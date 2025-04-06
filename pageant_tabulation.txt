@@ -1,0 +1,131 @@
+
+# Admin Interface - Pageant Tabulation System
+
+## 1. Dashboard
+
+*   **Purpose:** Provides a high-level, at-a-glance overview of the system's status and recent activity.
+*   **Key Widgets/Information:**
+    *   Total number of Pageants (broken down by status: Draft, Setup, Active, Completed, Unlocked\_For\_Edit, Archived, Cancelled).
+    *   Total number of registered Organizers (Active/Inactive).
+    *   Total number of registered Tabulators and Judges (system-wide count).
+    *   **Recent Pageant Activity Feed:** Shows latest events like pageant creation, status changes (e.g., "Pageant 'Miss City 2024' status changed to Completed"), edit permissions granted.
+    *   **Recent User Activity Feed:** Shows latest user actions like Organizer registration, Admin logins.
+    *   **Pending Requests (Optional):** If using an integrated request system, display count/list of pending edit permission requests from Organizers.
+*   **Quick Links:**
+    *   [Button] Create New Pageant
+    *   [Link] Manage Organizers
+    *   [Link] View Audit Log
+
+## 2. Pageants
+
+*   **Purpose:** Central hub for overseeing all pageants, managing their lifecycle from creation to archiving, assigning organizers, and controlling post-completion edit permissions.
+*   **Views/Sub-Sections:**
+    *   **All Pageants List:**
+        *   **Display:** Table view of all pageants.
+        *   **Columns:** Pageant Name, Status, Start Date, End Date, Assigned Organizer(s), Date Created, Edit Permission Status (e.g., "Locked", "Permission Granted to [Org Name] until [Expiry]", "Request Pending"), Actions.
+        *   **Filtering:** By Status, Date Range, Assigned Organizer, Edit Permission Status.
+        *   **Sorting:** By Name, Status, Dates, Organizer.
+        *   **Controls:**
+            *   [Button] Create New Pageant
+        *   **Row Actions (Context-Sensitive based on Pageant Status):**
+            *   **Draft/Setup:** View Details, Edit Setup, Assign/Reassign Organizer, Change Status (e.g., Activate), Delete.
+            *   **Active:** View Details, Reassign Organizer, Change Status (e.g., Cancel), View Audit Trail. *(Admin cannot directly edit active pageant operational data)*.
+            *   **Completed:** View Details, **Grant Edit Permission**, Reassign Organizer, Archive, View Audit Trail. *(Admin cannot directly edit completed pageant data)*.
+            *   **Unlocked\_For\_Edit:** View Details, **Revoke Edit Permission**, Reassign Organizer, View Audit Trail.
+            *   **Archived/Cancelled:** View Details, View Audit Trail, (Optional: Unarchive).
+    *   **Create Pageant Form:**
+        *   **Fields:**
+            *   Pageant Name (Required)
+            *   Description
+            *   Start Date / End Date
+            *   Venue / Location
+            *   Initial Status (Default: `Draft` or `Setup`)
+        *   **Assign Organizer(s) Section:**
+            *   **Option A:** Searchable multi-select dropdown: "Select Existing Organizer(s)" (lists active Organizers).
+            *   **Option B:** Button: `[+] Create & Assign New Organizer`
+                *   Opens Modal/Inline Form: Full Name, Email, Username (auto-suggested).
+                *   On Submit: Creates Organizer account (sends activation email), adds them to the selection for this pageant.
+        *   **Controls:** [Button] Save & Create Pageant
+    *   **Edit Pageant Setup Form:** (Accessible only for `Draft`/`Setup` pageants via the list view action).
+        *   Allows modification of the initial details entered during creation.
+    *   **Pageant Details View:** (Accessed via "View Details" action).
+        *   Displays all pageant information (mostly read-only after setup phase).
+        *   Shows Current Status, Assigned Organizer(s).
+        *   **Edit Permission Section (Visible for Completed/Unlocked):**
+            *   Displays current Edit Permission Status.
+            *   Shows pending request details (if applicable).
+            *   [Button] **Grant Edit Permission** (if Completed & Locked).
+                *   Modal/Confirmation: "Grant edit permission to [Organizer Name] for [Pageant Name]?" (Optional: Set expiry duration).
+            *   [Button] **Revoke Edit Permission** (if Unlocked\_For\_Edit).
+        *   [Button] **Reassign Organizer** (Available for most statuses, crucial for Completed/Unlocked if original Organizer is unavailable).
+        *   [Button] **View Audit Trail for this Pageant** (Links to Audit Log, pre-filtered).
+
+## 3. Users
+
+*   **Purpose:** Manage user accounts, primarily Organizers. Admins cannot manage Judges or Tabulators directly (these are handled by Organizer/Tabulator respectively), but may have a view.
+*   **Views/Sub-Sections:**
+    *   **Organizer Management:**
+        *   **Display:** Table view of all Organizer users.
+        *   **Columns:** Username, Full Name, Email, Account Status (Active, Inactive), Date Registered, # Pageants Assigned, Actions.
+        *   **Filtering:** By Status.
+        *   **Sorting:** By Username, Name, Status.
+        *   **Controls:**
+            *   [Button] Create New Organizer (alternative method).
+        *   **Row Actions:** View Details, Edit Profile (Name/Email), Activate/Deactivate Account, Reset Password (sends email link), View Assigned Pageants (links to filtered Pageant list).
+    *   **Create/Edit Organizer Form:**
+        *   **Fields:** Username, Email, Full Name, Account Status (Active/Inactive). (Password set via activation/reset email).
+    *   **(Optional) Admin Management:** Similar interface if multiple Admins are supported.
+    *   **(Optional) View Tabulators/Judges:** Read-only list of all Tabulator and Judge accounts, potentially filterable by Pageant they are associated with.
+
+## 4. Reports
+
+*   **Purpose:** Provide system-wide analytics and trends across all pageants.
+*   **Potential Reports:**
+    *   Pageant Statistics (Counts by status over time, average duration).
+    *   User Statistics (Organizer growth, active user counts).
+    *   System Usage (Aggregated stats on criteria/scoring types used, potentially anonymized win statistics across all completed pageants).
+*   **Controls:**
+    *   Filter reports by Date Range.
+    *   Export options (e.g., CSV, PDF).
+
+## 5. Audit Log
+
+*   **Purpose:** Secure, immutable, chronological record of all significant actions and events within the system. **Admin Access Only.**
+*   **Access:** Dedicated menu item.
+*   **Interface:**
+    *   **Strictly Read-Only:** No functionality to edit or delete log entries.
+    *   **Display:** Paginated table view, newest entries first.
+    *   **Columns:** Timestamp (Precise, with Timezone), Username (or "SYSTEM"), User Role (at time of action), Action Type (Standardized Code, e.g., `GRANT_EDIT_PERMISSION`), Target Entity (e.g., 'Pageant'), Target ID, Details (Human-readable summary), IP Address (Optional).
+    *   **Filtering Controls:**
+        *   Date Range selector.
+        *   User filter (dropdown/search for Username or select "SYSTEM").
+        *   Action Type filter (multi-select or dropdown).
+        *   Target Entity Type filter (dropdown: Pageant, User, etc.).
+        *   Target Entity ID filter (text input).
+    *   **Sorting:** Clickable column headers (Timestamp, Username, Action Type).
+    *   **Immutability:** Enforced by backend logic and restrictive database permissions (application user cannot UPDATE/DELETE on audit log table).
+
+## 6. System Settings
+
+*   **Purpose:** Configure global platform settings.
+*   **Potential Fields:**
+    *   Application Name
+    *   System Logo Upload
+    *   Default Timezone
+    *   Email Server Configuration (for sending activation/reset emails)
+    *   Terms of Service / Privacy Policy content management.
+
+* Remember we have Postgre DB.
+
+* This is the admin features of our app, implement these features and create a progress.md file to track the progress of the implementation. always check the markdown file so that you wont have to repeat implementing a feature. check it on every request. log it carefully with date and timestamp and the description of your progress or what you have worked on.
+
+* On your implementation, provide it full that is working and functional. The stack is Laravel 12 inertia vue. When creating a view or UI it should be visually appealing, be creative but not over the top and follow the overall theme and aesthetics of the app.
+
+* Do not run "npm run dev" and "php artisan serve" commands.
+
+
+
+
+
+
+

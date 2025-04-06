@@ -1,0 +1,1484 @@
+# Laravel 12 with Inertia.js and Vue Conversion
+
+## Updates
+
+- **2025-03-30 22:35PM**: Fixed Transition Component Error in OrganizerLayout:
+  - Fixed error: "<transition> can only be used on a single element or component"
+  - Added a wrapper div with class "transition-wrapper" around the slot content
+  - Ensured that the transition component has only one direct child element
+  - This resolves the issue occurring in the Timeline and other Organizer pages
+  - The error was happening because the slot content could contain multiple root elements
+  - Vue's transition component requires exactly one child element to work properly
+  - Maintained all existing transition animations and behavior
+
+- **2025-03-30 22:25PM**: Fixed Timeline Not Displaying At All:
+  - Completely rewrote date handling logic to be more resilient to bad data
+  - Simplified the controller data format for more consistent date handling
+  - Added proper display-only empty state when no events exist
+  - Removed dependency on Badge component to reduce potential points of failure
+  - Fixed timeline rendering logic with proper conditional rendering
+  - Added extensive error handling for date parsing operations
+  - Ensured all style classes are properly applied to timeline elements
+  - Improved null checking throughout the component to prevent rendering failures
+  - Added detailed error reporting to help diagnose any future issues
+  - Added fallback placeholders for incomplete event data
+
+- **2025-03-30 22:15PM**: Fixed White Screen Issue in Organizer Timeline Page:
+  - Updated date handling in the controller to provide ISO format strings for reliable date operations
+  - Added raw_start_datetime and raw_end_datetime fields for proper date computations in JavaScript
+  - Added default values and null-safety throughout the Timeline component
+  - Added error handling with try-catch block in the controller to prevent blank pages
+  - Added error message display on the frontend for user feedback
+  - Fixed sorting and date comparison operations to be null-safe
+  - Improved time display methods to work with formatted strings
+  - Enhanced the component robustness by adding proper type checking and defaults
+  - Made all date operations in the component resilient to missing or malformed data
+  - Added defensive programming techniques throughout the code to prevent runtime errors
+
+- **2025-03-30 21:49PM**: Reorganized Organizer Sidebar and Implemented Timeline Feature:
+  - Removed redundant Criteria and Scoring menu items from the organizer sidebar
+  - Consolidated functionality to make navigation cleaner and more focused
+  - Added new Timeline feature with chronological display of all pageant events
+  - Implemented comprehensive filtering with search capability and status filtering
+  - Added sorting options (oldest/newest first) for better organization of events
+  - Created visually appealing timeline design with vertical line and date separators
+  - Used color-coded status indicators for different event states
+  - Implemented custom icons based on event type for better visual recognition
+  - Each event links back to its parent pageant for easy navigation
+  - Ensured responsive design works well on all device sizes
+  - Created new Badge component for consistent UI across the application
+  - Updated routes and controller to support the new timeline feature
+  - Added controller method with proper data transformation for timeline display
+
+- **2025-06-14 09:45AM**: Simplified Organizer Dashboard design for improved clarity and aesthetics:
+  - Reduced visual complexity with cleaner card layouts and more subtle color scheme
+  - Replaced gradient headers with simple bordered sections
+  - Made status cards more uniform and minimalist
+  - Created a lighter color palette with better whitespace utilization
+  - Improved information hierarchy by adjusting typography and spacing
+  - Maintained all functionality while delivering a more balanced visual experience
+  - Streamlined icons and UI elements for a more professional appearance
+
+- **2025-06-13 16:15PM**: Fixed JSX syntax error in Organizer Dashboard component:
+  - Converted StatusCard component from JSX syntax to standard Vue template syntax
+  - Removed JSX-dependent code that was causing compiler errors
+  - Replaced the custom component approach with a v-for loop and dynamic components
+  - Created a statusCards array with configuration for all card types
+  - Added getStatusCount helper function to retrieve counts from props
+  - Maintained all functionality and visual design while fixing the compilation error
+  - This fixes "[vue/compiler-sfc] This experimental syntax requires enabling one of the following parser plugin(s): 'jsx', 'flow', 'typescript'" error
+
+- **2025-06-13 15:30PM**: Enhanced Organizer Dashboard UI and functionality:
+  - Completely redesigned the dashboard with a more user-friendly and visually appealing layout
+  - Implemented a clean welcome header with quick stats (total pageants and active pageants)
+  - Added a comprehensive Pageant Status Overview section with visual cards for all status types
+  - Reorganized the layout with a 2/3 + 1/3 grid for Recent Pageants and Quick Actions
+  - Made recent pageants clickable with hover effects to improve UX
+  - Enhanced pageant cards with more information and clearer status indicators
+  - Created color-coded status badges using the application's status color scheme
+  - Added an Upcoming Events timeline section with milestone indicators
+  - Fixed route references to use the Ziggy route() helper instead of hardcoded URLs
+  - Used consistent styling with orange gradient headers across all sections
+  - Created a StatusCard component to improve code reusability and maintainability
+  - Added empty state displays with helpful guidance when no data is available
+  - Improved mobile responsiveness throughout the entire dashboard
+  - Enhanced visual hierarchy with better typography and spacing
+  - Fixed loading states with proper shimmer animations for a better loading experience
+
+- **2025-06-12 11:00AM**: Fixed "Ziggy error: route 'organizer.pageant.edit' is not in the route list":
+  - Regenerated Ziggy routes using `php artisan ziggy:generate`
+  - Cleared route cache with `php artisan route:clear`
+  - Cleared application cache with `php artisan optimize:clear`
+  - Resolved issue where newly added routes for pageant editing weren't available in JavaScript
+  - This ensures that the Edit Pageant link works correctly from the pageant view
+
+- **2025-06-12 10:30AM**: Implemented Edit Pageant functionality and Event management:
+  - Added routes for editing pageants and managing events
+  - Created editPageant, updatePageant, and viewPageant controller methods
+  - Implemented event management controller methods (storeEvent, updateEvent, deleteEvent)
+  - Created PageantEdit.vue component with form to edit basic pageant details
+  - Added Events tab to PageantView.vue with timeline display
+  - Implemented EventForm.vue component for adding and editing events
+  - Added ConfirmDeleteModal.vue for safe deletion of events
+  - Connected all UI components to backend APIs
+  - Enhanced progress calculation based on event completion
+  - Used orange color scheme consistent with organizer interface design
+  - Added proper validation for all form inputs
+  - Implemented permission checking to prevent unauthorized edits
+  - Created visual status indicators for events with appropriate icons
+  - Ensured all forms have loading states for better UX
+
+- **2025-06-11 03:15PM**: Fixed Ziggy route error in PageantView.vue:
+  - Resolved "Uncaught (in promise) Error: Ziggy error: route 'organizer.my-pageants' is not in the route list"
+  - Cleared route cache with `php artisan route:clear`
+  - Cleared application cache with `php artisan optimize:clear`
+  - Regenerated Ziggy routes with `php artisan ziggy:generate`
+  - Rebuilt the application with `npm run build`
+  - Verified route is correctly defined in web.php and included in ziggy.js
+  - This ensures proper navigation in the organizer interface
+
+- **2025-06-11 02:45PM**: Fixed "Call to undefined method Illuminate\Database\Query\Builder::addEagerConstraints()" error:
+  - Created proper Criteria model with correct relationship definitions
+  - Updated Pageant model's criteria() method to return HasMany relationship instead of Query Builder
+  - Fixed OrganizerController's viewPageant method that was treating Query Builder as an Eloquent Collection
+  - Properly defined relationships between Pageant, Segment, and Category models
+  - Added proper table, fillable attributes, and type casting in Criteria model
+  - Ensured all eager loading in controllers works correctly with proper Eloquent relationships
+  - This fixes the issue when trying to eager load criteria with other relationships
+
+- **2025-06-10 04:30PM**: Enhanced Organizer My Pageants page UI and functionality:
+  - Completely redesigned My Pageants page with visually appealing card grid layout
+  - Made each pageant card clickable to view detailed pageant information
+  - Added hover effects with subtle transitions for better user interaction
+  - Implemented gradient backgrounds with improved visual styling for each card
+  - Created status badge system with color coding for different pageant statuses
+  - Enhanced stats display with custom icons for contestants, criteria, and judges
+  - Maintained existing tab and filter functionality while improving visual appeal
+  - Added action text based on pageant status for clearer user guidance
+  - Implemented orange color scheme consistent with organizer role theme
+  - Created new PageantView component with comprehensive tabbed interface including:
+    - Overview tab with progress tracking and key stats
+    - Contestants tab with photo grid and management options
+    - Criteria tab with weights and score ranges
+    - Judges tab with assigned judges display
+    - Scoring System tab with methodology explanation
+  - Added appropriate empty states for each section when data is missing
+  - Implemented new route and controller method for viewing individual pageants
+  - Enhanced detail view with hero section featuring pageant cover image and key information
+  - Added responsive design that works well on all device sizes
+  - Ensured consistent styling and transitions throughout the interface
+
+- **2025-05-02 11:15AM**: Fixed pageant progress calculation to properly show 0% when no events exist:
+  - Updated PageantDetails.vue component to handle null progress values with proper fallback to 0%
+  - Removed status-based progress placeholders in AdminController's allPageants method
+  - Updated calculateProgress method to ensure it always returns a valid integer
+  - Added better documentation to the calculateProgress method
+  - Ensured progress bar displays correctly with zero width when no events exist
+  - Removed hard-coded placeholder progress values for consistency
+  - Eliminated deceptive progress indicators that showed partial completion without real data
+  - Improved accuracy of pageant status visualization throughout the application
+  - Fixed all progress calculations to rely solely on real event data
+
+- **2025-05-02 10:30AM**: Completely removed all placeholder data and implemented empty states:
+  - Removed all hardcoded dummy data from Pageant model methods when real data is empty
+  - Updated getTopCategoriesAttribute to return empty array instead of fake categories
+  - Updated getPageantJudgesAttribute to return empty array instead of placeholder judges
+  - Updated getPageantActivitiesAttribute to return empty array instead of fake activities
+  - Completely rewrote getPageantPhasesAttribute to be based solely on real event data
+  - Removed fake contestant data and RandomUser.me photo URLs
+  - Added proper empty state visuals in the PageantDetails component for all sections
+  - Added informative messages when no phases, categories, judges or activities exist
+  - Enhanced UI with appropriate icons for empty states
+  - Maintained consistent styling and appearance in both populated and empty states
+  - Improved page load performance by removing unnecessary static data
+
+- **2025-05-01 12:00PM**: Removed dummy data from PageantDetails.vue:
+  - Removed hardcoded contestant data array with fictional contestants
+  - Removed mock pageant phases data with simulated milestones
+  - Removed simulated scoring system data
+  - Made the component fully rely on real data passed from the controller
+  - Converted static pageant.phases reference to use data from props
+  - Changed contestants from a static ref to a computed property based on props
+  - Improved real data handling with proper computed properties
+  - Removed arbitrary photo URLs from RandomUser API
+  - Ensured UI gracefully handles missing data with conditional rendering
+  - Enhanced code maintainability by removing redundant data declarations
+
+- **2025-05-01 12:15PM**: Enhanced Pageant model to use real scoring system data:
+  - Updated getPageantDetailsData() method to retrieve scoring system from database
+  - Added proper fallback for scoring system when data is missing
+  - Added json_decode for the scoring_system column to properly parse stored configuration
+  - Improved data consistency by using actual stored values rather than hardcoded defaults
+  - Made scoring visualization in the UI reflect the actual configured system
+  - Added backward compatibility with existing pageants
+
+- **2025-05-01 12:30PM**: Improved contestant display in PageantDetails.vue:
+  - Added fallback image for contestants without photos
+  - Added fallback for missing contestant numbers with placeholder "?"
+  - Added fallback for missing age data with placeholder "?"
+  - Added fallback for missing origin data with "Unknown" text
+  - Ensured all contestant data is properly checked for null/undefined values
+  - Enhanced robustness of UI when handling incomplete contestant data
+  - Maintained consistent design even when some data points are missing
+
+- **2025-04-30 1:15PM**: Fixed PostgreSQL date difference calculation error:
+  - Replaced `EXTRACT(DAY FROM (end_date - start_date))` with `EXTRACT(EPOCH FROM (end_date - start_date))/86400`
+  - Correctly calculates average pageant duration in days by converting epoch seconds to days
+  - Resolved the "function pg_catalog.extract(unknown, integer) does not exist" error
+  - Ensured compatibility with PostgreSQL's date arithmetic functions
+  - Fixed the Reports page average duration calculation
+
+- **2025-04-30 12:45PM**: Fixed PostgreSQL database function error in reports:
+  - Replaced MySQL's `MONTH()` function with PostgreSQL's `EXTRACT(MONTH FROM timestamp)` syntax
+  - Fixed `DATEDIFF()` function with PostgreSQL's `EXTRACT(DAY FROM (end_date - start_date))` 
+  - Updated `DAYOFWEEK()` function to use PostgreSQL's `EXTRACT(DOW FROM timestamp)`
+  - Corrected day of week indexing from 1-7 range to 0-6 range for PostgreSQL compatibility
+  - Fixed `whereYear()` query with PostgreSQL compatible `whereRaw('EXTRACT(YEAR FROM created_at) = ?')`
+  - Resolved "SQLSTATE[42883]: Undefined function" error in the Reports section
+
+- **2025-04-30 12:15PM**: Fixed invalid end tag error in Reports.vue:
+  - Recreated the Reports.vue file with correct template structure
+  - Fixed the improper closing of script and style tags that was causing Vite build errors
+  - Resolved "[plugin:vite:vue] Invalid end tag" error in the build process
+  - Ensured proper nesting of HTML elements in the template
+  - Maintained all functionality and UI elements of the Reports page
+  - Verified proper data binding and chart rendering after fix
+
+- **2025-04-30 9:15AM**: Implemented comprehensive Analytics & Reports section:
+  - Created visually appealing Reports page with teal color scheme matching app aesthetics
+  - Added backend data processing in AdminController to provide real statistics
+  - Implemented 4 key metrics cards with radial progress indicators
+  - Created 4 different chart types (bar charts, doughnut chart, pie chart) for data visualization
+  - Added time period filtering functionality for flexible data analysis
+  - Implemented export options for PDF and CSV reports of various data types
+  - Enhanced responsive design with appropriate layouts for all screen sizes
+  - Created consistent card design with intuitive icons and visual hierarchy
+  - Connected to real database queries for pageant statistics, user distribution and system usage
+
+- **2025-04-30 11:45AM**: Fixed Multiple Ziggy Route Errors:
+  - Regenerated Ziggy routes with `php artisan ziggy:generate` to ensure all routes are properly registered
+  - Fixed 'admin.users.organizers.edit' route error by ensuring route definition was properly included in ziggy.js
+  - Fixed 'admin.pageants.ongoing' route errors by replacing references with the existing 'admin.pageants.index' route
+  - Updated Dashboard.vue to use proper route names for pageant management links
+  - Updated PageantDetails.vue to handle navigation correctly with existing routes
+  - Modified Index.vue to use correct URL paths compatible with the routing system
+  - Ensured consistent navigation across the pageant management components
+  - These changes fix the "Ziggy error: route 'admin.users.organizers.edit' is not in the route list" and similar errors
+
+- **2025-04-30 11:30AM**: Fixed Ziggy Route Error for admin.pageants.ongoing.detail:
+  - Updated all components to use the correct route name 'admin.pageants.detail' instead of the non-existent 'admin.pageants.ongoing.detail'
+  - Modified Ongoing.vue to reference the proper route in Link components
+  - Updated Dashboard.vue to use the correct route in helper functions
+  - Fixed Index.vue to use the proper route in multiple locations
+  - Ensured all route references match the actual routes defined in routes/web.php
+  - No route changes were needed as 'admin.pageants.detail' already existed
+  - This fixes the "Ziggy error: route 'admin.pageants.ongoing.detail' is not in the route list" error
+
+- **2025-04-30 11:15AM**: Resolved heroicons import issue in UsersList component:
+  - Installed @heroicons/vue package using npm
+  - Initially updated import path for PowerIcon from @heroicons/vue/24/outline
+  - Subsequently replaced PowerIcon with native Power icon from lucide-vue-next for consistency
+  - Removed dependency on @heroicons/vue by eliminating the import
+  - Ensured all icon imports are now from a single library (lucide-vue-next)
+  - Maintained consistent icon styling and sizing throughout the component
+  - Improved code maintainability by standardizing icon usage
+  - This change fixes the "Failed to resolve import @heroicons/vue/24/outline" error
+
+- **2025-04-30 10:45AM**: Created Modal.vue component to resolve import error:
+  - Implemented reusable Modal.vue component in the Components directory
+  - Fixed the "Failed to resolve import '@/Components/Modal.vue'" error in ConfirmationModal
+  - Added Teleport functionality to ensure modals render at body level
+  - Implemented smooth entrance/exit transitions with transform and opacity
+  - Added backdrop click handler with configurable option to close on backdrop click
+  - Created responsive design with mobile-friendly layout
+  - Used proper aria attributes for accessibility (aria-labelledby, aria-modal, aria-hidden)
+  - Provided flexible slot system for custom modal content
+  - Added maxWidth prop for different sized modals
+  - Ensured proper z-index layering for stacked UI elements
+
+- **2023-08-22 14:30PM**: Enhanced User Management UI and functionality:
+  - Created generic `UsersList` component for displaying users with filtering and search capabilities
+  - Created reusable `ConfirmationModal` for user interactions
+  - Created reusable `UserForm` component for adding and editing users
+  - Enhanced `Organizers.vue` page with modern teal design and improved UI
+  - Created `CreateOrganizer.vue` page for adding new organizers
+  - Created `ShowOrganizer.vue` page for viewing organizer details
+  - Created `EditOrganizer.vue` page for editing organizer profiles
+  - Added route for resending verification emails to organizers
+  - Fixed route issue by clearing route cache and optimizing the application
+  - Updated `UserManagementController` with new methods:
+    - `editOrganizer()` - Display organizer edit form
+    - `resendVerificationEmail()` - Resend verification email to unverified organizers
+
+- **2025-04-16 3:30PM**: Implemented Organizer Management UI with teal color scheme:
+  - Created Organizers.vue page with comprehensive list view
+  - Implemented responsive table with organizer details and actions
+  - Added search functionality with filters by status (Active/Inactive/Unverified)
+  - Implemented confirmation modal for safe deletion of organizer accounts
+  - Added visual indicators for account status with appropriate color coding
+  - Created empty state UI with clear call-to-action
+  - Added user management action icons with tooltips for better UX
+  - Used teal color scheme throughout with appropriate accent colors
+  - Implemented role-appropriate icons from Lucide icon set
+  - Added pagination controls for large datasets
+  - Built responsive design that works on mobile and desktop
+  - Added visual feedback for all actions with hover states
+  - Created skeleton for future user management pages
+
+- **2025-04-16 3:00PM**: Created comprehensive User Management backend for admin section:
+  - Implemented new UserManagementController with complete CRUD operations
+  - Added 20+ routes for all user management functions
+  - Added specialized methods for each user type:
+    - Organizer management (create, view, edit, delete)
+    - Admin management with self-modification protection
+    - Read-only access to judges and tabulators
+    - Role-based permissions management
+  - Created directory structure for user management pages
+  - Added audit logging for all user management actions
+  - Implemented robust validation for all user operations
+  - Added security checks to prevent self-deletion of admin accounts
+  - Added relationship verification to prevent deletion of users with dependencies
+  - Enhanced User model to support all management functions
+  - Configured all necessary routes with proper naming conventions
+  - Prepared for future implementation of user management views
+
+- **2025-04-16 2:30PM**: Enhanced admin sidebar with User Management section:
+  - Added a comprehensive User Management section in the admin sidebar
+  - Created six child items for complete user administration:
+    - Organizers: For managing pageant organizers
+    - Create Organizer: Direct access to organizer creation
+    - Administrators: For managing admin users
+    - Tabulators: For viewing and managing tabulators
+    - Judges: For viewing and managing judges
+    - User Permissions: For managing role-based permissions
+  - Used intuitive, semantically appropriate icons for each menu item
+  - Maintained consistent teal color scheme for admin role
+  - Enhanced visual hierarchy with proper grouping of related functions
+  - Ensured hoverable dropdown works in collapsed sidebar mode
+  - Maintained mobile responsiveness throughout
+  - Aligned with UI/UX best practices for navigation organization
+
+- **2025-04-15 1:30PM**: Created dedicated ArchivedDetail page for archived pageants:
+  - Designed a comprehensive view specifically for archived pageants
+  - Added archive banner with reason and date information
+  - Implemented special UI treatments to distinguish archived status
+  - Created archive information section with detailed reason for archiving
+  - Added stats cards for archive date, organizer, budget, and category
+  - Included replacement pageant section with link to replacement event
+  - Created contestant information section with participation metrics
+  - Added admin actions: restore pageant, view replacement, export archive data
+  - Implemented consistent color scheme with red accents for archived content
+  - Maintained mobile responsiveness throughout the page
+  - Used gradient backgrounds and subtle design elements for visual appeal
+  - Added watermark archive icon in the hero section for clear visual indication
+
+- **2025-04-15 11:15AM**: Fixed icon import error in Archived Pageants page:
+  - Replaced nonexistent `UsersX` icon with `UserMinus` icon from lucide-vue-next
+  - Updated icon imports to only include available icons
+  - Ensured consistency across both mobile and desktop views
+  - Fixed "Uncaught SyntaxError: The requested module does not provide an export named 'UsersX'" error
+  - Made icon more semantically appropriate for archived contestants
+
+- **2025-04-15 10:30AM**: Enhanced Archived Pageants page with improved visual design and functionality:
+  - Completely redesigned UI with modern card-based grid layout for better visualization
+  - Added ribbon-style "ARCHIVED" badges for clear status indication
+  - Implemented comprehensive filtering system with year and reason filters
+  - Created mobile-responsive design with dedicated card layout for small screens
+  - Added gradient backgrounds with themed icons representing archived events
+  - Enhanced card details with archive reason, notes, and original dates
+  - Created hover effects with overlay actions for better user experience
+  - Added color-coded reason badges (Cancelled, Postponed, Merged, etc.)
+  - Implemented quick stats using colored chips for budget, organizer, and category
+  - Added empty state visualization with Lottie animations when no pageants match filters
+  - Added visual indicators for replacement pageants when applicable
+  - Enhanced search functionality to filter by title, venue, notes, category, or organizer
+  - Improved overall aesthetics to match application design language
+  - Added "Back to All Pageants" navigation for better user flow
+
+- **2025-04-14 5:45PM**: Fixed redirection issue in Previous Pageants page:
+  - Updated AdminController to render the PreviousDetail component instead of PageantDetails
+  - Fixed the previousPageantDetail method to properly handle previous pageant details
+  - Resolved the issue where clicking "View Details" in Previous Pageants would redirect to the wrong component
+  - Ensured proper navigation flow between Previous Pageants list and detail views
+  - Maintained consistent user experience across the admin interfaces
+
+- **2025-04-14 6:30PM**: Enhanced Previous Pageants pages with dynamic data and Lottie animations:
+  - Updated Previous.vue and PreviousDetail.vue to use real database data
+  - Implemented Lottie animations for empty states when no completed pageants exist
+  - Fixed property name references to match server-side data structure
+  - Added empty state handler with helpful guidance for users
+  - Created custom Lottie animation JSON for consistent empty state visuals
+  - Enhanced winner display with dynamic computation from contestant data
+  - Improved category and top performer display with placeholder data when needed
+  - Added edit permission modal for granting pageant access to organizers
+  - Connected permission management functionality to backend routes
+  - Implemented proper notification system for user feedback
+  - Improved performance by using computed properties for derived data
+  - Enhanced mobile responsiveness throughout both pages
+  - Fixed status badge styling to match application design language
+
+- **2025-04-14 5:30PM**: Enhanced PreviousDetail page with improved visual design and functionality:
+  - Redesigned header with responsive layout and clear navigation
+  - Added grant/revoke edit permission functionality
+  - Created visually enhanced info cards with gradient backgrounds and icons
+  - Improved winner showcase with elegant styling and better visual hierarchy
+  - Enhanced category display with cleaner layout and better visual indicators
+  - Added status badge and edit permission indicators
+  - Improved mobile responsiveness throughout the page
+  - Added expiry date display for edit permissions
+  - Enhanced description section with improved readability
+  - Implemented consistent design language with the rest of the application
+  - Added intuitive icons throughout the page for better visual context
+  - Improved export results button styling
+  - Added hover effects for interactive elements to improve user experience
+  - Enhanced typography and spacing for better readability
+  - Created proper navigation back to Previous Pageants page
+
+- **2025-04-14 5:15PM**: Enhanced Previous Pageants page with improved visual design and functionality:
+  - Completely redesigned UI with modern card-based grid layout for better visualization
+  - Added comprehensive filtering system with year and status filters
+  - Implemented mobile-responsive design with separate optimized card layout for small screens
+  - Added gradient image placeholders for pageants without cover images
+  - Enhanced card details with winner information, contestant counts, and edit permission status
+  - Created hover effects with overlay actions for better user experience
+  - Added color-coded status badges and edit permission indicators
+  - Implemented quick stats using colored chips for categories, judges, and year
+  - Added new responsive pagination controls
+  - Improved search functionality to filter by title, venue, or winner
+  - Added empty state visualization for better user feedback when no pageants match filters
+  - Enhanced overall aesthetics to match application design language
+  - Added "Back to All Pageants" navigation for better user flow
+  - Improved date formatting for better readability
+  - Added comprehensive filter reset functionality
+
+- **2025-04-14 5:00PM**: Enhanced notification system with improved positioning and styling:
+  - Fixed duplicate notification issue by removing redundant notification trigger
+  - Repositioned notifications to appear in top-right with proper spacing and sizing
+  - Added gradient color accents for more polished appearance
+  - Implemented pause/resume functionality when hovering over notifications
+  - Added subtle animations with transforms for more engaging entrance/exit
+  - Limited maximum number of visible notifications to prevent screen clutter
+  - Added duplicate prevention to avoid multiple notifications with the same message
+  - Improved overall visual appeal with better shadows, transitions, and spacing
+  - Added dark mode support for better accessibility
+  - Improved notification plugin with configurable settings
+  - Ensured notifications are responsive on mobile devices
+
+- **2025-04-14 4:15PM**: Fixed notification feedback issue when creating pageants:
+  - Updated HandleInertiaRequests middleware to properly pass flash messages to frontend
+  - Enhanced AdminController's storePageant method with proper error handling and consistent flash messages
+  - Added client-side fallback notifications in case server flash messages don't arrive
+  - Added debugging logs to App.vue to troubleshoot notification display issues
+  - Updated Index.vue to check for flash messages when mounted after redirects
+  - Ensured form submission success is consistently reported to users
+
+- **2025-04-14 3:30PM**: Implemented comprehensive notification system for user feedback:
+  - Created reusable NotificationSystem component for consistent feedback across the application
+  - Developed Vue plugin to register notification system globally
+  - Created useNotification composable for easy access in components
+  - Implemented visually appealing toast notifications with different types (success, error, warning, info)
+  - Added progress bars to notifications with auto-dismiss functionality
+  - Enhanced controllers to return proper flash messages
+  - Updated App.vue to handle flash messages and convert them to notifications
+  - Applied notification system to pageant creation, editing, status changes, and permissions
+  - Added visual feedback for all major user actions with appropriate colors and icons
+  - Used Tailwind CSS for clean, consistent styling matching the app's aesthetic
+  - Ensured notifications are responsive across all device sizes
+
+- **2025-04-13 2:30PM**: Enhanced Pageant model with placeholders and detailed data retrieval:
+  - Added comprehensive placeholder data for categories, judges, and activities when no real data exists
+  - Created getTopCategoriesAttribute method to provide realistic category data with weights and scores
+  - Added getPageantJudgesAttribute method with default judges when none are assigned
+  - Implemented getPageantActivitiesAttribute with realistic activity timeline placeholders
+  - Added getPageantPhasesAttribute for clear timeline visualization with dynamic milestone completion
+  - Created getPageantContestantsAttribute with realistic contestant data including photos and scores
+  - Implemented getPageantDetailsData method to retrieve all data needed for pageant details page
+  - Enhanced UI for better visualization of pageant progress, contestants, and scoring
+  - Integrated placeholder data seamlessly with real data when available
+  - Improved overall user experience with comprehensive data representation
+  - Merged "Ongoing Pageants" functionality into the main "All Pageants" page
+  - Updated AdminController to use the new getPageantDetailsData method for better code organization
+  - Updated routes to point all pageant detail views to a single controller method
+  - Removed redundant previousPageantDetail and archivedPageantDetail methods
+  - Updated sidebar navigation to remove the "Ongoing Pageants" menu item
+  - Enhanced isActiveLink function in SideNav to properly handle pageant detail pages
+
+- **2025-04-13 12:05PM**: Fixed ambiguous column reference issue:
+  - Resolved "SQLSTATE[42702]: Ambiguous column: 7 ERROR: column reference 'role' is ambiguous" error
+  - Updated Pageant model's `judges()` relationship method to explicitly specify `users.role`
+  - Also fixed potential ambiguity in `organizers()` relationship method
+  - Ensured proper table qualification for columns that exist in multiple related tables
+  - Improved query clarity and prevented SQL errors when accessing relationships
+
+- **2025-04-13 11:20AM**: Fixed migration and database setup:
+  - Fixed migration issues with problematic verification fields migration files
+  - Successfully ran all migrations including new tables for Contestants, Categories, Events, etc.
+  - Reset and reseeded database to ensure proper structure with `migrate:fresh`
+  - Fixed "undefined table: pageant_judges" error by properly running migrations
+  - Ensured all relationship tables exist and are properly set up
+  - Validated database schema integrity with PostgreSQL jsonb columns
+
+- **2025-04-13 10:15AM**: Enhanced Pageant model with comprehensive relationships and improved database schema:
+  - Created migrations and models for Contestants, Categories, Events, Activities, Segments, and PageantJudges
+  - Enhanced Pageant model with relationships to all new models for complete pageant data management
+  - Added utility methods to Pageant model for calculating progress and accessing related data
+  - Updated AdminController to include new relationships in pageant details view
+  - Modified Index view to handle displaying related pageant data
+  - Merged "Ongoing Pageants" functionality into the main "All Pageants" page for better UX
+  - Improved routes to maintain proper hierarchy and prevent conflicts
+  - Added helper methods to models for status checks and data calculations
+  - Enhanced data structure with PostgreSQL's JSONB for flexible metadata storage
+  - Added comprehensive attribute casting for proper data type handling
+
+- **2025-04-12 12:15PM**: Fixed property name mismatch in Ongoing Pageants page:
+  - Changed `pageant.title` to `pageant.name` to match the property sent from the controller
+  - Updated `pageant.date` to `pageant.start_date` to properly display dates
+  - Added fallback to `pageant.location` or `pageant.venue` for location display
+  - Improved contestants/organizers display to show available information
+  - Added a helper function to estimate progress based on pageant status
+  - Updated mock data property names to match server data structure
+  - Improved progress bar calculation using the pageant status when progress value is missing
+  - Enhanced fallback chain for multiple properties to ensure data is displayed properly
+  - Ensured consistent naming across the component to match API responses
+
+- **2025-04-12 11:30AM**: Enhanced Ongoing Pageants page for better user experience:
+  - Made entire pageant cards clickable, removing the fixed-position View Details button
+  - Added hover state with subtle arrow icon indicator to show cards are clickable
+  - Added placeholders for missing data (description, date, venue, contestants, etc.)
+  - Added default placeholder image path for pageants without cover images
+  - Improved overall visual appeal with better spacing and cleaner design
+  - Added subtle "View Details" label that appears on hover
+  - Enhanced user experience with immediate visual feedback on interactive elements
+  - Fixed progress bar to handle null/undefined values with fallback to 0%
+  - Added null checks and fallback values for all pageant properties
+
+- **2025-03-29 10:00AM**: Created new Laravel 12 project
+- **2025-03-29 10:05AM**: Installed Inertia.js for Laravel
+- **2025-03-29 10:10AM**: Created directory structure for Vue components
+- **2025-03-29 10:15AM**: Installed Vue, Pinia, and other frontend dependencies
+- **2025-03-29 10:20AM**: Set up Tailwind CSS
+- **2025-03-29 10:25AM**: Created basic layout and welcome components
+- **2025-03-29 10:30AM**: Set up HomeController and routes
+- **2025-03-29 10:35AM**: Migrated all components, pages, layouts, and stores from the original Vue.js project
+- **2025-03-29 10:40AM**: Created controllers for Organizer, Admin, Judge, and Tabulator sections
+- **2025-03-29 10:45AM**: Set up routes for all sections
+- **2025-03-29 10:50AM**: Updated middleware configuration to use Laravel 12's new bootstrap/app.php approach
+- **2025-03-29 11:00AM**: Fixed database configuration to use PostgreSQL
+- **2025-03-29 11:05AM**: Installed and configured Ziggy for route handling with Inertia
+- **2025-03-29 11:10AM**: Fixed error handling and updated app.blade.php for proper Inertia integration
+- **2025-03-29 11:15AM**: Fixed "Class Tightenco\Ziggy\Ziggy not found" error by implementing a custom route helper
+- **2025-03-29 11:20AM**: Fixed sidebar component to work with Inertia.js instead of Vue Router
+- **2025-03-29 11:25AM**: Fixed layout components to use Inertia slots instead of RouterView
+- **2025-03-29 11:30AM**: Cleaned up CSS and fixed styles to match the original application
+- **2025-03-29 11:35AM**: Fixed Tailwind configuration to include Figtree font
+- **2025-03-29 11:40AM**: Fixed import paths to use relative paths instead of @ alias
+- **2025-03-29 11:45AM**: Added skeleton CSS styles from original application to app.css
+- **2025-03-29 11:50AM**: Fixed vite.config.js to properly configure path aliases
+- **2025-03-29 11:55AM**: Updated layout components to use @ alias for imports after fixing path configuration
+- **2025-03-29 12:00PM**: Successfully built assets with Vite, creating all necessary CSS and JS files
+- **2025-03-29 12:15PM**: Fixed CSS styling issues by downgrading Tailwind CSS to 3.3.5 for compatibility
+- **2025-03-29 12:20PM**: Converted config files to CommonJS format with .cjs extension for proper module support
+- **2025-03-29 12:25PM**: Added test component to verify CSS styling is working correctly
+- **2025-03-29 12:30PM**: Fixed all CSS related issues and successfully built the application
+- **2025-03-29 12:35PM**: Fixed login functionality with temporary authentication for testing
+- **2025-03-29 12:40PM**: Updated Admin Dashboard to use Inertia Link components instead of Vue Router
+- **2025-03-29 12:45PM**: Removed test components now that styling is working correctly
+- **2025-03-30 01:15PM**: Redesigned the Admin Dashboard:
+  - Moved Quick Links to the top of the dashboard for better accessibility
+  - Implemented a uniform teal color scheme throughout the interface
+  - Added a gradient header with backdrop-blur for modern appearance
+  - Improved overall visual hierarchy and user experience
+  - Enhanced hover states and transitions for interactive elements
+  - Reorganized content sections for better information flow
+  - Improved visual consistency across cards and status indicators
+  - Made table headers more distinguishable with teal colors
+- **2025-03-30 01:45PM**: Enhanced Admin Dashboard Recent Activity and Status Indicators:
+  - Improved Recent Activity section with better space utilization
+  - Added dynamic icons for different activity types (create, update, delete, etc.)
+  - Implemented color-coded activity indicators based on action type
+  - Added hover effects with gradient background and action buttons
+  - Enhanced user and timestamp display with appropriate icons
+  - Improved pageant status indicators with distinct color coding for each status:
+    - Draft: Gray
+    - Setup: Blue
+    - Active: Green
+    - Completed: Purple
+    - Unlocked_For_Edit: Amber
+    - Archived: Slate
+    - Cancelled: Red
+  - Added ability to directly navigate to related pageants from activity items
+- **2025-08-27 11:45AM**: Renamed OngoingDetail component to PageantDetails for better clarity:
+  - Renamed resources/js/Pages/Admin/Pageants/OngoingDetail.vue to resources/js/Pages/Admin/Pageants/PageantDetails.vue
+  - Updated AdminController to reference the new component name
+  - Improved naming consistency to avoid confusion with other pageant detail views
+  - Maintained all functionality while enhancing code organization
+- **2025-08-27 3:45PM**: Confirmed Ziggy implementation for route handling throughout the application:
+  - Verified that route() helper is properly configured and working in Vue components
+  - Ziggy routes are available via the global `route()` function in all components
+  - Route names like 'admin.pageants.index' can now be used directly with the route() helper
+  - No manual URL construction needed for navigation between pages
+  - Enhanced type safety with named routes instead of hardcoded URLs
+  - Improved maintainability as route changes are automatically reflected in components
+  - Ziggy is properly included in app.js and configured with ZiggyVue plugin
+  - All route parameters are properly typed and validated
+- **2025-08-27 5:30PM**: Fixed sidebar scrollbar issue when minimized:
+  - Updated SideNav.vue to conditionally apply scrollbar styling only when sidebar is expanded
+  - Added custom scrollbar styling with thin, semi-transparent appearance for better aesthetics
+  - Removed scrollbar completely in collapsed state by setting overflow to visible
+  - Applied dynamic max-height calculation only when sidebar is expanded
+  - Added scoped CSS with browser-compatible scrollbar styling
+  - Enhanced overall sidebar appearance in both expanded and collapsed states
+  - Improved visual consistency across different browsers with custom scrollbar styling
+  - Fixed visual inconsistency when toggling between expanded and collapsed states
+- **2025-08-27 6:15PM**: Completely removed sidebar scrollbar on web view:
+  - Updated SideNav.vue to only show scrollbar on mobile devices
+  - Changed conditional logic to use isMobile instead of isOpen for overflow control
+  - Removed scrollbar from desktop view regardless of sidebar state (expanded or collapsed)
+  - Maintained scrollbar functionality on mobile for better touch navigation
+  - Simplified the navigation appearance on desktop for a cleaner interface
+- **2025-08-27 7:30PM**: Fixed sidebar navigation highlighting issue:
+  - Updated isSubmenuActive function to only highlight parent items when children are actually active
+  - Improved active item detection to prevent Pageant Management from always being highlighted
+  - Added special handling for top-level menu items (Dashboard, Reports, Audit Log)
+  - Implemented more precise route matching for direct top-level navigation
+  - Prevented parent menu highlighting when on a different top-level page
+  - Improved URL-based matching as a fallback when route-based matching fails
+  - Enhanced active state logic with proper path comparison
+  - Fixed section root dashboards highlighting for different user roles
+  - Made the navigation highlighting more intuitive and predictable
+- **2025-08-27 9:00PM**: Fixed Reports menu item not being highlighted when selected:
+  - Added specific route checking for the Reports menu item
+  - Added direct route().current('admin.reports') check for more accurate Reports page detection
+  - Enhanced Audit Log highlighting with URL-based path inclusion check
+  - Improved menu item detection logic with early returns for special cases
+  - Fixed inconsistent highlighting between different top-level menu items
+  - Ensured all admin menu items (Dashboard, Reports, Audit Log) are properly highlighted when active
+
+## 2025-08-11 2:15PM
+- Fixed admin sidebar transition issue preventing page rendering:
+  - Updated AdminLayout.vue to wrap slot content in a div with a key attribute
+  - Added proper root element within the transition that can be animated
+  - Fixed Dashboard.vue component to be compatible with the layout transitions
+  - Updated Reports.vue to use the correct import path and fixed TypeScript warnings
+  - Improved SideNav component to ensure main content has a proper root element
+  - Enhanced the isActiveLink function to better detect active routes
+  - Added special case handling for root section paths (e.g., /admin, /organizer)
+  - Added comprehensive logging to identify active navigation items
+  - Fixed import path for AdminLayout component in admin pages
+  - Removed unnecessary safeRoute helper function from Dashboard component
+
+## 2025-08-10 12:30PM
+- Fixed admin sidebar navigation issue:
+  - Updated SideNav component to add debugging logs for navigation link matching
+  - Added null checks to prevent errors when accessing properties of undefined objects
+  - Fixed navigation item matching logic to properly identify active routes
+  - Modified admin navigation items to use direct URLs instead of route names
+  - Generated Ziggy routes using artisan command `php artisan ziggy:generate`
+  - Updated Dashboard.vue to use direct URLs for Quick Actions instead of safeRoute function
+  - Enhanced Reports.vue component to ensure proper usage of AdminLayout
+  - Made navbar more robust by handling edge cases and undefined values
+
+## 2025-03-30 9:15AM
+- Created database seeders for user accounts
+- Added test accounts for admin, organizer, tabulator, and judge roles in `UserSeeder.php`
+- Updated `DatabaseSeeder.php` to use the new `UserSeeder`
+- Enhanced the `Login.vue` component with smooth page transition animations
+- Added hover and focus effects to form inputs
+- Modified the `Home.vue` component to redirect to the Login page
+- Removed embedded login form from `Home.vue` for better separation of concerns
+- Created dedicated login page at `/login` route
+- Updated `User` model to include `role` field and added role helper methods
+- Created migration `2025_03_30_000000_add_role_to_users_table.php` to add role column to users table
+- Updated `UserFactory` with role states to easily create users with specific roles
+- Improved `UserSeeder` to use factory methods instead of direct creation
+- Created custom Artisan command `app:setup` to simplify database setup
+- `app:setup` command runs migrations, seeds, clears cache, and links storage
+- Added `--fresh` option to refresh the database if needed
+
+## 2025-03-30 10:30AM
+- Fixed "Back to Ongoing Pageants" button in the PreviousDetail.vue file
+- Updated route mapping in the safeRoute function to properly handle navigation to ongoing pageants
+- Enhanced the ExportResults function with improved logging and user feedback
+- Ensured navigation between pageant pages is working correctly
+
+## 2025-03-30 11:15AM
+- Enhanced the "Back to Ongoing Pageants" button in PageantDetails with improved styling
+- Added border, shadow, and background color to increase button visibility
+- Implemented transition animations for hover and active states
+- Improved overall user experience with better visual feedback on interactive elements
+- Made navigation buttons more distinguishable from regular text
+- Ensured consistent styling across the application for navigation elements
+
+## 2025-03-30 12:00PM
+- Fixed navigation issues with "Back to Ongoing Pageants" buttons
+- Replaced Inertia Link components with direct anchor tags for more reliable navigation
+- Implemented explicit click handlers with @click.prevent for better control over navigation behavior
+- Added navigateBack functions that use window.location.href for guaranteed browser navigation
+- Ensured consistent behavior across all back buttons in the application
+- Improved reliability of navigation between pageant pages
+
+## 2025-03-30 12:45PM
+- Fixed navigation issues with "Back to Ongoing Pageants" buttons
+- Replaced window.location.href approach with Inertia's router.visit method
+- Removed dependency on safeRoute helper for back button navigation
+- Ensured consistent navigation behavior across both PageantDetails and PreviousDetail pages
+- Implemented proper SPA navigation without full page reloads
+- Improved user experience with smoother page transitions
+
+## 2025-03-30 1:30PM
+- Added page transitions to enhance user experience
+- Implemented NProgress for visual loading feedback during page navigation
+- Created custom App.vue component to handle transition animations
+- Added transitions.css with various animation types (fade, scale, slide)
+- Customized NProgress with teal color to match the application theme
+- Improved back button navigation with smooth transitions
+- Resolved navigation issue with proper Inertia.js integration
+- Added transition hooks to manage page state during navigation
+- Enhanced button styling with proper visual feedback
+- Applied consistent styling across all navigation elements
+
+## 2025-03-30 2:15PM
+- Fixed white screen issue by resolving JavaScript errors
+- Simplified App.vue component to correctly render Inertia pages
+- Removed complex transition wrapping that was causing rendering issues
+- Simplified navigation functions to use basic Inertia router visits
+- Improved application stability by removing overly complex page transitions
+- Rebuilt assets to ensure all JavaScript modules are properly bundled
+- Application now properly renders without any white screen issues
+- Back button navigation works properly with basic transitions
+- Fixed interaction between NProgress and Inertia page rendering
+
+## 2025-03-30 3:00PM
+- Implemented proper SPA navigation with smooth transitions
+- Updated App.vue component with Vue's built-in transition system
+- Added fade transitions between pages for better user experience
+- Improved SideNav component to use Inertia's Link component with preserveScroll
+- Optimized page transitions.css to handle various animation types
+- Replaced all manual navigation with Inertia Link components
+- Removed direct anchor tags for navigation in favor of Inertia Link for SPA experience
+- Fixed transitions with properly configured mode="out-in" on transition component
+- Added key to component to force re-rendering for smoother transitions
+- Enhanced logout functionality to use proper POST request
+
+## 2025-03-30 4:15PM
+- Enhanced SPA experience with improved transitions
+- Added slot-based App.vue component for more flexible page transitions
+- Created a reusable TransitionWrapper component for consistent transitions
+- Applied smoother cubic-bezier timing functions for all animations
+- Added button hover transitions with subtle elevation effects
+- Improved navigation elements with consistent transition classes
+- Enhanced transitions.css with additional animation utilities
+- Applied btn-transition class to interactive elements for consistent hover effects
+- Added layout wrapper transitions for smoother page layout shifts
+- Optimized transition durations for a polished but responsive feel
+- Used Vue's transition mode="out-in" for cleaner transitions between components
+
+## 2025-03-30 5:00PM
+- Updated page transitions to match the original implementation from the src folder
+- Simplified App.vue component for cleaner transitions between pages
+- Added inline styling directly to App.vue for core transition behavior
+- Streamlined transitions.css with simpler animation parameters
+- Replaced cubic-bezier timing functions with standard ease transitions for consistency
+- Removed unnecessary preserve-scroll attributes from Link components
+- Simplified navigation link components in SideNav
+- Applied consistent transition durations across different animation types
+- Made the animation lighter and more subtle for better user experience
+- Fixed transition timing for quicker navigation between pages
+- Ensured page transitions match the original src implementation exactly
+
+## 2025-03-29 7:30PM
+- Enhanced All Pageants page with clickable rows for better user experience:
+  - Made each pageant row directly clickable to view pageant details
+  - Added visual indicator with left border highlight on row hover
+  - Included animated arrow indicator that appears when hovering over rows
+  - Added cursor pointer styling to indicate clickability
+  - Applied consistent color scheme using teal highlighting to match admin theme
+  - Added tooltip "Click to view pageant details" for explicit user guidance
+  - Implemented text color changes on hover for better visual feedback
+  - Maintained existing View/Edit buttons in the actions column for alternative access
+  - Enhanced accessibility by making the entire row interactive
+  - Applied subtle transitions for smooth visual feedback
+
+## Laravel 12 Architecture Changes
+Laravel 12 introduced significant architectural changes:
+- Removed traditional `app/Http/Kernel.php` in favor of a more streamlined configuration in `bootstrap/app.php`
+- Simplified middleware configuration with a more functional approach
+- Inertia middleware has been properly configured in the new structure
+- Route handling is now implemented with named routes and a custom route helper
+
+## Database Configuration
+- Configured PostgreSQL database connection
+- Database details:
+  - Host: 127.0.0.1
+  - Port: 5432
+  - Database: pageant_tabulation
+  - Username: postgres
+  - Password: admin
+
+## Migration Summary
+The following files were migrated:
+
+1. **Components**:
+   - SideNav.vue (Updated to work with Inertia.js)
+   - Modals: OrganizerSettingsModal.vue
+   - Scoring: ScoringAnalytics.vue
+   - Skeletons: Various skeleton components and skeleton.css
+
+2. **Layouts**:
+   - AdminLayout.vue (Updated to use SideNav and Inertia slots)
+   - DashboardLayout.vue (Updated to use SideNav and Inertia slots)
+   - OrganizerLayout.vue (Updated to use SideNav and Inertia slots)
+   - TabulatorLayout.vue (Updated to use SideNav and Inertia slots)
+
+3. **Pages**:
+   - Home.vue
+   - Organizer: Dashboard.vue, Scoring.vue, Criteria.vue, Contestants.vue
+   - Admin: Dashboard.vue, Reports.vue
+   - Judge: Scoring.vue
+   - Tabulator: Dashboard.vue, Judges.vue, Scores.vue, Results.vue, Print.vue
+
+4. **Stores**:
+   - auth.ts
+
+5. **CSS**:
+   - Animations and styles preserved from original application
+   - Skeleton CSS styles integrated into main app.css
+   - Tailwind configuration updated for proper font usage
+
+## CSS Fixes
+- Downgraded Tailwind CSS to version 3.3.5 for compatibility with Laravel 12
+- Fixed postcss.config.js by converting it to CommonJS format (.cjs extension)
+- Fixed tailwind.config.js by converting it to CommonJS format (.cjs extension)
+- Updated vite.config.js to use the new .cjs config files
+- Added primary color palette to Tailwind configuration for proper styling
+- Integrated skeleton animations for loading states
+
+## Authentication Fixes
+- Implemented temporary login handling in Home.vue for testing without database integration
+- Set up hardcoded test accounts:
+  - admin@example.com / password
+  - organizer@example.com / password
+  - tabulator@example.com / password
+  - judge@example.com / password
+- Each role redirects to the appropriate dashboard
+- Updated admin dashboard to use Inertia's Link component instead of Vue Router
+
+## Next Steps
+- Set up proper authentication for different user roles
+- Create database migrations and models
+- Connect backend API endpoints
+- Test the application thoroughly
+- Deploy to production
+
+## Notes
+- Laravel 12 with Inertia.js and Vue 3 is now properly configured
+- Tailwind CSS has been set up with proper configuration
+- Vite has been configured to work with Vue SFC components
+- All original Vue components have been migrated to the Laravel structure
+- Styling and animations from the original project are preserved
+- Routes are now properly named for easier navigation
+- Sidebar component has been fixed to work with Inertia.js
+- Layout components have been updated to use proper Inertia slots
+- CSS styles from skeleton.css have been integrated into app.css
+- Import paths now correctly use the @ alias after fixing vite.config.js
+- Asset build completed successfully with all necessary CSS and JS files generated
+- All CSS styling issues have been resolved and the application now displays correctly
+- Login functionality is working with temporary authentication
+
+## 2025-03-29 1:45PM
+- Fixed Admin Dashboard styling to match the original design
+- Updated SideNav component with proper navigation items for all user roles (admin, organizer, tabulator, judge)
+- Improved active state detection in the sidebar to highlight the current page
+- Made the sidebar responsive with mini mode support for desktop displays
+
+## 2025-03-29 12:45PM
+- Removed TestStyles component from Home page as styling is working correctly now
+- Verified that all CSS styles are correctly applied throughout the application
+
+## 2025-03-29 12:40PM
+- Fixed Admin Dashboard component
+- Converted from TypeScript to JavaScript
+- Using Inertia.js Link components instead of Vue Router
+- Properly defined layout
+
+## 2025-03-29 12:35PM
+- Implemented temporary authentication for testing
+- Added hardcoded test accounts for different user roles (admin, organizer, tabulator, judge)
+
+## 2025-03-29 11:50AM
+- Set up Vite configuration to correctly resolve aliases
+
+## 2025-03-29 11:40AM
+- Added Tabulator Dashboard component
+- Fixed layout issues
+
+## 2025-03-29 11:30AM
+- Integrated Inertia.js for page rendering
+- Set up routing for different user roles
+
+## 2025-03-29 11:20AM
+- Added initial layouts (Admin, Organizer, Tabulator, Judge)
+- Created base components
+
+## 2025-03-29 11:10AM
+- Set up Laravel 12 project
+- Configured Tailwind CSS
+
+## Authentication Fixes
+
+### Temporary Login Implementation (2025-03-29 12:35PM)
+- Implemented a temporary login handling in `Home.vue`
+- Set up hardcoded test accounts for:
+  - Admin: admin@example.com / admin123
+  - Organizer: organizer@example.com / organizer123
+  - Tabulator: tabulator@example.com / tabulator123
+  - Judge: judge@example.com / judge123
+- Added logic to redirect users to appropriate dashboards based on role 
+
+## 2025-03-29 8:45PM
+- Fixed tabulator sidebar issue that prevented the sidebar from appearing when clicking on Judges:
+  - Updated `SideNav.vue` component with improved route matching logic
+  - Fixed `isActiveLink` function to properly handle URL and component path matching
+  - Added case-insensitive route name comparison for more reliable navigation
+  - Simplified navigation item href values to use direct URLs instead of route helper
+  - Updated `Tabulator/Judges.vue` to explicitly set the TabulatorLayout
+  - Fixed import path for TabulatorLayout in Judges component
+  - Enhanced active link detection for better sidebar highlighting
+  - Removed redundant debugging logs that were polluting the console 
+
+## 2025-03-29 9:15PM
+- Fixed the remaining tabulator menu items to ensure the sidebar appears for all Tabulator pages:
+  - Updated `Tabulator/Scores.vue` to explicitly use TabulatorLayout
+  - Updated `Tabulator/Results.vue` to explicitly use TabulatorLayout
+  - Updated `Tabulator/Print.vue` to explicitly use TabulatorLayout
+  - Defined ScoreDisplay component locally in Results.vue to fix component dependency issue
+  - Ensured consistent layout usage across all Tabulator section pages
+  - All tabulator sidebar menu items now correctly display the expected content when clicked 
+
+## 2025-03-30 12:45PM**: Fixed PostgreSQL column error in tabulator selection:
+  - Resolved "SQLSTATE[42703]: Undefined column: 7 ERROR: column "is_active" does not exist" error
+  - Removed non-existent `is_active` column filter from User queries in OrganizerController
+  - Updated tabulator retrieval in both viewPageant and editPageant methods
+  - This ensures the organizer can correctly view and assign tabulators to pageants
+
+## Admin Features Implementation Progress
+
+- **2025-03-29 11:00AM**: Started implementing admin features from the requirements
+- **2025-03-29 11:15AM**: Created Pageant migration and model with required fields and status tracking
+- **2025-03-29 11:30AM**: Created pageant_organizers pivot table for managing organizer assignments
+- **2025-03-29 11:45AM**: Created AuditLog migration and model for comprehensive system activity tracking
+- **2025-03-29 12:00PM**: Implemented AuditLogService to handle logging administrative actions
+- **2025-03-29 12:15PM**: Updated AdminController with dashboard and pageant management functionality
+- **2025-03-29 12:30PM**: Added routes for pageant management, view, edit, status change, and permissions
+- **2025-03-29 12:45PM**: Created Audit Log page with advanced filtering and pagination
+- **2025-03-29 01:00PM**: Redesigned Admin Dashboard with pageant status cards, user counts, and activity feeds
+- **2025-03-29 01:15PM**: Added skeleton loading components to improve user experience
+- **2025-03-29 01:30PM**: Created PageantSeeder to populate the database with sample pageants and audit logs
+- **2025-03-29 01:45PM**: Successfully implemented all Dashboard (Feature #1) requirements:
+  - Added pageant status overview with counts by status (Draft, Setup, Active, Completed, etc.)
+  - Added user counts for organizers, tabulators, and judges
+  - Implemented recent pageant activity feed showing latest system events
+  - Created quick links section for common admin tasks
+  - Displayed recent pageants with status indicators and action buttons 
+
+## 2025-08-15 11:30AM
+- Verified Admin Dashboard implementation:
+  - Confirmed all components are loading properly
+  - Checked data is being passed correctly from controller to view
+  - Cleared application caches (cache, config, route, view) to ensure proper functionality
+  - Confirmed the seeded data is displaying correctly in the dashboard
+  - Tested dashboard refresh functionality 
+
+## 2025-08-15 12:45PM
+- Enhanced Admin Interface:
+  - Added Audit Log to the admin sidebar navigation
+  - Completely redesigned the dashboard cards with a more organized layout
+  - Created a two-column card system for better information grouping
+  - Added visual enhancements with gradient backgrounds and border colors
+  - Improved card organization with proper titles and descriptions
+  - Grouped pageant status and system users into separate summary cards
+  - Enhanced status indicators with specific color schemes for different statuses
+  - Updated corresponding imports in the component file
+  - Ensured consistent styling across all dashboard elements 
+
+## 2025-08-15 2:15PM
+- Enhanced Admin Layout with Animations and Transitions:
+  - Added animated decorative elements to the top of the content area
+  - Implemented animated dots with different colors (teal, blue, purple) that move across the screen
+  - Created animated gradient line that expands across the viewport
+  - Enhanced page transitions with smoother animations (opacity, translation, and scaling)
+  - Added sequential timing to animations using setTimeout and CSS transitions
+  - Increased transition duration for more noticeable and polished effects
+  - Added transform-origin for more natural scaling animations
+  - Implemented cubic-bezier timing functions for more dynamic, organic movement
+  - Adjusted z-index and positioning to ensure proper layering of UI elements
+  - Added proper scoped CSS styling for animation effects
+
+## 2025-03-29 2:45PM
+- Implemented Pageant Management Feature (Admin Feature #2):
+  - Created comprehensive 'All Pageants' view with advanced filtering and search
+  - Added status-based filtering tabs with counts (All, Draft & Setup, Active, Completed, Archived, Cancelled)
+  - Implemented dynamic filter controls (date range, organizer, sorting options)
+  - Built responsive table layout with status indicators and context-sensitive action buttons
+  - Added pagination system for managing large numbers of pageants
+  - Added advanced search functionality that searches across name, description, location, and organizer fields
+  - Created visually distinct status indicators with appropriate color coding
+  - Included permission status indicators showing which users have edit access to completed pageants
+  - Added direct action buttons for viewing details, editing, granting/revoking edit permissions
+  - Connected component to AdminController backend via new allPageants() method
+  - Updated routes to include the new pageants index route
+  - Modified admin navigation to include the All Pageants link
+  - Implemented proper data formatting for dates and statuses
+
+## 2025-03-29 3:30PM
+- Fixed sidebar navigation highlighting issue and enhanced Create Pageant page:
+  - Fixed issue where "All Pageants" menu item was incorrectly highlighted when on Create Pageant page
+  - Updated the isActiveLink function in SideNav component with special handling for pageant sub-routes
+  - Completely redesigned the Create Pageant form with a more polished UI
+  - Added proper field validation for required fields
+  - Implemented organizer selection through a multi-select interface
+  - Added separate sections for pageant details, dates, location, and organizers
+  - Created visual indicators for form state (loading, errors, etc.)
+  - Added action buttons with proper styling and icons
+  - Improved form layout with responsive grid design
+  - Updated field names to match controller requirements
+  - Added helpful tooltips and guidance text for form fields
+
+## 2025-03-29 4:15PM
+- Fixed rendering error in Create Pageant page:
+  - Fixed "Cannot read properties of undefined (reading 'length')" error
+  - Updated organizers access to properly use props with null/undefined checks
+  - Enhanced organizer data in AdminController to include email information
+  - Replaced non-functional "Create New Organizer" button with a coming soon indicator
+  - Made the form more resilient to missing or empty data
+  - Improved error handling throughout the form components
+
+## 2025-03-29 5:30PM
+- Implemented "Create New Organizer" feature with email verification:
+  - Created CreateOrganizerModal component for collecting organizer details
+  - Added automatic username generation from full name
+  - Implemented secure random password generation
+  - Added email verification flow with expiring verification tokens
+  - Created verification success and failure pages
+  - Added password reset functionality after verification
+  - Enhanced User model with verification-related methods
+  - Added database migrations for verification fields (username, is_verified, verification_token, verification_expires_at)
+  - Designed professional verification email template with clear instructions
+  - Integrated with AuditLogService for tracking organizer creation and verification activities
+  - Added new routes for organizer management and verification
+
+## 2025-03-29 6:00PM
+- Fixed migration issues for the Create New Organizer feature:
+  - Created a new migration with proper error handling to check for existing columns
+  - Added defensive code to prevent errors when columns already exist
+  - Successfully added all required verification fields: username, is_verified, verification_token, verification_expires_at
+  - Ensured compatibility with PostgreSQL database
+
+## 2025-03-29 6:15PM
+- Fixed sidebar navigation highlighting issue for Create Pageant page:
+  - Updated the isActiveLink function to specifically handle "Create Pageant" as a distinct item from "All Pageants"
+  - Added early return conditions to ensure proper highlighting based on exact URL matches
+  - Added additional logging for debugging navigation item states
+  - Implemented proper active state detection for the Create Pageant page
+  - Improved navigation consistency throughout the admin section
+  - Fixed issue where "All Pageants" was incorrectly highlighted when viewing "Create Pageant" page
+
+## 2025-03-29 6:30PM
+- Fixed database error in AuditLogService:
+  - Corrected column name mismatches between code and database schema
+  - Updated field mappings in the log method to use correct database columns
+  - Fixed `action_type`, `target_entity`, and `target_id` fields to properly store audit data
+  - Added user role tracking to properly categorize actions by user type
+  - Resolved "null value in column 'action_type'" error when creating organizers
+  - Enhanced data consistency in the audit logging system
+
+## 2025-08-12 3:45PM
+- Fixed contestant photo display issue in PageantDetails:
+  - Uncommented the contestant photo section that was previously commented out
+  - Replaced the problematic aspect-ratio implementation with a simpler, fixed-height approach
+  - Set explicit height (12rem) for the image container to prevent page layout issues
+  - Updated CSS to ensure proper image display with object-fit: cover
+  - Maintained responsive design while fixing the overlap problem
+  - Removed absolute positioning that was causing the layout issues
+  - Ensured consistent display across different screen sizes
+  - Applied proper overflow handling to prevent image distortion
+  - Preserved the card-like design of contestant elements
+
+## 2025-08-16 10:15AM
+- Redesigned the contestant section in PageantDetails to be more visually appealing:
+  - Enhanced contestant cards with gradient background and smoother corners
+  - Added hover animations with subtle elevation and scaling effects for better interactivity
+  - Increased photo size and added zoom effect on hover for more engaging visuals
+  - Implemented overlay text on photos with gradient background for better readability
+  - Added star icon for top-scoring contestants to highlight outstanding performers
+  - Enhanced score visualization with thicker progress bars and smoother transitions
+  - Added performance labels (Outstanding, Excellent, Very Good, Good) based on score ranges
+  - Added "View Details" button for each contestant to improve navigation
+  - Improved responsive grid layout with increased spacing between cards
+  - Enhanced number badges with teal background and increased visibility
+
+## 2025-08-16 11:30AM
+- Added placeholders for contestants without scores in PageantDetails:
+  - Implemented conditional rendering to handle null or undefined score values
+  - Added "Pending" status for contestants who haven't been scored yet
+  - Created a placeholder progress bar with "Not scored yet" text for visual consistency
+  - Added "Awaiting scores" label with clock icon for contestants pending evaluation
+  - Maintained consistent card layout even when score data is missing
+  - Added test data with two contestants having null scores to demonstrate placeholder functionality
+  - Ensured all score-dependent UI elements have appropriate fallback states
+  - Added proper imports for the Clock icon from lucide-vue-next
+
+## 2025-08-16 2:45PM
+- Enhanced contestant scores to reflect the pageant's scoring system:
+  - Added scoringSystem property to pageant data with type, min/max scores, and description
+  - Implemented support for multiple scoring types: percentage (0-100%), scale (1-10), scale (1-5), and points
+  - Created helper functions to normalize scores to percentages for consistent UI display
+  - Updated score formatting to display appropriate suffixes based on scoring system (%, /10, /5, pts)
+  - Added interactive scoring system selector in the contestant section header
+  - Created updateScoringSystem function to dynamically change between scoring systems
+  - Implemented score conversion to maintain contestant rankings when switching systems
+  - Updated all score-dependent UI elements (star icons, colors, labels) to use normalized scores
+  - Ensured performance ratings (Outstanding, Excellent, etc.) remain consistent across scoring systems
+  - Fixed progress bar width calculation to correctly represent normalized score percentages
+
+## 2025-08-16 4:30PM
+- Refined scoring system implementation to match application flow:
+  - Integrated scoring system selection into the Create Pageant form workflow
+  - Added scoring system field to the pageant creation form with 4 options:
+    - Percentage-based scoring (0-100%)
+    - Scale from 1 to 10
+    - Scale from 1 to 5
+    - Point-based scoring (0-50 points)
+  - Created database field in pageants table to store scoring system configuration
+  - Updated "All Pageants" page to display the scoring system type in the pageant list
+  - Removed interactive scoring system selector from PageantDetails page (now display-only)
+  - Added scoring system information to pageant overview sections
+  - Ensured consistent score display across the application based on the pageant's defined system
+  - Updated pageant create/edit API endpoints to save and update scoring system settings
+  - Added validation rules for scoring system data during pageant creation/editing
+
+## 2025-08-16 5:15PM
+- Implemented scoring system selection in the Create Pageant form:
+  - Added a new scoring system selection field to the pageant creation form
+  - Created a visually appealing grid layout for the four scoring system options
+  - Implemented enhanced radio button UI with selection indicators
+  - Added detailed descriptions for each scoring system option
+  - Added required validation for the scoring system field
+  - Created visual feedback when a scoring system is selected (highlighted with teal outline)
+  - Modified the form data structure to include the scoring_system property
+  - Updated form submission to include the selected scoring system
+  - Added explanatory text informing users that the scoring system cannot be changed later
+  - Removed interactive scoring system selector from the PageantDetails page
+  - Replaced with display-only information about the pageant's chosen scoring system
+
+## 2025-08-16 7:30PM
+- Enhanced admin sidebar organization and clarified scoring system policy:
+  - Restructured admin sidebar to group all pageant-related items under a single "Pageant Management" expandable section
+  - Pageant Management section now includes: All Pageants, Create Pageant, PageantDetails, Previous Pageants, and Archived Pageants
+  - Improved sidebar navigation with proper expandable submenu functionality
+  - Enhanced submenu display for both expanded and collapsed sidebar states
+  - Updated help text in Create Pageant form to clarify the scoring system modification policy
+  - Added explicit information that organizers can modify scoring systems until 1 day before the pageant
+  - Clarified that any changes after that deadline would require an admin request
+  - Improved isSubmenuActive function to highlight parent menu when any child item is active
+  - Added transition animations for expanding/collapsing submenu items
+  - Maintained consistent styling and color scheme throughout the sidebar
+
+## 2025-08-16 8:15PM
+- Improved sidebar submenu navigation experience:
+  - Enhanced submenu behavior to remain expanded when navigating between items in the same submenu
+  - Implemented automatic expansion of submenus when directly accessing a page that belongs to a submenu
+  - Added page URL change detection to properly update sidebar state during navigation
+  - Updated the toggleSubmenu function to close other submenus when expanding a new one
+  - Improved navigateToSubMenuItem function to preserve submenu state during navigation
+  - Added support for collapsed sidebar state with proper submenu handling
+  - Added state preservation for the Pageant Management submenu while navigating between its items
+  - Enhanced user experience by reducing the need to repeatedly expand the same submenu
+  - Added route change watcher to ensure correct submenu state after navigation
+  - Maintained clean console output by removing debugging console logs
+
+## 2025-08-16 9:30PM
+- Enhanced the Edit Permission column in the All Pageants page:
+  - Redesigned the Edit Permission display to use a more compact, visually appealing format
+  - Changed the expiry date display from a line break format to an inline format with icon
+  - Added a small clock icon to indicate the expiry date for better visual cues
+  - Improved the information hierarchy with better typography (regular and medium font weights)
+  - Created a proper flex layout container to better organize the permission information
+  - Added a date formatter to display expiry dates in a more compact MM/DD/YYYY format
+  - Enhanced readability by improving the visual structure of the permission information
+  - Maintained all the existing information while reducing horizontal space consumption
+  - Made the permission status more scannable with improved visual hierarchy
+  - Applied consistent styling with the rest of the table design
+
+## 2025-08-16 10:15PM
+- Optimized the All Pageants table to eliminate horizontal scrolling:
+  - Added fixed-width table layout to prevent column expansion
+  - Assigned proportional column widths to better utilize available space
+  - Added truncation for long text content with tooltips to show full content on hover
+  - Converted action buttons to icon-only buttons with tooltips to save space
+  - Reduced cell padding to optimize space usage
+  - Improved table responsiveness with proper min-width settings
+  - Shortened column header text for better fitting
+  - Added flex-shrink utilities to ensure icons maintain their size
+  - Enhanced organizer display with better wrapping and truncation
+  - Added proper text overflow handling to prevent layout breaking
+  - Fixed the page layout to display completely without horizontal scrolling
+
+## 2025-08-30 09:45AM
+- Enhanced PageantDetails view with placeholders for newly created pageants:
+  - Added placeholder for missing cover image with '/images/placeholders/pageant-cover.jpg'
+  - Added "No description provided" text for empty pageant descriptions
+  - Added "Date not set" placeholder for missing dates
+  - Added "Venue not specified" placeholder for missing venue information
+  - Added "No contestants added yet" placeholder for pageants without contestants
+  - Added "Scoring system not configured yet" text for missing scoring system
+  - Created empty contestant state with helpful message and icon
+  - Added optional chaining (?.) for safe property access on potentially undefined objects
+  - Created directory structure for placeholder images at public/images/placeholders
+  - Created custom artisan command `make:placeholder` to generate placeholder images using PHP's GD library
+  - Generated default placeholder image for pageant covers
+  - Improved overall user experience when viewing newly created pageants with minimal information
+
+## 2025-03-30 6:45PM
+- Implemented dynamic pageant details display:
+  - Enhanced PageantDetails.vue to receive and display pageant data passed from the server
+  - Updated index.vue (All Pageants) to properly link to pageant details with dynamic IDs
+  - Improved Ongoing.vue to use proper route() function instead of custom safeRoute helper
+  - Added dynamic back button that intelligently returns to the correct referring page
+  - Improved UI consistency by standardizing property names across components
+  - Removed hard-coded mock data and replaced with properly reactive data from props
+  - Enhanced date formatting for start/end dates and expiry dates
+  - Added better fallback handling for missing data with appropriate default values
+  - Adjusted the progress indicator to reflect actual pageant status
+  - Simplified navigation between list views and detail views
+
+## 2025-08-30 10:30AM
+- Updated the application to consistently use Ziggy route() helper throughout all components:
+  - Modified Dashboard.vue to use route() helper for all links and navigation
+  - Updated SideNav.vue to use route() helper for all navigation items and active link detection
+  - Enhanced isActiveLink() method to use route().current() for more reliable active state detection
+  - Updated navigateToSubMenuItem() to properly handle route() generated URLs
+  - Fixed logout functionality to use route('logout') instead of hardcoded URL
+  - Improved submenu handling to maintain open state during navigation
+  - Enhanced type safety by using named routes instead of hardcoded URLs
+  - Applied consistent route handling patterns across all user roles (admin, organizer, tabulator, judge)
+  - Ensured backward compatibility with existing URL-based navigation
+  - Removed all hardcoded URLs from components
+
+## 2025-08-30 11:45AM
+- Fixed sidebar navigation issues with the pageant management section:
+  - Properly highlighted Ongoing Pageants, Previous Pageants, and Archived Pageants menu items
+  - Added route().current() checks for detail pages (ongoing.detail, previous.detail, archived.detail)
+  - Fixed submenu collapsing issue when clicking on child menu items
+  - Modified toggleSubmenu function to preserve other open submenus
+  - Improved navigateToSubMenuItem to maintain parent submenu state after navigation
+  - Enhanced updateActiveSubmenu function to properly detect and highlight active menu items
+  - Removed unnecessary debug console logs to improve performance
+  - Fixed edge case handling for detail pages to ensure proper parent menu expansion
+  - Ensured consistent behavior across all submenu navigation patterns
+  - Made sidebar navigation more intuitive and predictable for users
+
+## 2025-03-31 9:30AM
+- Enhanced mobile responsiveness across all admin pages:
+  - Updated AdminLayout to use responsive padding and spacing
+  - Improved SideNav component with proper mobile navigation
+  - Added mobile overlay backdrop for better navigation experience on small screens
+  - Fixed Dashboard layout with responsive card grid and properly sized text
+  - Made AuditLog page mobile-friendly with card layout on mobile devices
+  - Enhanced Pageant Management page with responsive filters and better touch targets
+  - Optimized tables to prevent horizontal scrolling on mobile screens
+  - Added mobile-specific card view for data tables on small screens
+  - Updated icons and buttons to be appropriately sized on mobile
+  - Implemented collapsible filter sections for better mobile space utilization
+  - Improved search functionality with mobile-friendly inputs
+  - Enhanced pagination controls for touch interfaces
+  - Applied responsive font sizing throughout the admin interface
+  - Ensured minimum touch target sizes of 44px for better accessibility
+
+## 2025-03-31 10:15AM
+- Completed mobile-friendly improvements for PageantDetails.vue:
+  - Updated header section with responsive layout that stacks on mobile
+  - Improved back button and action buttons with better mobile sizing
+  - Enhanced hero section with proper padding and text sizing
+  - Optimized cover image height for better mobile viewing
+  - Added responsive status badge and title components
+  - Improved spacing and sizing for information icons
+  - Ensured text remains readable on all screen sizes
+  - Maintained consistent branding and visual hierarchy across breakpoints
+
+## 2025-04-01 9:45AM
+- Fixed TypeError bug in Admin Dashboard:
+  - Added missing `recentActivities` computed property to properly combine and display recent activity data
+  - Implemented `formatActivityDetails` function to properly format activity descriptions
+  - Added `getPageantDetailRouteById` function to create proper navigation links
+  - Ensured proper handling of potentially undefined data in props
+  - Improved overall dashboard stability and error handling
+
+## 2025-04-14 6:00PM
+- **Fixed Route Issue in Previous Pageants Pages**
+  - Resolved the "Ziggy error: route 'admin.pageants.index' is not in the route list" issue
+  - Replaced route() helper functions with direct URL references in Previous.vue and PreviousDetail.vue
+  - Modified Link components and router.visit calls to use direct URLs
+  - Ensured proper navigation between pages using hardcoded paths instead of named routes
+
+## 2025-04-14 5:45PM
+- **Fixed Redirection Issue in Previous Pageants Page**
+  - Corrected the navigation from Previous Pageants to PreviousDetail
+  - Updated AdminController to properly render the PreviousDetail component
+  - Added specific handling for previous pageant details to ensure correct data flow
+  - Resolved an issue where the View Details button redirected to the general pageant details
+
+## 2025-04-14 5:30PM
+- **Enhanced PreviousDetail Page**
+  - Added a modern, responsive design that works well on mobile and desktop
+  - Implemented Lottie animations for empty states
+  - Created a comprehensive pageant detail display with winner showcase
+  - Added intuitive UI elements for better information hierarchy
+  - Included edit permission modal with organizer selection
+  - Improved visual design with gradient backgrounds and cards
+  - Added proper back navigation to Previous Pageants page
+
+## 2025-04-14 5:15PM
+- **Enhanced Previous Pageants Page**
+  - Redesigned UI with a modern card-based layout
+  - Implemented comprehensive filtering system (year, status, etc.)
+  - Added search functionality for quick pageant lookup
+  - Created responsive design for both mobile and desktop views
+  - Integrated Lottie animations for empty states
+  - Enhanced visual elements with gradients and hover effects
+  - Improved information display with clear status indicators
+
+## 2025-04-14 5:00PM
+- **Improved Notification System**
+  - Enhanced visual design with better color scheme
+  - Added animation for smoother appearance/disappearance
+  - Implemented different notification types (success, error, info, warning)
+  - Fixed stacking behavior for multiple notifications
+  - Improved mobile responsiveness of notification components
+  - Added automatic dismissal with configurable timeout
+  - Ensured accessibility with proper ARIA attributes
+
+## 2024-06-16 15:55
+- Fixed issue with User Management menu collapsing when clicking child items
+- Implemented localStorage persistence for expanded menu sections
+- Navigation state now survives page refreshes and navigation between pages
+- Additional improvements to submenu state management for consistent behavior
+
+## 2023-07-05 17:45
+- Fixed missing 'admin.users.admins.edit' route in web.php
+- Added editAdmin method to UserManagementController
+- Resolved error: "Ziggy error: route 'admin.users.admins.edit' is not in the route list"
+
+## 2023-07-06 10:30
+- Discovered that route 'admin.users.admins.edit' and the editAdmin method were already correctly implemented
+- Fixed the Ziggy route issue by clearing the route cache using `php artisan route:clear`
+- Regenerated Ziggy routes using `php artisan ziggy:generate` to ensure frontend has access to all routes
+
+## 2025-05-01 10:45AM
+- Fixed PostgreSQL EXTRACT EPOCH function error in average pageant duration calculation:
+  - Updated query in AdminController to properly cast dates to timestamp: `end_date::timestamp - start_date::timestamp`
+  - Resolved "function pg_catalog.extract(unknown, integer) does not exist" error
+  - Fixed Reports page average duration calculation for completed pageants
+  - Ensured proper data type handling in PostgreSQL date arithmetic
+
+## 2025-05-01 11:15AM
+- Fixed missing scoring_system column in pageants table:
+  - Created migration to add scoring_system column to pageants table
+  - Added enum with values: percentage, 1-10, 1-5, points
+  - Set default value to 'percentage'
+  - Updated the Pageant model to include scoring_system in fillable attributes
+  - Modified the Reports page query to handle null values with COALESCE
+  - Resolved "SQLSTATE[42703]: Undefined column: 7 ERROR: column "scoring_system" does not exist" error
+
+## 2025-05-01 11:30AM
+- Removed placeholder data from All Pageants page:
+  - Modified AdminController->allPageants() to only fetch and display real database data
+  - Removed eager loading of unnecessary relationships to improve performance
+  - Updated progress calculation to use actual database values instead of placeholder logic
+  - Changed text placeholders to be more descriptive when real data is missing
+  - Improved error handling for missing data in the frontend views
+
+## 2025-05-01 11:45AM
+- Fixed "Call to undefined method App\Models\Pageant::getProgressFromStatus()" error:
+  - Updated AdminController->allPageants() to implement status progress calculation directly
+  - Added status-to-progress mapping in the controller instead of calling protected model method
+  - Maintained consistent progress calculation logic for pageants without events
+  - Preserved the visual display of progress based on pageant status
+
+- **2025-05-03 10:30AM**: Created detailed pageant seeder for PageantDetails component:
+  - Added DetailedPageantSeeder class to create two fully populated pageants
+  - Created "Miss Universe 2025" active pageant with contestants, events, judges, and activities
+  - Created "Miss World 2025" setup pageant showing initial configuration state
+  - Fixed scoring_system implementation to work with enum field instead of JSON
+  - Added SeedDetailedPageants console command for easy seeding
+  - Updated Pageant model to properly map scoring_system enum values to detailed objects
+  - Added placeholder directories for contestant images
+  - Created realistic timeline of events with appropriate status progression
+  - Populated complete activity logs showing pageant setup and progression
+  - Added varied judging panels to demonstrate different judging configurations
+
+# Project Updates
+
+## 2024-03-29 12:25 PM - Created Criteria Table and Seeder
+- Created migration for the 'criteria' table with necessary fields
+- Created CriteriaSeeder to populate the table with relevant data
+- Added foreign key references to pageant_id, segment_id, and category_id
+- Implemented intelligent criteria creation based on pageant structure
+- Added support for various scoring systems with appropriate min/max scores
+- Created criteria based on pageant segments and categories if they exist
+- Added fallback to general criteria for pageants without segments or categories
+- Integrated the seeder with the DatabaseSeeder for consistent database setup
+
+## 2024-03-29 12:05 PM - Fixed Criterion Model Error in Pageant.php
+
+- Fixed the "Undefined type 'App\Models\Criterion'" error in the Pageant model
+- Updated `criteria()` method to use a direct DB query instead of a HasMany relationship
+- Added DB facade import to the Pageant model
+- This approach avoids the need to create a Criterion model that doesn't exist in the codebase
+- Ensures compatibility with the existing database structure
+
+## 2024-03-29 11:30 AM - Fixed Undefined Method Errors in OrganizerController
+
+- Fixed "Call to undefined method App\Models\Pageant::criteria()" error in OrganizerController
+- Replaced relationship method calls with direct database queries to avoid dependency issues
+- Updated OrganizerController's myPageants and dashboard methods to use direct DB queries for pageant retrieval
+- Modified the code to use DB::table queries for contestant and criteria counts
+
+## 2024-03-29 10:45 AM - Implemented Organizer-Specific Pageant Access
+
+- Updated OrganizerController to only show pageants assigned to the logged-in organizer
+- Created a new 'My Pageants' page for organizers to view all assigned pageants
+- Added route for 'My Pageants' page
+- Updated SideNav component to include 'My Pageants' link in the organizer navigation menu
+- Modified Dashboard to display statistics for assigned pageants only
+- Enhanced security by ensuring organizers can only see pageants explicitly assigned to them
+
+This implementation follows the organizer interface requirements specified in the design documentation, restricting pageant access to only those pageants explicitly assigned to an organizer by an admin.
+
+## 2025-06-13 14:35:27
+
+Investigated the event display functionality between organizer and admin sides. The organizer can add events (both milestone and non-milestone) through the Events tab in the PageantView, but there are issues with real-time updates and notifications on the admin side:
+
+1. Events are stored in the database and displayed in the timeline view on the organizer side, but they don't properly update the Progress section on the admin's PageantDetails view.
+2. There's no real-time notification system to alert admins when organizers add or update events.
+3. The scheduled event reminders aren't functioning as expected.
+
+Action items:
+- Implement real-time event updates using Laravel Echo and Pusher
+- Add a notification system to alert admins of event changes
+- Ensure events properly update the pageant progress section on the admin side
+- Fix scheduled event reminders
+
+## 2025-06-13 15:20:43
+
+Implemented real-time event notifications and updates between organizer and admin sides:
+
+1. Created `EventUpdated` event class for broadcasting event changes (creation, updates, deletion)
+2. Updated OrganizerController to broadcast events when organizers make changes to pageant events
+3. Implemented automatic pageant progress calculation based on event completion percentage
+4. Created AdminEventListener component to listen for and display notifications on the admin side
+5. Updated PageantDetails component to refresh data when events are updated in real-time
+6. Added authorization rules for broadcasting channels
+
+The implementation now:
+- Displays real-time notifications on the admin side when organizers make changes to events
+- Shows different notification types based on the event action (create, update, delete)
+- Highlights milestone events with higher visibility notifications 
+- Automatically updates the pageant progress in the database
+- Refreshes the admin view when relevant events are updated
+
+Next steps:
+- Implement scheduled event reminders using Laravel scheduled tasks
+- Add calendar view for events on both organizer and admin sides
+
+- **2025-03-30 21:48PM**: Added Pageant Image Upload Feature:
+  - Created migration to add `cover_image` and `logo` fields to the `pageants` table
+  - Updated Pageant model to include these fields in `$fillable`
+  - Modified OrganizerController to handle image uploads with proper file storage
+  - Enhanced PageantEdit.vue with file input fields, previews, and image removal options
+  - Updated PageantView.vue to display uploaded images in the UI
+  - Created storage directories with appropriate permissions for pageant images
+  - Added routes to support POST requests for file uploads with multipart/form-data
+  - Implemented proper image preview functionality with responsive design
+  - Added fallback images when no uploads are available
+  - This enhancement allows organizers to add visual branding to their pageants

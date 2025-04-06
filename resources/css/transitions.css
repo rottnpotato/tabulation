@@ -1,0 +1,104 @@
+/* Page Transitions CSS */
+
+/* NProgress customization */
+#nprogress .bar {
+  background: #10b981 !important; /* Teal-600 color */
+  height: 3px !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #10b981, 0 0 5px #10b981 !important;
+}
+
+/* Body transitioning class */
+body.page-transitioning {
+  overflow: hidden;
+}
+
+/* Page transition animations */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}
+
+/* Fade transition for modals and other elements */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Scale transition for cards and other elements */
+.scale-enter-active,
+.scale-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.scale-enter-from,
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Slide right transition */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.slide-right-enter-from,
+.slide-right-leave-to {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
+/* Slide left transition */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.slide-left-enter-from,
+.slide-left-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+/* Button hover animation */
+.btn-transition {
+  transition: all 0.2s ease;
+}
+
+.btn-transition:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Page wrapper transition for layout shifts */
+.layout-wrapper-enter-active,
+.layout-wrapper-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.layout-wrapper-enter-from,
+.layout-wrapper-leave-to {
+  opacity: 0;
+  transform: translateY(5px);
+}
+
+/* Smooth focus transitions for form elements */
+input, 
+textarea, 
+select, 
+button {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+} 

@@ -1,0 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap');
+@import './transitions.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Figtree', system-ui, sans-serif;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-out forwards;
+}
+
+.bg-gradient-overlay {
+  background: linear-gradient(to bottom right, rgba(6, 78, 59, 0.9), rgba(6, 95, 70, 0.9));
+}
+
+/* Base shimmer animation for skeleton loaders */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #e2e8f0;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Variant animations */
+.shimmer-slow {
+  animation-duration: 2.5s;
+}
+
+.shimmer-fast {
+  animation-duration: 1s;
+}
+
+/* Color theme variants */
+.shimmer-teal {
+  background-color: #e6fffa;
+  background-image: linear-gradient(
+    90deg,
+    rgba(129, 230, 217, 0) 0%,
+    rgba(129, 230, 217, 0.5) 50%,
+    rgba(129, 230, 217, 0) 100%
+  );
+}
+
+.shimmer-purple {
+  background-color: #f5f3ff;
+  background-image: linear-gradient(
+    90deg,
+    rgba(167, 139, 250, 0) 0%,
+    rgba(167, 139, 250, 0.5) 50%,
+    rgba(167, 139, 250, 0) 100%
+  );
+}
+
+.shimmer-blue {
+  background-color: #e6f7ff;
+  background-image: linear-gradient(
+    90deg,
+    rgba(96, 165, 250, 0) 0%,
+    rgba(96, 165, 250, 0.5) 50%,
+    rgba(96, 165, 250, 0) 100%
+  );
+}
+
+.shimmer-amber {
+  background-color: #fffbeb;
+  background-image: linear-gradient(
+    90deg,
+    rgba(252, 211, 77, 0) 0%,
+    rgba(252, 211, 77, 0.5) 50%,
+    rgba(252, 211, 77, 0) 100%
+  );
+}
+
+/* Wave animation variant */
+.shimmer-wave {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: wave 1.5s infinite;
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  50%, 100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Purple-themed shimmer */
+.shimmer-purple::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(167, 139, 250, 0.1) 20%,
+    rgba(167, 139, 250, 0.3) 60%,
+    rgba(255, 255, 255, 0)
+  );
+}
+
+/* Teal-themed shimmer */
+.shimmer-teal::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(45, 212, 191, 0.1) 20%,
+    rgba(45, 212, 191, 0.3) 60%,
+    rgba(255, 255, 255, 0)
+  );
+}
