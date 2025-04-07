@@ -216,6 +216,10 @@ const props = defineProps({
     type: String,
     required: true
   },
+  routeParams: {
+    type: Object,
+    default: () => ({})
+  },
   cancelRoute: {
     type: String,
     required: true
@@ -364,7 +368,19 @@ const submit = () => {
   
   // Use the appropriate method depending on if we're editing or creating
   if (props.editing) {
-    form.put(route(props.submitRoute, props.user.id))
+    // Make sure we have a valid user ID and route params
+    if (!props.user.id) {
+      console.error('User ID is missing for route', props.submitRoute)
+      return
+    }
+    
+    // Ensure route params contains the id parameter
+    const params = { ...props.routeParams }
+    if (!params.id && props.user.id) {
+      params.id = props.user.id
+    }
+    
+    form.put(route(props.submitRoute, params))
   } else {
     form.post(route(props.submitRoute))
   }

@@ -157,53 +157,69 @@ const totalManagedPageants = computed(() => {
 
 // Methods
 const confirmDelete = (organizer) => {
-  organizerToDelete.value = organizer
-  showDeleteModal.value = true
+  if (organizer.pageants_count > 0) {
+    // Don't allow deletion if organizer has pageants
+    return;
+  }
+  organizerToDelete.value = organizer;
+  showDeleteModal.value = true;
 }
 
 const deleteOrganizer = () => {
   if (organizerToDelete.value) {
     router.delete(route('admin.users.organizers.delete', organizerToDelete.value.id), {
+      preserveScroll: true,
       onSuccess: () => {
-        showDeleteModal.value = false
-        organizerToDelete.value = null
+        showDeleteModal.value = false;
+        organizerToDelete.value = null;
       },
       onError: (errors) => {
-        // Error handling can be added here if needed
-        console.error(errors)
+        console.error('Failed to delete organizer:', errors);
       }
-    })
+    });
   }
 }
 
 const confirmResendVerification = (organizer) => {
-  organizerToVerify.value = organizer
-  showResendModal.value = true
+  if (organizer.email_verified) {
+    // Don't allow resending if already verified
+    return;
+  }
+  organizerToVerify.value = organizer;
+  showResendModal.value = true;
 }
 
 const resendVerification = () => {
   if (organizerToVerify.value) {
-    router.post(route('admin.organizers.resend-verification', organizerToVerify.value.id), {}, {
+    router.post(route('admin.users.organizers.resend-verification', organizerToVerify.value.id), {}, {
+      preserveScroll: true,
       onSuccess: () => {
-        showResendModal.value = false
-        organizerToVerify.value = null
+        showResendModal.value = false;
+        organizerToVerify.value = null;
       },
       onError: (errors) => {
-        // Error handling can be added here if needed
-        console.error(errors)
+        console.error('Failed to resend verification:', errors);
       }
-    })
+    });
   }
 }
 
 const toggleStatus = (organizer) => {
-  const newStatus = organizer.status === 'Active' ? false : true
+  const newStatus = organizer.status === 'Active' ? false : true;
   
   router.put(route('admin.users.organizers.update', organizer.id), {
     name: organizer.name,
     email: organizer.email,
     username: organizer.username,
     is_active: newStatus
-  })
+  }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      // Success notification is handled by the backend flash message
+    },
+    onError: (errors) => {
+      console.error('Failed to update organizer status:', errors);
+    }
+  });
 }
 </script> 

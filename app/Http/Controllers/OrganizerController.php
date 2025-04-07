@@ -36,7 +36,15 @@ class OrganizerController extends Controller
 
         $exists = User::where('username', $request->username)->exists();
 
-        return response()->json([
+        // Check if this is an AJAX request (Inertia expects redirects)
+        if ($request->wantsJson()) {
+            return response()->json([
+                'usernameExists' => $exists
+            ]);
+        }
+
+        // Return a redirect for Inertia requests
+        return redirect()->back()->with([
             'usernameExists' => $exists
         ]);
     }
@@ -80,7 +88,21 @@ class OrganizerController extends Controller
             "Created organizer account for '{$organizer->name}' ({$organizer->email})"
         );
 
-        return response()->json([
+        // Check if this is an AJAX request (Inertia expects redirects)
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Organizer created successfully! A verification email has been sent.',
+                'organizer' => [
+                    'id' => $organizer->id,
+                    'name' => $organizer->name,
+                    'email' => $organizer->email,
+                ]
+            ]);
+        }
+
+        // Return a redirect for Inertia requests
+        return redirect()->back()->with([
             'success' => true,
             'message' => 'Organizer created successfully! A verification email has been sent.',
             'organizer' => [
@@ -159,18 +181,8 @@ class OrganizerController extends Controller
      */
     private function sendVerificationEmail(User $organizer, $token)
     {
-        $verificationUrl = url("/verify-organizer/{$token}");
-        
-        $mailData = [
-            'name' => $organizer->name,
-            'verificationUrl' => $verificationUrl,
-            'expiresAt' => $organizer->verification_expires_at->format('M d, Y H:i:s'),
-        ];
-        
-        Mail::send('emails.organizer-verification', $mailData, function($message) use ($organizer) {
-            $message->to($organizer->email, $organizer->name)
-                    ->subject('Verify Your Organizer Account');
-        });
+        // Send email using the dedicated mail class
+        Mail::to($organizer->email)->send(new \App\Mail\OrganizerVerification($organizer, $token));
     }
 
     /**

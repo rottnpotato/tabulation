@@ -100,7 +100,7 @@ class UserManagementController extends Controller
         );
 
         // Send verification email
-        // $organizer->sendEmailVerificationNotification();
+        $organizer->sendVerificationEmail();
 
         return redirect()->route('admin.users.organizers')->with('success', "Organizer {$organizer->name} created successfully. A verification email has been sent.");
     }
@@ -163,25 +163,76 @@ class UserManagementController extends Controller
     {
         $organizer = User::findOrFail($id);
         
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'username' => 'required|string|max:50|unique:users,username,' . $id,
-            'is_active' => 'required|boolean',
-        ]);
-
-        $organizer->update($validated);
-
-        // Log the action
-        $this->auditLogService->log(
-            Auth::user()->id,
-            'User',
-            $organizer->id,
-            'UPDATE_ORGANIZER',
-            "Updated organizer user: {$organizer->name}"
-        );
-
-        return redirect()->route('admin.users.organizers.show', $id)->with('success', "Organizer {$organizer->name} updated successfully.");
+        // Check if username is null or empty and generate one if needed
+        if ($request->has('username') && (is_null($request->username) || empty(trim($request->username)))) {
+            // Generate a username based on name
+            $baseUsername = Str::slug($request->name);
+            $username = $baseUsername;
+            $counter = 1;
+            
+            // Make sure username is unique
+            while (User::where('username', $username)->where('id', '!=', $id)->exists()) {
+                $username = $baseUsername . $counter;
+                $counter++;
+            }
+            
+            // Set the generated username in the request
+            $request->merge(['username' => $username]);
+            
+            // Log the username generation
+            Log::info("Generated username '{$username}' for organizer ID {$id} during update");
+        }
+        
+        // Check if this is a status-only update (toggle)
+        $isStatusToggle = $request->has('is_active') && count($request->only(['name', 'email', 'username', 'is_active'])) === 4;
+        
+        if ($isStatusToggle) {
+            // Only validate required fields for status toggle
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+                'username' => 'required|string|max:50|unique:users,username,' . $id,
+                'is_active' => 'required|boolean',
+            ]);
+            
+            // Update only the changed fields
+            $organizer->fill($validated);
+            $organizer->save();
+            
+            // Log the status change specifically
+            $this->auditLogService->log(
+                Auth::user()->id,
+                'User',
+                $organizer->id,
+                'UPDATE_ORGANIZER_STATUS',
+                "Updated organizer status: {$organizer->name}. Status changed to: " . ($organizer->is_active ? 'Active' : 'Inactive')
+            );
+            
+            return redirect()->back()->with('success', "Organizer {$organizer->name}'s status updated successfully.");
+        } else {
+            // Full update with all validations
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+                'username' => 'required|string|max:50|unique:users,username,' . $id,
+                'is_active' => 'required|boolean',
+            ]);
+            
+            // Update only the changed fields
+            $organizer->fill($validated);
+            $organizer->save();
+            
+            // Log the action
+            $this->auditLogService->log(
+                Auth::user()->id,
+                'User',
+                $organizer->id,
+                'UPDATE_ORGANIZER',
+                "Updated organizer user: {$organizer->name}. Status: " . ($organizer->is_active ? 'Active' : 'Inactive')
+            );
+            
+            return redirect()->back()->with('success', "Organizer {$organizer->name} updated successfully.");
+        }
     }
 
     /**
@@ -194,7 +245,7 @@ class UserManagementController extends Controller
 
         // Check if organizer has pageants
         if ($organizer->pageants()->count() > 0) {
-            return redirect()->route('admin.users.organizers')->with('error', "Cannot delete organizer {$name} because they have associated pageants.");
+            return redirect()->back()->with('error', "Cannot delete organizer {$name} because they have associated pageants.");
         }
 
         // Log the action before deletion
@@ -208,7 +259,7 @@ class UserManagementController extends Controller
 
         $organizer->delete();
 
-        return redirect()->route('admin.users.organizers')->with('success', "Organizer {$name} deleted successfully.");
+        return redirect()->back()->with('success', "Organizer {$name} deleted successfully.");
     }
 
     /**
@@ -219,24 +270,27 @@ class UserManagementController extends Controller
         $organizer = User::findOrFail($id);
         
         if ($organizer->email_verified_at) {
-            return redirect()->route('admin.users.organizers.show', $id)
-                ->with('warning', "Email for {$organizer->name} is already verified.");
+            return redirect()->back()->with('warning', "Email for {$organizer->name} is already verified.");
         }
         
-        // In a real implementation, this would send the actual verification email
-        // $organizer->sendEmailVerificationNotification();
-        
-        // Log the action
-        $this->auditLogService->log(
-            Auth::user()->id,
-            'User',
-            $organizer->id,
-            'RESEND_VERIFICATION',
-            "Resent verification email to organizer: {$organizer->name}"
-        );
-        
-        return redirect()->route('admin.users.organizers.show', $id)
-            ->with('success', "Verification email has been resent to {$organizer->name}.");
+        try {
+            // Send the verification email
+            $organizer->sendVerificationEmail();
+            
+            // Log the action
+            $this->auditLogService->log(
+                Auth::user()->id,
+                'User',
+                $organizer->id,
+                'RESEND_VERIFICATION',
+                "Resent verification email to organizer: {$organizer->name}"
+            );
+            
+            return redirect()->back()->with('success', "Verification email has been resent to {$organizer->name}.");
+        } catch (\Exception $e) {
+            Log::error('Failed to send verification email: ' . $e->getMessage());
+            return redirect()->back()->with('error', "Failed to send verification email. Please try again later.");
+        }
     }
 
     /**

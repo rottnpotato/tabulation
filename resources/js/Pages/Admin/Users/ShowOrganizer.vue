@@ -276,14 +276,49 @@ const resendVerification = () => {
 }
 
 const toggleStatus = () => {
-  const newStatus = !props.organizer.is_active
+  const newStatus = !props.organizer.is_active;
   
-  router.put(route('admin.users.organizers.update', props.organizer.id), {
+  // Ensure we have all required fields from validation in UserManagementController
+  const payload = {
     name: props.organizer.name,
     email: props.organizer.email,
-    username: props.organizer.username,
+    username: props.organizer.username || generateFallbackUsername(props.organizer.name),
     is_active: newStatus
-  })
+  };
+  
+  // Validate the payload before sending
+  if (!payload.name || !payload.email) {
+    console.error('Missing required fields in organizer data:', payload);
+    // You could show an error notification here
+    return;
+  }
+  
+  // Log the payload for debugging
+  console.log('Toggle status payload:', payload);
+  
+  router.put(route('admin.users.organizers.update', props.organizer.id), payload, {
+    preserveScroll: true,
+    onSuccess: () => {
+      // Update the local state to reflect the change immediately
+      props.organizer.is_active = newStatus;
+      // If username was null and we generated a fallback, update the local state
+      if (props.organizer.username === null) {
+        props.organizer.username = payload.username;
+      }
+    },
+    onError: (errors) => {
+      console.error('Failed to update organizer status:', errors);
+      // You could show an error notification here
+    }
+  });
+}
+
+// Helper to generate a fallback username from name
+const generateFallbackUsername = (name) => {
+  if (!name) return 'user_' + Date.now();
+  
+  // Convert name to lowercase, replace spaces with underscores, and add timestamp for uniqueness
+  return name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') + '_' + Date.now().toString().slice(-5);
 }
 
 const getStatusClass = (status) => {

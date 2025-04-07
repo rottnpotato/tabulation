@@ -84,7 +84,7 @@
         <div class="content">
             <h1>Verify Your Organizer Account</h1>
             
-            <p>Hello {{ $name }},</p>
+            <p>Hello {{ $user->name }},</p>
             
             <p>Your account has been created as an <strong>Organizer</strong> in our Pageant Management System. To complete your registration and access the system, please verify your email address by clicking the button below:</p>
             
@@ -102,7 +102,7 @@
                 </ul>
             </div>
             
-            <p>This verification link will expire on <span class="expiry">{{ $expiresAt }}</span>. If you don't verify your email before this time, you'll need to request a new verification link.</p>
+            <p>This verification link will expire in 24 hours. If you don't verify your email before this time, you'll need to request a new verification link.</p>
             
             <p>If you didn't request this account, please ignore this email or contact the administrator.</p>
             

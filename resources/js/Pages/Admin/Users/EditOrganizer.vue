@@ -42,10 +42,11 @@
         <UserForm
           :user="organizer"
           user-type="organizer"
-          :submit-route="route('admin.users.organizers.update', organizer.id)"
-          :cancel-route="route('admin.users.organizers.show', organizer.id)"
+          :editing="true"
+          submit-route="admin.users.organizers.update"
+          :route-params="{ id: organizer.id }"
+          :cancel-route="route('admin.users.organizers.show', { id: organizer.id })"
           :errors="errors"
-          method="put"
         />
       </div>
     </div>

@@ -397,11 +397,9 @@ const getStatusClasses = (user) => {
     return 'bg-yellow-100 text-yellow-800'
   }
   
-  if (user.status === 'Active') {
-    return 'bg-green-100 text-green-800'
-  }
-  
-  return 'bg-gray-100 text-gray-800'
+  return user.status === 'Active' 
+    ? 'bg-green-100 text-green-800' 
+    : 'bg-red-100 text-red-800'
 }
 
 const getPageantLabel = (count) => {
@@ -410,15 +408,20 @@ const getPageantLabel = (count) => {
 
 // Determine if a user can be edited (admins can't edit themselves)
 const canEdit = (user) => {
-  return !(props.userType === 'admin' && user.is_current_user)
+  if (props.userType === 'admin' && user.is_current_user) {
+    return false;
+  }
+  return true;
 }
 
 // Determine if a user can be deleted (admins can't delete themselves, users with pageants can't be deleted)
 const canDelete = (user) => {
   if (props.userType === 'admin' && user.is_current_user) {
-    return false
+    return false;
   }
-  
-  return user.pageants_count === 0
+  if (user.pageants_count && user.pageants_count > 0) {
+    return false;
+  }
+  return true;
 }
 </script> 

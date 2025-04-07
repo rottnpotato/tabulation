@@ -3,9 +3,12 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Mail\OrganizerVerification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -21,12 +24,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
         'username',
-        'is_verified',
-        'verification_token',
-        'verification_expires_at',
+        'role',
+        'is_active',
         'email_verified_at',
+        'verification_token',
+        'notes'
     ];
 
     /**
@@ -52,6 +55,9 @@ class User extends Authenticatable
             'verification_expires_at' => 'datetime',
             'password' => 'hashed',
             'is_verified' => 'boolean',
+            'is_active' => 'boolean',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 
@@ -128,6 +134,27 @@ class User extends Authenticatable
         }
         
         return now()->gt($this->verification_expires_at);
+    }
+    
+    /**
+     * Generate a verification token and send verification email
+     *
+     * @return void
+     */
+    public function sendVerificationEmail(): void
+    {
+        // Generate a new verification token
+        $token = Str::random(64);
+        $expiresAt = now()->addHours(24);
+        
+        // Save the token and expiration
+        $this->update([
+            'verification_token' => $token,
+            'verification_expires_at' => $expiresAt,
+        ]);
+        
+        // Send the verification email
+        Mail::to($this->email)->send(new OrganizerVerification($this, $token));
     }
     
     /**

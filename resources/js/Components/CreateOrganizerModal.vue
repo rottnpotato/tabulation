@@ -230,7 +230,16 @@ const generateUsername = () => {
   router.post('/admin/check-username', { username }, {
     preserveScroll: true,
     onSuccess: (response) => {
-      if (response.props.usernameExists) {
+      // Check if response comes in different formats
+      let usernameExists = false;
+      
+      if (response.props && response.props.usernameExists !== undefined) {
+        usernameExists = response.props.usernameExists;
+      } else if (response.props && response.props.flash && response.props.flash.usernameExists !== undefined) {
+        usernameExists = response.props.flash.usernameExists;
+      }
+      
+      if (usernameExists) {
         // If username exists, add random number
         form.username = username + Math.floor(Math.random() * 1000);
       } else {
@@ -298,16 +307,27 @@ const submitForm = () => {
   // Submit the form to create an organizer
   router.post('/admin/organizers', form, {
     preserveScroll: true,
-    onSuccess: () => {
+    onSuccess: (page) => {
       isSubmitting.value = false;
       success.value = true;
       
-      // Emit created event with the new organizer data
-      emit('created', {
-        id: response.props.organizer.id,
-        name: form.name,
-        email: form.email
-      });
+      // Check if the response contains organizer data
+      const response = page.props.flash || {};
+      if (response.organizer) {
+        // Emit created event with the new organizer data
+        emit('created', {
+          id: response.organizer.id,
+          name: form.name,
+          email: form.email
+        });
+      } else if (page.props.organizer) {
+        // Alternative location of organizer data
+        emit('created', {
+          id: page.props.organizer.id,
+          name: form.name,
+          email: form.email
+        });
+      }
       
       // Close modal after delay
       setTimeout(() => {

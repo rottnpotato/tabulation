@@ -15,7 +15,7 @@
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
-npm-debug.log
+npm-debug.log 
 yarn-error.log
 organizer_progress.md
 progress.md
