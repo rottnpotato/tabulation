@@ -9,20 +9,24 @@
             <p class="mt-1 text-sm text-gray-600">Manage contestants for this pageant</p>
           </div>
           <div class="flex gap-3">
-            <Link
-              :href="route('organizer.pageant.view', pageant.id)"
-              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-lg transition-colors shadow-sm hover:shadow flex items-center"
-            >
-              <ArrowLeft class="h-4 w-4 mr-2 text-purple-500" />
-              Back to Pageant
-            </Link>
-            <button
-              @click="showAddModal = true"
-              class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5 flex items-center"
-            >
-              <Plus class="h-4 w-4 mr-2" />
-              Add Contestant
-            </button>
+            <Tooltip text="Return to pageant overview and management" position="bottom">
+              <Link
+                :href="route('organizer.pageant.view', pageant.id)"
+                class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-lg transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center"
+              >
+                <ArrowLeft class="h-4 w-4 mr-2 text-purple-500" />
+                Back to Pageant
+              </Link>
+            </Tooltip>
+            <Tooltip text="Register a new contestant for this pageant" position="bottom">
+              <button
+                @click="showAddModal = true"
+                class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
+              >
+                <Plus class="h-4 w-4 mr-2" />
+                Add Contestant
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -61,15 +65,17 @@
           </h2>
           
           <!-- Search and filter controls -->
-          <div class="relative">
-            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="16" />
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Search contestants..." 
-              class="pl-10 pr-4 py-2 rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all shadow-sm"
-            />
-          </div>
+          <Tooltip text="Search by name, location, or contestant number" position="bottom">
+            <div class="relative">
+              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size="16" />
+              <input 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="Search contestants..." 
+                class="pl-10 pr-4 py-2 rounded-lg border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all shadow-sm hover:shadow-md"
+              />
+            </div>
+          </Tooltip>
         </div>
       </div>
 
@@ -81,13 +87,15 @@
           </div>
           <h3 class="text-lg font-medium text-gray-900 mb-1">No contestants yet</h3>
           <p class="text-gray-600 mb-6 max-w-md mx-auto">Add your first contestant to get started with your pageant</p>
-          <button
-            @click="showAddModal = true"
-            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5"
-          >
-            <Plus class="h-4 w-4 inline mr-1" />
-            Add Contestant
-          </button>
+          <Tooltip text="Get started by adding your first contestant" position="top">
+            <button
+              @click="showAddModal = true"
+              class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+            >
+              <Plus class="h-4 w-4 inline mr-1" />
+              Add Contestant
+            </button>
+          </Tooltip>
         </div>
 
         <!-- Contestants Grid -->
@@ -115,27 +123,33 @@
               
               <!-- Action buttons overlay - visible on hover -->
               <div class="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                <button 
-                  @click="openContestantDetail(contestant)" 
-                  class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2 shadow-lg"
-                >
-                  <Eye class="h-4 w-4" />
-                  View Details
-                </button>
-                <button 
-                  @click="editContestant(contestant)" 
-                  class="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/30 transition-colors flex items-center gap-2 border border-white/30"
-                >
-                  <Edit class="h-4 w-4" />
-                  Edit
-                </button>
-                <button 
-                  @click="deleteContestant(contestant)" 
-                  class="bg-red-500/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-500/30 transition-colors flex items-center gap-2 border border-red-500/30"
-                >
-                  <Trash2 class="h-4 w-4" />
-                  Delete
-                </button>
+                <Tooltip text="View detailed information, photos, and bio" position="top">
+                  <button 
+                    @click="openContestantDetail(contestant)" 
+                    class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center gap-2 shadow-lg transform hover:scale-105"
+                  >
+                    <Eye class="h-4 w-4" />
+                    View Details
+                  </button>
+                </Tooltip>
+                <Tooltip text="Edit contestant information and photos" position="top">
+                  <button 
+                    @click="editContestant(contestant)" 
+                    class="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/30 transition-colors flex items-center gap-2 border border-white/30 transform hover:scale-105"
+                  >
+                    <Edit class="h-4 w-4" />
+                    Edit
+                  </button>
+                </Tooltip>
+                <Tooltip text="Permanently remove contestant from pageant" position="top">
+                  <button 
+                    @click="deleteContestant(contestant)" 
+                    class="bg-red-500/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-500/30 transition-colors flex items-center gap-2 border border-red-500/30 transform hover:scale-105"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                    Delete
+                  </button>
+                </Tooltip>
               </div>
               
               <!-- Contestant info at bottom -->
@@ -194,6 +208,7 @@ import { ArrowLeft, Plus, Users, Search, MapPin, Calendar, Edit, Trash2, Eye, Ch
 import ContestantFormModal from '@/Components/ContestantFormModal.vue'
 import ContestantDetailModal from '@/Components/ContestantDetailModal.vue'
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue'
+import Tooltip from '@/Components/Tooltip.vue'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import axios from 'axios'
 

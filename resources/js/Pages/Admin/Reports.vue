@@ -1,250 +1,271 @@
 <template>
   <Head title="Analytics & Reports" />
-  <div class="space-y-6">
-    <!-- Header Section -->
-    <div class="bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-md overflow-hidden">
-      <div class="p-4 sm:p-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-          <div class="text-white">
-            <h1 class="text-2xl sm:text-3xl font-bold">Analytics & Reports</h1>
-            <p class="mt-1 text-sm sm:text-base opacity-90">Comprehensive system statistics and insights</p>
-          </div>
-          <div class="flex flex-wrap gap-2 sm:space-x-3">
-            <button 
-              @click="exportReportsPDF" 
-              class="bg-white text-teal-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-50 flex items-center shadow-sm transition-all"
-              :disabled="isExporting"
-            >
-              <FileDown :class="['h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-teal-600', {'animate-spin': isExporting}]" />
-              <span>{{ isExporting ? 'Exporting...' : 'Export Report' }}</span>
-            </button>
-            <button 
-              @click="refreshData" 
-              class="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white hover:bg-white/30 flex items-center shadow-sm transition-all"
-              :disabled="isLoading"
-            >
-              <RefreshCw :class="['h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-white', {'animate-spin': isLoading}]" />
-              <span>{{ isLoading ? 'Refreshing...' : 'Refresh Data' }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Filter Bar -->
-      <div class="bg-teal-700/30 backdrop-blur-sm px-3 sm:px-6 py-3 sm:py-4">
-        <div class="flex flex-wrap gap-2 sm:gap-3 items-center">
-          <div class="text-white text-xs sm:text-sm">
-            <span class="font-medium">Time Period:</span>
-          </div>
-          <select 
-            v-model="selectedPeriod" 
-            @change="updatePeriod"
-            class="bg-white/20 backdrop-blur-sm text-white border border-white/30 rounded-lg px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm"
-          >
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="year">This Year</option>
-            <option value="all">All Time</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Key Metrics Row -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <!-- Completion Rate -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-        <div class="flex items-center">
-          <div class="p-2 bg-teal-100 rounded-full">
-            <CheckCircle class="h-5 w-5 text-teal-600" />
-          </div>
-          <h3 class="ml-3 text-sm font-medium text-gray-900">Completion Rate</h3>
-        </div>
-        <div class="mt-2 flex items-baseline justify-between">
-          <div>
-            <div class="text-2xl font-bold text-gray-900">{{ pageantStats.completionRate }}%</div>
-            <div class="text-xs text-gray-500">of pageants completed</div>
-          </div>
-          <div class="h-10 w-10">
-            <div class="radial-progress" :style="`--value: ${pageantStats.completionRate}; --size: 40px; --thickness: 4px;`">
-              <div class="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-teal-600">
-                {{ pageantStats.completionRate }}%
+  <div class="space-y-8 bg-gray-50 min-h-screen">
+    <!-- Document Header -->
+    <div class="max-w-7xl mx-auto bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="max-w-7xl mx-auto">
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+            <div>
+              <h1 class="text-3xl font-bold text-gray-900">System Analytics Report</h1>
+              <p class="mt-2 text-gray-600">Comprehensive analysis of system performance and statistics</p>
+              <p class="mt-1 text-sm text-gray-500">Generated on {{ new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) }}</p>
+            </div>
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center text-sm text-gray-600">
+                <span class="font-medium mr-2">Report Period:</span>
+                <select 
+                  v-model="selectedPeriod" 
+                  @change="updatePeriod"
+                  class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                >
+                  <option value="7">Last 7 days</option>
+                  <option value="30">Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                  <option value="year">This Year</option>
+                  <option value="all">All Time</option>
+                </select>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button 
+                  @click="refreshData" 
+                  class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  :disabled="isLoading"
+                >
+                  <RefreshCw :class="['h-4 w-4 mr-2 text-gray-500', {'animate-spin': isLoading}]" />
+                  {{ isLoading ? 'Refreshing...' : 'Refresh' }}
+                </button>
+                <button 
+                  @click="previewReport('comprehensive')" 
+                  class="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <Eye class="h-4 w-4 mr-2 text-blue-600" />
+                  Preview Full Report
+                </button>
+                <button 
+                  @click="exportReportsPDF" 
+                  class="inline-flex items-center px-4 py-2 border border-blue-600 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  :disabled="isExporting"
+                >
+                  <FileDown :class="['h-4 w-4 mr-2', {'animate-spin': isExporting}]" />
+                  {{ isExporting ? 'Generating...' : 'Export PDF' }}
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Average Duration -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-        <div class="flex items-center">
-          <div class="p-2 bg-teal-100 rounded-full">
-            <Calendar class="h-5 w-5 text-teal-600" />
-          </div>
-          <h3 class="ml-3 text-sm font-medium text-gray-900">Average Duration</h3>
-        </div>
-        <div class="mt-2">
-          <div class="text-2xl font-bold text-gray-900">{{ pageantStats.avgDuration }} days</div>
-          <div class="text-xs text-gray-500">per pageant event</div>
-        </div>
-      </div>
-      
-      <!-- Total Users -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-        <div class="flex items-center">
-          <div class="p-2 bg-teal-100 rounded-full">
-            <Users class="h-5 w-5 text-teal-600" />
-          </div>
-          <h3 class="ml-3 text-sm font-medium text-gray-900">Total Users</h3>
-        </div>
-        <div class="mt-2">
-          <div class="text-2xl font-bold text-gray-900">{{ totalUsers }}</div>
-          <div class="text-xs text-gray-500">across all roles</div>
-        </div>
-      </div>
-      
-      <!-- Total Pageants -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
-        <div class="flex items-center">
-          <div class="p-2 bg-teal-100 rounded-full">
-            <Trophy class="h-5 w-5 text-teal-600" />
-          </div>
-          <h3 class="ml-3 text-sm font-medium text-gray-900">Total Pageants</h3>
-        </div>
-        <div class="mt-2">
-          <div class="text-2xl font-bold text-gray-900">{{ totalPageants }}</div>
-          <div class="text-xs text-gray-500">created in the system</div>
-        </div>
-      </div>
     </div>
+
+    <div class="max-w-7xl mx-auto px-6 pb-8">
     
-    <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-      <!-- Pageant Creation Trend -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-        <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100">
-          <div class="flex items-center justify-between">
-            <h2 class="text-base sm:text-lg font-semibold text-gray-900">Pageant Creation Trend</h2>
-            <div class="p-1.5 bg-teal-100 rounded-full">
-              <TrendingUp class="h-4 w-4 text-teal-600" />
-            </div>
-          </div>
-          <p class="text-xs text-gray-500 mt-1">Monthly pageant creation activity</p>
+      <!-- Executive Summary -->
+      <div class="bg-white border border-gray-200 rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Executive Summary</h2>
+          <p class="text-sm text-gray-600 mt-1">Key performance indicators for the reporting period</p>
         </div>
-        <div class="p-4 sm:p-6">
-          <div class="h-64">
-            <Bar 
-              :data="pageantCreationData" 
-              :options="barChartOptions" 
-            />
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Completion Rate -->
+            <div class="text-center border-r border-gray-200 last:border-r-0 pr-6 last:pr-0">
+              <div class="text-3xl font-bold text-black-600">{{ pageantStats.completionRate }}%</div>
+              <div class="text-sm text-gray-600 mt-1">Completion Rate</div>
+              <div class="text-xs text-gray-500 mt-1">of pageants completed</div>
+            </div>
+            
+            <!-- Average Duration -->
+            <div class="text-center border-r border-gray-200 last:border-r-0 pr-6 last:pr-0">
+              <div class="text-3xl font-bold text-black-600">{{ pageantStats.avgDuration }}</div>
+              <div class="text-sm text-gray-600 mt-1">Average Duration</div>
+              <div class="text-xs text-gray-500 mt-1">days per pageant</div>
+            </div>
+            
+            <!-- Total Users -->
+            <div class="text-center border-r border-gray-200 last:border-r-0 pr-6 last:pr-0">
+              <div class="text-3xl font-bold text-black-600">{{ totalUsers }}</div>
+              <div class="text-sm text-gray-600 mt-1">Total Users</div>
+              <div class="text-xs text-gray-500 mt-1">across all roles</div>
+            </div>
+            
+            <!-- Total Pageants -->
+            <div class="text-center">
+              <div class="text-3xl font-bold text-black-600">{{ totalPageants }}</div>
+              <div class="text-sm text-gray-600 mt-1">Total Pageants</div>
+              <div class="text-xs text-gray-500 mt-1">in the system</div>
+            </div>
           </div>
         </div>
       </div>
-      
-      <!-- User Distribution by Role -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-        <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100">
-          <div class="flex items-center justify-between">
-            <h2 class="text-base sm:text-lg font-semibold text-gray-900">User Distribution</h2>
-            <div class="p-1.5 bg-teal-100 rounded-full">
-              <PieChart class="h-4 w-4 text-teal-600" />
-            </div>
-          </div>
-          <p class="text-xs text-gray-500 mt-1">Users by role in the system</p>
-        </div>
-        <div class="p-4 sm:p-6">
-          <div class="h-64">
-            <Doughnut 
-              :data="userDistributionData" 
-              :options="doughnutChartOptions" 
-            />
-          </div>
-        </div>
-      </div>
-      
-      <!-- System Activity by Day -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-        <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100">
-          <div class="flex items-center justify-between">
-            <h2 class="text-base sm:text-lg font-semibold text-gray-900">System Activity</h2>
-            <div class="p-1.5 bg-teal-100 rounded-full">
-              <Activity class="h-4 w-4 text-teal-600" />
-            </div>
-          </div>
-          <p class="text-xs text-gray-500 mt-1">Activity distribution by day of week</p>
-        </div>
-        <div class="p-4 sm:p-6">
-          <div class="h-64">
-            <Bar 
-              :data="activityByDayData" 
-              :options="barChartOptions" 
-            />
-          </div>
-        </div>
-      </div>
-      
-      <!-- Scoring System Distribution -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-        <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100">
-          <div class="flex items-center justify-between">
-            <h2 class="text-base sm:text-lg font-semibold text-gray-900">Scoring Systems</h2>
-            <div class="p-1.5 bg-teal-100 rounded-full">
-              <BarChart class="h-4 w-4 text-teal-600" />
-            </div>
-          </div>
-          <p class="text-xs text-gray-500 mt-1">Distribution of scoring systems used</p>
-        </div>
-        <div class="p-4 sm:p-6">
-          <div class="h-64">
-            <Pie 
-              :data="scoringDistributionData" 
-              :options="doughnutChartOptions" 
-            />
-          </div>
-        </div>
-      </div>
-    </div>
     
-    <!-- Export Options -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100">
-        <div class="flex items-center justify-between">
-          <h2 class="text-base sm:text-lg font-semibold text-gray-900">Export Options</h2>
-          <div class="p-1.5 bg-teal-100 rounded-full">
-            <Download class="h-4 w-4 text-teal-600" />
+      <!-- Data Analysis -->
+      <div class="bg-white border border-gray-200 rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Data Analysis</h2>
+          <p class="text-sm text-gray-600 mt-1">Visual representation of system metrics and trends</p>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Pageant Creation Trend -->
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-base font-medium text-gray-900">Pageant Creation Trend</h3>
+                <p class="text-sm text-gray-600 mt-1">Monthly creation activity</p>
+              </div>
+              <div class="p-4">
+                <div class="h-64">
+                  <Bar 
+                    :data="pageantCreationData" 
+                    :options="barChartOptions" 
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <!-- User Distribution by Role -->
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-base font-medium text-gray-900">User Distribution</h3>
+                <p class="text-sm text-gray-600 mt-1">Users by role in the system</p>
+              </div>
+              <div class="p-4">
+                <div class="h-64">
+                  <Doughnut 
+                    :data="userDistributionData" 
+                    :options="doughnutChartOptions" 
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <!-- System Activity by Day -->
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-base font-medium text-gray-900">System Activity</h3>
+                <p class="text-sm text-gray-600 mt-1">Activity by day of week</p>
+              </div>
+              <div class="p-4">
+                <div class="h-64">
+                  <Bar 
+                    :data="activityByDayData" 
+                    :options="barChartOptions" 
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <!-- Scoring System Distribution -->
+            <div class="border border-gray-200 rounded-lg overflow-hidden">
+              <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-base font-medium text-gray-900">Scoring Systems</h3>
+                <p class="text-sm text-gray-600 mt-1">Distribution of scoring systems used</p>
+              </div>
+              <div class="p-4">
+                <div class="h-64">
+                  <Pie 
+                    :data="scoringDistributionData" 
+                    :options="doughnutChartOptions" 
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <p class="text-xs text-gray-500 mt-1">Generate and download detailed reports</p>
       </div>
-      <div class="p-4 sm:p-6">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button @click="exportReportCSV('pageants')" class="flex items-center justify-center p-4 rounded-lg border border-gray-200 hover:bg-teal-50 hover:border-teal-200 transition-colors group">
-            <FileText class="h-5 w-5 text-teal-600 mr-3" />
-            <div class="text-left">
-              <div class="font-medium text-gray-900 group-hover:text-teal-700">Pageant Report</div>
-              <div class="text-xs text-gray-500">Export pageant data as CSV</div>
+    
+      <!-- Report Generation -->
+      <div class="bg-white border border-gray-200 rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Report Generation</h2>
+          <p class="text-sm text-gray-600 mt-1">Generate and export detailed reports in various formats</p>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <!-- Pageant Report -->
+            <div class="border border-gray-200 rounded-lg p-4">
+              <div class="text-center">
+                <FileText class="h-8 w-8 text-blue-500 mx-auto mb-3" />
+                <h3 class="text-sm font-medium text-gray-900 mb-2">Pageant Report</h3>
+                <p class="text-xs text-gray-600 mb-4">Comprehensive pageant statistics and data</p>
+                <div class="space-y-2">
+                  <button 
+                    @click="previewReport('pageants')" 
+                    class="w-full px-3 py-2 text-xs border border-blue-300 rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    Preview Report
+                  </button>
+                  <button 
+                    @click="exportReportCSV('pageants')" 
+                    class="w-full px-3 py-2 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
             </div>
-          </button>
-          
-          <button @click="exportReportCSV('users')" class="flex items-center justify-center p-4 rounded-lg border border-gray-200 hover:bg-teal-50 hover:border-teal-200 transition-colors group">
-            <Users class="h-5 w-5 text-teal-600 mr-3" />
-            <div class="text-left">
-              <div class="font-medium text-gray-900 group-hover:text-teal-700">User Report</div>
-              <div class="text-xs text-gray-500">Export user statistics as CSV</div>
+            
+            <!-- User Report -->
+            <div class="border border-gray-200 rounded-lg p-4">
+              <div class="text-center">
+                <Users class="h-8 w-8 text-indigo-500 mx-auto mb-3" />
+                <h3 class="text-sm font-medium text-gray-900 mb-2">User Report</h3>
+                <p class="text-xs text-gray-600 mb-4">User management and role distribution data</p>
+                <div class="space-y-2">
+                  <button 
+                    @click="previewReport('users')" 
+                    class="w-full px-3 py-2 text-xs border border-indigo-300 rounded text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    Preview Report
+                  </button>
+                  <button 
+                    @click="exportReportCSV('users')" 
+                    class="w-full px-3 py-2 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
             </div>
-          </button>
-          
-          <button @click="exportReportCSV('system')" class="flex items-center justify-center p-4 rounded-lg border border-gray-200 hover:bg-teal-50 hover:border-teal-200 transition-colors group">
-            <BarChart3 class="h-5 w-5 text-teal-600 mr-3" />
-            <div class="text-left">
-              <div class="font-medium text-gray-900 group-hover:text-teal-700">System Report</div>
-              <div class="text-xs text-gray-500">Export system usage data as CSV</div>
+            
+            <!-- System Report -->
+            <div class="border border-gray-200 rounded-lg p-4">
+              <div class="text-center">
+                <BarChart3 class="h-8 w-8 text-purple-500 mx-auto mb-3" />
+                <h3 class="text-sm font-medium text-gray-900 mb-2">System Report</h3>
+                <p class="text-xs text-gray-600 mb-4">System analytics and usage metrics</p>
+                <div class="space-y-2">
+                  <button 
+                    @click="previewReport('system')" 
+                    class="w-full px-3 py-2 text-xs border border-purple-300 rounded text-purple-700 bg-purple-50 hover:bg-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  >
+                    Preview Report
+                  </button>
+                  <button 
+                    @click="exportReportCSV('system')" 
+                    class="w-full px-3 py-2 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
             </div>
-          </button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Report Preview Modal -->
+    <ReportPreview 
+      :show="showPreview"
+      :reportData="currentReportData"
+      @close="closePreview"
+    />
   </div>
 </template>
 
@@ -252,6 +273,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ReportPreview from '@/Components/ReportPreview.vue'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -278,7 +300,8 @@ import {
   BarChart3, 
   FileText, 
   PieChart,
-  Download
+  Download,
+  Eye
 } from 'lucide-vue-next'
 
 // Define the layout to use
@@ -310,6 +333,8 @@ const props = defineProps({
 const isLoading = ref(false)
 const isExporting = ref(false)
 const selectedPeriod = ref('30')
+const showPreview = ref(false)
+const currentReportData = ref({})
 
 // Computed values
 const totalUsers = computed(() => {
@@ -331,10 +356,10 @@ const barChartOptions = {
       display: false
     },
     tooltip: {
-      backgroundColor: 'rgba(13, 148, 136, 0.8)',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
       titleColor: '#fff',
       bodyColor: '#fff',
-      borderColor: 'rgba(13, 148, 136, 1)',
+      borderColor: 'rgba(0, 0, 0, 1)',
       borderWidth: 1
     }
   },
@@ -342,12 +367,18 @@ const barChartOptions = {
     y: {
       beginAtZero: true,
       grid: {
-        color: 'rgba(0, 0, 0, 0.05)'
+        color: 'rgba(0, 0, 0, 0.1)'
+      },
+      ticks: {
+        color: '#6b7280'
       }
     },
     x: {
       grid: {
         display: false
+      },
+      ticks: {
+        color: '#6b7280'
       }
     }
   }
@@ -361,14 +392,15 @@ const doughnutChartOptions = {
       position: 'bottom',
       labels: {
         usePointStyle: true,
-        boxWidth: 10
+        boxWidth: 10,
+        color: '#6b7280'
       }
     },
     tooltip: {
-      backgroundColor: 'rgba(13, 148, 136, 0.8)',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
       titleColor: '#fff',
       bodyColor: '#fff',
-      borderColor: 'rgba(13, 148, 136, 1)',
+      borderColor: 'rgba(0, 0, 0, 1)',
       borderWidth: 1
     }
   }
@@ -381,10 +413,10 @@ const pageantCreationData = computed(() => {
     datasets: [
       {
         label: 'Pageants Created',
-        backgroundColor: '#0d9488',
+        backgroundColor: '#3b82f6',
         data: props.pageantStats.monthlyCreation,
-        borderRadius: 5,
-        barThickness: 12
+        borderRadius: 3,
+        barThickness: 16
       }
     ]
   }
@@ -395,11 +427,11 @@ const userDistributionData = computed(() => {
   const labels = []
   const data = []
   const backgroundColors = [
-    '#0d9488', // teal-600
-    '#14b8a6', // teal-500
-    '#2dd4bf', // teal-400
-    '#5eead4', // teal-300
-    '#99f6e4'  // teal-200
+    '#6366f1', // indigo-500
+    '#3b82f6', // blue-500
+    '#06b6d4', // cyan-500
+    '#10b981', // emerald-500
+    '#8b5cf6'  // violet-500
   ]
   
   // Map role names to more user-friendly display names
@@ -433,10 +465,10 @@ const activityByDayData = computed(() => {
     datasets: [
       {
         label: 'System Activity',
-        backgroundColor: '#14b8a6',
+        backgroundColor: '#06b6d4',
         data: props.systemStats.activityByDay,
-        borderRadius: 5,
-        barThickness: 12
+        borderRadius: 3,
+        barThickness: 16
       }
     ]
   }
@@ -447,11 +479,11 @@ const scoringDistributionData = computed(() => {
   const labels = []
   const data = []
   const backgroundColors = [
-    '#0d9488', // teal-600
-    '#14b8a6', // teal-500
-    '#2dd4bf', // teal-400
-    '#5eead4', // teal-300
-    '#99f6e4'  // teal-200
+    '#8b5cf6', // violet-500
+    '#ec4899', // pink-500
+    '#f59e0b', // amber-500
+    '#10b981', // emerald-500
+    '#3b82f6'  // blue-500
   ]
   
   // Map scoring system names to more user-friendly display names
@@ -496,36 +528,157 @@ const updatePeriod = () => {
   }, 1000)
 }
 
+// Generate report data
+const generateReportData = (type = 'comprehensive') => {
+  const now = new Date()
+  const periodText = selectedPeriod.value === 'all' ? 'All Time' : 
+                   selectedPeriod.value === 'year' ? 'This Year' : 
+                   `Last ${selectedPeriod.value} days`
+
+  // Sample recent pageants data - in real app this would come from props or API
+  const samplePageants = [
+    { id: 1, title: 'Miss Universe 2024', status: 'Completed', contestants_count: 25, created_at: '2024-01-15' },
+    { id: 2, title: 'Miss World 2024', status: 'Ongoing', contestants_count: 18, created_at: '2024-01-10' },
+    { id: 3, title: 'Miss Earth 2024', status: 'Upcoming', contestants_count: 22, created_at: '2024-01-05' },
+    { id: 4, title: 'Miss International 2024', status: 'Completed', contestants_count: 30, created_at: '2024-01-01' }
+  ]
+
+  const baseData = {
+    title: type === 'comprehensive' ? 'Comprehensive System Report' : 
+           type === 'pageants' ? 'Pageant Activity Report' :
+           type === 'users' ? 'User Management Report' : 'System Analytics Report',
+    generatedDate: now.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }),
+    period: periodText,
+    summary: {
+      totalPageants: totalPageants.value,
+      totalUsers: totalUsers.value,
+      completionRate: props.pageantStats.completionRate,
+      avgDuration: props.pageantStats.avgDuration
+    },
+    userDistribution: props.userStats.byRole || {},
+    recentPageants: samplePageants,
+    monthlyActivity: {
+      'January': 12,
+      'February': 8,
+      'March': 15,
+      'April': 10
+    },
+    scoringSystems: props.systemStats.scoringDistribution || {}
+  }
+
+  // Customize data based on report type
+  if (type === 'pageants') {
+    baseData.title = 'Pageant Activity Report'
+    // Focus on pageant-specific data
+  } else if (type === 'users') {
+    baseData.title = 'User Management Report'
+    // Focus on user-specific data
+  } else if (type === 'system') {
+    baseData.title = 'System Analytics Report'
+    // Focus on system metrics
+  }
+
+  return baseData
+}
+
 const exportReportsPDF = () => {
-  isExporting.value = true
-  setTimeout(() => {
-    isExporting.value = false
-    // In a real implementation, this would generate and download a PDF
-    alert('PDF export functionality would be implemented here')
-  }, 1500)
+  currentReportData.value = generateReportData('comprehensive')
+  showPreview.value = true
+}
+
+const previewReport = (type) => {
+  currentReportData.value = generateReportData(type)
+  showPreview.value = true
+}
+
+const closePreview = () => {
+  showPreview.value = false
+  currentReportData.value = {}
 }
 
 const exportReportCSV = (type) => {
-  // In a real implementation, this would generate and download a CSV file
-  alert(`CSV export for ${type} would be implemented here`)
+  try {
+    let csvContent = ''
+    let filename = ''
+
+    if (type === 'pageants') {
+      csvContent = generatePageantCSV()
+      filename = 'pageant_report'
+    } else if (type === 'users') {
+      csvContent = generateUserCSV()
+      filename = 'user_report'
+    } else if (type === 'system') {
+      csvContent = generateSystemCSV()
+      filename = 'system_report'
+    }
+
+    // Create and download CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
+  } catch (error) {
+    console.error('Error generating CSV:', error)
+    alert('Error generating CSV file. Please try again.')
+  }
+}
+
+const generatePageantCSV = () => {
+  const headers = ['Title', 'Status', 'Contestants', 'Created Date', 'Completion Rate']
+  const data = [
+    ['Miss Universe 2024', 'Completed', '25', '2024-01-15', '100%'],
+    ['Miss World 2024', 'Ongoing', '18', '2024-01-10', '75%'],
+    ['Miss Earth 2024', 'Upcoming', '22', '2024-01-05', '0%'],
+    ['Miss International 2024', 'Completed', '30', '2024-01-01', '100%']
+  ]
+  
+  return [headers, ...data].map(row => row.join(',')).join('\n')
+}
+
+const generateUserCSV = () => {
+  const headers = ['Role', 'Count', 'Percentage']
+  const totalUsers = Object.values(props.userStats.byRole || {}).reduce((sum, count) => sum + count, 0)
+  const data = Object.entries(props.userStats.byRole || {}).map(([role, count]) => [
+    role.charAt(0).toUpperCase() + role.slice(1),
+    count,
+    `${((count / totalUsers) * 100).toFixed(1)}%`
+  ])
+  
+  return [headers, ...data].map(row => row.join(',')).join('\n')
+}
+
+const generateSystemCSV = () => {
+  const headers = ['Metric', 'Value']
+  const data = [
+    ['Total Pageants', totalPageants.value],
+    ['Total Users', totalUsers.value],
+    ['Completion Rate', `${props.pageantStats.completionRate}%`],
+    ['Average Duration', `${props.pageantStats.avgDuration} days`],
+    ...Object.entries(props.systemStats.scoringDistribution || {}).map(([system, count]) => 
+      [`Scoring System: ${system}`, count]
+    )
+  ]
+  
+  return [headers, ...data].map(row => row.join(',')).join('\n')
 }
 </script>
 
 <style scoped>
-/* Radial progress indicator */
-.radial-progress {
-  position: relative;
-  width: var(--size);
-  height: var(--size);
-  border-radius: 50%;
-  background: conic-gradient(#0d9488 calc(var(--value) * 1%), #e5e7eb 0);
-}
-
-.radial-progress::before {
-  content: '';
-  position: absolute;
-  inset: calc(var(--thickness) + 1px);
-  background: white;
-  border-radius: 50%;
+/* Document-style report page */
+.report-page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 </style> 

@@ -1,15 +1,17 @@
 <template>
   <div class="flex h-screen">
     <!-- Mobile menu button with improved touch target -->
-    <button
-      @click="toggleSidebar"
-      class="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md shadow-md bg-white"
-      :class="[roleColor, 'hover:bg-gray-100']"
-      aria-label="Toggle menu"
-    >
-      <Menu v-if="!isOpen" class="h-6 w-6" />
-      <X v-else class="h-6 w-6" />
-    </button>
+    <Tooltip :text="isOpen ? 'Close navigation menu' : 'Open navigation menu'" position="right">
+      <button
+        @click="toggleSidebar"
+        class="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md shadow-md bg-white transition-all transform hover:scale-105 hover:shadow-lg"
+        :class="[roleColor, 'hover:bg-gray-100']"
+        aria-label="Toggle menu"
+      >
+        <Menu v-if="!isOpen" class="h-6 w-6" />
+        <X v-else class="h-6 w-6" />
+      </button>
+    </Tooltip>
 
     <!-- Mobile overlay backdrop -->
     <div 
@@ -88,10 +90,10 @@
             <!-- Expandable hover popup for collapsed state (desktop only) -->
             <div 
               v-if="!isOpen && !isMobile" 
-              class="absolute left-full top-0 ml-2 px-4 py-3 bg-white shadow-lg rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50 whitespace-nowrap border border-gray-200 min-w-[150px] transform -translate-x-2 group-hover:translate-x-0 flex items-center"
-              :class="[isActiveLink(item) ? 'border-l-4 ' + hoverBorderColor : '']"
+              class="absolute left-full top-0 ml-2 px-4 py-3 bg-white shadow-xl rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 ease-out z-50 whitespace-nowrap border border-gray-200 min-w-[150px] transform -translate-x-2 group-hover:translate-x-0 flex items-center hover:shadow-2xl"
+              :class="[isActiveLink(item) ? 'border-l-4 ' + hoverBorderColor + ' bg-gradient-to-r from-orange-50 to-white' : '']"
             >
-              <component :is="item.icon" class="h-5 w-5 mr-3" :class="[isActiveLink(item) ? roleColor : 'text-gray-500']" />
+              <component :is="item.icon" class="h-5 w-5 mr-3 transition-colors" :class="[isActiveLink(item) ? roleColor : 'text-gray-500']" />
               <span :class="[isActiveLink(item) ? 'font-semibold ' + roleColor : 'text-gray-700']">{{ item.name }}</span>
             </div>
           </Link>
@@ -125,26 +127,26 @@
               <!-- Expandable hover popup for collapsed state (desktop only) -->
               <div 
                 v-if="!isOpen && !isMobile" 
-                class="absolute left-full top-0 ml-2 px-4 py-3 bg-white shadow-lg rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50 whitespace-nowrap border border-gray-200 min-w-[180px] transform -translate-x-2 group-hover:translate-x-0"
-                :class="[isParentActive(item) ? 'border-l-4 ' + hoverBorderColor : '']"
+                class="absolute left-full top-0 ml-2 px-4 py-3 bg-white shadow-xl rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 ease-out z-50 whitespace-nowrap border border-gray-200 min-w-[180px] transform -translate-x-2 group-hover:translate-x-0 hover:shadow-2xl"
+                :class="[isParentActive(item) ? 'border-l-4 ' + hoverBorderColor + ' bg-gradient-to-r from-orange-50 to-white' : '']"
               >
                 <div class="flex items-center justify-between w-full">
                   <div class="flex items-center">
-                    <component :is="item.icon" class="h-5 w-5 mr-3" :class="[isParentActive(item) ? roleColor : 'text-gray-500']" />
+                    <component :is="item.icon" class="h-5 w-5 mr-3 transition-colors" :class="[isParentActive(item) ? roleColor : 'text-gray-500']" />
                     <span :class="[isParentActive(item) ? 'font-semibold ' + roleColor : 'text-gray-700']">{{ item.name }}</span>
                   </div>
                   <ChevronRight class="h-4 w-4 text-gray-400" />
                 </div>
                 
                 <!-- Submenu items in hover popup for collapsed sidebar -->
-                <div class="mt-2 ml-8 space-y-1">
+                <div class="mt-3 ml-8 space-y-1">
                   <a 
                     v-for="child in item.children" 
                     :key="child.name"
                     :href="child.href"
                     @click.prevent="navigateToSubMenuItem(child.href, item.name)"
-                    class="block py-2 px-3 text-sm rounded-md hover:bg-gray-100 transition-colors"
-                    :class="[isActiveLink(child) ? 'font-semibold ' + roleColor : 'text-gray-700']"
+                    class="block py-2 px-3 text-sm rounded-md hover:bg-gray-100 transition-all transform hover:translate-x-1 hover:shadow-sm"
+                    :class="[isActiveLink(child) ? 'font-semibold ' + roleColor + ' bg-orange-50' : 'text-gray-700']"
                   >
                     {{ child.name }}
                   </a>
@@ -176,22 +178,27 @@
       </nav>
 
       <!-- Sidebar toggle button (hidden on mobile) -->
-      <div class="absolute bottom-20 w-full flex justify-center p-2 lg:block hidden">
-        <button 
-          @click="toggleCollapse" 
-          class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-200"
-          :title="isOpen ? 'Collapse sidebar' : 'Expand sidebar'"
+      <div class="absolute bottom-20 left-1/2 transform -translate-x-1/2 lg:block hidden pb-4">
+        <Tooltip 
+          :text="isOpen ? 'Collapse sidebar for more space' : 'Expand sidebar to see full menu'" 
+          :position="isOpen ? 'right' : 'right'"
         >
-          <ChevronLeft v-if="isOpen" class="h-6 w-6 text-gray-600" />
-          <ChevronRight v-else class="h-6 w-6 text-gray-600" />
-        </button>
+          <button 
+            @click="toggleCollapse" 
+            class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-200 transform hover:scale-110 hover:shadow-md"
+            :title="isOpen ? 'Collapse sidebar' : 'Expand sidebar'"
+          >
+            <ChevronLeft v-if="isOpen" class="h-6 w-6 text-gray-600" />
+            <ChevronRight v-else class="h-6 w-6 text-gray-600" />
+          </button>
+        </Tooltip>
       </div>
 
       <!-- Logout button -->
       <div class="absolute bottom-0 w-full p-4 border-t">
         <button
           @click="logout"
-          class="flex items-center w-full px-3 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-colors group relative"
+          class="flex items-center w-full px-3 py-3 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-700 rounded-md transition-all group relative transform hover:scale-105"
         >
           <LogOut class="h-6 w-6 flex-shrink-0" />
           <span 
@@ -204,10 +211,10 @@
           <!-- Expandable hover popup for collapsed state (desktop only) -->
           <div 
             v-if="!isOpen && !isMobile" 
-            class="absolute left-full bottom-0 ml-2 px-4 py-3 bg-white shadow-lg rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50 whitespace-nowrap border border-gray-200 min-w-[150px] transform -translate-x-2 group-hover:translate-x-0 flex items-center"
+            class="absolute left-full bottom-0 ml-2 px-4 py-3 bg-white shadow-xl rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 ease-out z-50 whitespace-nowrap border border-gray-200 min-w-[150px] transform -translate-x-2 group-hover:translate-x-0 flex items-center hover:shadow-2xl hover:bg-red-50 border-l-4 border-l-red-500"
           >
-            <LogOut class="h-5 w-5 mr-3 text-gray-500" />
-            <span class="text-gray-700">Logout</span>
+            <LogOut class="h-5 w-5 mr-3 text-red-500" />
+            <span class="text-red-700 font-medium">Logout</span>
           </div>
         </button>
       </div>
@@ -264,6 +271,7 @@ import {
   UsersRound,
   ClipboardSignature
 } from 'lucide-vue-next'
+import Tooltip from '@/Components/Tooltip.vue'
 
 const page = usePage()
 

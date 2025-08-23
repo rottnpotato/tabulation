@@ -70,12 +70,14 @@
         <!-- Pageant Info Overlay -->
         <div class="absolute bottom-0 left-0 w-full p-4 sm:p-6 md:p-8">
           <div class="flex flex-wrap gap-2 mb-2">
-            <span :class="[
-              getStatusClass(pageant.status).badge,
-              'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
-            ]">
-              {{ pageant.status }}
-            </span>
+            <Tooltip :text="getStatusTooltipText(pageant.status)" position="top">
+              <span :class="[
+                getStatusClass(pageant.status).badge,
+                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium hover:shadow-md transition-shadow cursor-help'
+              ]">
+                {{ pageant.status }}
+              </span>
+            </Tooltip>
           </div>
           
           <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">{{ pageant.name }}</h1>
@@ -137,12 +139,14 @@
                 <span>Overall Completion</span>
                 <span class="font-medium">{{ pageant.progress || 0 }}%</span>
               </div>
-              <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  class="bg-orange-600 h-2.5 rounded-full"
-                  :style="{ width: `${pageant.progress || 0}%` }"
-                ></div>
-              </div>
+              <Tooltip :text="getProgressTooltip(pageant.progress || 0)" position="top">
+                <div class="w-full bg-gray-200 rounded-full h-2.5 hover:h-3 transition-all cursor-help">
+                  <div
+                    class="bg-orange-600 h-2.5 hover:h-3 rounded-full transition-all"
+                    :style="{ width: `${pageant.progress || 0}%` }"
+                  ></div>
+                </div>
+              </Tooltip>
             </div>
             
             <div v-if="isCompleted" class="flex items-center text-sm text-green-700 bg-green-50 p-3 rounded-md">
@@ -312,12 +316,16 @@
                       
                       <!-- Actions -->
                       <div v-if="canEdit" class="mt-3 flex justify-end space-x-2">
-                        <button @click="editEvent(event)" class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50">
-                          <Edit class="h-4 w-4" />
-                        </button>
-                        <button @click="confirmDeleteEvent(event)" class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50">
-                          <Trash class="h-4 w-4" />
-                        </button>
+                        <Tooltip text="Edit event details, date, and location" position="top">
+                          <button @click="editEvent(event)" class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110">
+                            <Edit class="h-4 w-4" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip text="Delete this event permanently" position="top">
+                          <button @click="confirmDeleteEvent(event)" class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110">
+                            <Trash class="h-4 w-4" />
+                          </button>
+                        </Tooltip>
                       </div>
                     </div>
                   </div>
@@ -378,12 +386,16 @@
                   <span>{{ contestant.origin || 'Unknown origin' }}</span>
                 </div>
                 <div v-if="canEdit" class="mt-3 flex justify-end space-x-2">
-                  <button class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50">
-                    <Edit class="h-4 w-4" />
-                  </button>
-                  <button class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50">
-                    <Trash class="h-4 w-4" />
-                  </button>
+                  <Tooltip text="Edit contestant information" position="top">
+                    <button class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110">
+                      <Edit class="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip text="Remove contestant from pageant" position="top">
+                    <button class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110">
+                      <Trash class="h-4 w-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -439,12 +451,16 @@
                   <span class="font-medium ml-1">{{ criterion.min_score || 0 }} - {{ criterion.max_score || 10 }}</span>
                 </div>
                 <div v-if="canEdit" class="mt-3 flex justify-end space-x-2">
-                  <button class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50">
-                    <Edit class="h-4 w-4" />
-                  </button>
-                  <button class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50">
-                    <Trash class="h-4 w-4" />
-                  </button>
+                  <Tooltip text="Edit scoring criterion details" position="top">
+                    <button class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110">
+                      <Edit class="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip text="Remove this scoring criterion" position="top">
+                    <button class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110">
+                      <Trash class="h-4 w-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -629,12 +645,14 @@
                     </div>
                   </div>
                   <div v-if="canEdit">
-                    <button 
-                      @click="confirmRemoveTabulator(tabulator)"
-                      class="p-2 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50"
-                    >
-                      <Trash class="h-5 w-5" />
-                    </button>
+                    <Tooltip text="Remove tabulator from this pageant" position="left">
+                      <button 
+                        @click="confirmRemoveTabulator(tabulator)"
+                        class="p-2 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110"
+                      >
+                        <Trash class="h-5 w-5" />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               </div>
@@ -1017,6 +1035,7 @@ import {
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import EventForm from '@/Components/EventForm.vue'
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue'
+import Tooltip from '@/Components/Tooltip.vue'
 
 defineOptions({
   layout: OrganizerLayout
@@ -1380,5 +1399,40 @@ const getScoringSystemName = (system) => {
 const getScoringSystemDescription = (system) => {
   const systemInfo = scoringSystems.find(s => s.type === system)
   return systemInfo ? systemInfo.description : 'No description available'
+}
+
+// Helper function for status tooltips
+const getStatusTooltipText = (status) => {
+  switch (status) {
+    case 'Draft':
+      return 'This pageant is in draft mode. Continue adding contestants, criteria, and scheduling events.'
+    case 'Setup':
+      return 'Pageant setup is complete. Ready for contestant registration and judge assignments.'
+    case 'Active':
+      return 'This pageant is currently active. Scoring is in progress and results are being calculated.'
+    case 'Completed':
+      return 'This pageant has finished. All scoring is complete and final results are available.'
+    case 'Unlocked_For_Edit':
+      return 'This completed pageant is temporarily unlocked for editing and corrections.'
+    default:
+      return 'Current status of this pageant'
+  }
+}
+
+// Helper function for progress tooltip
+const getProgressTooltip = (progress) => {
+  if (progress === 0) {
+    return 'Pageant setup has not started. Begin by adding contestants, criteria, and events.'
+  } else if (progress < 25) {
+    return 'Pageant setup is in early stages. Continue adding basic information and participants.'
+  } else if (progress < 50) {
+    return 'Good progress! Keep adding contestants, criteria, and scheduling events.'
+  } else if (progress < 75) {
+    return 'Pageant is well configured. Consider finalizing judges and scoring systems.'
+  } else if (progress < 100) {
+    return 'Almost ready! Complete remaining setup items to activate the pageant.'
+  } else {
+    return 'Pageant setup is complete! All components are configured and ready.'
+  }
 }
 </script> 

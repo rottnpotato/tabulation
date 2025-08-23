@@ -8,13 +8,15 @@
       </div>
       
       <div class="flex items-center space-x-3">
-        <button 
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 btn-transition"
-          @click="toggleFilters"
-        >
-          <Filter class="h-4 w-4 mr-2 text-gray-500" />
-          Filter
-        </button>
+        <Tooltip text="Filter and sort pageants by status, date, or name" position="bottom">
+          <button 
+            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all transform hover:-translate-y-0.5"
+            @click="toggleFilters"
+          >
+            <Filter class="h-4 w-4 mr-2 text-gray-500" />
+            Filter
+          </button>
+        </Tooltip>
       </div>
     </div>
     
@@ -22,28 +24,33 @@
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
       <div class="border-b border-gray-200">
         <nav class="flex overflow-x-auto">
-          <button 
+          <Tooltip
             v-for="tab in tabs" 
             :key="tab.value"
-            :class="[
-              activeTab === tab.value 
-                ? 'border-orange-500 text-orange-600' 
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'group inline-flex items-center py-4 px-4 sm:px-6 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0'
-            ]"
-            @click="activeTab = tab.value"
+            :text="getTabTooltip(tab.value)"
+            position="bottom"
           >
-            <component :is="tab.icon" class="h-5 w-5 mr-2" :class="activeTab === tab.value ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-500'" />
-            {{ tab.name }}
-            <span
+            <button 
               :class="[
-                activeTab === tab.value ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-900',
-                'ml-2 py-0.5 px-2.5 rounded-full text-xs font-medium'
+                activeTab === tab.value 
+                  ? 'border-orange-500 text-orange-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                'group inline-flex items-center py-4 px-4 sm:px-6 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 transition-all'
               ]"
+              @click="activeTab = tab.value"
             >
-              {{ pageantCounts[tab.value] || 0 }}
-            </span>
-          </button>
+              <component :is="tab.icon" class="h-5 w-5 mr-2 transition-colors" :class="activeTab === tab.value ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-500'" />
+              {{ tab.name }}
+              <span
+                :class="[
+                  activeTab === tab.value ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-900',
+                  'ml-2 py-0.5 px-2.5 rounded-full text-xs font-medium transition-colors'
+                ]"
+              >
+                {{ pageantCounts[tab.value] || 0 }}
+              </span>
+            </button>
+          </Tooltip>
         </nav>
       </div>
       
@@ -109,12 +116,14 @@
             <!-- Card Header with Gradient Background -->
             <div class="h-32 bg-gradient-to-r from-orange-500 to-orange-300 relative">
               <!-- Status Badge -->
-              <span :class="[
-                getStatusClass(pageant.status).badge,
-                'absolute top-3 left-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shadow-sm'
-              ]">
-                {{ pageant.status }}
-              </span>
+              <Tooltip :text="getStatusTooltip(pageant.status)" position="right">
+                <span :class="[
+                  getStatusClass(pageant.status).badge,
+                  'absolute top-3 left-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shadow-sm hover:shadow-md transition-shadow cursor-help'
+                ]">
+                  {{ pageant.status }}
+                </span>
+              </Tooltip>
               
               <!-- Overlay with Title -->
               <div class="absolute inset-0 bg-black bg-opacity-20 p-4 flex flex-col justify-end">
@@ -170,12 +179,14 @@
                 </span>
               </div>
               <div class="flex-shrink-0">
-                <button
-                  @click.stop="managePageant(pageant)"
-                  class="p-1.5 rounded-full text-gray-400 bg-white border border-gray-200 hover:text-orange-600 hover:border-orange-300 transition-colors"
-                >
-                  <ChevronRight class="h-4 w-4" />
-                </button>
+                <Tooltip :text="getActionTextByStatus(pageant.status)" position="left">
+                  <button
+                    @click.stop="managePageant(pageant)"
+                    class="p-1.5 rounded-full text-gray-400 bg-white border border-gray-200 hover:text-orange-600 hover:border-orange-300 transition-all transform hover:scale-110 hover:shadow-md"
+                  >
+                    <ChevronRight class="h-4 w-4" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -193,6 +204,7 @@ import {
   ExternalLink, Play, Pause, CheckCircle, Clock, AlertCircle, 
   Archive, MapPin
 } from 'lucide-vue-next'
+import Tooltip from '@/Components/Tooltip.vue'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 
 defineOptions({
@@ -286,6 +298,44 @@ const getActionTextByStatus = (status) => {
       return 'Edit & Relock'
     default:
       return 'Manage Pageant'
+  }
+}
+
+// Get tooltip text for tabs
+const getTabTooltip = (tabValue) => {
+  switch (tabValue) {
+    case 'total':
+      return 'View all pageants assigned to you'
+    case 'draft':
+      return 'Pageants still being planned and configured'
+    case 'setup':
+      return 'Pageants ready for contestants and judges assignment'
+    case 'active':
+      return 'Currently running pageants with ongoing scoring'
+    case 'completed':
+      return 'Finished pageants with final results'
+    case 'unlocked_for_edit':
+      return 'Completed pageants temporarily unlocked for editing'
+    default:
+      return 'Filter pageants by status'
+  }
+}
+
+// Get tooltip text for status badges
+const getStatusTooltip = (status) => {
+  switch (status) {
+    case 'Draft':
+      return 'This pageant is still being planned. Add contestants, criteria, and schedule events to progress.'
+    case 'Setup':
+      return 'Pageant configuration is complete. Ready for contestant registration and judge assignments.'
+    case 'Active':
+      return 'This pageant is currently running. Judges are scoring and results are being tabulated live.'
+    case 'Completed':
+      return 'This pageant has finished and final results have been calculated and announced.'
+    case 'Unlocked_For_Edit':
+      return 'This completed pageant has been temporarily unlocked to allow corrections or updates.'
+    default:
+      return 'Pageant status information'
   }
 }
 

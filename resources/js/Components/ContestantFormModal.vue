@@ -43,14 +43,19 @@
                   <!-- Left Column -->
                   <div class="space-y-6">
                     <div>
-                      <label for="contestantNumber" class="block text-sm font-medium text-gray-700 mb-1">
-                        Contestant Number <span class="text-red-500">*</span>
-                      </label>
+                      <div class="flex items-center mb-1">
+                        <label for="contestantNumber" class="block text-sm font-medium text-gray-700">
+                          Contestant Number <span class="text-red-500">*</span>
+                        </label>
+                        <Tooltip text="This number will be used for identification during the pageant. Should be unique and easy to remember." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
                       <input
                         id="contestantNumber"
                         v-model="form.number"
                         type="number"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.number }"
                         placeholder="e.g. 1"
                         required
@@ -60,14 +65,19 @@
                     </div>
 
                     <div>
-                      <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                        Full Name <span class="text-red-500">*</span>
-                      </label>
+                      <div class="flex items-center mb-1">
+                        <label for="name" class="block text-sm font-medium text-gray-700">
+                          Full Name <span class="text-red-500">*</span>
+                        </label>
+                        <Tooltip text="Enter the contestant's complete legal name as it should appear in official documents and announcements." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
                       <input
                         id="name"
                         v-model="form.name"
                         type="text"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.name }"
                         placeholder="e.g. Jane Smith"
                         required
@@ -77,14 +87,19 @@
                     </div>
 
                     <div>
-                      <label for="age" class="block text-sm font-medium text-gray-700 mb-1">
-                        Age
-                      </label>
+                      <div class="flex items-center mb-1">
+                        <label for="age" class="block text-sm font-medium text-gray-700">
+                          Age
+                        </label>
+                        <Tooltip text="Age may be required for certain pageant categories and eligibility verification. Leave blank if not applicable." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
                       <input
                         id="age"
                         v-model="form.age"
                         type="number"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.age }"
                         placeholder="e.g. 24"
                       />
@@ -93,14 +108,19 @@
                     </div>
 
                     <div>
-                      <label for="origin" class="block text-sm font-medium text-gray-700 mb-1">
-                        Origin/Location
-                      </label>
+                      <div class="flex items-center mb-1">
+                        <label for="origin" class="block text-sm font-medium text-gray-700">
+                          Origin/Location
+                        </label>
+                        <Tooltip text="The city, state, or country the contestant represents. This will be displayed during introductions and announcements." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
                       <input
                         id="origin"
                         v-model="form.origin"
                         type="text"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.origin }"
                         placeholder="e.g. New York, USA"
                       />
@@ -112,14 +132,19 @@
                   <!-- Right Column -->
                   <div class="space-y-6">
                     <div>
-                      <label for="bio" class="block text-sm font-medium text-gray-700 mb-1">
-                        Biography
-                      </label>
+                      <div class="flex items-center mb-1">
+                        <label for="bio" class="block text-sm font-medium text-gray-700">
+                          Biography
+                        </label>
+                        <Tooltip text="A brief description of the contestant's background, achievements, interests, and what makes them unique. This may be read during the pageant." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
                       <textarea
                         id="bio"
                         v-model="form.bio"
                         rows="4"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.bio }"
                         placeholder="Share the contestant's background, achievements, interests..."
                       ></textarea>
@@ -128,30 +153,37 @@
                     </div>
 
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Contestant Photos
-                      </label>
-                      <div class="flex flex-col w-full">
-                        <label
-                          class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-purple-400 hover:bg-purple-50 transition-colors cursor-pointer"
-                        >
-                          <div class="flex flex-col items-center justify-center pt-7">
-                            <Camera class="w-8 h-8 text-purple-400 group-hover:text-purple-600" />
-                            <p class="pt-1 text-sm tracking-wider text-gray-600 group-hover:text-gray-600">
-                              {{ imageFiles.length > 0 ? `${imageFiles.length} file(s) selected` : 'Add photos' }}
-                            </p>
-                            <p class="text-xs text-gray-500 mt-1">
-                              Drag & drop files here or click to browse
-                            </p>
-                          </div>
-                          <input
-                            type="file"
-                            class="opacity-0 absolute"
-                            multiple
-                            accept="image/*"
-                            @change="handleImagesChange"
-                          />
+                      <div class="flex items-center mb-1">
+                        <label class="block text-sm font-medium text-gray-700">
+                          Contestant Photos
                         </label>
+                        <Tooltip text="Upload high-quality photos of the contestant. The first photo will be used as the main profile image. Multiple photos will be displayed in a gallery view." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
+                      <div class="flex flex-col w-full">
+                        <Tooltip text="Click to browse or drag and drop multiple image files. Supported formats: JPG, PNG, GIF" position="bottom">
+                          <label
+                            class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer transform hover:scale-[1.02]"
+                          >
+                            <div class="flex flex-col items-center justify-center pt-7">
+                              <Camera class="w-8 h-8 text-purple-400 group-hover:text-purple-600 transition-colors" />
+                              <p class="pt-1 text-sm tracking-wider text-gray-600 group-hover:text-gray-600">
+                                {{ imageFiles.length > 0 ? `${imageFiles.length} file(s) selected` : 'Add photos' }}
+                              </p>
+                              <p class="text-xs text-gray-500 mt-1">
+                                Drag & drop files here or click to browse
+                              </p>
+                            </div>
+                            <input
+                              type="file"
+                              class="opacity-0 absolute"
+                              multiple
+                              accept="image/*"
+                              @change="handleImagesChange"
+                            />
+                          </label>
+                        </Tooltip>
                       </div>
                       <p v-if="errors.images" class="mt-1 text-sm text-red-500">{{ errors.images }}</p>
                       <p v-else class="mt-1 text-xs text-gray-500">Upload contestant photos. First photo will be the primary image</p>
@@ -161,14 +193,16 @@
                     <div v-if="imageFiles.length > 0 || imagePreviewUrls.length > 0">
                       <div class="flex items-center justify-between mb-2">
                         <p class="text-sm font-medium text-gray-700">Image Previews:</p>
-                        <button
-                          v-if="imagePreviewUrls.length > 0"
-                          type="button"
-                          @click="clearAllImages"
-                          class="text-xs text-red-500 hover:text-red-700 transition-colors"
-                        >
-                          Clear all
-                        </button>
+                        <Tooltip text="Remove all uploaded photos" position="left">
+                          <button
+                            v-if="imagePreviewUrls.length > 0"
+                            type="button"
+                            @click="clearAllImages"
+                            class="text-xs text-red-500 hover:text-red-700 transition-colors hover:underline"
+                          >
+                            Clear all
+                          </button>
+                        </Tooltip>
                       </div>
                       <div class="grid grid-cols-3 gap-3">
                         <div 
@@ -180,13 +214,15 @@
                           <div 
                             class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                           >
-                            <button 
-                              type="button" 
-                              @click="removeImagePreview(index)" 
-                              class="text-white hover:text-red-400 transition-colors"
-                            >
-                              <XCircle class="h-6 w-6" />
-                            </button>
+                            <Tooltip text="Remove this photo" position="top">
+                              <button 
+                                type="button" 
+                                @click="removeImagePreview(index)" 
+                                class="text-white hover:text-red-400 transition-all transform hover:scale-110"
+                              >
+                                <XCircle class="h-6 w-6" />
+                              </button>
+                            </Tooltip>
                           </div>
                           <!-- Primary indicator -->
                           <div v-if="index === 0" class="absolute top-1 right-1 bg-purple-600 rounded-full px-1.5 py-0.5 text-white text-2xs">
@@ -232,7 +268,8 @@
 <script setup>
 import { ref, reactive, watch, computed, onMounted } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
-import { XCircle, Camera, Loader2 } from 'lucide-vue-next'
+import { XCircle, Camera, Loader2, HelpCircle } from 'lucide-vue-next'
+import Tooltip from '@/Components/Tooltip.vue'
 import axios from 'axios'
 
 const props = defineProps({

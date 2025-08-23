@@ -94,10 +94,12 @@
                 </div>
               </div>
               <div class="flex items-center space-x-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                      :class="getStatusClass(pageant.status)">
-                  {{ pageant.status }}
-                </span>
+                <Tooltip :text="getPageantStatusTooltip(pageant.status)" position="left">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium hover:shadow-md transition-shadow cursor-help"
+                        :class="getStatusClass(pageant.status)">
+                    {{ pageant.status }}
+                  </span>
+                </Tooltip>
                 <ChevronRight class="h-5 w-5 text-gray-400" />
               </div>
             </div>
@@ -105,9 +107,11 @@
         </div>
         
         <div class="border-t border-gray-100 bg-gray-50 px-4 py-3 rounded-b-lg">
-          <Link :href="route('organizer.my-pageants')" class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center">
-            View all pageants <ChevronRight class="h-4 w-4 ml-1" />
-          </Link>
+          <Tooltip text="Go to pageants management page" position="top">
+            <Link :href="route('organizer.my-pageants')" class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center transition-all transform hover:translate-x-1">
+              View all pageants <ChevronRight class="h-4 w-4 ml-1" />
+            </Link>
+          </Tooltip>
         </div>
       </div>
 
@@ -121,37 +125,45 @@
         </div>
         
         <div class="p-4 space-y-2">
-          <Link :href="route('organizer.my-pageants')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-colors border border-gray-100">
-            <Crown class="h-5 w-5 text-orange-500 mr-3" />
-            <div>
-              <div class="text-sm font-medium text-gray-900">My Pageants</div>
-              <div class="text-xs text-gray-500">View all pageants assigned to you</div>
-            </div>
-          </Link>
+          <Tooltip text="View and manage all your assigned pageants" position="right">
+            <Link :href="route('organizer.my-pageants')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-all border border-gray-100 transform hover:-translate-y-0.5 hover:shadow-md">
+              <Crown class="h-5 w-5 text-orange-500 mr-3" />
+              <div>
+                <div class="text-sm font-medium text-gray-900">My Pageants</div>
+                <div class="text-xs text-gray-500">View all pageants assigned to you</div>
+              </div>
+            </Link>
+          </Tooltip>
           
-          <Link :href="route('organizer.contestants')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-colors border border-gray-100">
-            <UserPlus class="h-5 w-5 text-orange-500 mr-3" />
-            <div>
-              <div class="text-sm font-medium text-gray-900">Manage Contestants</div>
-              <div class="text-xs text-gray-500">Register new pageant participants</div>
-            </div>
-          </Link>
+          <Tooltip text="Add and manage contestants for your pageants" position="right">
+            <Link :href="route('organizer.contestants')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-all border border-gray-100 transform hover:-translate-y-0.5 hover:shadow-md">
+              <UserPlus class="h-5 w-5 text-orange-500 mr-3" />
+              <div>
+                <div class="text-sm font-medium text-gray-900">Manage Contestants</div>
+                <div class="text-xs text-gray-500">Register new pageant participants</div>
+              </div>
+            </Link>
+          </Tooltip>
           
-          <Link :href="route('organizer.criteria')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-colors border border-gray-100">
-            <ListChecks class="h-5 w-5 text-orange-500 mr-3" />
-            <div>
-              <div class="text-sm font-medium text-gray-900">Configure Criteria</div>
-              <div class="text-xs text-gray-500">Set up judging criteria and weights</div>
-            </div>
-          </Link>
+          <Tooltip text="Set up scoring criteria and weight distributions" position="right">
+            <Link :href="route('organizer.criteria')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-all border border-gray-100 transform hover:-translate-y-0.5 hover:shadow-md">
+              <ListChecks class="h-5 w-5 text-orange-500 mr-3" />
+              <div>
+                <div class="text-sm font-medium text-gray-900">Configure Criteria</div>
+                <div class="text-xs text-gray-500">Set up judging criteria and weights</div>
+              </div>
+            </Link>
+          </Tooltip>
           
-          <Link :href="route('organizer.scoring')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-colors border border-gray-100">
-            <BarChart2 class="h-5 w-5 text-orange-500 mr-3" />
-            <div>
-              <div class="text-sm font-medium text-gray-900">Scoring System</div>
-              <div class="text-xs text-gray-500">Configure scoring methodology</div>
-            </div>
-          </Link>
+          <Tooltip text="Choose and configure your pageant's scoring methodology" position="right">
+            <Link :href="route('organizer.scoring')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-all border border-gray-100 transform hover:-translate-y-0.5 hover:shadow-md">
+              <BarChart2 class="h-5 w-5 text-orange-500 mr-3" />
+              <div>
+                <div class="text-sm font-medium text-gray-900">Scoring System</div>
+                <div class="text-xs text-gray-500">Configure scoring methodology</div>
+              </div>
+            </Link>
+          </Tooltip>
         </div>
       </div>
     </div>
@@ -233,9 +245,11 @@
       </div>
       
       <div v-if="upcomingEvents && upcomingEvents.length > 0" class="border-t border-gray-100 bg-gray-50 px-4 py-3 rounded-b-lg">
-        <Link :href="route('organizer.timeline')" class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center">
-          View all events <ChevronRight class="h-4 w-4 ml-1" />
-        </Link>
+        <Tooltip text="View complete timeline of all pageant events" position="top">
+          <Link :href="route('organizer.timeline')" class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center transition-all transform hover:translate-x-1">
+            View all events <ChevronRight class="h-4 w-4 ml-1" />
+          </Link>
+        </Tooltip>
       </div>
     </div>
 
@@ -255,6 +269,7 @@ import { router } from '@inertiajs/vue3'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import '@/Components/skeletons/skeleton.css'
 import OrganizerSettingsModal from '@/Components/modals/OrganizerSettingsModal.vue'
+import Tooltip from '@/Components/Tooltip.vue'
 import { 
   Calendar, MapPin, Users, ChevronRight, 
   UserPlus, ListChecks, BarChart2, Settings,
@@ -372,6 +387,24 @@ const viewPageant = (pageant) => {
 // Navigate to event's pageant
 const viewEventPageant = (event) => {
   router.visit(route('organizer.pageant.view', { id: event.pageant_id }))
+}
+
+// Get tooltip text for pageant status badges
+const getPageantStatusTooltip = (status) => {
+  switch (status) {
+    case 'Draft':
+      return 'In planning phase - add contestants, criteria, and events'
+    case 'Setup':
+      return 'Ready for contestant registration and judge assignments'
+    case 'Active':
+      return 'Currently running with live scoring in progress'
+    case 'Completed':
+      return 'Finished with final results available'
+    case 'Unlocked_For_Edit':
+      return 'Temporarily unlocked for editing'
+    default:
+      return 'Current pageant status'
+  }
 }
 
 // Settings modal functions
