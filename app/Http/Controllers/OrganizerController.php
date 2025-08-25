@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Contestant;
 use App\Models\User;
 use App\Models\Pageant;
-use App\Models\Event;
-use App\Events\EventUpdated;
+
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -232,6 +232,7 @@ class OrganizerController extends Controller
         
         // Get counts by status
         $pageantsByStatus = [
+            'pending_approval' => Pageant::whereIn('id', $pageantIds)->where('status', 'Pending_Approval')->count(),
             'active' => Pageant::whereIn('id', $pageantIds)->where('status', 'Active')->count(),
             'draft' => Pageant::whereIn('id', $pageantIds)->where('status', 'Draft')->count(),
             'setup' => Pageant::whereIn('id', $pageantIds)->where('status', 'Setup')->count(),
@@ -256,49 +257,13 @@ class OrganizerController extends Controller
                 ];
             });
             
-        // Get upcoming events
-        $upcomingEvents = Event::whereIn('pageant_id', $pageantIds)
-            ->where('status', '!=', 'Completed')
-            ->where('status', '!=', 'Cancelled')
-            ->where('start_datetime', '>', now())
-            ->orderBy('start_datetime')
-            ->limit(5)
-            ->get()
-            ->map(function ($event) {
-                // Get the associated pageant name
-                $pageantName = $event->pageant ? $event->pageant->name : 'Unknown Pageant';
-                
-                // Format dates to a consistent string format
-                $startDateTime = $event->start_datetime ? $event->start_datetime->format('Y-m-d H:i:s') : null;
-                $endDateTime = $event->end_datetime ? $event->end_datetime->format('Y-m-d H:i:s') : null;
-                
-                // Format for display
-                $startDateTimeFormatted = $startDateTime ? date('M d, Y h:i A', strtotime($startDateTime)) : null;
-                $endDateTimeFormatted = $endDateTime ? date('M d, Y h:i A', strtotime($endDateTime)) : null;
-                
-                return [
-                    'id' => $event->id,
-                    'pageant_id' => $event->pageant_id,
-                    'pageant_name' => $pageantName,
-                    'name' => $event->name,
-                    'description' => $event->description,
-                    'type' => $event->type ?? 'General',
-                    'start_datetime' => $startDateTimeFormatted,
-                    'end_datetime' => $endDateTimeFormatted,
-                    'raw_start_datetime' => $startDateTime,
-                    'raw_end_datetime' => $endDateTime,
-                    'venue' => $event->venue,
-                    'location' => $event->location,
-                    'status' => $event->status ?? 'Pending',
-                    'is_milestone' => $event->is_milestone ?? false,
-                ];
-            });
+
 
         return Inertia::render('Organizer/Dashboard', [
             'pageantCounts' => $pageantsByStatus,
             'recentPageants' => $recentPageants,
             'totalPageants' => count($pageantIds),
-            'upcomingEvents' => $upcomingEvents,
+
         ]);
     }
 
@@ -309,7 +274,60 @@ class OrganizerController extends Controller
 
     public function contestants()
     {
-        return Inertia::render('Organizer/Contestants');
+        $organizer = Auth::user();
+        
+        // Get pageant IDs that this organizer has access to
+        $pageantIds = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->pluck('pageant_id');
+        
+        // Get contestants only from pageants this organizer manages
+        $contestants = Contestant::with(['pageant:id,name,status,pageant_date'])
+            ->whereIn('pageant_id', $pageantIds)
+            ->where('active', true)
+            ->orderBy('pageant_id')
+            ->orderBy('number')
+            ->get()
+            ->map(function ($contestant) {
+                return [
+                    'id' => $contestant->id,
+                    'name' => $contestant->name,
+                    'number' => $contestant->number,
+                    'age' => $contestant->age,
+                    'origin' => $contestant->origin,
+                    'photo' => $contestant->photo,
+                    'bio' => $contestant->bio,
+                    'pageant' => [
+                        'id' => $contestant->pageant->id,
+                        'name' => $contestant->pageant->name,
+                        'status' => $contestant->pageant->status,
+                        'pageant_date' => $contestant->pageant->pageant_date,
+                    ],
+                    'contestNumber' => $contestant->number, // For compatibility with existing frontend
+                    'city' => $contestant->origin, // For compatibility with existing frontend
+                ];
+            });
+
+        // Group contestants by pageant
+        $contestantsByPageant = $contestants->groupBy('pageant.id');
+        
+        // Get pageant summaries
+        $pageantSummaries = $contestantsByPageant->map(function ($contestants, $pageantId) {
+            $firstContestant = $contestants->first();
+            return [
+                'id' => $pageantId,
+                'name' => $firstContestant['pageant']['name'],
+                'status' => $firstContestant['pageant']['status'],
+                'pageant_date' => $firstContestant['pageant']['pageant_date'],
+                'contestant_count' => $contestants->count(),
+            ];
+        })->values();
+        
+        return Inertia::render('Organizer/Contestants', [
+            'Contestants' => $contestants->values(),
+            'PageantSummaries' => $pageantSummaries,
+            'TotalContestants' => $contestants->count(),
+        ]);
     }
 
     public function scoring()
@@ -331,44 +349,15 @@ class OrganizerController extends Controller
                 ->where('user_id', $organizer->id)
                 ->pluck('pageant_id');
             
-            // Get all pageants with their events
+            // Get all pageants
             $pageants = Pageant::whereIn('id', $pageantIds)
-                ->with(['events' => function($query) {
-                    $query->orderBy('start_datetime');
-                }])
-                ->orderBy('start_date')
+                ->orderBy('pageant_date')
                 ->get()
                 ->map(function ($pageant) {
                     // Format dates for display
                     $startDate = $pageant->start_date ? $pageant->start_date->format('M d, Y') : null;
                     $endDate = $pageant->end_date ? $pageant->end_date->format('M d, Y') : null;
-                    
-                    // Get events formatted for display
-                    $events = $pageant->events->map(function ($event) {
-                        // Format dates to a consistent string format
-                        $startDateTime = $event->start_datetime ? $event->start_datetime->format('Y-m-d H:i:s') : null;
-                        $endDateTime = $event->end_datetime ? $event->end_datetime->format('Y-m-d H:i:s') : null;
-                        
-                        // Format for display
-                        $startDateTimeFormatted = $startDateTime ? date('M d, Y h:i A', strtotime($startDateTime)) : null;
-                        $endDateTimeFormatted = $endDateTime ? date('M d, Y h:i A', strtotime($endDateTime)) : null;
-                        
-                        return [
-                            'id' => $event->id,
-                            'name' => $event->name,
-                            'description' => $event->description,
-                            'type' => $event->type ?? 'General',
-                            'start_datetime' => $startDateTimeFormatted,
-                            'end_datetime' => $endDateTimeFormatted,
-                            'raw_start_datetime' => $startDateTime,
-                            'raw_end_datetime' => $endDateTime,
-                            'venue' => $event->venue,
-                            'location' => $event->location,
-                            'status' => $event->status ?? 'Pending',
-                            'is_milestone' => $event->is_milestone ?? false,
-                            'display_order' => $event->display_order ?? 0,
-                        ];
-                    });
+                    $pageantDate = $pageant->pageant_date ? $pageant->pageant_date->format('M d, Y') : null;
                     
                     // Calculate progress
                     $progress = $pageant->calculateProgress();
@@ -380,13 +369,11 @@ class OrganizerController extends Controller
                         'status' => $pageant->status,
                         'start_date' => $startDate,
                         'end_date' => $endDate,
+                        'pageant_date' => $pageantDate,
                         'venue' => $pageant->venue,
                         'location' => $pageant->location,
                         'progress' => $progress,
                         'cover_image' => $pageant->cover_image,
-                        'events' => $events,
-                        'events_count' => $events->count(),
-                        'completed_events_count' => $events->where('status', 'Completed')->count(),
                     ];
                 });
             
@@ -424,42 +411,14 @@ class OrganizerController extends Controller
                     ->with('error', 'You do not have access to this pageant');
             }
             
-            // Get the pageant details with events
-            $pageant = Pageant::with(['events' => function($query) {
-                    $query->orderBy('start_datetime');
-                }])
-                ->findOrFail($id);
+                    // Get the pageant details
+        $pageant = Pageant::findOrFail($id);
             
             // Format dates for display
             $startDate = $pageant->start_date ? $pageant->start_date->format('M d, Y') : null;
             $endDate = $pageant->end_date ? $pageant->end_date->format('M d, Y') : null;
             
-            // Get events formatted for display
-            $events = $pageant->events->map(function ($event) {
-                // Format dates to a consistent string format
-                $startDateTime = $event->start_datetime ? $event->start_datetime->format('Y-m-d H:i:s') : null;
-                $endDateTime = $event->end_datetime ? $event->end_datetime->format('Y-m-d H:i:s') : null;
-                
-                // Format for display
-                $startDateTimeFormatted = $startDateTime ? date('M d, Y h:i A', strtotime($startDateTime)) : null;
-                $endDateTimeFormatted = $endDateTime ? date('M d, Y h:i A', strtotime($endDateTime)) : null;
-                
-                return [
-                    'id' => $event->id,
-                    'name' => $event->name,
-                    'description' => $event->description,
-                    'type' => $event->type ?? 'General',
-                    'start_datetime' => $startDateTimeFormatted,
-                    'end_datetime' => $endDateTimeFormatted,
-                    'raw_start_datetime' => $startDateTime,
-                    'raw_end_datetime' => $endDateTime,
-                    'venue' => $event->venue,
-                    'location' => $event->location,
-                    'status' => $event->status ?? 'Pending',
-                    'is_milestone' => $event->is_milestone ?? false,
-                    'display_order' => $event->display_order ?? 0,
-                ];
-            });
+            // Events have been removed from the system
             
             // Calculate progress
             $progress = $pageant->calculateProgress();
@@ -475,9 +434,9 @@ class OrganizerController extends Controller
                 'location' => $pageant->location,
                 'progress' => $progress,
                 'cover_image' => $pageant->cover_image,
-                'events' => $events,
-                'events_count' => $events->count(),
-                'completed_events_count' => $events->where('status', 'Completed')->count(),
+                'events' => [],
+                'events_count' => 0,
+                'completed_events_count' => 0,
             ];
             
             return Inertia::render('Organizer/PageantTimeline', [
@@ -563,8 +522,7 @@ class OrganizerController extends Controller
                 'criteria',
                 'judges',
                 'tabulators',
-                'organizers',
-                'events'
+                'organizers'
             ])
             ->findOrFail($id);
             
@@ -633,28 +591,15 @@ class OrganizerController extends Controller
                     'active' => $tabulator->pivot->active,
                 ];
             }),
-            'events' => $pageant->events->map(function($event) {
-                return [
-                    'id' => $event->id,
-                    'name' => $event->name,
-                    'description' => $event->description,
-                    'type' => $event->type,
-                    'start_datetime' => $event->start_datetime?->format('M d, Y h:i A'),
-                    'end_datetime' => $event->end_datetime?->format('M d, Y h:i A'),
-                    'raw_start_datetime' => $event->start_datetime,
-                    'raw_end_datetime' => $event->end_datetime,
-                    'venue' => $event->venue,
-                    'location' => $event->location,
-                    'status' => $event->status,
-                    'is_milestone' => $event->is_milestone,
-                    'display_order' => $event->display_order,
-                ];
-            }),
+            'events' => [], // Events functionality has been removed
         ];
         
         return Inertia::render('Organizer/PageantView', [
             'pageant' => $pageantData,
             'availableTabulators' => $availableTabulators,
+            'auth' => [
+                'user' => Auth::user()
+            ],
         ]);
     }
 
@@ -688,8 +633,7 @@ class OrganizerController extends Controller
                 'criteria',
                 'judges',
                 'tabulators',
-                'organizers',
-                'events'
+                'organizers'
             ])
             ->findOrFail($id);
             
@@ -758,21 +702,7 @@ class OrganizerController extends Controller
                     'active' => $tabulator->pivot->active,
                 ];
             }),
-            'events' => $pageant->events->map(function($event) {
-                return [
-                    'id' => $event->id,
-                    'name' => $event->name,
-                    'description' => $event->description,
-                    'type' => $event->type,
-                    'start_datetime' => $event->start_datetime,
-                    'end_datetime' => $event->end_datetime,
-                    'venue' => $event->venue,
-                    'location' => $event->location,
-                    'status' => $event->status,
-                    'is_milestone' => $event->is_milestone,
-                    'display_order' => $event->display_order,
-                ];
-            }),
+            'events' => [], // Events functionality has been removed
         ];
         
         return Inertia::render('Organizer/PageantEdit', [
@@ -852,270 +782,9 @@ class OrganizerController extends Controller
             ->with('success', 'Pageant updated successfully');
     }
     
-    public function storeEvent(Request $request, $id)
-    {
-        // Get the currently logged in organizer
-        $organizer = Auth::user();
-        
-        // Check if this organizer has access to this pageant
-        $hasAccess = DB::table('pageant_organizers')
-            ->where('user_id', $organizer->id)
-            ->where('pageant_id', $id)
-            ->exists();
-            
-        if (!$hasAccess) {
-            return redirect()->route('organizer.my-pageants')
-                ->with('error', 'You do not have access to this pageant');
-        }
-        
-        // Find the pageant
-        $pageant = Pageant::findOrFail($id);
-        
-        // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
-            return redirect()->route('organizer.pageant.view', $id)
-                ->with('error', 'This pageant cannot be edited in its current status');
-        }
-        
-        // Validate request
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'required|string|max:50',
-            'start_datetime' => 'required|date',
-            'end_datetime' => 'required|date|after_or_equal:start_datetime',
-            'venue' => 'nullable|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'is_milestone' => 'boolean',
-        ]);
-        
-        // Set status and display order
-        $validated['status'] = 'Pending';
-        $validated['pageant_id'] = $id;
-        $validated['display_order'] = $pageant->events()->max('display_order') + 1;
-        
-        // Create the event
-        $event = Event::create($validated);
-        
-        // Log the action
-        $this->auditLogService->log(
-            'EVENT_CREATED',
-            'Event',
-            $event->id,
-            "Created event '{$event->name}' for pageant '{$pageant->name}'"
-        );
-        
-        // Broadcast event creation notification to admin
-        try {
-            broadcast(new EventUpdated([
-                'type' => 'event_created',
-                'pageant_id' => $pageant->id,
-                'pageant_name' => $pageant->name,
-                'event_id' => $event->id,
-                'event_name' => $event->name,
-                'organizer_name' => $organizer->name,
-                'is_milestone' => $event->is_milestone,
-                'message' => "New event '{$event->name}' created for pageant '{$pageant->name}' by {$organizer->name}",
-                'timestamp' => now()->toIso8601String()
-            ]))->toOthers();
-        } catch (\Exception $e) {
-            // Log the error but don't fail the request
-            Log::error('Failed to broadcast event notification: ' . $e->getMessage());
-        }
-        
-        // Update pageant progress
-        $this->updatePageantProgress($pageant);
-        
-        return redirect()->route('organizer.pageant.view', $id)
-            ->with('success', 'Event created successfully');
-    }
+
+
     
-    public function updateEvent(Request $request, $id, $eventId)
-    {
-        // Get the currently logged in organizer
-        $organizer = Auth::user();
-        
-        // Check if this organizer has access to this pageant
-        $hasAccess = DB::table('pageant_organizers')
-            ->where('user_id', $organizer->id)
-            ->where('pageant_id', $id)
-            ->exists();
-            
-        if (!$hasAccess) {
-            return redirect()->route('organizer.my-pageants')
-                ->with('error', 'You do not have access to this pageant');
-        }
-        
-        // Find the pageant
-        $pageant = Pageant::findOrFail($id);
-        
-        // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
-            return redirect()->route('organizer.pageant.view', $id)
-                ->with('error', 'This pageant cannot be edited in its current status');
-        }
-        
-        // Find the event and make sure it belongs to this pageant
-        $event = Event::where('id', $eventId)
-            ->where('pageant_id', $id)
-            ->firstOrFail();
-        
-        // Store original status to check for changes
-        $originalStatus = $event->status;
-        
-        // Validate request
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'required|string|max:50',
-            'start_datetime' => 'required|date',
-            'end_datetime' => 'required|date|after_or_equal:start_datetime',
-            'venue' => 'nullable|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'status' => 'required|string|in:Pending,In Progress,Completed,Cancelled',
-            'is_milestone' => 'boolean',
-            'display_order' => 'integer',
-        ]);
-        
-        // Update the event
-        $event->update($validated);
-        
-        // Log the action
-        $this->auditLogService->log(
-            'EVENT_UPDATED',
-            'Event',
-            $event->id,
-            "Updated event '{$event->name}' for pageant '{$pageant->name}'"
-        );
-        
-        // Broadcast event update notification to admin, with special notice for status changes
-        $notificationType = 'event_updated';
-        $notificationMessage = "Event '{$event->name}' updated for pageant '{$pageant->name}' by {$organizer->name}";
-        
-        // If status changed, make a more specific notification
-        if ($originalStatus !== $event->status) {
-            $notificationType = 'event_status_changed';
-            $notificationMessage = "Event '{$event->name}' status changed from '{$originalStatus}' to '{$event->status}' for pageant '{$pageant->name}'";
-        }
-        
-        try {
-            broadcast(new EventUpdated([
-                'type' => $notificationType,
-                'pageant_id' => $pageant->id,
-                'pageant_name' => $pageant->name,
-                'event_id' => $event->id,
-                'event_name' => $event->name,
-                'organizer_name' => $organizer->name,
-                'is_milestone' => $event->is_milestone,
-                'status' => $event->status,
-                'previous_status' => $originalStatus,
-                'message' => $notificationMessage,
-                'timestamp' => now()->toIso8601String()
-            ]))->toOthers();
-        } catch (\Exception $e) {
-            // Log the error but don't fail the request
-            Log::error('Failed to broadcast event notification: ' . $e->getMessage());
-        }
-        
-        // Update pageant progress if event status changed
-        if ($originalStatus !== $event->status) {
-            $this->updatePageantProgress($pageant);
-        }
-        
-        return redirect()->route('organizer.pageant.view', $id)
-            ->with('success', 'Event updated successfully');
-    }
-    
-    public function deleteEvent($id, $eventId)
-    {
-        // Get the currently logged in organizer
-        $organizer = Auth::user();
-        
-        // Check if this organizer has access to this pageant
-        $hasAccess = DB::table('pageant_organizers')
-            ->where('user_id', $organizer->id)
-            ->where('pageant_id', $id)
-            ->exists();
-            
-        if (!$hasAccess) {
-            return redirect()->route('organizer.my-pageants')
-                ->with('error', 'You do not have access to this pageant');
-        }
-        
-        // Find the pageant
-        $pageant = Pageant::findOrFail($id);
-        
-        // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
-            return redirect()->route('organizer.pageant.view', $id)
-                ->with('error', 'This pageant cannot be edited in its current status');
-        }
-        
-        // Find the event and make sure it belongs to this pageant
-        $event = Event::where('id', $eventId)
-            ->where('pageant_id', $id)
-            ->firstOrFail();
-        
-        // Get event name for the log
-        $eventName = $event->name;
-        $isMilestone = $event->is_milestone;
-        
-        // Delete the event
-        $event->delete();
-        
-        // Log the action
-        $this->auditLogService->log(
-            'EVENT_DELETED',
-            'Event',
-            $eventId,
-            "Deleted event '{$eventName}' from pageant '{$pageant->name}'"
-        );
-        
-        // Broadcast event deletion notification to admin
-        try {
-            broadcast(new EventUpdated([
-                'type' => 'event_deleted',
-                'pageant_id' => $pageant->id,
-                'pageant_name' => $pageant->name,
-                'event_id' => $eventId,
-                'event_name' => $eventName,
-                'organizer_name' => $organizer->name,
-                'is_milestone' => $isMilestone,
-                'message' => "Event '{$eventName}' deleted from pageant '{$pageant->name}' by {$organizer->name}",
-                'timestamp' => now()->toIso8601String()
-            ]))->toOthers();
-        } catch (\Exception $e) {
-            // Log the error but don't fail the request
-            Log::error('Failed to broadcast event notification: ' . $e->getMessage());
-        }
-        
-        // Update pageant progress
-        $this->updatePageantProgress($pageant);
-        
-        return redirect()->route('organizer.pageant.view', $id)
-            ->with('success', 'Event deleted successfully');
-    }
-    
-    /**
-     * Update the progress of a pageant based on event completion
-     */
-    private function updatePageantProgress(Pageant $pageant)
-    {
-        // Get count of all events
-        $totalEvents = $pageant->events()->count();
-        
-        if ($totalEvents > 0) {
-            // Count completed events
-            $completedEvents = $pageant->events()->where('status', 'Completed')->count();
-            
-            // Calculate progress percentage
-            $progress = round(($completedEvents / $totalEvents) * 100);
-            
-            // Update pageant progress
-            $pageant->progress = $progress;
-            $pageant->save();
-        }
-    }
 
     /**
      * Update the number of required judges for a pageant
@@ -1463,5 +1132,318 @@ class OrganizerController extends Controller
             'pageantId' => $pageant->id,
             'availableTabulators' => $availableTabulators
         ]);
+    }
+
+    /**
+     * Show the form for creating a new pageant (for organizers)
+     */
+    public function createPageant()
+    {
+        return Inertia::render('Organizer/CreatePageant');
+    }
+    
+    /**
+     * Store a newly created pageant (submitted for approval)
+     */
+    public function storePageant(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after_or_equal:start_date',
+                'venue' => 'nullable|string|max:255',
+                'location' => 'nullable|string|max:255',
+                'scoring_system' => 'required|string|in:percentage,1-10,1-5,points',
+            ]);
+            
+            // Create pageant with Pending_Approval status
+            $pageant = Pageant::create([
+                'name' => $validated['name'],
+                'description' => $validated['description'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'venue' => $validated['venue'],
+                'location' => $validated['location'],
+                'status' => 'Pending_Approval',
+                'created_by' => Auth::id(),
+                'scoring_system' => $validated['scoring_system'],
+            ]);
+            
+            // Attach the organizer who created it
+            $pageant->organizers()->attach(Auth::id());
+            
+            // Log the action
+            $this->auditLogService->log(
+                'PAGEANT_CREATED',
+                'Pageant',
+                $pageant->id,
+                "Created pageant '{$pageant->name}' for approval"
+            );
+            
+            return redirect()->route('organizer.dashboard')
+                ->with('success', "Pageant '{$pageant->name}' has been submitted for approval!");
+            
+        } catch (\Exception $e) {
+            Log::error('Error creating pageant for approval: ' . $e->getMessage());
+            
+            return back()
+                ->withErrors(['error' => 'There was an error submitting your pageant. Please try again.'])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Toggle pageant between draft and final status
+     */
+    public function togglePageantStatus(Request $request, $id)
+    {
+        $organizer = Auth::user();
+        
+        // Check if this organizer has access to this pageant
+        $hasAccess = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->where('pageant_id', $id)
+            ->exists();
+            
+        if (!$hasAccess) {
+            return redirect()->route('organizer.my-pageants')
+                ->with('error', 'You do not have access to this pageant');
+        }
+        
+        $pageant = Pageant::findOrFail($id);
+        $validated = $request->validate([
+            'action' => 'required|in:set_draft,set_final'
+        ]);
+        
+        if ($validated['action'] === 'set_final') {
+            if (!$pageant->isDraft()) {
+                return redirect()->back()
+                    ->with('error', 'Only draft pageants can be finalized');
+            }
+            $pageant->setFinal($organizer->id);
+            $message = 'Pageant has been finalized and locked for editing';
+        } else {
+            if (!($pageant->isSetup() || $pageant->isLocked())) {
+                return redirect()->back()
+                    ->with('error', 'Only setup/locked pageants can be set to draft');
+            }
+            $pageant->setDraft();
+            $message = 'Pageant has been set to draft and unlocked for editing';
+        }
+        
+        // Log the action
+        $this->auditLogService->log(
+            'PAGEANT_STATUS_CHANGED',
+            'Pageant',
+            $pageant->id,
+            "Organizer {$organizer->name} changed pageant '{$pageant->name}' status via toggle: {$validated['action']}"
+        );
+        
+        return redirect()->back()
+            ->with('success', $message);
+    }
+
+    /**
+     * Lock pageant configuration
+     */
+    public function lockPageant(Request $request, $id)
+    {
+        $organizer = Auth::user();
+        
+        // Check if this organizer has access to this pageant
+        $hasAccess = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->where('pageant_id', $id)
+            ->exists();
+            
+        if (!$hasAccess) {
+            return redirect()->route('organizer.my-pageants')
+                ->with('error', 'You do not have access to this pageant');
+        }
+        
+        $pageant = Pageant::findOrFail($id);
+        
+        if ($pageant->isLocked()) {
+            return redirect()->back()
+                ->with('error', 'Pageant is already locked');
+        }
+        
+        if (!in_array($pageant->status, ['Draft', 'Setup'])) {
+            return redirect()->back()
+                ->with('error', 'Only draft or setup pageants can be locked');
+        }
+        
+        $pageant->lockConfiguration($organizer->id);
+        
+        // Log the action
+        $this->auditLogService->log(
+            'PAGEANT_LOCKED',
+            'Pageant',
+            $pageant->id,
+            "Organizer {$organizer->name} locked pageant '{$pageant->name}' configuration"
+        );
+        
+        return redirect()->back()
+            ->with('success', 'Pageant configuration has been locked');
+    }
+
+    /**
+     * Unlock pageant configuration
+     */
+    public function unlockPageant(Request $request, $id)
+    {
+        $organizer = Auth::user();
+        
+        // Check if this organizer has access to this pageant
+        $hasAccess = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->where('pageant_id', $id)
+            ->exists();
+            
+        if (!$hasAccess) {
+            return redirect()->route('organizer.my-pageants')
+                ->with('error', 'You do not have access to this pageant');
+        }
+        
+        $pageant = Pageant::findOrFail($id);
+        
+        if (!$pageant->isLocked()) {
+            return redirect()->back()
+                ->with('error', 'Pageant is not locked');
+        }
+        
+        $pageant->unlockConfiguration();
+        
+        // Log the action
+        $this->auditLogService->log(
+            'PAGEANT_UNLOCKED',
+            'Pageant',
+            $pageant->id,
+            "Organizer {$organizer->name} unlocked pageant '{$pageant->name}' configuration"
+        );
+        
+        return redirect()->back()
+            ->with('success', 'Pageant configuration has been unlocked');
+    }
+
+    /**
+     * Update pageant status (for organizers)
+     */
+    public function updatePageantStatus(Request $request, $id)
+    {
+        $organizer = Auth::user();
+        
+        // Check if this organizer has access to this pageant
+        $hasAccess = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->where('pageant_id', $id)
+            ->exists();
+            
+        if (!$hasAccess) {
+            return redirect()->route('organizer.my-pageants')
+                ->with('error', 'You do not have access to this pageant');
+        }
+        
+        $pageant = Pageant::findOrFail($id);
+        
+        // Validate the status change request
+        $validated = $request->validate([
+            'status' => 'required|in:Draft,Setup,Active,Completed,Unlocked_For_Edit',
+        ]);
+        
+        $newStatus = $validated['status'];
+        $oldStatus = $pageant->status;
+        
+        // Check if pageant date has elapsed and should be auto-completed
+        $pageantDate = $pageant->start_date ? $pageant->start_date->startOfDay() : null;
+        $today = now()->startOfDay();
+        $isDateElapsed = $pageantDate && $pageantDate < $today;
+        
+        // If pageant date has elapsed and it's not completed, suggest completion
+        if ($isDateElapsed && !in_array($oldStatus, ['Completed', 'Unlocked_For_Edit'])) {
+            if ($newStatus !== 'Completed') {
+                return redirect()->back()
+                    ->with('warning', 'This pageant\'s date has elapsed. It should be marked as completed.');
+            }
+        }
+        
+        // Prevent invalid status transitions
+        if ($oldStatus === $newStatus) {
+            return redirect()->back()
+                ->with('error', 'Pageant is already in this status');
+        }
+        
+        // Check if the status transition is allowed
+        if (!$this->isValidStatusTransition($oldStatus, $newStatus)) {
+            $user = Auth::user();
+            $errorMessage = "Cannot change status from {$oldStatus} to {$newStatus}";
+            
+            // Add specific error messages for common issues
+            if ($oldStatus === 'Completed' && $user->role !== 'admin') {
+                $errorMessage .= '. Only administrators can modify completed pageants.';
+            } elseif ($newStatus === 'Unlocked_For_Edit' && $user->role !== 'admin') {
+                $errorMessage .= '. Only administrators can unlock pageants for editing.';
+            }
+            
+            return redirect()->back()
+                ->with('error', $errorMessage);
+        }
+        
+        // Special handling for certain status changes
+        if ($newStatus === 'Setup') {
+            // Moving to Setup should lock the pageant
+            $pageant->lockConfiguration($organizer->id);
+        } elseif ($oldStatus === 'Setup' && $newStatus === 'Draft') {
+            // Moving from Setup back to Draft should unlock
+            $pageant->unlockConfiguration();
+        } else {
+            // Regular status update
+            $pageant->update(['status' => $newStatus]);
+        }
+        
+        // Log the action
+        $this->auditLogService->log(
+            'PAGEANT_STATUS_CHANGED',
+            'Pageant',
+            $pageant->id,
+            "Organizer {$organizer->name} changed pageant '{$pageant->name}' status from '{$oldStatus}' to '{$newStatus}'"
+        );
+        
+        return redirect()->back()
+            ->with('success', "Pageant status changed from '{$oldStatus}' to '{$newStatus}'");
+    }
+    
+    /**
+     * Check if a status transition is valid for organizers
+     */
+    private function isValidStatusTransition($fromStatus, $toStatus)
+    {
+        $user = Auth::user();
+        $isAdmin = $user->role === 'admin';
+        
+        // Base transitions for organizers
+        $allowedTransitions = [
+            'Draft' => ['Setup', 'Active'],
+            'Setup' => ['Draft', 'Active'],
+            'Active' => ['Completed'],
+            'Completed' => [], // Completed pageants cannot be reverted by organizers
+            'Unlocked_For_Edit' => ['Completed'], // Can only go back to completed
+        ];
+        
+        // Only admins can set or modify Unlocked_For_Edit status
+        if ($isAdmin) {
+            $allowedTransitions['Completed'] = ['Unlocked_For_Edit'];
+            // Admins can also transition any status to Unlocked_For_Edit (for emergencies)
+            foreach ($allowedTransitions as $status => $transitions) {
+                if ($status !== 'Unlocked_For_Edit' && !in_array('Unlocked_For_Edit', $transitions)) {
+                    $allowedTransitions[$status][] = 'Unlocked_For_Edit';
+                }
+            }
+        }
+        
+        return isset($allowedTransitions[$fromStatus]) && 
+               in_array($toStatus, $allowedTransitions[$fromStatus]);
     }
 } 

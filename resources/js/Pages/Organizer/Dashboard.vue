@@ -1,27 +1,53 @@
 <template>
-  <div class="space-y-6">
-    <!-- Greeting and Quick Stats -->
-    <div class="bg-white rounded-lg shadow-sm p-5 border border-gray-100">
-      <div class="flex flex-col md:flex-row md:items-center justify-between">
-        <div>
-          <h1 class="text-xl font-semibold text-gray-900">Welcome to Your Dashboard</h1>
-          <p class="mt-1 text-sm text-gray-500">Manage your pageants and track event progress</p>
+  <div class="space-y-4 sm:space-y-6">
+    <!-- Page Header and Quick Links -->
+    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-md overflow-hidden">
+      <div class="p-4 sm:p-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+          <div class="text-white">
+            <h1 class="text-2xl sm:text-3xl font-bold">Organizer Dashboard</h1>
+            <p class="mt-1 text-sm sm:text-base opacity-90">Manage your pageants and track progress</p>
+          </div>
+          <div class="flex flex-wrap gap-2 sm:space-x-3">
+            <div class="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white flex items-center shadow-sm">
+              <Calendar class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-white" />
+              <span>Total: {{ totalPageants }}</span>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white flex items-center shadow-sm">
+              <Activity class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-white" />
+              <span>Active: {{ pageantCounts?.active || 0 }}</span>
+            </div>
+          </div>
         </div>
-        <div class="mt-4 md:mt-0 flex space-x-4">
-          <div class="px-4 py-2 bg-gray-50 border border-gray-100 rounded-md flex items-center">
-            <Calendar class="h-5 w-5 text-orange-500" />
-            <div class="ml-3">
-              <span class="text-xs font-medium text-gray-500">Total Pageants</span>
-              <p class="text-lg font-bold text-gray-900">{{ totalPageants }}</p>
-            </div>
-          </div>
-          <div class="px-4 py-2 bg-gray-50 border border-gray-100 rounded-md flex items-center">
-            <Activity class="h-5 w-5 text-green-500" />
-            <div class="ml-3">
-              <span class="text-xs font-medium text-gray-500">Active</span>
-              <p class="text-lg font-bold text-gray-900">{{ pageantCounts?.active || 0 }}</p>
-            </div>
-          </div>
+      </div>
+      
+      <!-- Quick Links Bar -->
+      <div class="bg-orange-700/30 backdrop-blur-sm px-3 sm:px-6 py-3 sm:py-4">
+        <div class="flex flex-wrap gap-2 sm:gap-3">
+          <Link :href="route('organizer.pageants.create')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white text-orange-700 hover:bg-orange-50 transition-all shadow-sm text-xs sm:text-sm">
+            <Plus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-orange-600" />
+            <span class="font-medium">Create Pageant</span>
+          </Link>
+          
+          <Link :href="route('organizer.my-pageants')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
+            <Crown class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span class="font-medium">My Pageants</span>
+          </Link>
+          
+          <Link :href="route('organizer.contestants')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
+            <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span class="font-medium">Contestants</span>
+          </Link>
+          
+          <Link :href="route('organizer.criteria')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
+            <ListChecks class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span class="font-medium">Criteria</span>
+          </Link>
+          
+          <Link :href="route('organizer.scoring')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
+            <BarChart2 class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span class="font-medium">Scoring</span>
+          </Link>
         </div>
       </div>
     </div>
@@ -172,8 +198,8 @@
     <div class="bg-white shadow-sm rounded-lg border border-gray-100">
       <div class="p-4 border-b border-gray-100">
         <h2 class="text-lg font-semibold text-gray-900 flex items-center">
-          <Clock class="h-5 w-5 mr-2 text-orange-500" />
-          Upcoming Events
+          <Calendar class="h-5 w-5 mr-2 text-orange-500" />
+          Recent Activity
         </h2>
       </div>
       
@@ -189,68 +215,27 @@
         </div>
         
         <div v-else class="relative">
-          <!-- Timeline events -->
-          <div class="relative space-y-8">
-            <div v-if="upcomingEvents && upcomingEvents.length === 0" class="flex items-center justify-center py-12 text-center">
-              <div class="text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-50 mb-4">
-                  <Calendar class="h-8 w-8 text-orange-400" />
-                </div>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No upcoming events</h3>
-                <p class="mt-1 text-sm text-gray-500 max-w-md mx-auto">
-                  Add events to your pageant timelines to keep track of important dates and milestones. Events will appear here based on their start dates.
-                </p>
-                <div class="mt-4">
-                  <Link :href="route('organizer.my-pageants')" class="inline-flex items-center px-4 py-2 bg-orange-100 text-orange-800 border border-orange-200 rounded-md text-sm font-medium hover:bg-orange-200 transition-colors">
-                    <Clock class="h-4 w-4 mr-2" />
-                    Manage Pageant Events
-                  </Link>
-                </div>
+          <div class="flex items-center justify-center py-12 text-center">
+            <div class="text-center">
+              <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-50 mb-4">
+                <Crown class="h-8 w-8 text-orange-400" />
               </div>
-            </div>
-            
-            <div v-for="(event, index) in upcomingEvents" :key="index" 
-                 class="relative pl-10 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
-                 @click="viewEventPageant(event)">
-              <!-- Timeline dot -->
-              <div class="absolute left-0 top-1.5 w-4 h-4 rounded-full border border-orange-500 bg-white"></div>
-              
-              <!-- Event content -->
-              <div>
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h3 class="text-sm font-semibold text-gray-900">{{ event.name }}</h3>
-                    <p class="text-xs font-medium text-orange-600">
-                      <span>{{ event.pageant_name }}</span>
-                    </p>
-                    <p class="text-sm text-gray-500">{{ event.description || 'No description provided' }}</p>
-                    <div class="mt-1 flex items-center text-xs text-gray-500">
-                      <MapPin class="h-3.5 w-3.5 mr-1 text-gray-400" />
-                      <span>{{ event.venue || event.location || 'Location not specified' }}</span>
-                    </div>
-                  </div>
-                  <span class="text-xs font-medium rounded-full px-2.5 py-0.5 bg-gray-100 text-gray-800">
-                    {{ event.start_datetime }}
-                  </span>
-                </div>
-                
-                <div v-if="event.is_milestone" class="mt-2 inline-flex items-center text-xs font-medium text-orange-600">
-                  <Star class="h-3.5 w-3.5 mr-1" />
-                  <span>Milestone Event</span>
-                </div>
+              <h3 class="mt-2 text-sm font-medium text-gray-900">Welcome to Your Dashboard</h3>
+              <p class="mt-1 text-sm text-gray-500 max-w-md mx-auto">
+                Manage your pageants, contestants, and judging criteria from here. Create your first pageant to get started.
+              </p>
+              <div class="mt-4">
+                <Link :href="route('organizer.pageants.create')" class="inline-flex items-center px-4 py-2 bg-orange-100 text-orange-800 border border-orange-200 rounded-md text-sm font-medium hover:bg-orange-200 transition-colors">
+                  <Plus class="h-4 w-4 mr-2" />
+                  Create Pageant
+                </Link>
               </div>
             </div>
           </div>
         </div>
       </div>
       
-      <div v-if="upcomingEvents && upcomingEvents.length > 0" class="border-t border-gray-100 bg-gray-50 px-4 py-3 rounded-b-lg">
-        <Tooltip text="View complete timeline of all pageant events" position="top">
-          <Link :href="route('organizer.timeline')" class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center transition-all transform hover:translate-x-1">
-            View all events <ChevronRight class="h-4 w-4 ml-1" />
-          </Link>
-        </Tooltip>
-      </div>
+
     </div>
 
     <!-- Settings Modal -->
@@ -275,7 +260,7 @@ import {
   UserPlus, ListChecks, BarChart2, Settings,
   Crown, Scale, Timer, CheckCircle, Sparkles, 
   Layers, Zap, Star, Clock, Edit, Activity, 
-  Unlock
+  Unlock, Plus
 } from 'lucide-vue-next'
 
 defineOptions({
@@ -286,7 +271,7 @@ const props = defineProps({
   pageantCounts: Object,
   recentPageants: Array,
   totalPageants: Number,
-  upcomingEvents: Array
+
 })
 
 // State
@@ -295,6 +280,13 @@ const isSettingsModalVisible = ref(false)
 
 // Status cards data
 const statusCards = [
+  { 
+    title: 'Pending', 
+    key: 'pending_approval',
+    icon: Clock, 
+    color: 'bg-white', 
+    textColor: 'text-gray-600' 
+  },
   { 
     title: 'Draft', 
     key: 'draft',
@@ -320,13 +312,6 @@ const statusCards = [
     title: 'Completed', 
     key: 'completed',
     icon: CheckCircle, 
-    color: 'bg-white', 
-    textColor: 'text-gray-600' 
-  },
-  { 
-    title: 'Unlocked', 
-    key: 'unlocked_for_edit',
-    icon: Unlock, 
     color: 'bg-white', 
     textColor: 'text-gray-600' 
   }
@@ -370,6 +355,7 @@ const formatDateTime = (datetime) => {
 // Status styling
 const getStatusClass = (status) => {
   const statusMap = {
+    'Pending_Approval': 'bg-orange-100 text-orange-800',
     'Draft': 'bg-gray-100 text-gray-800',
     'Setup': 'bg-blue-100 text-blue-800',
     'Active': 'bg-green-100 text-green-800',
@@ -384,16 +370,15 @@ const viewPageant = (pageant) => {
   router.visit(route('organizer.pageant.view', { id: pageant.id }))
 }
 
-// Navigate to event's pageant
-const viewEventPageant = (event) => {
-  router.visit(route('organizer.pageant.view', { id: event.pageant_id }))
-}
+
 
 // Get tooltip text for pageant status badges
 const getPageantStatusTooltip = (status) => {
   switch (status) {
+    case 'Pending_Approval':
+      return 'Awaiting admin approval before you can manage this pageant'
     case 'Draft':
-      return 'In planning phase - add contestants, criteria, and events'
+      return 'In planning phase - add contestants and criteria'
     case 'Setup':
       return 'Ready for contestant registration and judge assignments'
     case 'Active':

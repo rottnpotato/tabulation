@@ -4,14 +4,14 @@
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-2xl font-semibold text-gray-900">Score Entries</h2>
         <div class="flex space-x-4">
-          <select
-            v-model="CurrentRound"
-            class="rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-          >
-            <option value="evening_gown">Evening Gown</option>
-            <option value="swimsuit">Swimsuit</option>
-            <option value="qa">Q&A</option>
-          </select>
+          <div class="min-w-[160px]">
+            <CustomSelect
+              v-model="CurrentRound"
+              :options="roundOptions"
+              variant="blue"
+              placeholder="Select Round"
+            />
+          </div>
           <button
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
           >
@@ -89,6 +89,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RefreshCw } from 'lucide-vue-next'
+import CustomSelect from '../../Components/CustomSelect.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 
 defineOptions({
@@ -96,6 +97,12 @@ defineOptions({
 })
 
 const CurrentRound = ref('evening_gown')
+
+const roundOptions = ref([
+  { value: 'evening_gown', label: 'Evening Gown' },
+  { value: 'swimsuit', label: 'Swimsuit' },
+  { value: 'qa', label: 'Q&A' }
+])
 
 const Judges = ref([
   { id: 1, name: 'Judge 1' },

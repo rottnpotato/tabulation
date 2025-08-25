@@ -26,16 +26,46 @@
           <h2 class="text-xl font-semibold text-gray-800 flex items-center">
             <Users class="h-5 w-5 mr-2 text-purple-500" />
             All Contestants 
-            <span class="ml-2 text-gray-500 text-sm font-normal">({{ Contestants.length }})</span>
+            <span class="ml-2 text-gray-500 text-sm font-normal">({{ TotalContestants || 0 }})</span>
           </h2>
           
-          <!-- Search and filter controls - Add later if needed -->
+          <!-- Filter by Pageant -->
+          <div class="flex items-center space-x-4">
+            <div class="min-w-[200px]">
+              <CustomSelect
+                v-model="selectedPageant"
+                :options="pageantOptions"
+                placeholder="All Pageants"
+                variant="purple"
+                @change="filterContestants"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="p-6">
+        <!-- Pageant Summaries -->
+        <div v-if="PageantSummaries && PageantSummaries.length > 0" class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="pageant in PageantSummaries" :key="pageant.id" class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold text-gray-800">{{ pageant.name }}</h3>
+                <p class="text-sm text-gray-600">{{ pageant.contestant_count }} contestants</p>
+              </div>
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getStatusClasses(pageant.status)">
+                {{ formatStatus(pageant.status) }}
+              </span>
+            </div>
+            <div v-if="pageant.pageant_date" class="mt-2 flex items-center text-xs text-gray-500">
+              <Calendar class="h-3 w-3 mr-1" />
+              {{ formatDate(pageant.pageant_date) }}
+            </div>
+          </div>
+        </div>
+
         <!-- No contestants message -->
-        <div v-if="Contestants.length === 0" class="text-center py-12">
+        <div v-if="filteredContestants.length === 0" class="text-center py-12">
           <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-purple-100 to-pink-100 mb-4">
             <Users class="h-12 w-12 text-purple-500" />
           </div>
@@ -53,7 +83,7 @@
         <!-- Contestants Grid -->
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <div 
-            v-for="contestant in Contestants" 
+            v-for="contestant in filteredContestants" 
             :key="contestant.id"
             class="bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group"
             @click="ViewContestantDetails(contestant)"
@@ -111,6 +141,11 @@
                     <Calendar class="h-3.5 w-3.5 mr-1 text-purple-300" />
                     <span>{{ contestant.age }} years</span>
                   </div>
+                </div>
+                <!-- Pageant info -->
+                <div class="mt-2 flex items-center text-xs bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 w-fit">
+                  <Award class="h-3 w-3 mr-1" />
+                  <span class="truncate">{{ contestant.pageant.name }}</span>
                 </div>
               </div>
             </div>
@@ -505,13 +540,21 @@ import {
   Eye, 
   FileText, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  Award
 } from 'lucide-vue-next'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
+import CustomSelect from '@/Components/CustomSelect.vue'
 import { motion } from 'motion-v'
 
 defineOptions({
   layout: OrganizerLayout
+})
+
+const props = defineProps({
+  Contestants: Array,
+  PageantSummaries: Array,
+  TotalContestants: Number,
 })
 
 const ShowAddModal = ref(false)
@@ -520,6 +563,26 @@ const EditingContestant = ref(null)
 const SelectedContestant = ref(null)
 const currentPhotoIndex = ref(0)
 const activePhoto = ref(null)
+const selectedPageant = ref('')
+
+// Create options for pageant filter
+const pageantOptions = computed(() => [
+  { value: '', label: 'All Pageants' },
+  ...props.PageantSummaries?.map(pageant => ({
+    value: pageant.id,
+    label: `${pageant.name} (${pageant.contestant_count})`
+  })) || []
+])
+
+// Filter contestants based on selected pageant
+const filteredContestants = computed(() => {
+  if (!selectedPageant.value) {
+    return props.Contestants || []
+  }
+  return (props.Contestants || []).filter(contestant => 
+    contestant.pageant.id == selectedPageant.value
+  )
+})
 
 const Form = ref({
   name: '',
@@ -679,6 +742,43 @@ const resetForm = () => {
     photos: [], 
     contestNumber: '' 
   }
+}
+
+const filterContestants = () => {
+  // This will trigger the computed property to recalculate
+}
+
+const getStatusClasses = (status) => {
+  const statusMap = {
+    'Draft': 'bg-gray-100 text-gray-800',
+    'Setup': 'bg-blue-100 text-blue-800',
+    'Active': 'bg-green-100 text-green-800',
+    'Completed': 'bg-purple-100 text-purple-800',
+    'Pending_Approval': 'bg-yellow-100 text-yellow-800',
+    'Cancelled': 'bg-red-100 text-red-800',
+  }
+  return statusMap[status] || 'bg-gray-100 text-gray-800'
+}
+
+const formatStatus = (status) => {
+  const statusMap = {
+    'Draft': 'Draft',
+    'Setup': 'In Setup',
+    'Active': 'Active',
+    'Completed': 'Completed',
+    'Pending_Approval': 'Pending Approval',
+    'Cancelled': 'Cancelled',
+  }
+  return statusMap[status] || status
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'TBA'
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 </script>
 

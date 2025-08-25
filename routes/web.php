@@ -8,6 +8,7 @@ use App\Http\Controllers\TabulatorController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\ContestantController;
+
 use App\Http\Controllers\CriteriaController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,26 +34,33 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/verify-organizer/{token}', [OrganizerController::class, 'verify'])->name('verify.organizer');
 
 // Organizer Routes
-Route::prefix('organizer')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () {
     Route::get('/dashboard', [OrganizerController::class, 'dashboard'])->name('organizer.dashboard');
     Route::get('/criteria', [OrganizerController::class, 'criteria'])->name('organizer.criteria');
     Route::get('/contestants', [OrganizerController::class, 'contestants'])->name('organizer.contestants');
     Route::get('/scoring', [OrganizerController::class, 'scoring'])->name('organizer.scoring');
     Route::get('/my-pageants', [OrganizerController::class, 'myPageants'])->name('organizer.my-pageants');
+    
+    // Pageant creation routes
+    Route::get('/pageants/create', [OrganizerController::class, 'createPageant'])->name('organizer.pageants.create');
+    Route::post('/pageants/create', [OrganizerController::class, 'storePageant'])->name('organizer.pageants.store');
     Route::get('/timeline', [OrganizerController::class, 'timeline'])->name('organizer.timeline');
     Route::get('/pageant/{id}/timeline', [OrganizerController::class, 'pageantTimeline'])->name('organizer.pageant.timeline');
     Route::get('/pageant/{id}', [OrganizerController::class, 'viewPageant'])->name('organizer.pageant.view');
     Route::get('/pageant/{id}/edit', [OrganizerController::class, 'editPageant'])->name('organizer.pageant.edit');
     Route::put('/pageant/{id}', [OrganizerController::class, 'updatePageant'])->name('organizer.pageant.update');
     Route::post('/pageant/{id}', [OrganizerController::class, 'updatePageant']);
-    Route::post('/pageant/{id}/events', [OrganizerController::class, 'storeEvent'])->name('organizer.pageant.events.store');
-    Route::put('/pageant/{id}/events/{eventId}', [OrganizerController::class, 'updateEvent'])->name('organizer.pageant.events.update');
-    Route::delete('/pageant/{id}/events/{eventId}', [OrganizerController::class, 'deleteEvent'])->name('organizer.pageant.events.delete');
     
     // Judge and Tabulator Management Routes
     Route::put('/pageant/{id}/required-judges', [OrganizerController::class, 'updateRequiredJudges'])->name('organizer.pageant.required-judges.update');
     Route::put('/pageant/{id}/scoring-system', [OrganizerController::class, 'updateScoringSystem'])->name('organizer.pageant.scoring-system.update');
     Route::post('/pageant/{id}/tabulators', [OrganizerController::class, 'assignTabulator'])->name('organizer.pageant.tabulators.assign');
+    
+    // Pageant status and locking routes
+    Route::post('/pageant/{id}/toggle-status', [OrganizerController::class, 'togglePageantStatus'])->name('organizer.pageant.toggle-status');
+    Route::put('/pageant/{id}/status', [OrganizerController::class, 'updatePageantStatus'])->name('organizer.pageant.status.update');
+    Route::post('/pageant/{id}/lock', [OrganizerController::class, 'lockPageant'])->name('organizer.pageant.lock');
+    Route::post('/pageant/{id}/unlock', [OrganizerController::class, 'unlockPageant'])->name('organizer.pageant.unlock');
     Route::delete('/pageant/{id}/tabulators/{tabulatorId}', [OrganizerController::class, 'removeTabulator'])->name('organizer.pageant.tabulators.remove');
     
     // Criteria routes
@@ -74,7 +82,7 @@ Route::prefix('organizer')->group(function () {
 });
 
 // Admin Routes
-Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'verified', 'check_role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/reports', [AdminController::class, 'reports'])->name('admin.reports');
     Route::get('/audit-log', [AdminController::class, 'auditLog'])->name('admin.audit_log');
@@ -122,6 +130,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
         Route::get('/create', [AdminController::class, 'createPageant'])->name('admin.pageants.create');
         Route::post('/create', [AdminController::class, 'storePageant'])->name('admin.pageants.store');
         
+        // Approval routes
+        Route::get('/pending-approvals', [AdminController::class, 'pendingApprovals'])->name('admin.pageants.pending-approvals');
+        Route::post('/{id}/approve', [AdminController::class, 'approvePageant'])->name('admin.pageants.approve');
+        Route::post('/{id}/reject', [AdminController::class, 'rejectPageant'])->name('admin.pageants.reject');
+        
         Route::get('/', [AdminController::class, 'allPageants'])->name('admin.pageants.index');
         
         Route::get('/previous', [AdminController::class, 'previousPageants'])->name('admin.pageants.previous');
@@ -143,6 +156,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->group(function () {
 Route::prefix('judge')->group(function () {
     Route::get('/scoring', [JudgeController::class, 'scoring'])->name('judge.scoring');
 });
+
 
 // Tabulator Routes
 Route::prefix('tabulator')->group(function () {

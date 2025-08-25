@@ -244,6 +244,7 @@ import { Link } from '@inertiajs/vue3'
 import {
   Crown,
   LayoutDashboard,
+  Clock,
   Award,
   Calendar,
   Archive,
@@ -356,6 +357,7 @@ const navigation = computed(() => {
           icon: Crown,
           children: [
             { name: 'All Pageants', href: route('admin.pageants.index'), route: 'admin.pageants.index', icon: LayoutList },
+            { name: 'Pending Approvals', href: route('admin.pageants.pending-approvals'), route: 'admin.pageants.pending-approvals', icon: Clock },
             { name: 'Create Pageant', href: route('admin.pageants.create'), route: 'admin.pageants.create', icon: Plus },
             { name: 'Previous Pageants', href: route('admin.pageants.previous'), route: 'admin.pageants.previous', icon: Award },
             { name: 'Archived Pageants', href: route('admin.pageants.archived'), route: 'admin.pageants.archived', icon: Archive }
@@ -379,6 +381,7 @@ const navigation = computed(() => {
     case 'organizer':
       return [
         { name: 'Dashboard', href: route('organizer.dashboard'), route: 'organizer.dashboard', icon: LayoutDashboard },
+        { name: 'Create Pageant', href: route('organizer.pageants.create'), route: 'organizer.pageants.create', icon: Plus },
         { name: 'My Pageants', href: route('organizer.my-pageants'), route: 'organizer.my-pageants', icon: Award },
         { name: 'Contestants', href: route('organizer.contestants'), route: 'organizer.contestants', icon: Users },
         { name: 'Timeline', href: route('organizer.timeline'), route: 'organizer.timeline', icon: Calendar }
@@ -453,10 +456,14 @@ const isActiveLink = (item) => {
   
   // Direct checks for specific pageant navigation items
   if (item.name === 'Create Pageant') {
-    return route().current('admin.pageants.create');
+    return route().current('admin.pageants.create') || route().current('organizer.pageants.create');
   }
   
-  if (item.name === 'All Pageants' && route().current('admin.pageants.create')) {
+  if (item.name === 'Pending Approvals') {
+    return route().current('admin.pageants.pending-approvals');
+  }
+  
+  if (item.name === 'All Pageants' && (route().current('admin.pageants.create') || route().current('admin.pageants.pending-approvals'))) {
     return false;
   }
   

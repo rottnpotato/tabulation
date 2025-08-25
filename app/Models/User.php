@@ -111,6 +111,16 @@ class User extends Authenticatable
     {
         return $this->hasRole('judge');
     }
+
+    /**
+     * Check if the user is a contestant
+     *
+     * @return bool
+     */
+    public function isContestant(): bool
+    {
+        return $this->hasRole('contestant');
+    }
     
     /**
      * Check if the user's email is verified
@@ -163,5 +173,24 @@ class User extends Authenticatable
     public function pageants()
     {
         return $this->belongsToMany(Pageant::class, 'pageant_organizers', 'user_id', 'pageant_id');
+    }
+
+    /**
+     * Get contestant profile associated with this user (if they are a contestant)
+     */
+    public function contestantProfile()
+    {
+        return $this->hasOne(Contestant::class, 'user_id');
+    }
+
+    /**
+     * Get pageants this user participates in as a contestant
+     */
+    public function contestantPageants()
+    {
+        if ($this->isContestant() && $this->contestantProfile) {
+            return collect([$this->contestantProfile->pageant]);
+        }
+        return collect([]);
     }
 }

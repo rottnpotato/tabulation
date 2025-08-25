@@ -68,28 +68,21 @@
         </div>
         
         <div>
-          <label for="sortBy" class="block text-sm font-medium text-gray-700">Sort By</label>
-          <select 
-            id="sortBy" 
+          <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+          <CustomSelect
             v-model="sortBy"
-            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md"
-          >
-            <option value="name">Name</option>
-            <option value="created_at">Date Created</option>
-            <option value="start_date">Start Date</option>
-          </select>
+            :options="sortByOptions"
+            variant="orange"
+          />
         </div>
         
         <div>
-          <label for="sortOrder" class="block text-sm font-medium text-gray-700">Sort Order</label>
-          <select 
-            id="sortOrder" 
+          <label class="block text-sm font-medium text-gray-700 mb-2">Sort Order</label>
+          <CustomSelect
             v-model="sortOrder"
-            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md"
-          >
-            <option value="asc">Ascending</option>
-            <option value="desc">Descending</option>
-          </select>
+            :options="sortOrderOptions"
+            variant="orange"
+          />
         </div>
       </div>
       
@@ -205,6 +198,7 @@ import {
   Archive, MapPin
 } from 'lucide-vue-next'
 import Tooltip from '@/Components/Tooltip.vue'
+import CustomSelect from '@/Components/CustomSelect.vue'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 
 defineOptions({
@@ -229,6 +223,18 @@ const searchQuery = ref('')
 const sortBy = ref('name')
 const sortOrder = ref('asc')
 const activeTab = ref('total')
+
+// Options for selects
+const sortByOptions = [
+  { value: 'name', label: 'Name' },
+  { value: 'created_at', label: 'Date Created' },
+  { value: 'start_date', label: 'Start Date' }
+]
+
+const sortOrderOptions = [
+  { value: 'asc', label: 'Ascending' },
+  { value: 'desc', label: 'Descending' }
+]
 
 // Define tabs
 const tabs = [
@@ -325,7 +331,7 @@ const getTabTooltip = (tabValue) => {
 const getStatusTooltip = (status) => {
   switch (status) {
     case 'Draft':
-      return 'This pageant is still being planned. Add contestants, criteria, and schedule events to progress.'
+      return 'This pageant is still being planned. Add contestants and criteria to progress.'
     case 'Setup':
       return 'Pageant configuration is complete. Ready for contestant registration and judge assignments.'
     case 'Active':

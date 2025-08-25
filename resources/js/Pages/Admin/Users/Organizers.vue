@@ -2,7 +2,7 @@
   <AdminLayout>
     <div class="py-6 px-4 sm:px-6 lg:px-8">
       <!-- Header with fancy gradient background -->
-      <div class="relative mb-8 overflow-hidden bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-lg">
+      <div class="relative mb-8 overflow-hidden bg-gradient-to-r from-teal-500 to-emerald-600 rounded-xl shadow-lg">
         <div class="absolute inset-0 opacity-10">
           <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjUiPjxwYXRoIGQ9Ik0yOS41IDE4LjVoLTJ2N2gtN3YyaDd2N2gydi03aDd2LTJoLTd6Ii8+PC9nPjwvZz48L3N2Zz4=')]"></div>
         </div>
@@ -19,7 +19,7 @@
           <div class="mt-4 md:mt-0">
             <Link
               :href="route('admin.users.organizers.create')"
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-teal-600 bg-white hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-teal-600 focus:ring-white transition-colors duration-150"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-emerald-600 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-emerald-600 focus:ring-white transition-colors duration-150"
             >
               <UserPlus class="mr-2 h-4 w-4" />
               Create Organizer
@@ -31,8 +31,8 @@
         <div class="px-8 pb-8">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg shadow-sm p-4 flex items-center">
-              <div class="w-12 h-12 rounded-lg bg-teal-100 flex items-center justify-center mr-4">
-                <Users class="h-6 w-6 text-teal-600" />
+              <div class="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center mr-4">
+                <Users class="h-6 w-6 text-emerald-600" />
               </div>
               <div>
                 <div class="text-sm text-gray-500">Total Organizers</div>
@@ -58,8 +58,8 @@
               </div>
             </div>
             <div class="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg shadow-sm p-4 flex items-center">
-              <div class="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center mr-4">
-                <Crown class="h-6 w-6 text-indigo-600" />
+              <div class="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center mr-4">
+                <Crown class="h-6 w-6 text-emerald-600" />
               </div>
               <div>
                 <div class="text-sm text-gray-500">Managed Pageants</div>

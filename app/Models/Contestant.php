@@ -18,6 +18,7 @@ class Contestant extends Model
      */
     protected $fillable = [
         'pageant_id',
+        'user_id',
         'name',
         'number',
         'origin',
@@ -50,6 +51,14 @@ class Contestant extends Model
     public function pageant(): BelongsTo
     {
         return $this->belongsTo(Pageant::class);
+    }
+
+    /**
+     * Get the user associated with this contestant.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
     
     /**

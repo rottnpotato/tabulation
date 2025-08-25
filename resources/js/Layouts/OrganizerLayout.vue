@@ -25,6 +25,9 @@
       @close="CloseSettingsModal"
       @update="UpdateSettings" 
     />
+
+    <!-- Notification System -->
+    <NotificationSystem />
   </div>
 </template>
 
@@ -34,6 +37,7 @@ import { Head } from '@inertiajs/vue3';
 import SideNav from '@/Components/SideNav.vue';
 import { Calendar, Settings, Crown } from 'lucide-vue-next';
 import OrganizerSettingsModal from '@/Components/modals/OrganizerSettingsModal.vue';
+import NotificationSystem from '@/Components/NotificationSystem.vue';
 
 // Settings modal - these will be handled by Dashboard.vue now
 const isSettingsModalVisible = ref(false);

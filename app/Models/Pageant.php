@@ -23,6 +23,7 @@ class Pageant extends Model
         'description',
         'start_date',
         'end_date',
+        'pageant_date',
         'venue',
         'location',
         'cover_image',
@@ -34,6 +35,9 @@ class Pageant extends Model
         'edit_permission_granted_to',
         'scoring_system',
         'required_judges',
+        'is_locked',
+        'locked_at',
+        'locked_by',
     ];
 
     /**
@@ -44,8 +48,11 @@ class Pageant extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'pageant_date' => 'date',
         'is_edit_permission_granted' => 'boolean',
         'edit_permission_expires_at' => 'datetime',
+        'is_locked' => 'boolean',
+        'locked_at' => 'datetime',
     ];
 
     /**
@@ -62,6 +69,14 @@ class Pageant extends Model
     public function editorWithPermission(): BelongsTo
     {
         return $this->belongsTo(User::class, 'edit_permission_granted_to');
+    }
+
+    /**
+     * Get the user who locked this pageant.
+     */
+    public function lockedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'locked_by');
     }
 
     /**
@@ -104,13 +119,7 @@ class Pageant extends Model
         return $this->hasMany(Contestant::class);
     }
 
-    /**
-     * Get the events associated with this pageant.
-     */
-    public function events(): HasMany
-    {
-        return $this->hasMany(Event::class)->orderBy('display_order');
-    }
+
 
     /**
      * Get the categories associated with this pageant.
@@ -144,17 +153,7 @@ class Pageant extends Model
         return $this->hasMany(Activity::class)->latest();
     }
 
-    /**
-     * Get the upcoming events for this pageant.
-     */
-    public function upcomingEvents()
-    {
-        return $this->events()
-            ->where('status', 'Pending')
-            ->where('start_datetime', '>=', now())
-            ->orderBy('start_datetime')
-            ->limit(5);
-    }
+
 
     /**
      * Get the active segments for this pageant.
@@ -173,22 +172,11 @@ class Pageant extends Model
     }
 
     /**
-     * Calculate the overall progress of the pageant based on completed events/milestones.
-     * Returns 0 when no events exist.
+     * Calculate the overall progress of the pageant based on status.
      */
     public function calculateProgress(): int
     {
-        // If no events exist yet, return 0 progress
-        $eventsCount = $this->events()->count();
-        if ($eventsCount === 0) {
-            return 0;
-        }
-        
-        $completedCount = $this->events()->where('status', 'Completed')->count();
-        $progress = ($completedCount / $eventsCount) * 100;
-        
-        // Ensure we return an integer and not a value less than 0
-        return min(100, max(0, (int)$progress));
+        return $this->getProgressFromStatus();
     }
 
     /**
@@ -197,6 +185,7 @@ class Pageant extends Model
     protected function getProgressFromStatus(): int
     {
         $statusMap = [
+            'Pending_Approval' => 5,
             'Draft' => 10,
             'Setup' => 25,
             'Active' => 60,
@@ -274,11 +263,6 @@ class Pageant extends Model
                 case 'CONTESTANT_REMOVED':
                     $icon = 'User2';
                     break;
-                case 'EVENT_CREATED':
-                case 'EVENT_UPDATED':
-                case 'EVENT_COMPLETED':
-                    $icon = 'Calendar';
-                    break;
                 case 'SEGMENT_CREATED':
                 case 'SEGMENT_UPDATED':
                     $icon = 'Clock';
@@ -305,87 +289,50 @@ class Pageant extends Model
     }
 
     /**
-     * Get pageant phases based only on real event data.
+     * Get pageant phases based on status and date.
      */
     public function getPageantPhasesAttribute()
     {
-        $events = $this->events()->orderBy('display_order')->get();
-        
-        if ($events->isEmpty()) {
-            return [];
-        }
-        
-        // Group events into phases
         $phases = [];
-        $eventsByType = $events->groupBy('type');
         
-        if ($eventsByType->has('setup')) {
-            $phases[] = [
-                'name' => 'Setup',
-                'description' => 'Initial pageant configuration and planning',
-                'icon' => 'File',
-                'completed' => $eventsByType['setup']->where('status', 'Completed')->count() === $eventsByType['setup']->count(),
-                'current' => $eventsByType['setup']->where('status', 'In Progress')->count() > 0,
-                'milestones' => $eventsByType['setup']->map(function($event) {
-                    return [
-                        'name' => $event->name,
-                        'completed' => $event->status === 'Completed',
-                        'date' => $event->start_datetime,
-                    ];
-                })->values()->toArray(),
-            ];
-        }
+        // Setup phase - based on status
+        $setupCompleted = in_array($this->status, ['Active', 'Completed', 'Unlocked_For_Edit', 'Archived']);
+        $setupCurrent = $this->status === 'Setup';
         
-        if ($eventsByType->has('registration')) {
-            $phases[] = [
-                'name' => 'Contestant Registration',
-                'description' => 'Registering and documenting pageant contestants',
-                'icon' => 'Users',
-                'completed' => $eventsByType['registration']->where('status', 'Completed')->count() === $eventsByType['registration']->count(),
-                'current' => $eventsByType['registration']->where('status', 'In Progress')->count() > 0,
-                'milestones' => $eventsByType['registration']->map(function($event) {
-                    return [
-                        'name' => $event->name,
-                        'completed' => $event->status === 'Completed',
-                        'date' => $event->start_datetime,
-                    ];
-                })->values()->toArray(),
-            ];
-        }
+        $phases[] = [
+            'name' => 'Setup',
+            'description' => 'Initial pageant configuration and planning',
+            'icon' => 'File',
+            'completed' => $setupCompleted,
+            'current' => $setupCurrent,
+            'milestones' => []
+        ];
         
-        if ($eventsByType->has('preliminary')) {
-            $phases[] = [
-                'name' => 'Preliminary Events',
-                'description' => 'Initial competitions and preliminary judging',
-                'icon' => 'Clock',
-                'completed' => $eventsByType['preliminary']->where('status', 'Completed')->count() === $eventsByType['preliminary']->count(),
-                'current' => $eventsByType['preliminary']->where('status', 'In Progress')->count() > 0,
-                'milestones' => $eventsByType['preliminary']->map(function($event) {
-                    return [
-                        'name' => $event->name,
-                        'completed' => $event->status === 'Completed',
-                        'date' => $event->start_datetime,
-                    ];
-                })->values()->toArray(),
-            ];
-        }
+        // Registration phase
+        $regCompleted = in_array($this->status, ['Active', 'Completed', 'Unlocked_For_Edit', 'Archived']);
+        $regCurrent = $this->status === 'Draft';
         
-        if ($eventsByType->has('final')) {
-            $phases[] = [
-                'name' => 'Final Event',
-                'description' => 'Finals competition and winner announcement',
-                'icon' => 'Timer',
-                'completed' => $eventsByType['final']->where('status', 'Completed')->count() === $eventsByType['final']->count(),
-                'current' => $eventsByType['final']->where('status', 'In Progress')->count() > 0,
-                'milestones' => $eventsByType['final']->map(function($event) {
-                    return [
-                        'name' => $event->name,
-                        'completed' => $event->status === 'Completed',
-                        'date' => $event->start_datetime,
-                    ];
-                })->values()->toArray(),
-            ];
-        }
+        $phases[] = [
+            'name' => 'Contestant Registration',
+            'description' => 'Registering and documenting pageant contestants',
+            'icon' => 'Users',
+            'completed' => $regCompleted,
+            'current' => $regCurrent,
+            'milestones' => []
+        ];
+        
+        // Competition phase
+        $compCompleted = in_array($this->status, ['Completed', 'Unlocked_For_Edit', 'Archived']);
+        $compCurrent = $this->status === 'Active';
+        
+        $phases[] = [
+            'name' => 'Competition',
+            'description' => 'Main pageant competition and judging',
+            'icon' => 'Clock',
+            'completed' => $compCompleted,
+            'current' => $compCurrent,
+            'milestones' => []
+        ];
         
         return $phases;
     }
@@ -449,6 +396,7 @@ class Pageant extends Model
             'description' => $this->description,
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
+            'pageant_date' => $this->pageant_date,
             'venue' => $this->venue,
             'location' => $this->location,
             'status' => $this->status,
@@ -519,5 +467,107 @@ class Pageant extends Model
     public function isCancelled(): bool
     {
         return $this->status === 'Cancelled';
+    }
+
+    /**
+     * Check if the pageant is pending approval
+     */
+    public function isPendingApproval(): bool
+    {
+        return $this->status === 'Pending_Approval';
+    }
+
+    /**
+     * Check if the pageant can be approved
+     */
+    public function canBeApproved(): bool
+    {
+        return $this->isPendingApproval();
+    }
+
+    /**
+     * Approve the pageant and set it to Draft status
+     */
+    public function approve(): void
+    {
+        if ($this->canBeApproved()) {
+            $this->update(['status' => 'Draft']);
+        }
+    }
+
+    /**
+     * Reject the pageant and set it to Cancelled status
+     */
+    public function reject(): void
+    {
+        if ($this->canBeApproved()) {
+            $this->update(['status' => 'Cancelled']);
+        }
+    }
+
+    /**
+     * Check if the pageant is locked
+     */
+    public function isLocked(): bool
+    {
+        return $this->is_locked === true;
+    }
+
+    /**
+     * Check if the pageant can be edited (not locked and in editable status)
+     */
+    public function canBeEdited(): bool
+    {
+        if ($this->isLocked()) {
+            return false;
+        }
+
+        return in_array($this->status, ['Draft', 'Setup', 'Unlocked_For_Edit']);
+    }
+
+    /**
+     * Lock the pageant configuration
+     */
+    public function lockConfiguration($userId = null): void
+    {
+        $this->update([
+            'is_locked' => true,
+            'locked_at' => now(),
+            'locked_by' => $userId,
+            'status' => 'Setup' // Move to Setup when locked
+        ]);
+    }
+
+    /**
+     * Unlock the pageant configuration
+     */
+    public function unlockConfiguration(): void
+    {
+        $this->update([
+            'is_locked' => false,
+            'locked_at' => null,
+            'locked_by' => null,
+            'status' => 'Draft' // Move back to Draft when unlocked
+        ]);
+    }
+
+    /**
+     * Set pageant status to final (Setup)
+     */
+    public function setFinal($userId = null): void
+    {
+        $this->lockConfiguration($userId);
+    }
+
+    /**
+     * Set pageant status to draft
+     */
+    public function setDraft(): void
+    {
+        if ($this->isLocked()) {
+            $this->unlockConfiguration();
+        } else {
+            $this->update(['status' => 'Draft']);
+        }
     }
 }

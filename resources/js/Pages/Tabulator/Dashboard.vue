@@ -14,17 +14,14 @@
           <p class="text-blue-100 mt-1">Tabulation Dashboard</p>
         </div>
         <div class="flex mt-4 md:mt-0 space-x-3">
-          <div class="relative">
-            <select
-               v-model="CurrentRound"
-                 class="rounded-lg bg-dark/20 backdrop-blur text-black border-white/20 px-4 py-2"
-                >
-                <option value="evening_gown">Evening Gown</option>
-                <option value="swimsuit">Swimsuit</option>
-                <option value="qa">Q&A Round</option>
-                <option value="talent">Talent</option>
-              </select>
-            </div>
+          <div class="relative min-w-[180px]">
+            <CustomSelect
+              v-model="CurrentRound"
+              :options="roundOptions"
+              variant="blue"
+              placeholder="Select Round"
+            />
+          </div>
           <button class="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg flex items-center gap-2 border border-white/20 transition-colors">
             <CalendarClock class="h-4 w-4" />
             <span>Change Round</span>
@@ -290,12 +287,14 @@
           Top Contestants
         </h3>
         <div class="flex items-center space-x-2">
-          <select class="text-sm rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-            <option>All Rounds</option>
-            <option>Evening Gown</option>
-            <option>Swimsuit</option>
-            <option>Q&A</option>
-          </select>
+          <div class="min-w-[130px]">
+            <CustomSelect
+              v-model="topContestantsFilter"
+              :options="topContestantsOptions"
+              variant="blue"
+              placeholder="Select Round"
+            />
+          </div>
           <button class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
             View All <ChevronRight class="h-4 w-4 ml-1" />
           </button>
@@ -456,6 +455,7 @@ import {
   Trophy, 
   FileText
 } from 'lucide-vue-next';
+import CustomSelect from '@/Components/CustomSelect.vue';
 import '@/Components/skeletons/skeleton.css';
 import TabulatorLayout from '@/Layouts/TabulatorLayout.vue';
 
@@ -464,6 +464,23 @@ defineOptions({
 });
 
 const isLoading = ref(false);
+const CurrentRound = ref('evening_gown');
+
+const roundOptions = ref([
+  { value: 'evening_gown', label: 'Evening Gown' },
+  { value: 'swimsuit', label: 'Swimsuit' },
+  { value: 'qa', label: 'Q&A Round' },
+  { value: 'talent', label: 'Talent' }
+]);
+
+// Top contestants filter
+const topContestantsFilter = ref('all');
+const topContestantsOptions = [
+  { value: 'all', label: 'All Rounds' },
+  { value: 'evening_gown', label: 'Evening Gown' },
+  { value: 'swimsuit', label: 'Swimsuit' },
+  { value: 'qa', label: 'Q&A' }
+];
 
 // Refresh dashboard data
 const RefreshDashboard = () => {

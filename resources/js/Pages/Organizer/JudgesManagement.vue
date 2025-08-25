@@ -183,21 +183,13 @@
 
             <form @submit.prevent="assignTabulator" class="space-y-4">
               <div>
-                <label for="tabulatorId" class="block text-sm font-medium text-gray-700">Select Tabulator</label>
-                <select 
-                  id="tabulatorId" 
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Tabulator</label>
+                <CustomSelect
                   v-model="tabulatorForm.tabulator_id"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                >
-                  <option value="" disabled>Select a tabulator</option>
-                  <option 
-                    v-for="tabulator in availableTabulators" 
-                    :key="tabulator.id" 
-                    :value="tabulator.id"
-                  >
-                    {{ tabulator.name }} (@{{ tabulator.username }})
-                  </option>
-                </select>
+                  :options="tabulatorOptions"
+                  placeholder="Select a tabulator"
+                  variant="orange"
+                />
               </div>
               <div>
                 <label for="tabulatorNotes" class="block text-sm font-medium text-gray-700">Notes (Optional)</label>
@@ -287,7 +279,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { 
   ArrowLeft, 
@@ -302,6 +294,7 @@ import {
 import { useForm } from '@inertiajs/vue3'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue'
+import CustomSelect from '@/Components/CustomSelect.vue'
 
 defineOptions({
   layout: OrganizerLayout
@@ -335,6 +328,14 @@ const tabulatorForm = useForm({
   tabulator_id: '',
   notes: ''
 })
+
+// Computed options for tabulator select
+const tabulatorOptions = computed(() => 
+  props.availableTabulators.map(tabulator => ({
+    value: tabulator.id,
+    label: `${tabulator.name} (@${tabulator.username})`
+  }))
+)
 
 // Modal states
 const showDeleteModal = ref(false)

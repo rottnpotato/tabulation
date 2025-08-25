@@ -376,16 +376,11 @@
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Specialized Category</label>
-                    <select
+                    <CustomSelect
                       v-model="newJudge.category"
-                      class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                    >
-                      <option value="">All Categories</option>
-                      <option value="evening_gown">Evening Gown</option>
-                      <option value="swimsuit">Swimsuit</option>
-                      <option value="talent">Talent</option>
-                      <option value="qa">Q&A</option>
-                    </select>
+                      :options="categoryOptions"
+                      variant="orange"
+                    />
                   </div>
 
                   <div class="mt-6 flex justify-end space-x-3">
@@ -421,6 +416,7 @@ import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild, Switch } from '@headlessui/vue'
 import { Plus, UserCircle, X, Settings } from 'lucide-vue-next'
 import ScoringAnalytics from '../../components/scoring/ScoringAnalytics.vue'
+import CustomSelect from '@/Components/CustomSelect.vue'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 
 defineOptions({
@@ -449,6 +445,15 @@ const newJudge = ref({
   email: '',
   category: ''
 })
+
+// Options for category select
+const categoryOptions = [
+  { value: '', label: 'All Categories' },
+  { value: 'evening_gown', label: 'Evening Gown' },
+  { value: 'swimsuit', label: 'Swimsuit' },
+  { value: 'talent', label: 'Talent' },
+  { value: 'qa', label: 'Q&A' }
+]
 
 const scaleConfig = ref({
   range: '10',

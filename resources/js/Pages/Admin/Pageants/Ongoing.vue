@@ -6,7 +6,7 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Link 
-          v-for="pageant in pageants" 
+          v-for="pageant in props.pageants" 
           :key="pageant.id" 
           :href="route('admin.pageants.detail', { id: pageant.id })"
           class="bg-white border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full relative overflow-hidden group cursor-pointer"
@@ -45,7 +45,7 @@
               </div>
               <div class="flex items-center text-sm text-gray-500">
                 <Users class="h-4 w-4 mr-2 text-teal-600" />
-                {{ pageant.contestants || pageant.organizers ? (pageant.organizers.length + ' Organizers') : '0 Contestants' }}
+                {{ pageant.contestants_count || 0 }} Contestants
               </div>
               <div class="flex items-center text-sm text-gray-500">
                 <Timer class="h-4 w-4 mr-2 text-teal-600" />
@@ -60,7 +60,7 @@
                 <span>{{ pageant.progress || 0 }}%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-teal-600 h-2 rounded-full" :style="{ width: `${pageant.progress || getProgressFromStatus(pageant.status) || 0}%` }"></div>
+                <div class="bg-teal-600 h-2 rounded-full" :style="{ width: `${pageant.progress || 0}%` }"></div>
               </div>
             </div>
           </div>
@@ -75,7 +75,7 @@
       </div>
       
       <!-- Empty state -->
-      <div v-if="pageants.length === 0" class="text-center py-12">
+      <div v-if="props.pageants.length === 0" class="text-center py-12">
         <div class="mx-auto h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
           <Calendar class="h-8 w-8 text-gray-400" />
         </div>
@@ -98,7 +98,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Calendar, MapPin, Clock, Users, Timer, Eye, Plus, ChevronRight } from 'lucide-vue-next';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
@@ -122,98 +121,7 @@ const FormatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
-// Helper function to estimate progress based on pageant status
-const getProgressFromStatus = (status) => {
-  if (!status) return 0;
-  
-  const statusMap = {
-    'Draft': 10,
-    'Setup': 25,
-    'Active': 60,
-    'Completed': 100,
-    'Unlocked_For_Edit': 100,
-    'Archived': 100,
-    'Cancelled': 100
-  };
-  
-  return statusMap[status] || 0;
-};
 
-// If we're using mock data, display this. Otherwise, use props.pageants
-const pageants = ref(props.pageants.length > 0 ? props.pageants : [
-  {
-    id: 1,
-    name: 'Miss Universe 2025',
-    description: 'The most prestigious beauty pageant showcasing grace, talent, and intelligence on the global stage. Contestants from over 90 countries compete for the coveted crown.',
-    start_date: '2025-05-15',
-    venue: 'Grand Plaza Hotel, Crystal Ballroom',
-    status: 'Preliminary Round',
-    contestants: 92,
-    currentRound: 'Evening Gown',
-    progress: 45,
-    coverImage: 'https://images.unsplash.com/photo-1569937756447-1d44f657ee0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: 2,
-    name: 'Mr. World 2025',
-    description: 'Celebrating male excellence in fashion, fitness, and personality. A global competition showcasing the finest talents from around the world.',
-    start_date: '2025-06-20',
-    venue: 'Metropolitan Convention Center',
-    status: 'Semi-Finals',
-    contestants: 78,
-    currentRound: 'Talent Showcase',
-    progress: 65,
-    coverImage: 'https://images.unsplash.com/photo-1521119989659-a83eee488004?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2023&q=80'
-  },
-  {
-    id: 3,
-    name: 'Teen Pageant Excellence 2025',
-    description: 'A platform for young talents aged 13-19 to showcase their abilities and build confidence. Focuses on academic achievement, community service, and personal growth.',
-    start_date: '2025-07-10',
-    venue: 'Central City Auditorium',
-    status: 'Registration Closing',
-    contestants: 52,
-    currentRound: 'Contestant Registration',
-    progress: 15,
-    coverImage: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: 4,
-    name: 'Ms. Elegance International',
-    description: 'A celebration of mature beauty and accomplishment for women over 40. This pageant highlights professional achievements, community impact, and personal style.',
-    start_date: '2025-08-05',
-    venue: 'Regal Seasons Hotel',
-    status: 'Interview Phase',
-    contestants: 45,
-    currentRound: 'Panel Interviews',
-    progress: 30,
-    coverImage: 'https://images.unsplash.com/photo-1502635385003-ee1e6a1a742d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: 5,
-    name: 'Cultural Heritage Showcase 2025',
-    description: 'A unique pageant celebrating cultural diversity and heritage through traditional costumes, performances, and storytelling from various regions worldwide.',
-    start_date: '2025-09-12',
-    venue: 'International Cultural Center',
-    status: 'Preliminary Judging',
-    contestants: 63,
-    currentRound: 'National Costume',
-    progress: 40,
-    coverImage: 'https://images.unsplash.com/photo-1571380401583-82b0dafba9f4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: 6,
-    name: 'Eco-Friendly Fashion Gala',
-    description: 'A sustainable pageant focusing on eco-conscious fashion and environmental advocacy. Contestants showcase outfits made from recycled materials and present environmental projects.',
-    start_date: '2025-10-18',
-    venue: 'Green Living Exhibition Hall',
-    status: 'Project Presentation',
-    contestants: 38,
-    currentRound: 'Eco Projects',
-    progress: 55,
-    coverImage: 'https://images.unsplash.com/photo-1523983254932-c7e6571c9d60?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2072&q=80'
-  }
-]);
 </script>
 
 <style scoped>

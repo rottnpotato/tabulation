@@ -28,7 +28,7 @@
 
       <!-- Administrator Profile -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-teal-500 to-teal-600">
+        <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-teal-500 to-emerald-600">
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               <div class="h-16 w-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-4">
@@ -43,7 +43,7 @@
               <Link
                 v-if="!isSelf"
                 :href="route('admin.users.admins.edit', admin.id)"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-teal-600 bg-white hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-teal-600 focus:ring-white transition-colors duration-150"
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-emerald-600 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-emerald-600 focus:ring-white transition-colors duration-150"
               >
                 <Edit class="mr-2 h-4 w-4" />
                 Edit Profile
@@ -112,7 +112,7 @@
             <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt class="text-sm font-medium text-gray-500">Role</dt>
               <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                   System Administrator
                 </span>
               </dd>
@@ -123,7 +123,7 @@
 
       <!-- Permissions Info -->
       <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-indigo-500 to-purple-600">
+        <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-teal-500 to-emerald-600">
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               <div class="h-12 w-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-4">
@@ -131,7 +131,7 @@
               </div>
               <div>
                 <h3 class="text-lg font-bold leading-6 text-white">System Permissions</h3>
-                <p class="mt-1 max-w-2xl text-sm text-indigo-100">
+                <p class="mt-1 max-w-2xl text-sm text-teal-100">
                   Full administrative access to the system
                 </p>
               </div>

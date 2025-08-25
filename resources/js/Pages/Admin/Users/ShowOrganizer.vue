@@ -28,7 +28,7 @@
 
       <!-- Organizer Profile -->
       <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-teal-500 to-teal-600">
+        <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-teal-500 to-emerald-600">
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               <div class="h-16 w-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-4">
@@ -42,7 +42,7 @@
             <div class="flex space-x-3">
               <Link
                 :href="route('admin.users.organizers.edit', organizer.id)"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-teal-600 bg-white hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-teal-600 focus:ring-white transition-colors duration-150"
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-emerald-600 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-emerald-600 focus:ring-white transition-colors duration-150"
               >
                 <Edit class="mr-2 h-4 w-4" />
                 Edit Profile
@@ -104,7 +104,7 @@
                 </span>
                 <button 
                   @click="toggleStatus" 
-                  class="ml-2 inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+                  class="ml-2 inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                 >
                   {{ organizer.is_active ? 'Deactivate' : 'Activate' }}
                 </button>
@@ -120,7 +120,7 @@
 
       <!-- Pageant List -->
       <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
-        <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-indigo-500 to-purple-600">
+        <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-teal-500 to-emerald-600">
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               <div class="h-12 w-12 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-4">
@@ -128,7 +128,7 @@
               </div>
               <div>
                 <h3 class="text-lg font-bold leading-6 text-white">Managed Pageants</h3>
-                <p class="mt-1 max-w-2xl text-sm text-indigo-100">
+                <p class="mt-1 max-w-2xl text-sm text-teal-100">
                   {{ 
                     organizer.pageants && organizer.pageants.length > 0 
                       ? `${organizer.pageants.length} pageant${organizer.pageants.length !== 1 ? 's' : ''} assigned to this organizer` 
@@ -140,7 +140,7 @@
             <div>
               <Link
                 href="/admin/pageants/create"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-indigo-600 focus:ring-white transition-colors duration-150"
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-emerald-600 bg-white hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-emerald-600 focus:ring-white transition-colors duration-150"
               >
                 <Plus class="mr-2 h-4 w-4" />
                 Assign New Pageant
@@ -154,7 +154,7 @@
               <Link :href="route('admin.pageants.detail', pageant.id)" class="block">
                 <div class="px-4 py-4 sm:px-6">
                   <div class="flex items-center justify-between">
-                    <p class="text-sm font-medium text-indigo-600 truncate">{{ pageant.name }}</p>
+                    <p class="text-sm font-medium text-emerald-600 truncate">{{ pageant.name }}</p>
                     <div class="ml-2 flex-shrink-0 flex">
                       <p 
                         class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
@@ -187,7 +187,7 @@
             </p>
             <Link
               href="/admin/pageants/create"
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
             >
               <Plus class="mr-2 h-4 w-4" />
               Create New Pageant
@@ -330,7 +330,7 @@ const getStatusClass = (status) => {
     case 'Active':
       return 'bg-green-100 text-green-800'
     case 'Completed':
-      return 'bg-purple-100 text-purple-800'
+      return 'bg-emerald-100 text-emerald-800'
     case 'Unlocked_For_Edit':
       return 'bg-yellow-100 text-yellow-800'
     case 'Archived':

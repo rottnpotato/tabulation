@@ -34,6 +34,15 @@
             <span class="font-medium">Create Pageant</span>
           </Link>
           
+          <Link 
+            v-if="pageantCounts.pending_approval > 0"
+            :href="route('admin.pageants.pending-approvals')" 
+            class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-orange-100 text-orange-800 hover:bg-orange-200 transition-all shadow-sm text-xs sm:text-sm border border-orange-200"
+          >
+            <ClockIcon class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-orange-600" />
+            <span class="font-medium">{{ pageantCounts.pending_approval }} Pending Approval</span>
+          </Link>
+          
           <Link :href="route('admin.pageants.index')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
             <ActivityIcon class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
             <span class="font-medium">Manage Pageants</span>
@@ -76,6 +85,18 @@
               </div>
               <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">{{ pageantCounts.active }}</p>
               <p class="text-2xs sm:text-xs text-teal-700 mt-0.5 sm:mt-1">Currently running pageants</p>
+            </div>
+            
+            <!-- Pending Approval Pageants -->
+            <div v-if="pageantCounts.pending_approval > 0" class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 sm:p-4 border border-orange-200">
+              <div class="flex items-center space-x-2">
+                <div class="p-1.5 sm:p-2 bg-orange-100 rounded-full border border-orange-200">
+                  <ClockIcon class="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                </div>
+                <span class="text-xs sm:text-sm font-medium text-orange-800">Pending Approval</span>
+              </div>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">{{ pageantCounts.pending_approval }}</p>
+              <p class="text-2xs sm:text-xs text-orange-700 mt-0.5 sm:mt-1">Awaiting admin approval</p>
             </div>
             
             <!-- Draft/Setup Pageants -->

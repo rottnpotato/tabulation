@@ -10,16 +10,15 @@
           </div>
           <div class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
             <span class="text-amber-50 font-medium px-3">Current Round:</span>
-            <select
-              v-model="currentRound"
-              class="bg-white/20 text-white border-0 rounded-lg py-2 px-3 focus:bg-white/30 focus:ring-amber-400 focus:border-amber-400"
-              :disabled="isLoading"
-            >
-              <option value="evening_gown">Evening Gown</option>
-              <option value="swimsuit">Swimsuit</option>
-              <option value="talent">Talent</option>
-              <option value="qa">Q&A</option>
-            </select>
+            <div class="min-w-[160px]">
+              <CustomSelect
+                v-model="currentRound"
+                :options="roundOptions"
+                :disabled="isLoading"
+                variant="amber"
+                placeholder="Select Round"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -233,6 +232,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Star, Save, CheckCircle } from 'lucide-vue-next'
 import { useAuthStore } from '../../stores/auth'
+import CustomSelect from '../../Components/CustomSelect.vue'
 import '../../components/skeletons/skeleton.css'
 import JudgeLayout from '../../Layouts/JudgeLayout.vue'
 
@@ -245,6 +245,13 @@ const currentRound = ref('evening_gown')
 const showConfirmation = ref(false)
 const submittedContestantId = ref(null)
 const isLoading = ref(true)
+
+const roundOptions = ref([
+  { value: 'evening_gown', label: 'Evening Gown' },
+  { value: 'swimsuit', label: 'Swimsuit' },
+  { value: 'talent', label: 'Talent' },
+  { value: 'qa', label: 'Q&A' }
+])
 
 const criteria = ref([
   {

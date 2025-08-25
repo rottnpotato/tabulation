@@ -25,6 +25,7 @@ class AdminController extends Controller
     {
         // Count pageants by status
         $pageantCounts = [
+            'pending_approval' => Pageant::where('status', 'Pending_Approval')->count(),
             'draft' => Pageant::where('status', 'Draft')->count(),
             'setup' => Pageant::where('status', 'Setup')->count(),
             'active' => Pageant::where('status', 'Active')->count(),
@@ -93,31 +94,11 @@ class AdminController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($pageant) {
-                // Calculate progress based on real data, not placeholders
-                $eventsCount = $pageant->events()->count();
-                $eventsCompletedCount = $pageant->events()->where('status', 'Completed')->count();
-                $progress = $eventsCount > 0 ? ($eventsCompletedCount / $eventsCount) * 100 : 0;
+                // Calculate progress using the pageant's built-in progress calculation
+                $progress = $pageant->calculateProgress();
                 
-                // No longer use status-based progress if no events exist
-                // Remove dummy placeholder values
-                
-                // Get current phase or event from real data only
+                // Events functionality has been removed
                 $currentEvent = null;
-                
-                if ($pageant->status === 'Active') {
-                    $currentEvent = $pageant->events()
-                        ->where('status', 'In Progress')
-                        ->orderBy('start_datetime', 'desc')
-                        ->first();
-                        
-                    if (!$currentEvent) {
-                        $currentEvent = $pageant->events()
-                            ->where('status', 'Pending')
-                            ->where('start_datetime', '>=', now())
-                            ->orderBy('start_datetime', 'asc')
-                            ->first();
-                    }
-                }
                 
                 return [
                     'id' => $pageant->id,
@@ -338,7 +319,38 @@ class AdminController extends Controller
     
     public function ongoingPageants()
     {
-        return redirect()->route('admin.pageants.index');
+        // Get pageants that are currently active or in progress
+        $ongoingPageants = Pageant::with(['organizers', 'contestants'])
+            ->whereIn('status', ['Active', 'Setup'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($pageant) {
+                return [
+                    'id' => $pageant->id,
+                    'name' => $pageant->name,
+                    'description' => $pageant->description,
+                    'status' => $pageant->status,
+                    'start_date' => $pageant->start_date?->format('M d, Y'),
+                    'end_date' => $pageant->end_date?->format('M d, Y'),
+                    'pageant_date' => $pageant->pageant_date?->format('M d, Y'),
+                    'venue' => $pageant->venue,
+                    'location' => $pageant->location,
+                    'progress' => $pageant->calculateProgress(),
+                    'contestants_count' => $pageant->contestants()->count(),
+                    'organizers' => $pageant->organizers->map(function ($organizer) {
+                        return [
+                            'id' => $organizer->id,
+                            'name' => $organizer->name,
+                        ];
+                    }),
+                    'coverImage' => $pageant->cover_image ?: '/images/placeholders/pageant-cover.jpg',
+                    'created_at' => $pageant->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+
+        return Inertia::render('Admin/Pageants/Ongoing', [
+            'pageants' => $ongoingPageants,
+        ]);
     }
     
     public function ongoingPageantDetail($id)
@@ -347,7 +359,6 @@ class AdminController extends Controller
             'organizers', 
             'judges',
             'contestants',
-            'events',
             'segments',
             'categories',
             'activities' => function ($query) {
@@ -385,6 +396,11 @@ class AdminController extends Controller
         
         $pageant = Pageant::findOrFail($id);
         $oldStatus = $pageant->status;
+        
+        // Prevent direct status changes from Pending_Approval
+        if ($pageant->isPendingApproval()) {
+            return back()->with('error', 'Pageants pending approval must be approved or rejected through the approval system.');
+        }
         
         $pageant->update([
             'status' => $validated['status'],
@@ -554,7 +570,6 @@ class AdminController extends Controller
             'organizers', 
             'judges',
             'contestants',
-            'events',
             'segments',
             'categories',
             'activities' => function ($query) {
@@ -690,5 +705,80 @@ class AdminController extends Controller
             'targetEntities' => $targetEntities,
             'users' => $users,
         ]);
+    }
+
+    /**
+     * Show pending pageants awaiting approval
+     */
+    public function pendingApprovals()
+    {
+        $pendingPageants = Pageant::where('status', 'Pending_Approval')
+            ->with(['creator', 'organizers'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Admin/Pageants/PendingApprovals', [
+            'pendingPageants' => $pendingPageants,
+        ]);
+    }
+
+    /**
+     * Approve a pending pageant
+     */
+    public function approvePageant($id)
+    {
+        try {
+            $pageant = Pageant::findOrFail($id);
+            
+            if (!$pageant->canBeApproved()) {
+                return back()->with('error', 'This pageant cannot be approved in its current status.');
+            }
+            
+            $pageant->approve();
+            
+            // Log the action
+            $this->auditLogService->log(
+                'PAGEANT_APPROVED',
+                'Pageant',
+                $pageant->id,
+                "Approved pageant '{$pageant->name}'"
+            );
+            
+            return back()->with('success', "Pageant '{$pageant->name}' has been approved successfully!");
+            
+        } catch (\Exception $e) {
+            Log::error('Error approving pageant: ' . $e->getMessage());
+            return back()->with('error', 'Failed to approve pageant. Please try again.');
+        }
+    }
+
+    /**
+     * Reject a pending pageant
+     */
+    public function rejectPageant($id)
+    {
+        try {
+            $pageant = Pageant::findOrFail($id);
+            
+            if (!$pageant->canBeApproved()) {
+                return back()->with('error', 'This pageant cannot be rejected in its current status.');
+            }
+            
+            $pageant->reject();
+            
+            // Log the action
+            $this->auditLogService->log(
+                'PAGEANT_REJECTED',
+                'Pageant',
+                $pageant->id,
+                "Rejected pageant '{$pageant->name}'"
+            );
+            
+            return back()->with('success', "Pageant '{$pageant->name}' has been rejected.");
+            
+        } catch (\Exception $e) {
+            Log::error('Error rejecting pageant: ' . $e->getMessage());
+            return back()->with('error', 'Failed to reject pageant. Please try again.');
+        }
     }
 } 

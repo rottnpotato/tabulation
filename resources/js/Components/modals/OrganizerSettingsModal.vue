@@ -9,12 +9,12 @@
       leave-to-class="transform scale-95 opacity-0"
     >
       <div v-if="isVisible" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="flex items-center justify-center min-h-screen p-4">
           <!-- Background overlay -->
           <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="Close"></div>
 
           <!-- Modal panel -->
-          <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+          <div class="w-full max-w-2xl bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all">
             <div class="absolute top-0 right-0 pt-4 pr-4">
               <button type="button" @click="Close" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 <span class="sr-only">Close</span>
@@ -314,14 +314,14 @@
                             
                             <div class="space-x-2 flex items-center">
                               <span class="text-xs text-gray-500">Round:</span>
-                              <select v-model="criterion.round" 
-                                class="rounded-md border-gray-300 focus:border-purple-500 focus:ring-purple-500 text-sm">
-                                <option value="all">All Rounds</option>
-                                <option value="evening_gown">Evening Gown</option>
-                                <option value="swimsuit">Swimsuit</option>
-                                <option value="talent">Talent</option>
-                                <option value="qa">Q&A</option>
-                              </select>
+                              <div class="min-w-[120px]">
+                                <CustomSelect
+                                  v-model="criterion.round"
+                                  :options="roundOptions"
+                                  variant="purple"
+                                  placeholder="Select Round"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -394,6 +394,7 @@ import { ref, defineProps, defineEmits, computed } from 'vue'
 import { 
   Settings, X, Check, Image, Bell, Palette, Shield, ChevronUp, ChevronDown, Trash2, Plus, AlertTriangle
 } from 'lucide-vue-next'
+import CustomSelect from '../CustomSelect.vue'
 
 const props = defineProps({
   isVisible: {
@@ -521,6 +522,15 @@ const moveCriterionDown = (index: number) => {
 const totalCriteriaWeight = computed(() => {
   return settings.value.scoringCriteria.reduce((total, criterion) => total + Number(criterion.weight), 0)
 })
+
+// Round options for CustomSelect
+const roundOptions = [
+  { value: 'all', label: 'All Rounds' },
+  { value: 'evening_gown', label: 'Evening Gown' },
+  { value: 'swimsuit', label: 'Swimsuit' },
+  { value: 'talent', label: 'Talent' },
+  { value: 'qa', label: 'Q&A' }
+]
 </script>
 
 <style scoped>

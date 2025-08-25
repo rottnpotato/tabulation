@@ -1,18 +1,9 @@
 <template>
   <div class="space-y-6">
-    <!-- Event Form Modal -->
-    <EventForm
-      :visible="showEventForm"
-      :pageant-id="pageant.id"
-      :event="selectedEvent"
-      @close="closeEventForm"
-      @saved="eventSaved"
-    />
-    
     <!-- Delete Confirmation Modal -->
     <ConfirmDeleteModal
       :visible="showDeleteConfirm"
-      :message="selectedEvent ? `event '${selectedEvent.name}'` : 'this event'"
+      :message="'this item'"
       :processing="deleteProcessing"
       @confirm="confirmDelete"
       @cancel="showDeleteConfirm = false"
@@ -165,6 +156,123 @@
             </div>
           </div>
           
+          <!-- Status Change Section -->
+          <div v-if="canEdit || isActive || (isCompleted && isAdmin) || isUnlockedForEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-visible">
+            <div class="p-4 sm:p-6">
+              <h4 class="text-base font-medium text-gray-900 mb-4">Pageant Status</h4>
+              <p class="text-sm text-gray-500 mb-4">
+                Update the status of your pageant as it progresses through different phases.
+              </p>
+              
+              <!-- Auto-completion warning -->
+              <div v-if="isPageantDateElapsed && !isCompleted && !isUnlockedForEdit" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <div class="flex items-start">
+                  <AlertCircle class="h-5 w-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <h5 class="text-sm font-medium text-amber-800">Auto-completion Required</h5>
+                    <p class="text-xs text-amber-700 mt-1">
+                      This pageant's date has elapsed ({{ pageant.start_date }}). It should be marked as completed to finalize results.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Admin-only notice -->
+              <div v-if="!isAdmin && (isCompleted || isUnlockedForEdit)" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div class="flex items-start">
+                  <Info class="h-5 w-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <h5 class="text-sm font-medium text-blue-800">Administrative Status</h5>
+                    <p class="text-xs text-blue-700 mt-1">
+                      Only administrators can modify the status of completed pageants or unlock them for editing.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <span class="text-sm text-gray-600 mr-3">Current Status:</span>
+                  <span :class="[
+                    getStatusClass(pageant.status).badge,
+                    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
+                  ]">
+                    {{ pageant.status }}
+                  </span>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                  <div v-if="getAvailableStatusTransitions().length > 0">
+                    <label class="block text-sm font-medium text-gray-700">Change to:</label>
+                    <div class="mt-1 w-full">
+                      <CustomSelect
+                        v-model="selectedNewStatus"
+                        :options="getAvailableStatusTransitions()"
+                        placeholder="Select new status"
+                        variant="orange"
+                      />
+                    </div>
+                  </div>
+                  
+                  <button 
+                    v-if="selectedNewStatus && getAvailableStatusTransitions().length > 0"
+                    @click="updateStatus"
+                    :disabled="statusUpdateForm.processing"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <AlertCircle class="h-4 w-4 mr-1.5" />
+                    {{ statusUpdateForm.processing ? 'Updating...' : 'Update Status' }}
+                  </button>
+                  
+                  <div v-else-if="getAvailableStatusTransitions().length === 0" class="text-sm text-gray-500">
+                    {{ isCompleted && !isAdmin ? 'Completed pageants can only be modified by administrators.' : 'No status changes available from current status.' }}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Status transition help -->
+              <div v-if="selectedNewStatus" class="mt-3 p-3 bg-blue-50 rounded-md">
+                <p class="text-sm text-blue-700">
+                  <strong>{{ pageant.status }} → {{ selectedNewStatus }}:</strong>
+                  {{ getStatusTransitionHelp(pageant.status, selectedNewStatus) }}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Completed Pageant Status (Non-Admin View) -->
+          <div v-if="isCompleted && !isAdmin" class="bg-gray-50 rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div class="p-4 sm:p-6">
+              <h4 class="text-base font-medium text-gray-900 mb-4">Pageant Status</h4>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <span class="text-sm text-gray-600 mr-3">Current Status:</span>
+                  <span :class="[
+                    getStatusClass(pageant.status).badge,
+                    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
+                  ]">
+                    {{ pageant.status }}
+                  </span>
+                </div>
+                <div class="text-sm text-gray-500">
+                  <CheckCircle class="h-4 w-4 inline mr-1" />
+                  Pageant completed
+                </div>
+              </div>
+              <div class="mt-3 p-3 bg-blue-50 rounded-md">
+                <div class="flex items-start">
+                  <Info class="h-5 w-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p class="text-sm text-blue-700">
+                      <strong>This pageant has been completed.</strong> 
+                      Only administrators can unlock completed pageants for editing or make status changes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <!-- Stats Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <!-- Contestants Card -->
@@ -235,105 +343,8 @@
           </div>
         </div>
         
-        <!-- Events Tab -->
-        <div v-else-if="activeTab === 'events'" class="space-y-6">
-          <div class="flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-gray-900">Pageant Events</h3>
-            <div v-if="canEdit">
-              <button 
-                @click="showEventForm = true"
-                class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 btn-transition"
-              >
-                <Plus class="h-4 w-4 mr-1.5" />
-                Add Event
-              </button>
-            </div>
-          </div>
-          
-          <!-- Empty State -->
-          <div v-if="!pageant.events || pageant.events.length === 0" class="bg-gray-50 rounded-lg py-12 px-4 text-center">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-              <Calendar class="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-1">No Events Scheduled</h3>
-            <p class="text-gray-500 max-w-md mx-auto">
-              No events have been scheduled for this pageant yet.
-              {{ canEdit ? 'Click the "Add Event" button to schedule your first event.' : '' }}
-            </p>
-          </div>
-          
-          <!-- Timeline View -->
-          <div v-else class="mt-6 flow-root">
-            <ul class="-mb-8">
-              <li v-for="(event, index) in sortedEvents" :key="event.id" class="relative pb-8">
-                <!-- Timeline connector line -->
-                <div v-if="index !== pageant.events.length - 1" class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></div>
-                
-                <div class="relative flex space-x-3">
-                  <!-- Status circle -->
-                  <div>
-                    <span :class="[
-                      getEventStatusClass(event.status).bgClass,
-                      'h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white'
-                    ]">
-                      <component :is="getEventStatusClass(event.status).icon" class="h-5 w-5 text-white" aria-hidden="true" />
-                    </span>
-                  </div>
-                  
-                  <!-- Event content -->
-                  <div class="flex-1 min-w-0 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                    <div class="px-4 py-3">
-                      <div class="flex items-center justify-between mb-1">
-                        <h4 class="text-base font-medium text-gray-900">{{ event.name }}</h4>
-                        <span :class="[
-                          getEventStatusClass(event.status).textClass,
-                          'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium'
-                        ]">
-                          {{ event.status }}
-                        </span>
-                      </div>
-                      
-                      <p v-if="event.description" class="text-sm text-gray-500 mb-2">{{ event.description }}</p>
-                      
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-500">
-                        <div class="flex items-center">
-                          <Clock class="h-4 w-4 mr-1.5 text-gray-400" />
-                          {{ event.start_datetime }} - {{ event.end_datetime }}
-                        </div>
-                        <div v-if="event.venue || event.location" class="flex items-center">
-                          <MapPin class="h-4 w-4 mr-1.5 text-gray-400" />
-                          {{ event.venue || event.location }}
-                        </div>
-                        <div class="flex items-center">
-                          <Tag class="h-4 w-4 mr-1.5 text-gray-400" />
-                          {{ event.type }}
-                        </div>
-                        <div v-if="event.is_milestone" class="flex items-center text-orange-600">
-                          <Flag class="h-4 w-4 mr-1.5" />
-                          Milestone Event
-                        </div>
-                      </div>
-                      
-                      <!-- Actions -->
-                      <div v-if="canEdit" class="mt-3 flex justify-end space-x-2">
-                        <Tooltip text="Edit event details, date, and location" position="top">
-                          <button @click="editEvent(event)" class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110">
-                            <Edit class="h-4 w-4" />
-                          </button>
-                        </Tooltip>
-                        <Tooltip text="Delete this event permanently" position="top">
-                          <button @click="confirmDeleteEvent(event)" class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110">
-                            <Trash class="h-4 w-4" />
-                          </button>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
+
+
         
         <!-- Contestants Tab -->
         <div v-else-if="activeTab === 'contestants'" class="space-y-6">
@@ -562,7 +573,7 @@
           </div>
           
           <!-- Tabulator Assignment Section -->
-          <div v-if="canEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+          <div v-if="canEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-visible">
             <div class="p-4 sm:p-6">
               <h4 class="text-base font-medium text-gray-900 mb-4">Assign Tabulator</h4>
               <p class="text-sm text-gray-500 mb-4">
@@ -572,20 +583,14 @@
               <form @submit.prevent="assignTabulator" class="space-y-4">
                 <div>
                   <label for="tabulatorId" class="block text-sm font-medium text-gray-700">Select Tabulator</label>
-                  <select 
-                    id="tabulatorId" 
-                    v-model="tabulatorForm.tabulator_id"
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-                  >
-                    <option value="" disabled>Select a tabulator</option>
-                    <option 
-                      v-for="tabulator in availableTabulators" 
-                      :key="tabulator.id" 
-                      :value="tabulator.id"
-                    >
-                      {{ tabulator.name }} (@{{ tabulator.username }})
-                    </option>
-                  </select>
+                  <div class="mt-1">
+                    <CustomSelect
+                      v-model="tabulatorForm.tabulator_id"
+                      :options="tabulatorOptions"
+                      variant="orange"
+                      placeholder="Select a tabulator"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label for="tabulatorNotes" class="block text-sm font-medium text-gray-700">Notes (Optional)</label>
@@ -1007,7 +1012,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { 
   ChevronLeft, 
@@ -1033,9 +1038,10 @@ import {
   Tag
 } from 'lucide-vue-next'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
-import EventForm from '@/Components/EventForm.vue'
+
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue'
 import Tooltip from '@/Components/Tooltip.vue'
+import CustomSelect from '@/Components/CustomSelect.vue'
 
 defineOptions({
   layout: OrganizerLayout
@@ -1049,13 +1055,16 @@ const props = defineProps({
   availableTabulators: {
     type: Array,
     default: () => []
+  },
+  auth: {
+    type: Object,
+    required: true
   }
 })
 
 // State
 const activeTab = ref('overview')
-const showEventForm = ref(false)
-const selectedEvent = ref(null)
+
 const showDeleteConfirm = ref(false)
 const deleteProcessing = ref(false)
 const selectedTabulator = ref(null)
@@ -1074,100 +1083,29 @@ const tabulatorForm = ref({
   processing: false
 })
 
+// Computed properties
+const tabulatorOptions = computed(() => {
+  return props.availableTabulators.map(tabulator => ({
+    value: tabulator.id,
+    label: `${tabulator.name} (@${tabulator.username})`
+  }))
+})
+
+// Status update form
+const statusUpdateForm = ref({
+  processing: false
+})
+const selectedNewStatus = ref('')
+
 // Tabs configuration
 const tabs = [
   { id: 'overview', name: 'Overview', icon: Info },
-  { id: 'events', name: 'Events', icon: Calendar },
+
   { id: 'contestants', name: 'Contestants', icon: Users },
   { id: 'criteria', name: 'Criteria', icon: ListChecks },
   { id: 'judges', name: 'Judges', icon: Scale },
   { id: 'scoring', name: 'Scoring System', icon: Calculator },
 ]
-
-// Event status classes
-const getEventStatusClass = (status) => {
-  switch (status) {
-    case 'Pending':
-      return { 
-        bgClass: 'bg-blue-500',
-        textClass: 'bg-blue-100 text-blue-800',
-        icon: Clock
-      }
-    case 'In Progress':
-      return { 
-        bgClass: 'bg-orange-500',
-        textClass: 'bg-orange-100 text-orange-800',
-        icon: Activity
-      }
-    case 'Completed':
-      return { 
-        bgClass: 'bg-green-500',
-        textClass: 'bg-green-100 text-green-800',
-        icon: CheckCircle
-      }
-    case 'Cancelled':
-      return { 
-        bgClass: 'bg-red-500',
-        textClass: 'bg-red-100 text-red-800',
-        icon: AlertCircle
-      }
-    default:
-      return { 
-        bgClass: 'bg-gray-500',
-        textClass: 'bg-gray-100 text-gray-800',
-        icon: Info
-      }
-  }
-}
-
-// Events sorted by date
-const sortedEvents = computed(() => {
-  if (!props.pageant.events) return []
-  
-  return [...props.pageant.events].sort((a, b) => {
-    return new Date(a.raw_start_datetime) - new Date(b.raw_start_datetime)
-  })
-})
-
-// Event related functions
-const closeEventForm = () => {
-  showEventForm.value = false
-  selectedEvent.value = null
-}
-
-const eventSaved = () => {
-  // Success message could be shown here
-}
-
-const editEvent = (event) => {
-  selectedEvent.value = event
-  showEventForm.value = true
-}
-
-const confirmDeleteEvent = (event) => {
-  selectedEvent.value = event
-  showDeleteConfirm.value = true
-}
-
-const confirmDelete = () => {
-  if (!selectedEvent.value) return
-  
-  deleteProcessing.value = true
-  
-  router.delete(route('organizer.pageant.events.delete', {
-    id: props.pageant.id,
-    eventId: selectedEvent.value.id
-  }), {
-    onSuccess: () => {
-      deleteProcessing.value = false
-      showDeleteConfirm.value = false
-      selectedEvent.value = null
-    },
-    onError: () => {
-      deleteProcessing.value = false
-    }
-  })
-}
 
 // Tabulator and Judge related functions
 const updateRequiredJudges = () => {
@@ -1365,6 +1303,18 @@ const isActive = computed(() => props.pageant.status === 'Active')
 const isCompleted = computed(() => props.pageant.status === 'Completed')
 const isUnlockedForEdit = computed(() => props.pageant.status === 'Unlocked_For_Edit')
 
+// Check if user is admin
+const isAdmin = computed(() => props.auth?.user?.role === 'admin')
+
+// Check if pageant date has elapsed
+const isPageantDateElapsed = computed(() => {
+  if (!props.pageant.start_date) return false
+  const pageantDate = new Date(props.pageant.start_date)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Reset time to start of day
+  return pageantDate < today
+})
+
 // Check if pageant can be edited
 const canEdit = computed(() => 
   isDraft.value || 
@@ -1435,4 +1385,103 @@ const getProgressTooltip = (progress) => {
     return 'Pageant setup is complete! All components are configured and ready.'
   }
 }
+
+// Status management functions
+const getAvailableStatusTransitions = () => {
+  const currentStatus = props.pageant.status
+  
+  // If pageant date has elapsed and it's not completed, auto-complete
+  if (isPageantDateElapsed.value && !isCompleted.value && !isUnlockedForEdit.value) {
+    return [{
+      value: 'Completed',
+      label: 'Completed (Auto-completion due to elapsed date)'
+    }]
+  }
+  
+  const baseTransitions = {
+    'Draft': ['Setup', 'Active'],
+    'Setup': ['Draft', 'Active'],
+    'Active': ['Completed'],
+    'Completed': [], // Completed pageants cannot be reverted
+    'Unlocked_For_Edit': ['Completed'], // Can only go back to completed
+  }
+  
+  let transitions = baseTransitions[currentStatus] || []
+  
+  // Only admins can set Unlocked_For_Edit status
+  if (currentStatus === 'Completed' && isAdmin.value) {
+    transitions = ['Unlocked_For_Edit']
+  }
+  
+  // Only admins can transition from any status to Unlocked_For_Edit
+  if (isAdmin.value && currentStatus !== 'Completed' && currentStatus !== 'Unlocked_For_Edit') {
+    transitions = [...transitions, 'Unlocked_For_Edit']
+  }
+  
+  return transitions.map(status => ({
+    value: status,
+    label: status
+  }))
+}
+
+const getStatusTransitionHelp = (fromStatus, toStatus) => {
+  const transitions = {
+    'Draft->Setup': 'Lock the pageant configuration and prepare for contestant registration.',
+    'Draft->Active': 'Start the pageant competition immediately (skips setup phase).',
+    'Draft->Unlocked_For_Edit': 'Temporarily unlock the pageant for administrative corrections. (Admin only)',
+    'Setup->Draft': 'Unlock the pageant to continue making changes.',
+    'Setup->Active': 'Start the pageant competition and begin scoring.',
+    'Setup->Unlocked_For_Edit': 'Temporarily unlock the pageant for administrative corrections. (Admin only)',
+    'Active->Completed': 'End the pageant and finalize results.',
+    'Active->Unlocked_For_Edit': 'Temporarily unlock the pageant for administrative corrections. (Admin only)',
+    'Completed->Unlocked_For_Edit': 'Temporarily unlock the completed pageant to make corrections. (Admin only)',
+    'Unlocked_For_Edit->Completed': 'Relock the pageant as completed.',
+  }
+  
+  // Special case for auto-completion
+  if (toStatus === 'Completed' && isPageantDateElapsed.value) {
+    return 'This pageant will be automatically completed because the pageant date has elapsed.'
+  }
+  
+  const key = `${fromStatus}->${toStatus}`
+  return transitions[key] || 'Change pageant to this status.'
+}
+
+const updateStatus = () => {
+  if (!selectedNewStatus.value) return
+  
+  statusUpdateForm.value.processing = true
+  
+  router.put(route('organizer.pageant.status.update', props.pageant.id), {
+    status: selectedNewStatus.value
+  }, {
+    onFinish: () => {
+      statusUpdateForm.value.processing = false
+      selectedNewStatus.value = ''
+    },
+    onError: (errors) => {
+      statusUpdateForm.value.processing = false
+      console.error('Status update failed:', errors)
+    }
+  })
+}
+
+// Auto-completion logic
+const checkForAutoCompletion = () => {
+  if (isPageantDateElapsed.value && !isCompleted.value && !isUnlockedForEdit.value && !statusUpdateForm.value.processing) {
+    console.log('Pageant date has elapsed, suggesting auto-completion')
+    // You could automatically trigger the completion here, but it's better to let the user decide
+    // by showing the auto-completion option in the UI
+  }
+}
+
+// Check for auto-completion on mount
+onMounted(() => {
+  checkForAutoCompletion()
+})
+
+// Watch for changes in pageant status or date that might trigger auto-completion
+watch([isPageantDateElapsed, isCompleted, isUnlockedForEdit], () => {
+  checkForAutoCompletion()
+})
 </script> 

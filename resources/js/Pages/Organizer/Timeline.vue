@@ -20,25 +20,21 @@
           </div>
         </div>
         
-        <select 
-          v-model="statusFilter"
-          class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 bg-white shadow-sm"
-        >
-          <option value="all">All Statuses</option>
-          <option value="Draft">Draft</option>
-          <option value="Setup">Setup</option>
-          <option value="Active">Active</option>
-          <option value="Completed">Completed</option>
-          <option value="Unlocked_For_Edit">Unlocked For Edit</option>
-        </select>
+        <div class="min-w-[140px]">
+          <CustomSelect
+            v-model="statusFilter"
+            :options="statusFilterOptions"
+            variant="orange"
+          />
+        </div>
         
-        <select 
-          v-model="sortOrder"
-          class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 bg-white shadow-sm"
-        >
-          <option value="asc">Start Date (Oldest First)</option>
-          <option value="desc">Start Date (Newest First)</option>
-        </select>
+        <div class="min-w-[180px]">
+          <CustomSelect
+            v-model="sortOrder"
+            :options="sortOrderOptions"
+            variant="orange"
+          />
+        </div>
       </div>
     </div>
     
@@ -160,13 +156,10 @@
               <!-- Footer with Stats and CTA -->
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
+                  <!-- Events functionality has been removed -->
                   <div class="flex items-center">
                     <Calendar class="w-5 h-5 text-gray-400" />
-                    <span class="ml-1 text-sm font-medium text-gray-700">{{ pageant.events_count || 0 }}</span>
-                  </div>
-                  <div class="flex items-center">
-                    <Check class="w-5 h-5 text-green-500" />
-                    <span class="ml-1 text-sm font-medium text-gray-700">{{ pageant.completed_events_count || 0 }}</span>
+                    <span class="ml-1 text-sm font-medium text-gray-700">{{ pageant.contestants_count || 0 }} contestants</span>
                   </div>
                 </div>
                 
@@ -203,6 +196,7 @@
 import { ref, computed } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
+import CustomSelect from '@/Components/CustomSelect.vue'
 import { 
   Calendar, 
   Search, 
@@ -240,6 +234,21 @@ const props = defineProps({
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const sortOrder = ref('asc')
+
+// Options for selects
+const statusFilterOptions = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'Draft', label: 'Draft' },
+  { value: 'Setup', label: 'Setup' },
+  { value: 'Active', label: 'Active' },
+  { value: 'Completed', label: 'Completed' },
+  { value: 'Unlocked_For_Edit', label: 'Unlocked For Edit' }
+]
+
+const sortOrderOptions = [
+  { value: 'asc', label: 'Start Date (Oldest First)' },
+  { value: 'desc', label: 'Start Date (Newest First)' }
+]
 
 // Computed
 const filteredPageants = computed(() => {

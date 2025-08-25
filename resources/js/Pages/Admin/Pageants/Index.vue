@@ -70,56 +70,53 @@
               <!-- Date filter -->
               <div class="flex items-center space-x-2">
                 <label class="text-xs sm:text-sm font-medium text-gray-700">Date:</label>
-                <select 
-                  v-model="dateFilter" 
-                  class="border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 text-xs sm:text-sm"
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                  <option value="year">This Year</option>
-                </select>
+                <div class="min-w-[120px]">
+                  <CustomSelect
+                    v-model="dateFilter"
+                    :options="dateFilterOptions"
+                    variant="teal"
+                    placeholder="Select Date"
+                  />
+                </div>
               </div>
 
               <!-- Organizer filter -->
               <div class="flex items-center space-x-2">
                 <label class="text-xs sm:text-sm font-medium text-gray-700">Organizer:</label>
-                <select 
-                  v-model="organizerFilter" 
-                  class="border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 text-xs sm:text-sm"
-                >
-                  <option value="">All Organizers</option>
-                  <option v-for="organizer in organizers" :key="organizer.id" :value="organizer.id">
-                    {{ organizer.name }}
-                  </option>
-                </select>
+                <div class="min-w-[140px]">
+                  <CustomSelect
+                    v-model="organizerFilter"
+                    :options="organizerFilterOptions"
+                    variant="teal"
+                    placeholder="Select Organizer"
+                  />
+                </div>
               </div>
 
               <!-- Sort by -->
               <div class="flex items-center space-x-2">
                 <label class="text-xs sm:text-sm font-medium text-gray-700">Sort By:</label>
-                <select 
-                  v-model="sortBy" 
-                  class="border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 text-xs sm:text-sm"
-                >
-                  <option value="name">Name</option>
-                  <option value="created_at">Date Created</option>
-                  <option value="start_date">Start Date</option>
-                  <option value="end_date">End Date</option>
-                </select>
+                <div class="min-w-[130px]">
+                  <CustomSelect
+                    v-model="sortBy"
+                    :options="sortByOptions"
+                    variant="teal"
+                    placeholder="Sort By"
+                  />
+                </div>
               </div>
 
               <!-- Sort direction -->
               <div class="flex items-center space-x-2">
                 <label class="text-xs sm:text-sm font-medium text-gray-700">Order:</label>
-                <select 
-                  v-model="sortDirection" 
-                  class="border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 text-xs sm:text-sm"
-                >
-                  <option value="asc">Ascending</option>
-                  <option value="desc">Descending</option>
-                </select>
+                <div class="min-w-[120px]">
+                  <CustomSelect
+                    v-model="sortDirection"
+                    :options="sortDirectionOptions"
+                    variant="teal"
+                    placeholder="Select Order"
+                  />
+                </div>
               </div>
             </div>
 
@@ -439,6 +436,7 @@ import {
   Eye
 } from 'lucide-vue-next';
 import { useNotification } from '@/Composables/useNotification';
+import CustomSelect from '@/Components/CustomSelect.vue';
 
 // Define props from controller
 const props = defineProps({
@@ -481,6 +479,35 @@ const sortBy = ref('created_at');
 const sortDirection = ref('desc');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
+
+// Filter options for CustomSelect components
+const dateFilterOptions = [
+  { value: 'all', label: 'All Time' },
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
+  { value: 'year', label: 'This Year' }
+];
+
+const organizerFilterOptions = computed(() => [
+  { value: '', label: 'All Organizers' },
+  ...props.organizers.map(organizer => ({
+    value: organizer.id,
+    label: organizer.name
+  }))
+]);
+
+const sortByOptions = [
+  { value: 'name', label: 'Name' },
+  { value: 'created_at', label: 'Date Created' },
+  { value: 'start_date', label: 'Start Date' },
+  { value: 'end_date', label: 'End Date' }
+];
+
+const sortDirectionOptions = [
+  { value: 'asc', label: 'Ascending' },
+  { value: 'desc', label: 'Descending' }
+];
 
 // Status filters
 const statusFilters = [
