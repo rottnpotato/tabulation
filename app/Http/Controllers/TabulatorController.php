@@ -10,6 +10,7 @@ use App\Models\Criteria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class TabulatorController extends Controller
@@ -94,13 +95,112 @@ class TabulatorController extends Controller
             ];
         });
         
+        // Get available judges not yet assigned to this pageant
+        $assignedJudgeIds = $pageant->judges->pluck('id')->toArray();
+        $availableJudges = User::where('role', 'judge')
+            ->where('is_active', true)
+            ->whereNotIn('id', $assignedJudgeIds)
+            ->select('id', 'name', 'email', 'username')
+            ->orderBy('name')
+            ->get();
+        
         return Inertia::render('Tabulator/Judges', [
             'pageant' => [
                 'id' => $pageant->id,
                 'name' => $pageant->name,
+                'required_judges' => $pageant->required_judges,
+                'current_judges_count' => $judges->count(),
             ],
             'judges' => $judges,
+            'availableJudges' => $availableJudges,
         ]);
+    }
+
+    /**
+     * Assign a judge to the pageant
+     */
+    public function assignJudge(Request $request, $pageantId)
+    {
+        $request->validate([
+            'judge_id' => 'required|exists:users,id',
+            'role' => 'nullable|string|max:50',
+        ]);
+
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+        
+        // Check if pageant has reached required judges limit
+        if ($pageant->required_judges && $pageant->judges()->count() >= $pageant->required_judges) {
+            return back()->withErrors(['message' => 'This pageant has already reached the maximum number of judges.']);
+        }
+        
+        // Check if judge is already assigned
+        if ($pageant->judges()->where('user_id', $request->judge_id)->exists()) {
+            return back()->withErrors(['message' => 'This judge is already assigned to this pageant.']);
+        }
+        
+        // Assign the judge
+        $pageant->judges()->attach($request->judge_id, [
+            'role' => $request->role ?? 'judge',
+            'active' => true,
+        ]);
+        
+        return back()->with('success', 'Judge assigned successfully.');
+    }
+
+    /**
+     * Remove a judge from the pageant
+     */
+    public function removeJudge($pageantId, $judgeId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+        
+        $pageant->judges()->detach($judgeId);
+        
+        return back()->with('success', 'Judge removed successfully.');
+    }
+
+    /**
+     * Toggle judge active status
+     */
+    public function toggleJudgeStatus($pageantId, $judgeId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+        
+        $judge = $pageant->judges()->where('user_id', $judgeId)->first();
+        if ($judge) {
+            $newStatus = !$judge->pivot->active;
+            $pageant->judges()->updateExistingPivot($judgeId, ['active' => $newStatus]);
+            
+            return back()->with('success', 'Judge status updated successfully.');
+        }
+        
+        return back()->withErrors(['message' => 'Judge not found.']);
+    }
+
+    /**
+     * Reset judge password
+     */
+    public function resetJudgePassword($pageantId, $judgeId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+        
+        $judge = User::find($judgeId);
+        if ($judge && $pageant->judges()->where('user_id', $judgeId)->exists()) {
+            // Generate a new password
+            $newPassword = Str::random(8);
+            $judge->update(['password' => bcrypt($newPassword)]);
+            
+            // TODO: Send email with new password
+            // Mail::to($judge->email)->send(new PasswordReset($judge, $newPassword));
+            
+            return back()->with('success', "Judge password reset. New password: {$newPassword}");
+        }
+        
+        return back()->withErrors(['message' => 'Judge not found.']);
     }
 
     /**

@@ -183,6 +183,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useForm, Link } from '@inertiajs/vue3'
+import { useNotification } from '@/Composables/useNotification'
 import { 
   User2,
   Users,
@@ -239,6 +240,9 @@ const props = defineProps({
 })
 
 defineEmits(['submit'])
+
+// Initialize notification system
+const notify = useNotification()
 
 // Create form with initial values
 const form = useForm({
@@ -374,15 +378,62 @@ const submit = () => {
       return
     }
     
-    // Ensure route params contains the id parameter
+    // Ensure route params contains the id parameter and filter out undefined values
     const params = { ...props.routeParams }
     if (!params.id && props.user.id) {
       params.id = props.user.id
     }
     
-    form.put(route(props.submitRoute, params))
+    // Filter out any undefined or null values from params
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([key, value]) => value != null)
+    )
+    
+    form.put(route(props.submitRoute, cleanParams), {
+      onSuccess: () => {
+        notify.success(`${userTypeSingular.value} updated successfully!`)
+      },
+      onError: (errors) => {
+        const errorMessage = getErrorMessage(errors)
+        notify.error(`Failed to update ${userTypeSingular.value.toLowerCase()}: ${errorMessage}`)
+      }
+    })
   } else {
-    form.post(route(props.submitRoute))
+    form.post(route(props.submitRoute), {
+      onSuccess: () => {
+        notify.success(`${userTypeSingular.value} created successfully!`)
+      },
+      onError: (errors) => {
+        const errorMessage = getErrorMessage(errors)
+        notify.error(`Failed to create ${userTypeSingular.value.toLowerCase()}: ${errorMessage}`)
+      }
+    })
   }
+}
+
+// Helper function to extract error message from errors object
+const getErrorMessage = (errors) => {
+  if (typeof errors === 'string') {
+    return errors
+  }
+  
+  if (errors && typeof errors === 'object') {
+    // If there's a specific message property
+    if (errors.message) {
+      return errors.message
+    }
+    
+    // Get the first validation error
+    const firstError = Object.values(errors)[0]
+    if (Array.isArray(firstError)) {
+      return firstError[0]
+    }
+    
+    if (typeof firstError === 'string') {
+      return firstError
+    }
+  }
+  
+  return 'Please check the form for errors'
 }
 </script> 

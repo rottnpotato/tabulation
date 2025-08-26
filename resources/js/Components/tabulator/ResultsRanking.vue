@@ -4,7 +4,7 @@
     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
-        <div v-if="$slots.actions" class="flex items-center space-x-2">
+        <div v-if="slots.actions" class="flex items-center space-x-2">
           <slot name="actions" />
         </div>
       </div>
@@ -100,8 +100,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useSlots } from 'vue'
 import { Trophy, Crown, Medal, Award } from 'lucide-vue-next'
+
+const slots = useSlots()
 
 interface Round {
   id: number

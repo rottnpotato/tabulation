@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('pageant_id')->constrained()->onDelete('cascade');
             $table->string('name'); // Evening Gown, Production Number, Q&A, etc.
             $table->text('description')->nullable();
-            $table->string('type')->default('competition'); // competition, preliminary, final
+            $table->string('type')->default('semi-final'); // semi-final, final
             $table->integer('weight')->default(100); // Weight percentage for scoring
             $table->integer('display_order')->default(0);
             $table->boolean('is_active')->default(true);

@@ -485,33 +485,60 @@ class UserManagementController extends Controller
      */
     public function tabulators()
     {
-        $tabulators = User::where('role', 'tabulator')
-            ->withCount('pageants')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($tabulator) {
-                return [
-                    'id' => $tabulator->id,
-                    'name' => $tabulator->name,
-                    'username' => $tabulator->username,
-                    'email' => $tabulator->email,
-                    'status' => $tabulator->is_active ? 'Active' : 'Inactive',
-                    'created_at' => $tabulator->created_at->format('M d, Y'),
-                    'pageants_count' => $tabulator->pageants_count,
-                ];
-            });
-
-        return Inertia::render('Admin/Users/Tabulators', [
-            'tabulators' => $tabulators
-        ]);
+        try {
+            // Debug current user and auth state
+            $currentUser = Auth::user();
+            Log::info('Current user accessing tabulators:', [
+                'user_id' => $currentUser?->id,
+                'user_role' => $currentUser?->role,
+                'is_authenticated' => Auth::check()
+            ]);
+            
+            $tabulators = User::where('role', 'tabulator')
+                ->withCount('tabulatorPageants as pageants_count')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($tabulator) {
+                    return [
+                        'id' => $tabulator->id,
+                        'name' => $tabulator->name,
+                        'username' => $tabulator->username,
+                        'email' => $tabulator->email,
+                        'status' => $tabulator->is_active ? 'Active' : 'Inactive',
+                        'created_at' => $tabulator->created_at->format('M d, Y'),
+                        'pageants_count' => $tabulator->pageants_count ?? 0,
+                    ];
+                });
+                
+            Log::info('Tabulators data prepared:', [
+                'count' => $tabulators->count(), 
+                'sample' => $tabulators->take(2)->toArray()
+            ]);
+                
+            $data = [
+                'tabulators' => $tabulators->toArray()
+            ];
+            
+            Log::info('Final data being passed to Inertia:', $data);
+                
+            return Inertia::render('Admin/Users/Tabulators', $data);
+        } catch (\Exception $e) {
+            Log::error('Error in tabulators method: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return Inertia::render('Admin/Users/Tabulators', [
+                'tabulators' => []
+            ]);
+        }
     }
 
     /**
-     * Display specific tabulator details (read-only)
+     * Display specific tabulator details
      */
     public function showTabulator($id)
     {
-        $tabulator = User::with('pageants')
+        $tabulator = User::with('tabulatorPageants')
             ->findOrFail($id);
 
         $tabulatorData = [
@@ -521,7 +548,7 @@ class UserManagementController extends Controller
             'email' => $tabulator->email,
             'is_active' => $tabulator->is_active,
             'created_at' => $tabulator->created_at->format('M d, Y'),
-            'pageants' => $tabulator->pageants->map(function ($pageant) {
+            'pageants' => $tabulator->tabulatorPageants->map(function ($pageant) {
                 return [
                     'id' => $pageant->id,
                     'name' => $pageant->name,
@@ -537,37 +564,163 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Display judges list (read-only)
+     * Display tabulator edit form
      */
-    public function judges()
+    public function editTabulator($id)
     {
-        $judges = User::where('role', 'judge')
-            ->withCount('pageants')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($judge) {
-                return [
-                    'id' => $judge->id,
-                    'name' => $judge->name,
-                    'username' => $judge->username,
-                    'email' => $judge->email,
-                    'status' => $judge->is_active ? 'Active' : 'Inactive',
-                    'created_at' => $judge->created_at->format('M d, Y'),
-                    'pageants_count' => $judge->pageants_count,
-                ];
-            });
+        $tabulator = User::findOrFail($id);
 
-        return Inertia::render('Admin/Users/Judges', [
-            'judges' => $judges
+        $tabulatorData = [
+            'id' => $tabulator->id,
+            'name' => $tabulator->name,
+            'username' => $tabulator->username,
+            'email' => $tabulator->email,
+            'is_active' => $tabulator->is_active,
+        ];
+
+        return Inertia::render('Admin/Users/EditTabulator', [
+            'tabulator' => $tabulatorData
         ]);
     }
 
     /**
-     * Display specific judge details (read-only)
+     * Update tabulator details
+     */
+    public function updateTabulator(Request $request, $id)
+    {
+        $tabulator = User::findOrFail($id);
+        
+        // Check if username is null or empty and generate one if needed
+        if ($request->has('username') && (is_null($request->username) || empty(trim($request->username)))) {
+            // Generate a username based on name
+            $baseUsername = Str::slug($request->name);
+            $username = $baseUsername;
+            $counter = 1;
+            
+            // Make sure username is unique
+            while (User::where('username', $username)->where('id', '!=', $id)->exists()) {
+                $username = $baseUsername . $counter;
+                $counter++;
+            }
+            
+            // Set the generated username in the request
+            $request->merge(['username' => $username]);
+            
+            // Log the username generation
+            Log::info("Generated username '{$username}' for tabulator ID {$id} during update");
+        }
+        
+        // Check if this is a status-only update (toggle)
+        $isStatusToggle = $request->has('is_active') && count($request->only(['name', 'email', 'username', 'is_active'])) === 4;
+        
+        if ($isStatusToggle) {
+            // Only validate required fields for status toggle
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+                'username' => 'required|string|max:50|unique:users,username,' . $id,
+                'is_active' => 'required|boolean',
+            ]);
+            
+            // Update only the changed fields
+            $tabulator->fill($validated);
+            $tabulator->save();
+            
+            // Log the status change specifically
+            $this->auditLogService->log(
+                Auth::user()->id,
+                'User',
+                $tabulator->id,
+                'UPDATE_TABULATOR_STATUS',
+                "Updated tabulator status: {$tabulator->name}. Status changed to: " . ($tabulator->is_active ? 'Active' : 'Inactive')
+            );
+            
+            return redirect()->back()->with('success', "Tabulator {$tabulator->name}'s status updated successfully.");
+        } else {
+            // Full update with all validations
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+                'username' => 'required|string|max:50|unique:users,username,' . $id,
+                'is_active' => 'required|boolean',
+            ]);
+            
+            // Update only the changed fields
+            $tabulator->fill($validated);
+            $tabulator->save();
+            
+            // Log the action
+            $this->auditLogService->log(
+                Auth::user()->id,
+                'User',
+                $tabulator->id,
+                'UPDATE_TABULATOR',
+                "Updated tabulator user: {$tabulator->name}. Status: " . ($tabulator->is_active ? 'Active' : 'Inactive')
+            );
+            
+            return redirect()->route('admin.users.tabulators.show', $id)->with('success', "Tabulator {$tabulator->name} updated successfully.");
+        }
+    }
+
+    /**
+     * Display judges list (read-only)
+     */
+    public function judges()
+    {
+        try {
+            // Debug current user and auth state
+            $currentUser = Auth::user();
+            Log::info('Current user accessing judges:', [
+                'user_id' => $currentUser?->id,
+                'user_role' => $currentUser?->role,
+                'is_authenticated' => Auth::check()
+            ]);
+            
+            $judges = User::where('role', 'judge')
+                ->withCount('judgePageants as pageants_count')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($judge) {
+                    return [
+                        'id' => $judge->id,
+                        'name' => $judge->name,
+                        'username' => $judge->username,
+                        'email' => $judge->email,
+                        'status' => $judge->is_active ? 'Active' : 'Inactive',
+                        'created_at' => $judge->created_at->format('M d, Y'),
+                        'pageants_count' => $judge->pageants_count ?? 0,
+                    ];
+                });
+                
+            Log::info('Judges data prepared:', [
+                'count' => $judges->count(), 
+                'sample' => $judges->take(2)->toArray()
+            ]);
+                
+            $data = [
+                'judges' => $judges->toArray()
+            ];
+            
+            Log::info('Final data being passed to Inertia:', $data);
+                
+            return Inertia::render('Admin/Users/Judges', $data);
+        } catch (\Exception $e) {
+            Log::error('Error in judges method: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return Inertia::render('Admin/Users/Judges', [
+                'judges' => []
+            ]);
+        }
+    }
+
+    /**
+     * Display specific judge details
      */
     public function showJudge($id)
     {
-        $judge = User::with('pageants')
+        $judge = User::with('judgePageants')
             ->findOrFail($id);
 
         $judgeData = [
@@ -577,7 +730,7 @@ class UserManagementController extends Controller
             'email' => $judge->email,
             'is_active' => $judge->is_active,
             'created_at' => $judge->created_at->format('M d, Y'),
-            'pageants' => $judge->pageants->map(function ($pageant) {
+            'pageants' => $judge->judgePageants->map(function ($pageant) {
                 return [
                     'id' => $pageant->id,
                     'name' => $pageant->name,
@@ -590,6 +743,105 @@ class UserManagementController extends Controller
         return Inertia::render('Admin/Users/ShowJudge', [
             'judge' => $judgeData
         ]);
+    }
+
+    /**
+     * Display judge edit form
+     */
+    public function editJudge($id)
+    {
+        $judge = User::findOrFail($id);
+
+        $judgeData = [
+            'id' => $judge->id,
+            'name' => $judge->name,
+            'username' => $judge->username,
+            'email' => $judge->email,
+            'is_active' => $judge->is_active,
+        ];
+
+        return Inertia::render('Admin/Users/EditJudge', [
+            'judge' => $judgeData
+        ]);
+    }
+
+    /**
+     * Update judge details
+     */
+    public function updateJudge(Request $request, $id)
+    {
+        $judge = User::findOrFail($id);
+        
+        // Check if username is null or empty and generate one if needed
+        if ($request->has('username') && (is_null($request->username) || empty(trim($request->username)))) {
+            // Generate a username based on name
+            $baseUsername = Str::slug($request->name);
+            $username = $baseUsername;
+            $counter = 1;
+            
+            // Make sure username is unique
+            while (User::where('username', $username)->where('id', '!=', $id)->exists()) {
+                $username = $baseUsername . $counter;
+                $counter++;
+            }
+            
+            // Set the generated username in the request
+            $request->merge(['username' => $username]);
+            
+            // Log the username generation
+            Log::info("Generated username '{$username}' for judge ID {$id} during update");
+        }
+        
+        // Check if this is a status-only update (toggle)
+        $isStatusToggle = $request->has('is_active') && count($request->only(['name', 'email', 'username', 'is_active'])) === 4;
+        
+        if ($isStatusToggle) {
+            // Only validate required fields for status toggle
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+                'username' => 'required|string|max:50|unique:users,username,' . $id,
+                'is_active' => 'required|boolean',
+            ]);
+            
+            // Update only the changed fields
+            $judge->fill($validated);
+            $judge->save();
+            
+            // Log the status change specifically
+            $this->auditLogService->log(
+                Auth::user()->id,
+                'User',
+                $judge->id,
+                'UPDATE_JUDGE_STATUS',
+                "Updated judge status: {$judge->name}. Status changed to: " . ($judge->is_active ? 'Active' : 'Inactive')
+            );
+            
+            return redirect()->back()->with('success', "Judge {$judge->name}'s status updated successfully.");
+        } else {
+            // Full update with all validations
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+                'username' => 'required|string|max:50|unique:users,username,' . $id,
+                'is_active' => 'required|boolean',
+            ]);
+            
+            // Update only the changed fields
+            $judge->fill($validated);
+            $judge->save();
+            
+            // Log the action
+            $this->auditLogService->log(
+                Auth::user()->id,
+                'User',
+                $judge->id,
+                'UPDATE_JUDGE',
+                "Updated judge user: {$judge->name}. Status: " . ($judge->is_active ? 'Active' : 'Inactive')
+            );
+            
+            return redirect()->route('admin.users.judges.show', $id)->with('success', "Judge {$judge->name} updated successfully.");
+        }
     }
 
     /**

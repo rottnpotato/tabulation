@@ -4,7 +4,7 @@
     <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
-        <div v-if="$slots.actions" class="flex items-center space-x-2">
+        <div v-if="slots.actions" class="flex items-center space-x-2">
           <slot name="actions" />
         </div>
       </div>
@@ -77,7 +77,7 @@
     <!-- Empty State -->
     <div v-if="contestants.length === 0" class="text-center py-12">
       <div class="text-gray-500">
-        <component :is="emptyIcon" class="mx-auto h-12 w-12 text-gray-400" />
+        <Users class="mx-auto h-12 w-12 text-gray-400" />
         <p class="mt-2 text-lg font-medium">{{ emptyTitle || 'No data available' }}</p>
         <p class="text-sm">{{ emptyMessage || 'No contestants or scores to display.' }}</p>
       </div>
@@ -86,7 +86,10 @@
 </template>
 
 <script setup lang="ts">
+import { useSlots } from 'vue'
 import { Users } from 'lucide-vue-next'
+
+const slots = useSlots()
 
 interface Contestant {
   id: number
@@ -105,14 +108,12 @@ interface Props {
   contestants: Contestant[]
   judges: Judge[]
   scores: Map<string, number> | Record<string, number>
-  emptyIcon?: any
   emptyTitle?: string
   emptyMessage?: string
   scoreKey?: string // for generating score keys like 'contestantId-judgeId-roundId'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  emptyIcon: Users,
   scoreKey: ''
 })
 

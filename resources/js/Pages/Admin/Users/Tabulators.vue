@@ -11,15 +11,16 @@
 
     <!-- User List Component -->
     <UsersList
-      :users="tabulators"
+      :users="tabulatorsData"
       user-type="tabulator"
       detail-route="admin.users.tabulators.show"
+      edit-route="admin.users.tabulators.edit"
       user-type-label="Tabulators"
       user-type-singular="Tabulator"
       pageant-column-title="Assigned Pageants"
       :has-pageants-column="true"
       :has-toggle-status="false"
-      :has-edit="false"
+      :has-edit="true"
       :has-delete="false"
       :show-unverified="false"
       :has-resend-verification="false"
@@ -29,6 +30,7 @@
 
 <script setup>
 import { Head } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import UsersList from '@/Components/users/UsersList.vue'
 
@@ -41,7 +43,17 @@ defineOptions({
 const props = defineProps({
   tabulators: {
     type: Array,
-    required: true
+    required: false,
+    default: () => []
   }
 })
+
+// Safely handle the tabulators data
+const tabulatorsData = computed(() => {
+  console.log('Props received:', props)
+  console.log('Tabulators prop:', props.tabulators)
+  console.log('Is tabulators array?', Array.isArray(props.tabulators))
+  return Array.isArray(props.tabulators) ? props.tabulators : []
+})
+
 </script> 

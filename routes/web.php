@@ -127,10 +127,14 @@ Route::middleware(['auth', 'verified', 'check_role:admin'])->prefix('admin')->gr
         // Tabulator management
         Route::get('/tabulators', [UserManagementController::class, 'tabulators'])->name('admin.users.tabulators');
         Route::get('/tabulators/{id}', [UserManagementController::class, 'showTabulator'])->name('admin.users.tabulators.show');
+        Route::get('/tabulators/{id}/edit', [UserManagementController::class, 'editTabulator'])->name('admin.users.tabulators.edit');
+        Route::put('/tabulators/{id}', [UserManagementController::class, 'updateTabulator'])->name('admin.users.tabulators.update');
         
         // Judge management
         Route::get('/judges', [UserManagementController::class, 'judges'])->name('admin.users.judges');
         Route::get('/judges/{id}', [UserManagementController::class, 'showJudge'])->name('admin.users.judges.show');
+        Route::get('/judges/{id}/edit', [UserManagementController::class, 'editJudge'])->name('admin.users.judges.edit');
+        Route::put('/judges/{id}', [UserManagementController::class, 'updateJudge'])->name('admin.users.judges.update');
         
         // User permissions
         Route::get('/permissions', [UserManagementController::class, 'permissions'])->name('admin.users.permissions');
@@ -169,8 +173,11 @@ Route::middleware(['auth', 'verified', 'check_role:admin'])->prefix('admin')->gr
 });
 
 // Judge Routes
-Route::prefix('judge')->group(function () {
-    Route::get('/scoring', [JudgeController::class, 'scoring'])->name('judge.scoring');
+Route::middleware(['auth', 'verified', 'check_role:judge'])->prefix('judge')->group(function () {
+    Route::get('/dashboard', [JudgeController::class, 'dashboard'])->name('judge.dashboard');
+    Route::get('/{pageantId}/scoring/{roundId?}', [JudgeController::class, 'scoring'])->name('judge.scoring');
+    Route::post('/{pageantId}/rounds/{roundId}/scores', [JudgeController::class, 'submitScores'])->name('judge.scores.submit');
+    Route::get('/{pageantId}/scores-summary', [JudgeController::class, 'scoresSummary'])->name('judge.scores.summary');
 });
 
 
@@ -178,6 +185,10 @@ Route::prefix('judge')->group(function () {
 Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulator')->group(function () {
     Route::get('/dashboard/{pageantId?}', [TabulatorController::class, 'dashboard'])->name('tabulator.dashboard');
     Route::get('/{pageantId}/judges', [TabulatorController::class, 'judges'])->name('tabulator.judges');
+    Route::post('/{pageantId}/judges', [TabulatorController::class, 'assignJudge'])->name('tabulator.judges.assign');
+    Route::delete('/{pageantId}/judges/{judgeId}', [TabulatorController::class, 'removeJudge'])->name('tabulator.judges.remove');
+    Route::post('/{pageantId}/judges/{judgeId}/toggle-status', [TabulatorController::class, 'toggleJudgeStatus'])->name('tabulator.judges.toggle-status');
+    Route::post('/{pageantId}/judges/{judgeId}/reset-password', [TabulatorController::class, 'resetJudgePassword'])->name('tabulator.judges.reset-password');
     Route::get('/{pageantId}/scores/{roundId?}', [TabulatorController::class, 'scores'])->name('tabulator.scores');
     Route::get('/{pageantId}/results', [TabulatorController::class, 'results'])->name('tabulator.results');
     Route::get('/{pageantId}/print', [TabulatorController::class, 'print'])->name('tabulator.print');

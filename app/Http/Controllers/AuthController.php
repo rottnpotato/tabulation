@@ -47,7 +47,7 @@ class AuthController extends Controller
                 case 'tabulator':
                     return redirect()->route('tabulator.dashboard');
                 case 'judge':
-                    return redirect()->route('judge.scoring');
+                    return redirect()->route('judge.dashboard');
                 default:
                     return redirect()->route('admin.dashboard');
             }

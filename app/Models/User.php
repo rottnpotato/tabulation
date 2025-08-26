@@ -176,6 +176,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get pageants that this user is a judge for
+     */
+    public function judgePageants()
+    {
+        return $this->belongsToMany(Pageant::class, 'pageant_judges', 'user_id', 'pageant_id');
+    }
+
+    /**
+     * Get pageants that this user is a tabulator for
+     */
+    public function tabulatorPageants()
+    {
+        return $this->belongsToMany(Pageant::class, 'pageant_tabulators', 'user_id', 'pageant_id');
+    }
+
+    /**
      * Get contestant profile associated with this user (if they are a contestant)
      */
     public function contestantProfile()

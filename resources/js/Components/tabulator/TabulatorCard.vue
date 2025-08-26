@@ -16,19 +16,21 @@
         <p v-if="description" class="text-sm text-gray-500 mt-1">{{ description }}</p>
       </div>
       
-      <div v-if="$slots.content" class="mt-4">
+      <div v-if="slots.content" class="mt-4">
         <slot name="content" />
       </div>
     </div>
     
-    <div v-if="$slots.footer" class="border-t border-gray-100 bg-gray-50 px-6 py-3">
+    <div v-if="slots.footer" class="border-t border-gray-100 bg-gray-50 px-6 py-3">
       <slot name="footer" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useSlots } from 'vue'
+
+const slots = useSlots()
 
 interface Props {
   title: string

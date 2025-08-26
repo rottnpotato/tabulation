@@ -6,17 +6,19 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 class="text-2xl md:text-3xl font-bold text-white">Judge Scoring Panel</h1>
-            <p class="text-amber-100 mt-1">Score contestants for the current event</p>
+            <p class="text-amber-100 mt-1" v-if="pageant">{{ pageant.name }}</p>
+            <p class="text-amber-200 text-sm mt-1" v-if="currentRound">{{ currentRound.name }}</p>
           </div>
-          <div class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
+          <div v-if="rounds.length > 1" class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
             <span class="text-amber-50 font-medium px-3">Current Round:</span>
             <div class="min-w-[160px]">
               <CustomSelect
-                v-model="currentRound"
+                v-model="currentRoundId"
                 :options="roundOptions"
                 :disabled="isLoading"
                 variant="amber"
                 placeholder="Select Round"
+                @change="handleRoundChange"
               />
             </div>
           </div>
@@ -24,183 +26,145 @@
       </div>
     </div>
 
+    <!-- Error State -->
+    <div v-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6">
+      <div class="flex items-center">
+        <AlertCircle class="h-6 w-6 text-red-600 mr-3" />
+        <div>
+          <h3 class="text-lg font-medium text-red-900">Unable to Load Scoring Interface</h3>
+          <p class="text-red-700 mt-1">{{ error }}</p>
+        </div>
+      </div>
+      <div class="mt-4">
+        <Link 
+          :href="route('judge.dashboard')"
+          class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+        >
+          Return to Dashboard
+        </Link>
+      </div>
+    </div>
+
     <!-- Scoring Criteria Overview Cards -->
-    <div class="bg-white shadow-md rounded-xl border border-gray-100 p-6">
+    <div v-else-if="criteria.length > 0" class="bg-white shadow-md rounded-xl border border-gray-100 p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
         <Star class="h-5 w-5 text-amber-500 mr-2" />
         Scoring Criteria
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <template v-if="isLoading">
-          <div v-for="i in 3" :key="i" class="relative overflow-hidden rounded-xl border border-amber-100 transition-all">
-            <div class="absolute top-0 left-0 h-full w-1 bg-amber-200 shimmer shimmer-amber"></div>
-            <div class="p-4 pl-5">
-              <div class="h-5 w-32 bg-gray-200 rounded shimmer shimmer-amber mb-2"></div>
-              <div class="h-4 w-full bg-gray-200 rounded shimmer shimmer-amber mb-3"></div>
-              <div class="h-6 w-20 bg-gray-200 rounded-full shimmer shimmer-amber"></div>
-            </div>
-          </div>
-        </template>
-        <template v-else>
-          <div 
-            v-for="criterion in criteria" 
-            :key="criterion.id" 
-            class="relative overflow-hidden rounded-xl border border-amber-100 transition-all hover:shadow-md group"
-          >
-            <div class="absolute top-0 left-0 h-full w-1 bg-amber-500"></div>
-            <div class="p-4 pl-5">
-              <h3 class="font-medium text-gray-900 group-hover:text-amber-700 transition-colors">{{ criterion.name }}</h3>
-              <p class="text-sm text-gray-600 mt-1">{{ criterion.description }}</p>
-              <div class="mt-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+        <div 
+          v-for="criterion in criteria" 
+          :key="criterion.id" 
+          class="relative overflow-hidden rounded-xl border border-amber-100 transition-all hover:shadow-md group"
+        >
+          <div class="absolute top-0 left-0 h-full w-1 bg-amber-500"></div>
+          <div class="p-4 pl-5">
+            <h3 class="font-medium text-gray-900 group-hover:text-amber-700 transition-colors">{{ criterion.name }}</h3>
+            <p class="text-sm text-gray-600 mt-1">{{ criterion.description }}</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                 Weight: {{ criterion.weight }}%
+              </div>
+              <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {{ criterion.min_score }}-{{ criterion.max_score }} pts
               </div>
             </div>
           </div>
-        </template>
+        </div>
       </div>
     </div>
 
     <!-- Contestant Scoring Cards -->
-    <div class="space-y-6">
-      <template v-if="isLoading">
-        <div v-for="i in 3" :key="i" class="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden">
-          <!-- Skeleton Contestant Header -->
-          <div class="p-6 border-b border-gray-100">
-            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div class="relative">
-                <div class="h-20 w-20 rounded-xl bg-gray-200 shimmer shimmer-amber"></div>
-                <div class="absolute -bottom-3 -right-3 h-8 w-8 rounded-full bg-gray-200 shimmer shimmer-amber"></div>
-              </div>
-              <div class="space-y-2">
-                <div class="h-6 w-40 bg-gray-200 rounded shimmer shimmer-amber"></div>
-                <div class="h-4 w-32 bg-gray-200 rounded shimmer shimmer-amber"></div>
-              </div>
-              <div class="sm:ml-auto">
-                <div class="bg-gray-100 rounded-lg px-4 py-2">
-                  <div class="h-3 w-16 bg-gray-200 rounded shimmer shimmer-amber mb-1"></div>
-                  <div class="h-7 w-10 bg-gray-200 rounded shimmer shimmer-amber"></div>
-                </div>
+    <div v-else-if="contestants.length > 0" class="space-y-6">
+      <div v-for="contestant in contestants" :key="contestant.id" class="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
+        <!-- Contestant Header -->
+        <div class="p-6 border-b border-gray-100">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="relative">
+              <img
+                :src="contestant.image"
+                :alt="contestant.name"
+                class="h-20 w-20 rounded-xl object-cover"
+              />
+              <div class="absolute -bottom-3 -right-3 bg-amber-500 text-white text-xs font-bold h-8 w-8 rounded-full flex items-center justify-center shadow-md">
+                #{{ contestant.number }}
               </div>
             </div>
-          </div>
-
-          <!-- Skeleton Scoring Form -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-              <div v-for="j in 6" :key="j" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg">
-                <div class="space-y-1">
-                  <div class="h-5 w-32 bg-gray-200 rounded shimmer shimmer-amber"></div>
-                  <div class="h-3 w-20 bg-gray-200 rounded shimmer shimmer-amber"></div>
-                </div>
-                <div class="flex items-center gap-3">
-                  <div class="h-4 w-36 bg-gray-200 rounded shimmer shimmer-amber"></div>
-                  <div class="h-8 w-16 bg-gray-200 rounded shimmer shimmer-amber"></div>
-                </div>
-              </div>
+            <div>
+              <h3 class="text-xl font-semibold text-gray-900">{{ contestant.name }}</h3>
+              <p class="text-sm text-gray-500" v-if="contestant.origin">{{ contestant.origin }}</p>
             </div>
-
-            <!-- Skeleton Submit Button & Notes -->
-            <div class="mt-8 flex flex-col sm:flex-row gap-4">
-              <div class="flex-grow">
-                <div class="h-4 w-32 bg-gray-200 rounded shimmer shimmer-amber mb-2"></div>
-                <div class="h-16 w-full bg-gray-200 rounded shimmer shimmer-amber"></div>
-              </div>
-              <div class="flex items-end">
-                <div class="h-12 w-32 bg-gray-200 rounded shimmer shimmer-amber"></div>
+            <div class="sm:ml-auto flex items-center">
+              <div class="bg-gray-100 rounded-lg px-4 py-2">
+                <div class="text-xs text-gray-500">Average Score</div>
+                <div class="text-xl font-bold" :class="getAverageScoreColor(calculateAverage(contestant.id))">
+                  {{ calculateAverage(contestant.id) }}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </template>
-      <template v-else>
-        <div v-for="contestant in contestants" :key="contestant.id" class="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
-          <!-- Contestant Header -->
-          <div class="p-6 border-b border-gray-100">
-            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div class="relative">
-                <img
-                  :src="contestant.image"
-                  :alt="contestant.name"
-                  class="h-20 w-20 rounded-xl object-cover"
-                />
-                <div class="absolute -bottom-3 -right-3 bg-amber-500 text-white text-xs font-bold h-8 w-8 rounded-full flex items-center justify-center shadow-md">
-                  #{{ contestant.number }}
-                </div>
-              </div>
+
+        <!-- Scoring Form -->
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div 
+              v-for="criterion in criteria" 
+              :key="criterion.id" 
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg hover:bg-amber-50 transition-colors"
+            >
               <div>
-                <h3 class="text-xl font-semibold text-gray-900">{{ contestant.name }}</h3>
-                <p class="text-sm text-gray-500">{{ getContestantTitle(contestant.id) }}</p>
+                <div class="font-medium text-gray-900">{{ criterion.name }}</div>
+                <div class="text-xs text-gray-500">Score {{ criterion.min_score }}-{{ criterion.max_score }}</div>
               </div>
-              <div class="sm:ml-auto flex items-center">
-                <div class="bg-gray-100 rounded-lg px-4 py-2">
-                  <div class="text-xs text-gray-500">Average Score</div>
-                  <div class="text-xl font-bold" :class="getAverageScoreColor(calculateAverage(contestant.id))">
-                    {{ calculateAverage(contestant.id) }}
-                  </div>
-                </div>
+              <div class="flex items-center gap-3">
+                <input
+                  type="range"
+                  v-model="scores[`${contestant.id}-${criterion.id}`]"
+                  :min="criterion.min_score"
+                  :max="criterion.max_score"
+                  :step="criterion.allow_decimals ? 0.1 : 1"
+                  class="w-28 sm:w-36 accent-amber-500"
+                  @input="validateScore($event, contestant.id, criterion.id, criterion)"
+                />
+                <input
+                  type="number"
+                  v-model="scores[`${contestant.id}-${criterion.id}`]"
+                  :min="criterion.min_score"
+                  :max="criterion.max_score"
+                  :step="criterion.allow_decimals ? 0.1 : 1"
+                  class="w-16 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-center"
+                  @change="validateScore($event, contestant.id, criterion.id, criterion)"
+                />
               </div>
             </div>
           </div>
 
-          <!-- Scoring Form -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-              <div 
-                v-for="criterion in criteria" 
-                :key="criterion.id" 
-                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg hover:bg-amber-50 transition-colors"
-              >
-                <div>
-                  <div class="font-medium text-gray-900">{{ criterion.name }}</div>
-                  <div class="text-xs text-gray-500">Score 1-100</div>
-                </div>
-                <div class="flex items-center gap-3">
-                  <input
-                    type="range"
-                    v-model="scores[`${contestant.id}-${criterion.id}`]"
-                    min="1"
-                    max="100"
-                    class="w-28 sm:w-36 accent-amber-500"
-                    @input="validateScore($event, contestant.id, criterion.id)"
-                  />
-                  <input
-                    type="number"
-                    v-model="scores[`${contestant.id}-${criterion.id}`]"
-                    min="1"
-                    max="100"
-                    class="w-16 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-center"
-                    @change="validateScore($event, contestant.id, criterion.id)"
-                  />
-                </div>
-              </div>
+          <!-- Submit Button & Notes -->
+          <div class="mt-8 flex flex-col sm:flex-row gap-4">
+            <div class="flex-grow">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Scoring Notes (Optional)</label>
+              <textarea 
+                v-model="notes[contestant.id]" 
+                rows="2" 
+                class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm resize-none"
+                placeholder="Add any comments or observations about this contestant's performance..."
+              ></textarea>
             </div>
-
-            <!-- Submit Button & Notes -->
-            <div class="mt-8 flex flex-col sm:flex-row gap-4">
-              <div class="flex-grow">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Scoring Notes (Optional)</label>
-                <textarea 
-                  v-model="notes[contestant.id]" 
-                  rows="2" 
-                  class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm resize-none"
-                  placeholder="Add any comments or observations about this contestant's performance..."
-                ></textarea>
-              </div>
-              <div class="flex items-end">
-                <button
-                  @click="submitScores(contestant.id)"
-                  class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 shadow-sm hover:shadow transition-all"
-                  :disabled="!isContestantScoreComplete(contestant.id)"
-                  :class="{ 'opacity-50 cursor-not-allowed': !isContestantScoreComplete(contestant.id) }"
-                >
-                  <Save class="h-5 w-5" />
-                  <span>Submit Scores</span>
-                </button>
-              </div>
+            <div class="flex items-end">
+              <button
+                @click="submitScores(contestant.id)"
+                class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 shadow-sm hover:shadow transition-all"
+                :disabled="!isContestantScoreComplete(contestant.id) || submitLoading"
+                :class="{ 'opacity-50 cursor-not-allowed': !isContestantScoreComplete(contestant.id) || submitLoading }"
+              >
+                <Save class="h-5 w-5" />
+                <span>{{ submitLoading ? 'Submitting...' : 'Submit Scores' }}</span>
+              </button>
             </div>
           </div>
         </div>
-      </template>
+      </div>
     </div>
 
     <!-- Confirmation Modal -->
@@ -230,101 +194,100 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Star, Save, CheckCircle } from 'lucide-vue-next'
-import { useAuthStore } from '../../stores/auth'
+import { Star, Save, CheckCircle, AlertCircle } from 'lucide-vue-next'
+import { Link, router, usePage } from '@inertiajs/vue3'
+import { route } from 'ziggy-js'
 import CustomSelect from '../../Components/CustomSelect.vue'
 import '../../components/skeletons/skeleton.css'
 import JudgeLayout from '../../Layouts/JudgeLayout.vue'
+import axios from 'axios'
 
 defineOptions({
   layout: JudgeLayout
 })
 
-const authStore = useAuthStore()
-const currentRound = ref('evening_gown')
+const props = defineProps({
+  pageant: {
+    type: Object,
+    default: null
+  },
+  rounds: {
+    type: Array,
+    default: () => []
+  },
+  currentRound: {
+    type: Object,
+    default: null
+  },
+  contestants: {
+    type: Array,
+    default: () => []
+  },
+  criteria: {
+    type: Array,
+    default: () => []
+  },
+  existingScores: {
+    type: Object,
+    default: () => ({})
+  },
+  existingNotes: {
+    type: Object,
+    default: () => ({})
+  },
+  error: {
+    type: String,
+    default: null
+  }
+})
+
+const currentRoundId = ref(props.currentRound?.id)
 const showConfirmation = ref(false)
 const submittedContestantId = ref(null)
-const isLoading = ref(true)
+const isLoading = ref(false)
+const submitLoading = ref(false)
 
-const roundOptions = ref([
-  { value: 'evening_gown', label: 'Evening Gown' },
-  { value: 'swimsuit', label: 'Swimsuit' },
-  { value: 'talent', label: 'Talent' },
-  { value: 'qa', label: 'Q&A' }
-])
+const roundOptions = computed(() => {
+  return props.rounds.map(round => ({
+    value: round.id.toString(),
+    label: round.name
+  }))
+})
 
-const criteria = ref([
-  {
-    id: 1,
-    name: 'Beauty and Poise',
-    description: 'Overall physical appearance, grace, and elegance in presentation',
-    weight: 30
-  },
-  {
-    id: 2,
-    name: 'Stage Presence',
-    description: 'Confidence, charisma, and ability to command attention',
-    weight: 40
-  },
-  {
-    id: 3,
-    name: 'Overall Impact',
-    description: 'The lasting impression and overall performance quality',
-    weight: 30
-  }
-])
+const scores = ref({ ...props.existingScores })
+const notes = ref({ ...props.existingNotes })
 
-const contestants = ref([
-  {
-    id: 1,
-    number: 1,
-    name: 'Sarah Johnson',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80',
-    title: 'Miss California'
-  },
-  {
-    id: 2,
-    number: 2,
-    name: 'Emily Davis',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80',
-    title: 'Miss New York'
-  },
-  {
-    id: 3,
-    number: 3,
-    name: 'Maria Garcia',
-    image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80',
-    title: 'Miss Florida'
-  }
-])
-
-const scores = ref({})
-const notes = ref({})
-
-const getContestantTitle = (contestantId) => {
-  const contestant = contestants.value.find(c => c.id === contestantId)
-  return contestant?.title || 'Contestant'
+const handleRoundChange = (value) => {
+  const roundId = parseInt(value)
+  router.visit(route('judge.scoring', [props.pageant.id, roundId]))
 }
 
-const validateScore = (event, contestantId, criterionId) => {
+const validateScore = (event, contestantId, criterionId, criterion) => {
   const input = event.target
-  let value = parseInt(input.value)
+  let value = parseFloat(input.value)
   
-  if (value < 1) value = 1
-  if (value > 100) value = 100
+  if (value < criterion.min_score) value = criterion.min_score
+  if (value > criterion.max_score) value = criterion.max_score
+  
+  // Handle decimal places
+  if (!criterion.allow_decimals) {
+    value = Math.round(value)
+  } else if (criterion.decimal_places) {
+    value = parseFloat(value.toFixed(criterion.decimal_places))
+  }
   
   scores.value[`${contestantId}-${criterionId}`] = value
 }
 
 const calculateAverage = (contestantId) => {
-  const contestantScores = criteria.value.map(criterion => 
+  const contestantScores = props.criteria.map(criterion => 
     scores.value[`${contestantId}-${criterion.id}`] || 0
   )
   
   if (contestantScores.some(score => score === 0)) return '-'
   
   const weightedSum = contestantScores.reduce((sum, score, index) => 
-    sum + (score * criteria.value[index].weight / 100), 0
+    sum + (score * props.criteria[index].weight / 100), 0
   )
   
   return weightedSum.toFixed(1)
@@ -342,42 +305,44 @@ const getAverageScoreColor = (score) => {
 }
 
 const isContestantScoreComplete = (contestantId) => {
-  return criteria.value.every(criterion => 
-    scores.value[`${contestantId}-${criterion.id}`] !== undefined
+  return props.criteria.every(criterion => 
+    scores.value[`${contestantId}-${criterion.id}`] !== undefined && scores.value[`${contestantId}-${criterion.id}`] !== null
   )
 }
 
-const submitScores = (contestantId) => {
-  // Simulate API call to submit scores
-  const contestantScores = {
-    judgeId: authStore.user?.id,
-    contestantId,
-    round: currentRound.value,
-    notes: notes.value[contestantId] || '',
-    scores: criteria.value.map(criterion => ({
-      criterionId: criterion.id,
-      score: scores.value[`${contestantId}-${criterion.id}`]
-    }))
+const submitScores = async (contestantId) => {
+  if (submitLoading.value) return
+  
+  submitLoading.value = true
+  
+  try {
+    const contestantScores = {}
+    props.criteria.forEach(criterion => {
+      contestantScores[criterion.id] = scores.value[`${contestantId}-${criterion.id}`]
+    })
+    
+    const response = await axios.post(route('judge.scores.submit', [props.pageant.id, props.currentRound.id]), {
+      contestant_id: contestantId,
+      scores: contestantScores,
+      notes: notes.value[contestantId] || ''
+    })
+    
+    if (response.data.success) {
+      submittedContestantId.value = contestantId
+      showConfirmation.value = true
+    }
+  } catch (error) {
+    console.error('Error submitting scores:', error)
+    // Handle error (show toast notification, etc.)
+    alert('Error submitting scores. Please try again.')
+  } finally {
+    submitLoading.value = false
   }
-  
-  console.log('Submitting scores:', contestantScores)
-  // Here you would typically make an API call to save the scores
-  
-  // Show confirmation
-  submittedContestantId.value = contestantId
-  showConfirmation.value = true
 }
 
 const getSubmittedContestantName = () => {
   if (!submittedContestantId.value) return ''
-  const contestant = contestants.value.find(c => c.id === submittedContestantId.value)
+  const contestant = props.contestants.find(c => c.id === submittedContestantId.value)
   return contestant?.name || ''
 }
-
-onMounted(() => {
-  // Simulate data loading
-  setTimeout(() => {
-    isLoading.value = false
-  }, 1500)
-})
 </script>

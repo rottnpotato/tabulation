@@ -524,6 +524,12 @@ class OrganizerController extends Controller
                     $query->where('active', true)->orderBy('number');
                 }, 
                 'criteria',
+                'rounds' => function ($query) {
+                    $query->orderBy('display_order');
+                },
+                'rounds.criteria' => function ($query) {
+                    $query->orderBy('display_order');
+                },
                 'judges',
                 'tabulators',
                 'organizers'
@@ -595,6 +601,32 @@ class OrganizerController extends Controller
                     'active' => $tabulator->pivot->active,
                 ];
             }),
+            'rounds' => $pageant->rounds->map(function ($round) {
+                return [
+                    'id' => $round->id,
+                    'name' => $round->name,
+                    'description' => $round->description,
+                    'type' => $round->type,
+                    'weight' => $round->weight,
+                    'display_order' => $round->display_order,
+                    'is_active' => $round->is_active,
+                    'scoring_config' => $round->scoring_config,
+                    'criteria_count' => $round->criteria->count(),
+                    'criteria' => $round->criteria->map(function ($criteria) {
+                        return [
+                            'id' => $criteria->id,
+                            'name' => $criteria->name,
+                            'description' => $criteria->description,
+                            'weight' => $criteria->weight,
+                            'min_score' => $criteria->min_score,
+                            'max_score' => $criteria->max_score,
+                            'allow_decimals' => $criteria->allow_decimals,
+                            'decimal_places' => $criteria->decimal_places,
+                            'display_order' => $criteria->display_order,
+                        ];
+                    }),
+                ];
+            }),
             'events' => [], // Events functionality has been removed
         ];
         
@@ -637,6 +669,12 @@ class OrganizerController extends Controller
                     $query->where('active', true)->orderBy('number');
                 }, 
                 'criteria',
+                'rounds' => function ($query) {
+                    $query->orderBy('display_order');
+                },
+                'rounds.criteria' => function ($query) {
+                    $query->orderBy('display_order');
+                },
                 'judges',
                 'tabulators',
                 'organizers'
@@ -1181,7 +1219,7 @@ class OrganizerController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'required|string|in:competition,preliminary,final',
+            'type' => 'required|string|in:semi-final,final',
             'weight' => 'required|integer|min:1|max:100',
             'display_order' => 'required|integer|min:0',
         ]);
@@ -1199,26 +1237,12 @@ class OrganizerController extends Controller
         // Log activity
         $this->auditLogService->log(
             'ROUND_CREATED',
-            "Created round: {$round->name}",
-            'round',
+            'Round',
             $round->id,
-            $organizer->id,
-            $pageantId
+            "Created round: {$round->name}"
         );
 
-        return response()->json([
-            'message' => 'Round created successfully',
-            'round' => [
-                'id' => $round->id,
-                'name' => $round->name,
-                'description' => $round->description,
-                'type' => $round->type,
-                'weight' => $round->weight,
-                'display_order' => $round->display_order,
-                'is_active' => $round->is_active,
-                'criteria_count' => 0,
-            ]
-        ]);
+        return redirect()->back()->with('success', 'Round created successfully');
     }
 
     /**
@@ -1242,7 +1266,7 @@ class OrganizerController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'type' => 'required|string|in:competition,preliminary,final',
+            'type' => 'required|string|in:semi-final,final',
             'weight' => 'required|integer|min:1|max:100',
             'display_order' => 'required|integer|min:0',
             'is_active' => 'boolean',
@@ -1262,26 +1286,12 @@ class OrganizerController extends Controller
         // Log activity
         $this->auditLogService->log(
             'ROUND_UPDATED',
-            "Updated round: {$round->name}",
-            'round',
+            'Round',
             $round->id,
-            $organizer->id,
-            $pageantId
+            "Updated round: {$round->name}"
         );
 
-        return response()->json([
-            'message' => 'Round updated successfully',
-            'round' => [
-                'id' => $round->id,
-                'name' => $round->name,
-                'description' => $round->description,
-                'type' => $round->type,
-                'weight' => $round->weight,
-                'display_order' => $round->display_order,
-                'is_active' => $round->is_active,
-                'criteria_count' => $round->criteria()->count(),
-            ]
-        ]);
+        return redirect()->back()->with('success', 'Round updated successfully');
     }
 
     /**
@@ -1310,16 +1320,12 @@ class OrganizerController extends Controller
         // Log activity
         $this->auditLogService->log(
             'ROUND_DELETED',
-            "Deleted round: {$roundName}",
-            'round',
+            'Round',
             $roundId,
-            $organizer->id,
-            $pageantId
+            "Deleted round: {$roundName}"
         );
 
-        return response()->json([
-            'message' => 'Round deleted successfully'
-        ]);
+        return redirect()->back()->with('success', 'Round deleted successfully');
     }
 
     /**
@@ -1370,27 +1376,12 @@ class OrganizerController extends Controller
         // Log activity
         $this->auditLogService->log(
             'CRITERIA_CREATED',
-            "Created criteria: {$criteria->name} for round: {$round->name}",
-            'criteria',
+            'Criteria',
             $criteria->id,
-            $organizer->id,
-            $pageantId
+            "Created criteria: {$criteria->name} for round: {$round->name}"
         );
 
-        return response()->json([
-            'message' => 'Criteria created successfully',
-            'criteria' => [
-                'id' => $criteria->id,
-                'name' => $criteria->name,
-                'description' => $criteria->description,
-                'weight' => $criteria->weight,
-                'min_score' => $criteria->min_score,
-                'max_score' => $criteria->max_score,
-                'allow_decimals' => $criteria->allow_decimals,
-                'decimal_places' => $criteria->decimal_places,
-                'display_order' => $criteria->display_order,
-            ]
-        ]);
+        return redirect()->back()->with('success', 'Criteria created successfully');
     }
 
     /**
@@ -1440,27 +1431,12 @@ class OrganizerController extends Controller
         // Log activity
         $this->auditLogService->log(
             'CRITERIA_UPDATED',
-            "Updated criteria: {$criteria->name}",
-            'criteria',
+            'Criteria',
             $criteria->id,
-            $organizer->id,
-            $pageantId
+            "Updated criteria: {$criteria->name}"
         );
 
-        return response()->json([
-            'message' => 'Criteria updated successfully',
-            'criteria' => [
-                'id' => $criteria->id,
-                'name' => $criteria->name,
-                'description' => $criteria->description,
-                'weight' => $criteria->weight,
-                'min_score' => $criteria->min_score,
-                'max_score' => $criteria->max_score,
-                'allow_decimals' => $criteria->allow_decimals,
-                'decimal_places' => $criteria->decimal_places,
-                'display_order' => $criteria->display_order,
-            ]
-        ]);
+        return redirect()->back()->with('success', 'Criteria updated successfully');
     }
 
     /**
@@ -1491,16 +1467,12 @@ class OrganizerController extends Controller
         // Log activity
         $this->auditLogService->log(
             'CRITERIA_DELETED',
-            "Deleted criteria: {$criteriaName}",
-            'criteria',
+            'Criteria',
             $criteriaId,
-            $organizer->id,
-            $pageantId
+            "Deleted criteria: {$criteriaName}"
         );
 
-        return response()->json([
-            'message' => 'Criteria deleted successfully'
-        ]);
+        return redirect()->back()->with('success', 'Criteria deleted successfully');
     }
 
     /**

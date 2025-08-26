@@ -344,8 +344,17 @@ const getCurrentPageantId = computed(() => {
   if (user.value?.role !== 'tabulator') return null;
   
   const currentUrl = page.url || '';
-  const match = currentUrl.match(/\/tabulator\/(\d+)/);
-  return match ? match[1] : null;
+  // Match both dashboard/pageantId and pageantId/action patterns
+  const dashboardMatch = currentUrl.match(/\/tabulator\/dashboard\/(\d+)/);
+  const actionMatch = currentUrl.match(/\/tabulator\/(\d+)\/(?:judges|scores|results|print)/);
+  
+  if (dashboardMatch) {
+    return dashboardMatch[1];
+  } else if (actionMatch) {
+    return actionMatch[1];
+  }
+  
+  return null;
 })
 
 // Navigation items
@@ -412,7 +421,7 @@ const navigation = computed(() => {
       ]
     case 'judge':
       return [
-        { name: 'Scoring', href: route('judge.scoring'), route: 'judge.scoring', icon: Calculator }
+        { name: 'Dashboard', href: route('judge.dashboard'), route: 'judge.dashboard', icon: LayoutDashboard }
       ]
     default:
       return []
@@ -463,7 +472,7 @@ const isActiveLink = (item) => {
           return true;
         } else if (role === 'tabulator' && route().current('tabulator.dashboard')) {
           return true;
-        } else if (role === 'judge' && route().current('judge.scoring')) {
+        } else if (role === 'judge' && route().current('judge.dashboard')) {
           return true;
         }
       }

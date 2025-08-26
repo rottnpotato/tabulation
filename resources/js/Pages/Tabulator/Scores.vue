@@ -1,56 +1,76 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="space-y-4 sm:space-y-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">
-          {{ pageant ? `${pageant.name} - Score Tracking` : 'Score Tracking' }}
-        </h1>
-        <p class="text-gray-600 mt-2">Monitor judge submissions and scoring progress</p>
+      <!-- Header Section -->
+      <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md overflow-hidden">
+        <div class="p-4 sm:p-6">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div class="text-white">
+              <h1 class="text-2xl sm:text-3xl font-bold">
+                {{ pageant ? `${pageant.name} - Score Tracking` : 'Score Tracking' }}
+              </h1>
+              <p class="mt-1 text-sm sm:text-base opacity-90">Monitor judge submissions and scoring progress</p>
+            </div>
+            <div v-if="pageant" class="flex flex-wrap gap-2">
+              <button 
+                @click="refreshData"
+                class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
+              >
+                <RefreshCw class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
+                <span>Refresh Data</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- No Pageant Assigned -->
       <div v-if="!pageant" class="text-center py-16">
-        <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 mb-6">
-          <ClipboardList class="h-12 w-12 text-blue-500" />
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-12">
+          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-blue-200 mb-6">
+            <ClipboardList class="h-12 w-12 text-blue-600" />
+          </div>
+          <h3 class="text-xl font-medium text-gray-900 mb-2">No Pageant Selected</h3>
+          <p class="text-gray-600 mb-6 max-w-md mx-auto">
+            You haven't been assigned to any pageants yet, or you need to select a pageant to view scores.
+          </p>
+          <Link 
+            :href="route('tabulator.dashboard')"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+          >
+            <LayoutDashboard class="w-4 h-4 mr-2" />
+            Go to Dashboard
+          </Link>
         </div>
-        <h3 class="text-xl font-medium text-gray-900 mb-2">No Pageant Selected</h3>
-        <p class="text-gray-600 mb-6 max-w-md mx-auto">
-          You haven't been assigned to any pageants yet, or you need to select a pageant to view scores.
-        </p>
-        <Link 
-          :href="route('tabulator.dashboard')"
-          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
-        >
-          <LayoutDashboard class="w-4 h-4 mr-2" />
-          Go to Dashboard
-        </Link>
       </div>
 
       <!-- Round Selection -->
-      <div v-if="pageant" class="mb-6 flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-          <h2 class="text-lg font-semibold text-gray-900">Current Round:</h2>
-          <div class="w-48">
-            <CustomSelect 
-              v-model="currentRoundId"
-              :options="roundOptions"
-              placeholder="Select Round"
-              @change="handleRoundChange"
-            />
+      <div v-if="pageant" class="bg-white rounded-xl shadow-md border border-gray-100 p-4 sm:p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+            <h2 class="text-lg font-semibold text-gray-900">Current Round:</h2>
+            <div class="w-full sm:w-48">
+              <CustomSelect 
+                v-model="currentRoundId"
+                :options="roundOptions"
+                placeholder="Select Round"
+                @change="handleRoundChange"
+              />
+            </div>
           </div>
+          <button 
+            @click="refreshData"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
+          >
+            <RefreshCw class="w-4 h-4 mr-2" />
+            Refresh Data
+          </button>
         </div>
-        <button 
-          @click="refreshData"
-          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
-        >
-          <RefreshCw class="w-4 h-4 mr-2" />
-          Refresh Data
-        </button>
       </div>
 
       <!-- No Rounds Message -->
       <div v-if="pageant && (!rounds || rounds.length === 0)" class="text-center py-12">
-        <div class="text-gray-500">
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-12">
           <Target class="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <h3 class="text-lg font-medium text-gray-900 mb-2">No Rounds Available</h3>
           <p class="text-gray-500">

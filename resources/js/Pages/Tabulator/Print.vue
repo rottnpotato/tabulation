@@ -5,8 +5,8 @@
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- No Pageant Assigned -->
         <div v-if="!pageant" class="text-center py-16">
-          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 mb-6">
-            <Printer class="h-12 w-12 text-blue-500" />
+          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-blue-200 mb-6">
+            <Printer class="h-12 w-12 text-blue-600" />
           </div>
           <h3 class="text-xl font-medium text-gray-900 mb-2">No Pageant Assignment</h3>
           <p class="text-gray-600 mb-6 max-w-md mx-auto">
@@ -118,6 +118,59 @@ const printResults = () => {
 @media screen {
   .print-only {
     display: none !important;
+  }
+}
+</style>
+
+<style>
+/* Global print styles to hide layout elements */
+@media print {
+  /* Hide sidebar and navigation */
+  .sidebar,
+  .side-nav,
+  nav,
+  .navigation,
+  .nav-container,
+  [class*="nav"],
+  [class*="sidebar"] {
+    display: none !important;
+  }
+  
+  /* Hide header elements */
+  header,
+  .header,
+  [class*="header"] {
+    display: none !important;
+  }
+  
+  /* Hide buttons and interactive elements */
+  button,
+  .btn,
+  [class*="button"] {
+    display: none !important;
+  }
+  
+  /* Ensure full width for print content */
+  body,
+  #app,
+  .min-h-screen,
+  .bg-gray-50 {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  
+  /* Override layout padding */
+  .p-6 {
+    padding: 0 !important;
+  }
+  
+  /* Show only print content */
+  .print-only {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
 </style>

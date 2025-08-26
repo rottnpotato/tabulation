@@ -27,5 +27,6 @@
 import { ref } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import SideNav from '@/Components/SideNav.vue'
+import { TransitionGroup } from 'vue'
 
 </script> 

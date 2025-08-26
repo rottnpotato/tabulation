@@ -37,12 +37,11 @@
       <div class="px-4 py-5 sm:p-6">
         <UserForm
           :user="admin"
-          :submit-route="route('admin.users.admins.update', admin.id)"
+          user-type="admin"
+          :editing="true"
+          submit-route="admin.users.admins.update"
+          :route-params="{ id: admin.id }"
           :cancel-route="route('admin.users.admins.show', admin.id)"
-          is-edit="true"
-          is-admin-form="true"
-          submit-label="Update Administrator"
-          submit-method="put"
         />
       </div>
     </div>
@@ -53,12 +52,16 @@
 import { Head, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import UserForm from '@/Components/users/UserForm.vue'
+import { useNotification } from '@/Composables/useNotification'
 import { ChevronRight } from 'lucide-vue-next'
 
 // Layout configuration
 defineOptions({
   layout: AdminLayout,
 })
+
+// Initialize notification system
+const notify = useNotification()
 
 // Props from controller
 const props = defineProps({

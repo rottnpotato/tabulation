@@ -344,25 +344,25 @@
               </div>
             </div>
             
-            <!-- Criteria Card -->
+            <!-- Rounds Card -->
             <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
               <div class="p-4">
                 <div class="flex items-center justify-between">
-                  <h3 class="text-lg font-semibold text-gray-900">Criteria</h3>
-                  <div class="p-2 bg-orange-100 rounded-full">
-                    <ListChecks class="h-5 w-5 text-orange-600" />
+                  <h3 class="text-lg font-semibold text-gray-900">Rounds</h3>
+                  <div class="p-2 bg-purple-100 rounded-full">
+                    <Target class="h-5 w-5 text-purple-600" />
                   </div>
                 </div>
-                <p class="mt-2 text-3xl font-bold text-gray-900">{{ pageant.criteria.length }}</p>
-                <p class="text-sm text-gray-500">Scoring criteria defined</p>
+                <p class="mt-2 text-3xl font-bold text-gray-900">{{ pageant.rounds?.length || 0 }}</p>
+                <p class="text-sm text-gray-500">Competition rounds</p>
               </div>
               <div class="border-t border-gray-100 bg-gray-50 px-4 py-3">
-                <Link 
-                  :href="route('organizer.pageant.criteria-management', pageant.id)"
+                <button 
+                  @click="activeTab = 'rounds'"
                   class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center"
                 >
-                  Manage Criteria <ChevronRight class="h-4 w-4 ml-1" />
-                </Link>
+                  View Rounds <ChevronRight class="h-4 w-4 ml-1" />
+                </button>
               </div>
             </div>
             
@@ -495,78 +495,147 @@
           </div>
         </div>
         
-        <!-- Criteria Tab -->
-        <div v-else-if="activeTab === 'criteria'" class="space-y-6">
+        <!-- Rounds Tab -->
+        <div v-else-if="activeTab === 'rounds'" class="space-y-6">
           <div class="flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-gray-900">Scoring Criteria</h3>
+            <h3 class="text-lg font-semibold text-gray-900">Competition Rounds</h3>
             <div v-if="canEdit" class="flex items-center space-x-2">
-              <Link 
-                :href="route('organizer.pageant.criteria-management', pageant.id)"
+              <button
+                @click="openAddRoundModal"
                 class="inline-flex items-center px-3 py-2 bg-orange-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
               >
                 <Plus class="h-4 w-4 mr-1.5" />
-                Add Criterion
-              </Link>
+                Add Round
+              </button>
               <Link 
-                :href="route('organizer.pageant.criteria-management', pageant.id)"
+                :href="route('organizer.pageant.rounds-management', pageant.id)"
                 class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 btn-transition"
               >
-                <ListChecks class="h-4 w-4 mr-1.5" />
+                <Target class="h-4 w-4 mr-1.5" />
                 Manage All
               </Link>
             </div>
           </div>
           
           <!-- Empty State -->
-          <div v-if="!pageant.criteria || pageant.criteria.length === 0" class="bg-gray-50 rounded-lg py-12 px-4 text-center">
+          <div v-if="!pageant.rounds || pageant.rounds.length === 0" class="bg-gray-50 rounded-lg py-12 px-4 text-center">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-              <ListChecks class="h-8 w-8 text-gray-400" />
+              <Target class="h-8 w-8 text-gray-400" />
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-1">No Criteria Defined</h3>
+            <h3 class="text-lg font-medium text-gray-900 mb-1">No Rounds Defined</h3>
             <p class="text-gray-500 max-w-md mx-auto">
-              No scoring criteria have been defined for this pageant yet.
-              {{ canEdit ? 'Click the "Manage Criteria" button to set up your scoring system.' : '' }}
+              No competition rounds have been defined for this pageant yet.
+              {{ canEdit ? 'Click the "Add Round" button to set up your competition structure.' : '' }}
             </p>
           </div>
           
-          <!-- Criteria List -->
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Rounds List -->
+          <div v-else class="space-y-4">
             <div 
-              v-for="criterion in pageant.criteria" 
-              :key="criterion.id"
-              class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow group"
+              v-for="round in pageant.rounds" 
+              :key="round.id"
+              class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
-              <div class="p-4">
+              <!-- Round Header -->
+              <div class="p-4 border-b border-gray-100">
                 <div class="flex items-center justify-between">
-                  <h4 class="font-medium text-gray-900 group-hover:text-orange-600">{{ criterion.name }}</h4>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                    {{ criterion.weight }}%
-                  </span>
-                </div>
-                <p class="mt-1 text-sm text-gray-500">
-                  {{ criterion.description || 'No description provided' }}
-                </p>
-                <div class="mt-3 flex items-center text-xs text-gray-500">
-                  <span>Score Range: </span>
-                  <span class="font-medium ml-1">{{ criterion.min_score || 0 }} - {{ criterion.max_score || 10 }}</span>
-                </div>
-                <div v-if="canEdit" class="mt-3 flex justify-end space-x-2">
-                  <Tooltip text="Edit scoring criterion details" position="top">
-                    <Link 
-                      :href="route('organizer.pageant.criteria-management', pageant.id)"
-                      class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110"
+                  <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                      <Target class="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h4 class="font-semibold text-gray-900">{{ round.name }}</h4>
+                      <p class="text-sm text-gray-500">{{ round.description || 'No description provided' }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      {{ round.weight }}% Weight
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      {{ round.type }}
+                    </span>
+                    <button 
+                      @click="toggleRoundExpansion(round.id)"
+                      class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all"
                     >
-                      <Edit class="h-4 w-4" />
-                    </Link>
-                  </Tooltip>
-                  <Tooltip text="Manage all criteria" position="top">
-                    <Link 
-                      :href="route('organizer.pageant.criteria-management', pageant.id)"
-                      class="p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all transform hover:scale-110"
-                    >
-                      <ListChecks class="h-4 w-4" />
-                    </Link>
-                  </Tooltip>
+                      <ChevronDown v-if="expandedRounds.includes(round.id)" class="h-5 w-5" />
+                      <ChevronRight v-else class="h-5 w-5" />
+                    </button>
+                    <div v-if="canEdit" class="flex space-x-1">
+                      <Tooltip text="Edit round" position="top">
+                        <button 
+                          @click="openEditRoundModal(round)"
+                          class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110"
+                        >
+                          <Edit class="h-4 w-4" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip text="Delete round" position="top">
+                        <button 
+                          @click="confirmDeleteRound(round)"
+                          class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110"
+                        >
+                          <Trash class="h-4 w-4" />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Round Criteria (Expanded) -->
+              <div v-if="expandedRounds.includes(round.id)" class="p-4 bg-gray-50">
+                <div class="flex justify-between items-center mb-4">
+                  <h5 class="text-sm font-medium text-gray-900">Scoring Criteria</h5>
+                  <button
+                    v-if="canEdit"
+                    @click="openAddCriteriaModal(round)"
+                    class="inline-flex items-center px-2 py-1 bg-orange-600 border border-transparent rounded text-xs font-medium text-white hover:bg-orange-700 transition-colors"
+                  >
+                    <Plus class="h-3 w-3 mr-1" />
+                    Add Criteria
+                  </button>
+                </div>
+                
+                <!-- Criteria Empty State -->
+                <div v-if="!round.criteria || round.criteria.length === 0" class="text-center py-6">
+                  <ListChecks class="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p class="text-sm text-gray-500">No criteria defined for this round</p>
+                </div>
+                
+                <!-- Criteria List -->
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div 
+                    v-for="criteria in round.criteria" 
+                    :key="criteria.id"
+                    class="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow"
+                  >
+                    <div class="flex items-center justify-between mb-2">
+                      <h6 class="font-medium text-gray-900">{{ criteria.name }}</h6>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                        {{ criteria.weight }}%
+                      </span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">{{ criteria.description || 'No description' }}</p>
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                      <span>Score: {{ criteria.min_score || 0 }} - {{ criteria.max_score || 10 }}</span>
+                      <div v-if="canEdit" class="flex space-x-1">
+                        <button 
+                          @click="openEditCriteriaModal(round, criteria)"
+                          class="p-1 rounded text-gray-400 hover:text-orange-600 transition-colors"
+                        >
+                          <Edit class="h-3 w-3" />
+                        </button>
+                        <button 
+                          @click="confirmDeleteCriteria(round, criteria)"
+                          class="p-1 rounded text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash class="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -576,8 +645,57 @@
         <!-- Judges Tab -->
         <div v-else-if="activeTab === 'judges'" class="space-y-6">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Judges & Tabulators</h3>
+            <h3 class="text-lg font-semibold text-gray-900">Judges</h3>
+            <div class="flex items-center">
+              <span class="text-sm text-gray-500 mr-2">Required: {{ pageant.required_judges }}</span>
+              <span class="text-sm text-gray-500">Assigned: {{ pageant.judges.length }}</span>
+            </div>
           </div>
+          
+
+          
+
+          
+          <!-- Judges Section -->
+          <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div class="p-4 sm:p-6">
+              
+              <!-- Empty State for Judges -->
+              <div v-if="!pageant.judges || pageant.judges.length === 0" class="bg-gray-50 rounded-lg py-6 px-4 text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                  <Scale class="h-6 w-6 text-gray-400" />
+                </div>
+                <h5 class="text-base font-medium text-gray-900 mb-1">No Judges Assigned</h5>
+                <p class="text-sm text-gray-500 max-w-md mx-auto">
+                  No judges have been assigned to this pageant yet. The tabulator will handle judge assignments.
+                </p>
+              </div>
+              
+              <!-- Judges List -->
+              <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div 
+                  v-for="judge in pageant.judges" 
+                  :key="judge.id"
+                  class="bg-gray-50 rounded-lg p-4 hover:shadow-sm transition-shadow"
+                >
+                  <div class="flex items-center">
+                    <div class="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                      <User2 class="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div class="ml-3">
+                      <h5 class="font-medium text-gray-900">{{ judge.name }}</h5>
+                      <p class="text-sm text-gray-500">@{{ judge.username }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Management Tab -->
+        <div v-else-if="activeTab === 'management'" class="space-y-6">
+          <h3 class="text-lg font-semibold text-gray-900">Pageant Management</h3>
           
           <!-- Required Judges Setting Section -->
           <div v-if="canEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -607,60 +725,6 @@
                   >
                     <Save class="h-4 w-4 mr-1.5" />
                     Save
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
-          <!-- Scoring System Section -->
-          <div v-if="canEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            <div class="p-4 sm:p-6">
-              <h4 class="text-base font-medium text-gray-900 mb-4">Scoring System</h4>
-              <p class="text-sm text-gray-500 mb-4">
-                Choose the scoring system for this pageant. This will determine how judges score contestants across all criteria.
-              </p>
-              
-              <form @submit.prevent="updateScoringSystem" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div 
-                    v-for="system in scoringSystems" 
-                    :key="system.type" 
-                    @click="scoringSystemForm.scoring_system = system.type"
-                    class="relative border rounded-lg p-4 cursor-pointer hover:bg-orange-50 transition-colors"
-                    :class="scoringSystemForm.scoring_system === system.type ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' : 'border-gray-300'"
-                  >
-                    <div class="flex items-start">
-                      <div class="flex items-center h-5">
-                        <input 
-                          type="radio" 
-                          :id="system.type" 
-                          :value="system.type" 
-                          v-model="scoringSystemForm.scoring_system"
-                          class="h-4 w-4 text-orange-600 border-gray-300 focus:ring-orange-500"
-                        />
-                      </div>
-                      <div class="ml-3 text-sm">
-                        <label :for="system.type" class="font-medium text-gray-900">{{ system.name }}</label>
-                        <p class="text-gray-500">{{ system.description }}</p>
-                      </div>
-                    </div>
-                    <div v-if="scoringSystemForm.scoring_system === system.type" class="absolute top-2 right-2 text-orange-600">
-                      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="flex justify-end">
-                  <button 
-                    type="submit"
-                    :disabled="scoringSystemForm.processing"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <Save class="h-4 w-4 mr-1.5" />
-                    Save Scoring System
                   </button>
                 </div>
               </form>
@@ -758,49 +822,6 @@
               </div>
             </div>
           </div>
-          
-          <!-- Judges Section -->
-          <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-            <div class="p-4 sm:p-6">
-              <div class="flex justify-between items-center mb-4">
-                <h4 class="text-base font-medium text-gray-900">Judges</h4>
-                <div class="flex items-center">
-                  <span class="text-sm text-gray-500 mr-2">Required: {{ pageant.required_judges }}</span>
-                  <span class="text-sm text-gray-500">Assigned: {{ pageant.judges.length }}</span>
-                </div>
-              </div>
-              
-              <!-- Empty State for Judges -->
-              <div v-if="!pageant.judges || pageant.judges.length === 0" class="bg-gray-50 rounded-lg py-6 px-4 text-center">
-                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                  <Scale class="h-6 w-6 text-gray-400" />
-                </div>
-                <h5 class="text-base font-medium text-gray-900 mb-1">No Judges Assigned</h5>
-                <p class="text-sm text-gray-500 max-w-md mx-auto">
-                  No judges have been assigned to this pageant yet. The tabulator will handle judge assignments.
-                </p>
-              </div>
-              
-              <!-- Judges List -->
-              <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div 
-                  v-for="judge in pageant.judges" 
-                  :key="judge.id"
-                  class="bg-gray-50 rounded-lg p-4 hover:shadow-sm transition-shadow"
-                >
-                  <div class="flex items-center">
-                    <div class="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                      <User2 class="h-5 w-5 text-orange-600" />
-                    </div>
-                    <div class="ml-3">
-                      <h5 class="font-medium text-gray-900">{{ judge.name }}</h5>
-                      <p class="text-sm text-gray-500">@{{ judge.username }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
         
         <!-- Scoring System Tab -->
@@ -888,15 +909,69 @@
             </div>
           </div>
           
-          <!-- Choose Scoring System Section (for editable pageants) -->
+          <!-- Current Scoring System Settings -->
           <div v-if="canEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <div class="p-4 sm:p-6">
-              <h4 class="text-base font-medium text-gray-900 mb-4">Change Scoring System</h4>
+              <h4 class="text-base font-medium text-gray-900 mb-4">Scoring System Settings</h4>
               <p class="text-sm text-gray-500 mb-4">
-                You can change the scoring system for this pageant. This will determine how judges score contestants across all criteria.
+                Choose the scoring system for this pageant. This will determine how judges score contestants across all criteria.
               </p>
               
-              <form @submit.prevent="updateScoringSystem" class="space-y-6">
+              <form @submit.prevent="updateScoringSystem" class="space-y-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div 
+                    v-for="system in scoringSystems" 
+                    :key="system.type" 
+                    @click="scoringSystemForm.scoring_system = system.type"
+                    class="relative border rounded-lg p-4 cursor-pointer hover:bg-orange-50 transition-colors"
+                    :class="scoringSystemForm.scoring_system === system.type ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' : 'border-gray-300'"
+                  >
+                    <div class="flex items-start">
+                      <div class="flex items-center h-5">
+                        <input 
+                          type="radio" 
+                          :id="system.type" 
+                          :value="system.type" 
+                          v-model="scoringSystemForm.scoring_system"
+                          class="h-4 w-4 text-orange-600 border-gray-300 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div class="ml-3 text-sm">
+                        <label :for="system.type" class="font-medium text-gray-900">{{ system.name }}</label>
+                        <p class="text-gray-500">{{ system.description }}</p>
+                      </div>
+                    </div>
+                    <div v-if="scoringSystemForm.scoring_system === system.type" class="absolute top-2 right-2 text-orange-600">
+                      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex justify-end">
+                  <button 
+                    type="submit"
+                    :disabled="scoringSystemForm.processing"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Save class="h-4 w-4 mr-1.5" />
+                    Save Scoring System
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <!-- Detailed Scoring System Information -->
+          <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div class="p-4 sm:p-6">
+              <h4 class="text-base font-medium text-gray-900 mb-4">Detailed System Information</h4>
+              <p class="text-sm text-gray-500 mb-4">
+                Explore detailed information about each scoring system to make the best choice for your pageant.
+              </p>
+              
+              <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div 
                     v-for="system in scoringSystems" 
@@ -905,26 +980,16 @@
                     :class="scoringSystemForm.scoring_system === system.type ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' : 'border-gray-300'"
                   >
                     <div class="flex flex-col">
-                      <!-- Radio button and basic info -->
+                      <!-- Basic info -->
                       <div class="flex items-start">
-                        <div class="flex items-center h-5">
-                          <input 
-                            type="radio" 
-                            :id="system.type" 
-                            :value="system.type" 
-                            v-model="scoringSystemForm.scoring_system"
-                            class="h-4 w-4 text-orange-600 border-gray-300 focus:ring-orange-500"
-                            @click="selectedScoringSystem = system.type"
-                          />
-                        </div>
-                        <div class="ml-3 text-sm">
-                          <label :for="system.type" class="font-medium text-gray-900">{{ system.name }}</label>
+                        <div class="text-sm">
+                          <h5 class="font-medium text-gray-900">{{ system.name }}</h5>
                           <p class="text-gray-500">{{ system.description }}</p>
                         </div>
                       </div>
                       
                       <!-- Details toggle button -->
-                      <div class="ml-7 mt-2">
+                      <div class="mt-2">
                         <button 
                           type="button"
                           @click.prevent="toggleScoringDetails(system.type)"
@@ -939,7 +1004,7 @@
                       <!-- Expanded system details -->
                       <div 
                         v-if="showScoringDetails && selectedScoringSystem === system.type" 
-                        class="mt-3 ml-7 pt-3 border-t border-gray-100"
+                        class="mt-3 pt-3 border-t border-gray-100"
                       >
                         <p class="text-sm text-gray-600 mb-3">{{ system.details }}</p>
                         
@@ -974,8 +1039,8 @@
                       </div>
                     </div>
                     
-                    <!-- Selected indicator -->
-                    <div v-if="scoringSystemForm.scoring_system === system.type" class="absolute top-2 right-2 text-orange-600">
+                    <!-- Current system indicator -->
+                    <div v-if="pageant.scoring_system === system.type" class="absolute top-2 right-2 text-orange-600">
                       <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
                       </svg>
@@ -1073,18 +1138,7 @@
                     </div>
                   </div>
                 </div>
-                
-                <div class="flex justify-end">
-                  <button 
-                    type="submit"
-                    :disabled="scoringSystemForm.processing"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <Save class="h-4 w-4 mr-1.5" />
-                    Save Scoring System
-                  </button>
-                </div>
-              </form>
+              </div>
             </div>
           </div>
           
@@ -1337,6 +1391,366 @@
         </div>
       </div>
     </div>
+    
+    <!-- Add/Edit Round Modal -->
+    <TransitionRoot appear :show="showRoundModal" as="template">
+      <Dialog as="div" @close="closeRoundModal" class="relative z-30">
+        <TransitionChild
+          enter="ease-out duration-300"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="ease-in duration-200"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4">
+            <TransitionChild
+              enter="ease-out duration-300"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel class="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
+                <div class="relative border-b border-gray-200 p-6">
+                  <DialogTitle as="h3" class="text-2xl font-bold text-gray-800 leading-6">
+                    {{ editingRound ? 'Edit Round' : 'Add New Round' }}
+                  </DialogTitle>
+                  <p class="mt-2 text-gray-600 max-w-2xl">
+                    {{ editingRound ? 'Update round information' : 'Add a new competition round to your pageant' }}
+                  </p>
+                  <button 
+                    @click="closeRoundModal" 
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <XCircle class="h-6 w-6" />
+                  </button>
+                </div>
+
+                <form @submit.prevent="submitRoundForm" class="p-6">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
+                      <div>
+                        <label for="roundName" class="block text-sm font-medium text-gray-700 mb-1">
+                          Round Name <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="roundName"
+                          v-model="roundForm.name"
+                          type="text"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. Production Number, Q&A, Evening Gown"
+                          required
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Enter the name of this competition round</p>
+                      </div>
+
+                      <div>
+                        <label for="roundType" class="block text-sm font-medium text-gray-700 mb-1">
+                          Round Type <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                          id="roundType"
+                          v-model="roundForm.type"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          required
+                        >
+                          <option value="semi-final">Semi-Final</option>
+                          <option value="final">Final</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Select the type of round</p>
+                      </div>
+
+                      <div>
+                        <label for="roundWeight" class="block text-sm font-medium text-gray-700 mb-1">
+                          Weight (%) <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="roundWeight"
+                          v-model.number="roundForm.weight"
+                          type="number"
+                          min="1"
+                          max="100"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. 40"
+                          required
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Percentage weight of this round in overall scoring</p>
+                      </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                      <div>
+                        <label for="roundDescription" class="block text-sm font-medium text-gray-700 mb-1">
+                          Description
+                        </label>
+                        <textarea
+                          id="roundDescription"
+                          v-model="roundForm.description"
+                          rows="4"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="Describe what this round involves..."
+                        ></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Optional description of this round</p>
+                      </div>
+
+                      <div>
+                        <label for="roundDisplayOrder" class="block text-sm font-medium text-gray-700 mb-1">
+                          Display Order
+                        </label>
+                        <input
+                          id="roundDisplayOrder"
+                          v-model.number="roundForm.display_order"
+                          type="number"
+                          min="0"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. 1"
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Order in which this round appears (0 = first)</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      @click="closeRoundModal"
+                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      :disabled="roundForm.processing"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {{ roundForm.processing ? 'Saving...' : (editingRound ? 'Save Changes' : 'Add Round') }}
+                    </button>
+                  </div>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+    
+    <!-- Add/Edit Criteria Modal -->
+    <TransitionRoot appear :show="showCriteriaModal" as="template">
+      <Dialog as="div" @close="closeCriteriaModal" class="relative z-30">
+        <TransitionChild
+          enter="ease-out duration-300"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="ease-in duration-200"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4">
+            <TransitionChild
+              enter="ease-out duration-300"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel class="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
+                <div class="relative border-b border-gray-200 p-6">
+                  <DialogTitle as="h3" class="text-2xl font-bold text-gray-800 leading-6">
+                    {{ editingCriteria ? 'Edit Criteria' : 'Add New Criteria' }}
+                  </DialogTitle>
+                  <p class="mt-2 text-gray-600 max-w-2xl">
+                    {{ editingCriteria ? 'Update criteria information' : `Add a new scoring criteria to ${selectedRound?.name}` }}
+                  </p>
+                  <button 
+                    @click="closeCriteriaModal" 
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <XCircle class="h-6 w-6" />
+                  </button>
+                </div>
+
+                <form @submit.prevent="submitCriteriaForm" class="p-6">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
+                      <div>
+                        <label for="criteriaName" class="block text-sm font-medium text-gray-700 mb-1">
+                          Criteria Name <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="criteriaName"
+                          v-model="criteriaForm.name"
+                          type="text"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. Beauty, Poise, Intelligence"
+                          required
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Enter the name of this scoring criteria</p>
+                      </div>
+
+                      <div>
+                        <label for="criteriaWeight" class="block text-sm font-medium text-gray-700 mb-1">
+                          Weight (%) <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="criteriaWeight"
+                          v-model.number="criteriaForm.weight"
+                          type="number"
+                          min="1"
+                          max="100"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. 30"
+                          required
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Percentage weight within this round</p>
+                      </div>
+
+                      <div class="grid grid-cols-2 gap-3">
+                        <div>
+                          <label for="criteriaMinScore" class="block text-sm font-medium text-gray-700 mb-1">
+                            Min Score <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            id="criteriaMinScore"
+                            v-model.number="criteriaForm.min_score"
+                            type="number"
+                            step="0.01"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                            placeholder="0"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label for="criteriaMaxScore" class="block text-sm font-medium text-gray-700 mb-1">
+                            Max Score <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            id="criteriaMaxScore"
+                            v-model.number="criteriaForm.max_score"
+                            type="number"
+                            step="0.01"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                            placeholder="100"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                      <div>
+                        <label for="criteriaDescription" class="block text-sm font-medium text-gray-700 mb-1">
+                          Description
+                        </label>
+                        <textarea
+                          id="criteriaDescription"
+                          v-model="criteriaForm.description"
+                          rows="4"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="Describe what judges should evaluate..."
+                        ></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Optional description for judges</p>
+                      </div>
+
+                      <div>
+                        <label class="flex items-center">
+                          <input
+                            v-model="criteriaForm.allow_decimals"
+                            type="checkbox"
+                            class="rounded border-gray-300 text-orange-600 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
+                          />
+                          <span class="ml-2 text-sm text-gray-700">Allow decimal scores</span>
+                        </label>
+                      </div>
+
+                      <div v-if="criteriaForm.allow_decimals">
+                        <label for="criteriaDecimalPlaces" class="block text-sm font-medium text-gray-700 mb-1">
+                          Decimal Places
+                        </label>
+                        <input
+                          id="criteriaDecimalPlaces"
+                          v-model.number="criteriaForm.decimal_places"
+                          type="number"
+                          min="1"
+                          max="4"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="2"
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Number of decimal places allowed</p>
+                      </div>
+
+                      <div>
+                        <label for="criteriaDisplayOrder" class="block text-sm font-medium text-gray-700 mb-1">
+                          Display Order
+                        </label>
+                        <input
+                          id="criteriaDisplayOrder"
+                          v-model.number="criteriaForm.display_order"
+                          type="number"
+                          min="0"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="0"
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Order in which this criteria appears</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      @click="closeCriteriaModal"
+                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      :disabled="criteriaForm.processing"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {{ criteriaForm.processing ? 'Saving...' : (editingCriteria ? 'Save Changes' : 'Add Criteria') }}
+                    </button>
+                  </div>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+    
+    <!-- Delete Round Confirmation Modal -->
+    <ConfirmDeleteModal
+      :visible="showDeleteRoundModal"
+      :message="roundToDelete ? `round '${roundToDelete.name}' and all its criteria` : 'this round'"
+      :processing="deleteRoundProcessing"
+      @confirm="deleteRound"
+      @cancel="closeDeleteRoundModal"
+    />
+    
+    <!-- Delete Criteria Confirmation Modal -->
+    <ConfirmDeleteModal
+      :visible="showDeleteCriteriaModal"
+      :message="criteriaToDelete ? `criteria '${criteriaToDelete.name}'` : 'this criteria'"
+      :processing="deleteCriteriaProcessing"
+      @confirm="deleteCriteria"
+      @cancel="closeDeleteCriteriaModal"
+    />
   </div>
 </template>
 
@@ -1413,6 +1827,20 @@ const deleteContestantProcessing = ref(false)
 const photoPreview = ref(null)
 const photoInput = ref(null)
 
+// Rounds modal states
+const showRoundModal = ref(false)
+const showCriteriaModal = ref(false)
+const showDeleteRoundModal = ref(false)
+const showDeleteCriteriaModal = ref(false)
+const editingRound = ref(null)
+const editingCriteria = ref(null)
+const selectedRound = ref(null)
+const roundToDelete = ref(null)
+const criteriaToDelete = ref(null)
+const deleteRoundProcessing = ref(false)
+const deleteCriteriaProcessing = ref(false)
+const expandedRounds = ref([])
+
 // Form state
 const requiredJudgesForm = ref({
   required_judges: props.pageant.required_judges || 0,
@@ -1437,6 +1865,32 @@ const contestantForm = ref({
   processing: false
 })
 
+// Round form state
+const roundForm = ref({
+  id: null,
+  name: '',
+  description: '',
+  type: 'semi-final',
+  weight: 100,
+  display_order: 0,
+  processing: false
+})
+
+// Criteria form state
+const criteriaForm = ref({
+  id: null,
+  round_id: null,
+  name: '',
+  description: '',
+  weight: 100,
+  min_score: 0,
+  max_score: 100,
+  allow_decimals: true,
+  decimal_places: 2,
+  display_order: 0,
+  processing: false
+})
+
 // Quick settings state
 const quickRequiredJudges = ref(props.pageant.required_judges || 0)
 
@@ -1457,11 +1911,11 @@ const selectedNewStatus = ref('')
 // Tabs configuration
 const tabs = [
   { id: 'overview', name: 'Overview', icon: Info },
-
   { id: 'contestants', name: 'Contestants', icon: Users },
-  { id: 'criteria', name: 'Criteria', icon: ListChecks },
+  { id: 'rounds', name: 'Rounds', icon: Target },
   { id: 'judges', name: 'Judges', icon: Scale },
-  { id: 'scoring', name: 'Scoring System', icon: Calculator },
+  { id: 'management', name: 'Management', icon: Calculator },
+  { id: 'scoring', name: 'Scoring System', icon: ChartBar },
 ]
 
 // Tabulator and Judge related functions
@@ -1846,6 +2300,247 @@ const checkForAutoCompletion = () => {
     // You could automatically trigger the completion here, but it's better to let the user decide
     // by showing the auto-completion option in the UI
   }
+}
+
+// Rounds management functions
+const toggleRoundExpansion = (roundId) => {
+  const index = expandedRounds.value.indexOf(roundId)
+  if (index > -1) {
+    expandedRounds.value.splice(index, 1)
+  } else {
+    expandedRounds.value.push(roundId)
+  }
+}
+
+const openAddRoundModal = () => {
+  editingRound.value = null
+  resetRoundForm()
+  showRoundModal.value = true
+}
+
+const openEditRoundModal = (round) => {
+  editingRound.value = round
+  roundForm.value = {
+    id: round.id,
+    name: round.name,
+    description: round.description || '',
+    type: round.type,
+    weight: round.weight,
+    display_order: round.display_order,
+    processing: false
+  }
+  showRoundModal.value = true
+}
+
+const closeRoundModal = () => {
+  showRoundModal.value = false
+  editingRound.value = null
+  resetRoundForm()
+}
+
+const resetRoundForm = () => {
+  roundForm.value = {
+    id: null,
+    name: '',
+    description: '',
+    type: 'semi-final',
+    weight: 100,
+    display_order: 0,
+    processing: false
+  }
+}
+
+const submitRoundForm = () => {
+  roundForm.value.processing = true
+  
+  const url = editingRound.value 
+    ? route('organizer.pageant.rounds.update', { 
+        pageantId: props.pageant.id, 
+        roundId: editingRound.value.id 
+      })
+    : route('organizer.pageant.rounds.store', props.pageant.id)
+  
+  const method = editingRound.value ? 'put' : 'post'
+  
+  router[method](url, {
+    name: roundForm.value.name,
+    description: roundForm.value.description,
+    type: roundForm.value.type,
+    weight: roundForm.value.weight,
+    display_order: roundForm.value.display_order
+  }, {
+    onSuccess: () => {
+      closeRoundModal()
+      router.reload({ only: ['pageant'] })
+    },
+    onError: (errors) => {
+      console.error('Round form error:', errors)
+      alert('Error saving round. Please try again.')
+    },
+    onFinish: () => {
+      roundForm.value.processing = false
+    }
+  })
+}
+
+const confirmDeleteRound = (round) => {
+  roundToDelete.value = round
+  showDeleteRoundModal.value = true
+}
+
+const closeDeleteRoundModal = () => {
+  showDeleteRoundModal.value = false
+  roundToDelete.value = null
+}
+
+const deleteRound = () => {
+  if (!roundToDelete.value) return
+  
+  deleteRoundProcessing.value = true
+  
+  router.delete(route('organizer.pageant.rounds.destroy', {
+    pageantId: props.pageant.id,
+    roundId: roundToDelete.value.id
+  }), {
+    onSuccess: () => {
+      closeDeleteRoundModal()
+      router.reload({ only: ['pageant'] })
+    },
+    onError: (errors) => {
+      console.error('Delete round error:', errors)
+      alert('Error deleting round. Please try again.')
+    },
+    onFinish: () => {
+      deleteRoundProcessing.value = false
+    }
+  })
+}
+
+// Criteria management functions
+const openAddCriteriaModal = (round) => {
+  editingCriteria.value = null
+  selectedRound.value = round
+  resetCriteriaForm()
+  criteriaForm.value.round_id = round.id
+  showCriteriaModal.value = true
+}
+
+const openEditCriteriaModal = (round, criteria) => {
+  editingCriteria.value = criteria
+  selectedRound.value = round
+  criteriaForm.value = {
+    id: criteria.id,
+    round_id: round.id,
+    name: criteria.name,
+    description: criteria.description || '',
+    weight: criteria.weight,
+    min_score: criteria.min_score,
+    max_score: criteria.max_score,
+    allow_decimals: criteria.allow_decimals,
+    decimal_places: criteria.decimal_places,
+    display_order: criteria.display_order,
+    processing: false
+  }
+  showCriteriaModal.value = true
+}
+
+const closeCriteriaModal = () => {
+  showCriteriaModal.value = false
+  editingCriteria.value = null
+  selectedRound.value = null
+  resetCriteriaForm()
+}
+
+const resetCriteriaForm = () => {
+  criteriaForm.value = {
+    id: null,
+    round_id: null,
+    name: '',
+    description: '',
+    weight: 100,
+    min_score: 0,
+    max_score: 100,
+    allow_decimals: true,
+    decimal_places: 2,
+    display_order: 0,
+    processing: false
+  }
+}
+
+const submitCriteriaForm = () => {
+  criteriaForm.value.processing = true
+  
+  const url = editingCriteria.value 
+    ? route('organizer.pageant.rounds.criteria.update', { 
+        pageantId: props.pageant.id, 
+        roundId: criteriaForm.value.round_id,
+        criteriaId: editingCriteria.value.id 
+      })
+    : route('organizer.pageant.rounds.criteria.store', {
+        pageantId: props.pageant.id,
+        roundId: criteriaForm.value.round_id
+      })
+  
+  const method = editingCriteria.value ? 'put' : 'post'
+  
+  router[method](url, {
+    name: criteriaForm.value.name,
+    description: criteriaForm.value.description,
+    weight: criteriaForm.value.weight,
+    min_score: criteriaForm.value.min_score,
+    max_score: criteriaForm.value.max_score,
+    allow_decimals: criteriaForm.value.allow_decimals,
+    decimal_places: criteriaForm.value.decimal_places,
+    display_order: criteriaForm.value.display_order
+  }, {
+    onSuccess: () => {
+      closeCriteriaModal()
+      router.reload({ only: ['pageant'] })
+    },
+    onError: (errors) => {
+      console.error('Criteria form error:', errors)
+      alert('Error saving criteria. Please try again.')
+    },
+    onFinish: () => {
+      criteriaForm.value.processing = false
+    }
+  })
+}
+
+const confirmDeleteCriteria = (round, criteria) => {
+  selectedRound.value = round
+  criteriaToDelete.value = criteria
+  showDeleteCriteriaModal.value = true
+}
+
+const closeDeleteCriteriaModal = () => {
+  showDeleteCriteriaModal.value = false
+  selectedRound.value = null
+  criteriaToDelete.value = null
+}
+
+const deleteCriteria = () => {
+  if (!criteriaToDelete.value || !selectedRound.value) return
+  
+  deleteCriteriaProcessing.value = true
+  
+  router.delete(route('organizer.pageant.rounds.criteria.destroy', {
+    pageantId: props.pageant.id,
+    roundId: selectedRound.value.id,
+    criteriaId: criteriaToDelete.value.id
+  }), {
+    onSuccess: () => {
+      closeDeleteCriteriaModal()
+      router.reload({ only: ['pageant'] })
+    },
+    onError: (errors) => {
+      console.error('Delete criteria error:', errors)
+      alert('Error deleting criteria. Please try again.')
+    },
+    onFinish: () => {
+      deleteCriteriaProcessing.value = false
+    }
+  })
 }
 
 // Contestant management functions

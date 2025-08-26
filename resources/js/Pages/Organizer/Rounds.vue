@@ -65,17 +65,17 @@
                   <Trash2 class="w-4 h-4" />
                 </button>
                 <button
-                  @click="toggleRoundCriteria(round.id)"
+                  @click="toggleRoundCriteria(round.id!)"
                   class="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition duration-150 ease-in-out"
                 >
-                  <ChevronDown class="w-4 h-4 transform transition-transform duration-200" :class="{ 'rotate-180': expandedRounds.includes(round.id) }" />
+                  <ChevronDown class="w-4 h-4 transform transition-transform duration-200" :class="{ 'rotate-180': expandedRounds.includes(round.id!) }" />
                 </button>
               </div>
             </div>
           </div>
 
           <!-- Criteria Section -->
-          <div v-show="expandedRounds.includes(round.id)" class="p-6 bg-gray-50">
+          <div v-show="expandedRounds.includes(round.id!)" class="p-6 bg-gray-50">
             <div class="flex items-center justify-between mb-4">
               <h4 class="text-md font-medium text-gray-900">Scoring Criteria</h4>
               <button
@@ -172,8 +172,7 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              <option value="competition">Competition</option>
-              <option value="preliminary">Preliminary</option>
+              <option value="semi-final">Semi-Final</option>
               <option value="final">Final</option>
             </select>
           </div>
@@ -400,7 +399,7 @@ const roundForm = reactive({
   id: null as number | null,
   name: '',
   description: '',
-  type: 'competition',
+  type: 'semi-final',
   weight: 100,
   display_order: 0,
 })
@@ -428,7 +427,7 @@ const toggleRoundCriteria = (roundId: number) => {
 }
 
 const editRound = (round: Round) => {
-  roundForm.id = round.id
+  roundForm.id = round.id || null
   roundForm.name = round.name
   roundForm.description = round.description
   roundForm.type = round.type
@@ -453,7 +452,7 @@ const showAddCriteriaModal = (round: Round) => {
 
 const editCriteria = (round: Round, criteria: Criteria) => {
   currentRound.value = round
-  criteriaForm.id = criteria.id
+  criteriaForm.id = criteria.id || null
   criteriaForm.name = criteria.name
   criteriaForm.description = criteria.description
   criteriaForm.weight = criteria.weight
@@ -562,7 +561,7 @@ const resetRoundForm = () => {
   roundForm.id = null
   roundForm.name = ''
   roundForm.description = ''
-  roundForm.type = 'competition'
+  roundForm.type = 'semi-final'
   roundForm.weight = 100
   roundForm.display_order = 0
 }
