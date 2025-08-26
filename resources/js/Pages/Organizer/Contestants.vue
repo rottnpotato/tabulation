@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <!-- Header Section with Gradient Background -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+      <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-semibold text-gray-800">Contestants</h1>
@@ -10,7 +10,7 @@
           </div>
           <button
             @click="ShowAddModal = true"
-            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5 flex items-center"
+            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5 flex items-center"
           >
             <Plus class="h-4 w-4 mr-2" />
             Add Contestant
@@ -24,7 +24,7 @@
       <div class="px-6 py-5 border-b border-gray-200">
         <div class="flex justify-between items-center">
           <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-            <Users class="h-5 w-5 mr-2 text-purple-500" />
+            <Users class="h-5 w-5 mr-2 text-orange-500" />
             All Contestants 
             <span class="ml-2 text-gray-500 text-sm font-normal">({{ TotalContestants || 0 }})</span>
           </h2>
@@ -36,7 +36,7 @@
                 v-model="selectedPageant"
                 :options="pageantOptions"
                 placeholder="All Pageants"
-                variant="purple"
+                variant="orange"
                 @change="filterContestants"
               />
             </div>
@@ -47,7 +47,7 @@
       <div class="p-6">
         <!-- Pageant Summaries -->
         <div v-if="PageantSummaries && PageantSummaries.length > 0" class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div v-for="pageant in PageantSummaries" :key="pageant.id" class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+          <div v-for="pageant in PageantSummaries" :key="pageant.id" class="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
             <div class="flex items-center justify-between">
               <div>
                 <h3 class="font-semibold text-gray-800">{{ pageant.name }}</h3>
@@ -66,18 +66,37 @@
 
         <!-- No contestants message -->
         <div v-if="filteredContestants.length === 0" class="text-center py-12">
-          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-purple-100 to-pink-100 mb-4">
-            <Users class="h-12 w-12 text-purple-500" />
+          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-orange-200 mb-4">
+            <Users class="h-12 w-12 text-orange-500" />
           </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-1">No contestants yet</h3>
-          <p class="text-gray-600 mb-6 max-w-md mx-auto">Add your first contestant to get started</p>
-          <button
-            @click="ShowAddModal = true"
-            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5"
-          >
-            <Plus class="h-4 w-4 inline mr-1" />
-            Add Contestant
-          </button>
+          <h3 class="text-lg font-medium text-gray-900 mb-1">
+            {{ PageantSummaries && PageantSummaries.length === 0 ? 'No pageants created yet' : 'No contestants found' }}
+          </h3>
+          <p class="text-gray-600 mb-6 max-w-md mx-auto">
+            {{ PageantSummaries && PageantSummaries.length === 0 
+                ? 'Create your first pageant to start adding contestants and managing competitions'
+                : selectedPageant 
+                  ? 'No contestants found for the selected pageant. Add contestants to get started.'
+                  : 'Add contestants to your pageants to build your competition roster' 
+            }}
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <button
+              v-if="PageantSummaries && PageantSummaries.length > 0"
+              @click="ShowAddModal = true"
+              class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5"
+            >
+              <Plus class="h-4 w-4 inline mr-2" />
+              Add Contestant
+            </button>
+            <Link
+              :href="route('organizer.pageants.create')"
+              class="px-6 py-3 text-sm font-medium text-orange-700 hover:text-orange-900 bg-orange-50 border border-orange-200 hover:border-orange-300 rounded-lg transition-all shadow-sm hover:shadow-md flex items-center"
+            >
+              <Plus class="h-4 w-4 mr-2" />
+              {{ PageantSummaries && PageantSummaries.length === 0 ? 'Create First Pageant' : 'Create New Pageant' }}
+            </Link>
+          </div>
         </div>
 
         <!-- Contestants Grid -->
@@ -99,7 +118,7 @@
               
               <!-- Contestant number badge -->
               <div class="absolute top-3 right-3">
-                <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-600 text-white text-sm font-bold shadow-md">
+                <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-500 text-white text-sm font-bold shadow-md">
                   #{{ contestant.contestNumber }}
                 </span>
               </div>
@@ -108,7 +127,7 @@
               <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                 <button 
                   @click.stop="ViewContestantDetails(contestant)" 
-                  class="bg-purple-500/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm border border-purple-500/30 hover:bg-purple-500/30 transition-colors"
+                  class="bg-orange-500/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm border border-orange-500/30 hover:bg-orange-500/30 transition-colors"
                 >
                   <Eye class="h-4 w-4 inline-block mr-1" />
                   View
@@ -133,12 +152,12 @@
               <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
                 <h3 class="text-lg font-bold truncate">{{ contestant.name }}</h3>
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                  <div class="flex items-center text-sm text-purple-100">
-                    <MapPin class="h-3.5 w-3.5 mr-1 text-purple-300" />
+                  <div class="flex items-center text-sm text-orange-100">
+                    <MapPin class="h-3.5 w-3.5 mr-1 text-orange-300" />
                     <span class="truncate">{{ contestant.city }}</span>
                   </div>
-                  <div class="flex items-center text-sm text-purple-100">
-                    <Calendar class="h-3.5 w-3.5 mr-1 text-purple-300" />
+                  <div class="flex items-center text-sm text-orange-100">
+                    <Calendar class="h-3.5 w-3.5 mr-1 text-orange-300" />
                     <span>{{ contestant.age }} years</span>
                   </div>
                 </div>
@@ -206,7 +225,7 @@
                           id="contestNumber"
                           v-model="Form.contestNumber"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 001"
                           required
                         />
@@ -221,7 +240,7 @@
                           id="name"
                           v-model="Form.name"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. Jane Smith"
                           required
                         />
@@ -236,7 +255,7 @@
                           id="age"
                           v-model="Form.age"
                           type="number"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 24"
                           required
                         />
@@ -254,7 +273,7 @@
                           id="city"
                           v-model="Form.city"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. New York, USA"
                           required
                         />
@@ -269,7 +288,7 @@
                           id="bio"
                           v-model="Form.bio"
                           rows="4"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
                           placeholder="Share the contestant's background, achievements, interests..."
                           required
                         ></textarea>
@@ -306,10 +325,10 @@
                     <!-- Upload New Photos -->
                     <div class="flex flex-col w-full">
                       <label
-                        class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-purple-400 hover:bg-purple-50 transition-colors cursor-pointer"
+                        class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-orange-400 hover:bg-orange-50 transition-colors cursor-pointer"
                       >
                         <div class="flex flex-col items-center justify-center pt-7">
-                          <Camera class="w-8 h-8 text-purple-400 group-hover:text-purple-600" />
+                          <Camera class="w-8 h-8 text-orange-400 group-hover:text-orange-600" />
                           <p class="pt-1 text-sm tracking-wider text-gray-600 group-hover:text-gray-600">
                             Upload contestant photos
                           </p>
@@ -339,7 +358,7 @@
                     </button>
                     <button
                       type="submit"
-                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                     >
                       {{ EditingContestant ? 'Save Changes' : 'Add Contestant' }}
                     </button>
@@ -401,7 +420,7 @@
                       
                       <!-- Contestant number badge -->
                       <div class="absolute top-4 right-4">
-                        <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-purple-600 text-white text-lg font-bold shadow-md">
+                        <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-orange-500 text-white text-lg font-bold shadow-md">
                           #{{ SelectedContestant.contestNumber }}
                         </span>
                       </div>
@@ -470,17 +489,17 @@
                       
                       <!-- Info cards -->
                       <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-purple-50 rounded-lg p-4">
+                        <div class="bg-orange-50 rounded-lg p-4">
                           <div class="flex items-center">
-                            <Calendar class="h-5 w-5 text-purple-600 mr-2" />
+                            <Calendar class="h-5 w-5 text-orange-600 mr-2" />
                             <span class="text-sm font-medium text-gray-600">Age</span>
                           </div>
                           <p class="mt-1 text-lg font-semibold text-gray-900">{{ SelectedContestant.age }} years</p>
                         </div>
                         
-                        <div class="bg-purple-50 rounded-lg p-4">
+                        <div class="bg-orange-50 rounded-lg p-4">
                           <div class="flex items-center">
-                            <MapPin class="h-5 w-5 text-purple-600 mr-2" />
+                            <MapPin class="h-5 w-5 text-orange-600 mr-2" />
                             <span class="text-sm font-medium text-gray-600">Location</span>
                           </div>
                           <p class="mt-1 text-lg font-semibold text-gray-900">{{ SelectedContestant.city }}</p>
@@ -490,7 +509,7 @@
                       <!-- Biography -->
                       <div class="bg-white border border-gray-200 rounded-lg p-5">
                         <h3 class="text-xl font-semibold text-gray-800 mb-3 flex items-center">
-                          <FileText class="h-5 w-5 text-purple-500 mr-2" />
+                          <FileText class="h-5 w-5 text-orange-500 mr-2" />
                           Biography
                         </h3>
                         <p class="text-gray-700 leading-relaxed">{{ SelectedContestant.bio }}</p>
@@ -527,6 +546,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { Link } from '@inertiajs/vue3'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { 
   Plus, 

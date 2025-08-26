@@ -1,168 +1,163 @@
 <template>
-  <div class="space-y-6">
-    <div class="bg-white shadow-sm rounded-lg p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-semibold text-gray-900">Score Entries</h2>
-        <div class="flex space-x-4">
-          <div class="min-w-[160px]">
-            <CustomSelect
-              v-model="CurrentRound"
+  <div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">
+          {{ pageant ? `${pageant.name} - Score Tracking` : 'Score Tracking' }}
+        </h1>
+        <p class="text-gray-600 mt-2">Monitor judge submissions and scoring progress</p>
+      </div>
+
+      <!-- No Pageant Assigned -->
+      <div v-if="!pageant" class="text-center py-16">
+        <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 mb-6">
+          <ClipboardList class="h-12 w-12 text-blue-500" />
+        </div>
+        <h3 class="text-xl font-medium text-gray-900 mb-2">No Pageant Selected</h3>
+        <p class="text-gray-600 mb-6 max-w-md mx-auto">
+          You haven't been assigned to any pageants yet, or you need to select a pageant to view scores.
+        </p>
+        <Link 
+          :href="route('tabulator.dashboard')"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+        >
+          <LayoutDashboard class="w-4 h-4 mr-2" />
+          Go to Dashboard
+        </Link>
+      </div>
+
+      <!-- Round Selection -->
+      <div v-if="pageant" class="mb-6 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <h2 class="text-lg font-semibold text-gray-900">Current Round:</h2>
+          <div class="w-48">
+            <CustomSelect 
+              v-model="currentRoundId"
               :options="roundOptions"
-              variant="blue"
               placeholder="Select Round"
+              @change="handleRoundChange"
             />
           </div>
-          <button
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
-          >
-            <RefreshCw class="h-5 w-5 mr-2" />
-            Refresh Scores
-          </button>
+        </div>
+        <button 
+          @click="refreshData"
+          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+        >
+          <RefreshCw class="w-4 h-4 mr-2" />
+          Refresh Data
+        </button>
+      </div>
+
+      <!-- No Rounds Message -->
+      <div v-if="pageant && (!rounds || rounds.length === 0)" class="text-center py-12">
+        <div class="text-gray-500">
+          <Target class="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No Rounds Available</h3>
+          <p class="text-gray-500">
+            No competition rounds have been set up for this pageant yet.
+          </p>
         </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contestant
-              </th>
-              <th
-                v-for="judge in Judges"
-                :key="judge.id"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ judge.name }}
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Average
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="contestant in Contestants" :key="contestant.id">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="h-10 w-10 flex-shrink-0">
-                    <img
-                      :src="contestant.image"
-                      :alt="contestant.name"
-                      class="h-10 w-10 rounded-full object-cover"
-                    />
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ contestant.name }}
-                    </div>
-                    <div class="text-sm text-gray-500">
-                      #{{ contestant.number }}
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td
-                v-for="judge in Judges"
-                :key="judge.id"
-                class="px-6 py-4 whitespace-nowrap"
-              >
-                <div
-                  class="text-sm"
-                  :class="GetScoreClass(GetScore(contestant.id, judge.id))"
-                >
-                  {{ GetScore(contestant.id, judge.id) }}
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-semibold text-gray-900">
-                  {{ CalculateAverage(contestant.id) }}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Scores Table -->
+      <div v-if="pageant && rounds && rounds.length > 0">
+        <ScoreTable 
+          :title="`Judge Scores - ${getCurrentRoundLabel()}`"
+          :contestants="contestants"
+          :judges="judges"
+          :scores="scores"
+          :score-key="currentRound?.id.toString()"
+          empty-title="No Scores Available"
+          empty-message="Scores will appear here once judges start submitting their evaluations."
+        >
+          <template #actions>
+            <button
+              @click="exportScores"
+              class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
+            >
+              <Download class="w-4 h-4 mr-2" />
+              Export
+            </button>
+          </template>
+        </ScoreTable>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { RefreshCw } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { router, Link } from '@inertiajs/vue3'
+import { route } from 'ziggy-js'
+import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
+import ScoreTable from '../../Components/tabulator/ScoreTable.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 
 defineOptions({
   layout: TabulatorLayout
 })
 
-const CurrentRound = ref('evening_gown')
+interface Round {
+  id: number
+  name: string
+  type: string
+  weight: number
+}
 
-const roundOptions = ref([
-  { value: 'evening_gown', label: 'Evening Gown' },
-  { value: 'swimsuit', label: 'Swimsuit' },
-  { value: 'qa', label: 'Q&A' }
-])
+interface Contestant {
+  id: number
+  name: string
+  number: number
+  image: string
+}
 
-const Judges = ref([
-  { id: 1, name: 'Judge 1' },
-  { id: 2, name: 'Judge 2' },
-  { id: 3, name: 'Judge 3' },
-  { id: 4, name: 'Judge 4' },
-  { id: 5, name: 'Judge 5' }
-])
+interface Judge {
+  id: number
+  name: string
+}
 
-const Contestants = ref([
-  {
-    id: 1,
-    number: 1,
-    name: 'Sarah Johnson',
-    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80'
-  },
-  {
-    id: 2,
-    number: 2,
-    name: 'Emily Davis',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80'
-  }
-])
+interface Pageant {
+  id: number
+  name: string
+}
 
-// Simulated scores
-const Scores = ref(new Map())
+interface Props {
+  pageant?: Pageant
+  rounds: Round[]
+  currentRound: Round | null
+  contestants: Contestant[]
+  judges: Judge[]
+  scores: Record<string, number> | Map<string, number>
+}
 
-// Initialize random scores
-Contestants.value.forEach(contestant => {
-  Judges.value.forEach(judge => {
-    const key = `${contestant.id}-${judge.id}-${CurrentRound.value}`
-    Scores.value.set(key, Math.floor(Math.random() * 20) + 80) // Random score between 80-100
-  })
+const props = defineProps<Props>()
+
+const currentRoundId = ref(props.currentRound?.id || (props.rounds[0]?.id))
+
+const roundOptions = computed(() => {
+  return props.rounds.map(round => ({
+    value: round.id.toString(),
+    label: round.name
+  }))
 })
 
-const GetScore = (contestantId: number, judgeId: number) => {
-  const key = `${contestantId}-${judgeId}-${CurrentRound.value}`
-  return Scores.value.get(key) || '-'
+const getCurrentRoundLabel = () => {
+  const selectedRound = props.rounds.find(r => r.id.toString() === currentRoundId.value?.toString())
+  return selectedRound ? selectedRound.name : 'Unknown Round'
 }
 
-const CalculateAverage = (contestantId: number) => {
-  const contestantScores: number[] = []
-  
-  Judges.value.forEach(judge => {
-    const key = `${contestantId}-${judge.id}-${CurrentRound.value}`
-    const score = Scores.value.get(key)
-    if (score) {
-      contestantScores.push(score)
-    }
-  })
-  
-  if (contestantScores.length === 0) return '-'
-  
-  const sum = contestantScores.reduce((acc, score) => acc + score, 0)
-  return (sum / contestantScores.length).toFixed(2)
+const handleRoundChange = (value: string) => {
+  const roundId = parseInt(value)
+  router.visit(route('tabulator.scores', { pageantId: props.pageant?.id, roundId }))
 }
 
-const GetScoreClass = (score: number) => {
-  if (score >= 90) return 'text-green-600 font-semibold'
-  if (score >= 80) return 'text-blue-600'
-  return 'text-gray-900'
+const refreshData = () => {
+  router.reload()
+}
+
+const exportScores = () => {
+  // TODO: Implement score export functionality
+  console.log('Export scores for round:', currentRoundId.value)
 }
 </script>

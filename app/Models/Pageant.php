@@ -146,6 +146,14 @@ class Pageant extends Model
     }
 
     /**
+     * Get the rounds associated with this pageant.
+     */
+    public function rounds(): HasMany
+    {
+        return $this->hasMany(Round::class);
+    }
+
+    /**
      * Get the activities associated with this pageant.
      */
     public function activities(): HasMany

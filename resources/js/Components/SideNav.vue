@@ -339,11 +339,17 @@ const hoverBorderColor = computed(() => {
   }
 })
 
+// Helper function to extract pageantId from current URL for tabulator users
+const getCurrentPageantId = computed(() => {
+  if (user.value?.role !== 'tabulator') return null;
+  
+  const currentUrl = page.url || '';
+  const match = currentUrl.match(/\/tabulator\/(\d+)/);
+  return match ? match[1] : null;
+})
+
 // Navigation items
 const navigation = computed(() => {
-  // Clear debugging output that might be polluting the console
-  console.log('User role in navigation:', user.value?.role);
-  
   // Helper function to create route URLs based on role
   const rolePrefix = user.value?.role || 'admin';
   
@@ -387,12 +393,22 @@ const navigation = computed(() => {
         { name: 'Timeline', href: route('organizer.timeline'), route: 'organizer.timeline', icon: Calendar }
       ]
     case 'tabulator':
+      const currentPageantId = getCurrentPageantId.value;
+      
+      // If no pageant is selected, only show dashboard
+      if (!currentPageantId) {
+        return [
+          { name: 'Dashboard', href: route('tabulator.dashboard'), route: 'tabulator.dashboard', icon: LayoutDashboard }
+        ];
+      }
+      
+      // If pageant is selected, show full navigation with pageant context
       return [
-        { name: 'Dashboard', href: route('tabulator.dashboard'), route: 'tabulator.dashboard', icon: LayoutDashboard },
-        { name: 'Judges', href: route('tabulator.judges'), route: 'tabulator.judges', icon: Users },
-        { name: 'Scores', href: route('tabulator.scores'), route: 'tabulator.scores', icon: ClipboardList },
-        { name: 'Results', href: route('tabulator.results'), route: 'tabulator.results', icon: Award },
-        { name: 'Print', href: route('tabulator.print'), route: 'tabulator.print', icon: Printer }
+        { name: 'Dashboard', href: route('tabulator.dashboard', currentPageantId), route: 'tabulator.dashboard', icon: LayoutDashboard },
+        { name: 'Judges', href: route('tabulator.judges', currentPageantId), route: 'tabulator.judges', icon: Users },
+        { name: 'Scores', href: route('tabulator.scores', currentPageantId), route: 'tabulator.scores', icon: ClipboardList },
+        { name: 'Results', href: route('tabulator.results', currentPageantId), route: 'tabulator.results', icon: Award },
+        { name: 'Print', href: route('tabulator.print', currentPageantId), route: 'tabulator.print', icon: Printer }
       ]
     case 'judge':
       return [

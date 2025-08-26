@@ -273,6 +273,53 @@
             </div>
           </div>
           
+          <!-- Quick Settings Panel -->
+          <div v-if="canEdit" class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200 p-6">
+            <h4 class="text-base font-medium text-gray-900 mb-4 flex items-center">
+              <Calculator class="h-5 w-5 text-orange-600 mr-2" />
+              Quick Settings
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Current Scoring System -->
+              <div class="bg-white rounded-lg p-4 border border-orange-100">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Current Scoring System</label>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-900 font-medium">{{ getScoringSystemName(pageant.scoring_system) }}</span>
+                  <button 
+                    @click="activeTab = 'scoring'"
+                    class="text-xs text-orange-600 hover:text-orange-800 font-medium"
+                  >
+                    Change
+                  </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">{{ getScoringSystemDescription(pageant.scoring_system) }}</p>
+              </div>
+              
+              <!-- Required Judges Quick Setting -->
+              <div class="bg-white rounded-lg p-4 border border-orange-100">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Required Judges</label>
+                <div class="flex items-center space-x-2">
+                  <input 
+                    v-model="quickRequiredJudges" 
+                    type="number" 
+                    min="0" 
+                    max="20"
+                    @change="updateRequiredJudgesQuick"
+                    class="w-20 text-sm border-gray-300 rounded-md shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  />
+                  <span class="text-sm text-gray-500">judges</span>
+                  <button 
+                    @click="activeTab = 'judges'"
+                    class="text-xs text-orange-600 hover:text-orange-800 font-medium ml-auto"
+                  >
+                    Manage
+                  </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Current: {{ pageant.judges.length }} assigned</p>
+              </div>
+            </div>
+          </div>
+          
           <!-- Stats Cards -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <!-- Contestants Card -->
@@ -340,6 +387,28 @@
                 </Link>
               </div>
             </div>
+            
+            <!-- Rounds Card -->
+            <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <div class="p-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-gray-900">Rounds</h3>
+                  <div class="p-2 bg-purple-100 rounded-full">
+                    <Target class="h-5 w-5 text-purple-600" />
+                  </div>
+                </div>
+                <p class="mt-2 text-3xl font-bold text-gray-900">{{ pageant.rounds?.length || 0 }}</p>
+                <p class="text-sm text-gray-500">Competition rounds</p>
+              </div>
+              <div class="border-t border-gray-100 bg-gray-50 px-4 py-3">
+                <Link 
+                  :href="route('organizer.pageant.rounds-management', pageant.id)"
+                  class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center"
+                >
+                  Manage Rounds <ChevronRight class="h-4 w-4 ml-1" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -350,13 +419,20 @@
         <div v-else-if="activeTab === 'contestants'" class="space-y-6">
           <div class="flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-900">Contestants</h3>
-            <div v-if="canEdit">
+            <div v-if="canEdit" class="flex items-center space-x-2">
+              <button
+                @click="openAddContestantModal"
+                class="inline-flex items-center px-3 py-2 bg-orange-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+              >
+                <Plus class="h-4 w-4 mr-1.5" />
+                Add Contestant
+              </button>
               <Link 
                 :href="route('organizer.pageant.contestants-management', pageant.id)"
                 class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 btn-transition"
               >
-                <Plus class="h-4 w-4 mr-1.5" />
-                Manage Contestants
+                <Users class="h-4 w-4 mr-1.5" />
+                Manage All
               </Link>
             </div>
           </div>
@@ -398,12 +474,18 @@
                 </div>
                 <div v-if="canEdit" class="mt-3 flex justify-end space-x-2">
                   <Tooltip text="Edit contestant information" position="top">
-                    <button class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110">
+                    <button 
+                      @click="openEditContestantModal(contestant)"
+                      class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110"
+                    >
                       <Edit class="h-4 w-4" />
                     </button>
                   </Tooltip>
                   <Tooltip text="Remove contestant from pageant" position="top">
-                    <button class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110">
+                    <button 
+                      @click="confirmDeleteContestant(contestant)"
+                      class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110"
+                    >
                       <Trash class="h-4 w-4" />
                     </button>
                   </Tooltip>
@@ -417,13 +499,20 @@
         <div v-else-if="activeTab === 'criteria'" class="space-y-6">
           <div class="flex justify-between items-center">
             <h3 class="text-lg font-semibold text-gray-900">Scoring Criteria</h3>
-            <div v-if="canEdit">
+            <div v-if="canEdit" class="flex items-center space-x-2">
+              <Link 
+                :href="route('organizer.pageant.criteria-management', pageant.id)"
+                class="inline-flex items-center px-3 py-2 bg-orange-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+              >
+                <Plus class="h-4 w-4 mr-1.5" />
+                Add Criterion
+              </Link>
               <Link 
                 :href="route('organizer.pageant.criteria-management', pageant.id)"
                 class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 btn-transition"
               >
-                <Plus class="h-4 w-4 mr-1.5" />
-                Manage Criteria
+                <ListChecks class="h-4 w-4 mr-1.5" />
+                Manage All
               </Link>
             </div>
           </div>
@@ -463,14 +552,20 @@
                 </div>
                 <div v-if="canEdit" class="mt-3 flex justify-end space-x-2">
                   <Tooltip text="Edit scoring criterion details" position="top">
-                    <button class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110">
+                    <Link 
+                      :href="route('organizer.pageant.criteria-management', pageant.id)"
+                      class="p-1 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all transform hover:scale-110"
+                    >
                       <Edit class="h-4 w-4" />
-                    </button>
+                    </Link>
                   </Tooltip>
-                  <Tooltip text="Remove this scoring criterion" position="top">
-                    <button class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110">
-                      <Trash class="h-4 w-4" />
-                    </button>
+                  <Tooltip text="Manage all criteria" position="top">
+                    <Link 
+                      :href="route('organizer.pageant.criteria-management', pageant.id)"
+                      class="p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all transform hover:scale-110"
+                    >
+                      <ListChecks class="h-4 w-4" />
+                    </Link>
                   </Tooltip>
                 </div>
               </div>
@@ -1008,15 +1103,251 @@
         </div>
       </div>
     </div>
+    
+    <!-- Add/Edit Contestant Modal -->
+    <TransitionRoot appear :show="showContestantModal" as="template">
+      <Dialog as="div" @close="closeContestantModal" class="relative z-30">
+        <TransitionChild
+          enter="ease-out duration-300"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="ease-in duration-200"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4">
+            <TransitionChild
+              enter="ease-out duration-300"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel class="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
+                <div class="relative border-b border-gray-200 p-6">
+                  <DialogTitle as="h3" class="text-2xl font-bold text-gray-800 leading-6">
+                    {{ editingContestant ? 'Edit Contestant' : 'Add New Contestant' }}
+                  </DialogTitle>
+                  <p class="mt-2 text-gray-600 max-w-2xl">
+                    {{ editingContestant ? 'Update contestant information' : 'Add a new contestant to your pageant' }}
+                  </p>
+                  <button 
+                    @click="closeContestantModal" 
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <XCircle class="h-6 w-6" />
+                  </button>
+                </div>
+
+                <form @submit.prevent="submitContestantForm" class="p-6">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
+                      <div>
+                        <label for="contestNumber" class="block text-sm font-medium text-gray-700 mb-1">
+                          Contestant Number <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="contestNumber"
+                          v-model="contestantForm.number"
+                          type="text"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. 001"
+                          required
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's competition number</p>
+                      </div>
+
+                      <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                          Full Name <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="name"
+                          v-model="contestantForm.name"
+                          type="text"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. Jane Smith"
+                          required
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's full name</p>
+                      </div>
+
+                      <div>
+                        <label for="age" class="block text-sm font-medium text-gray-700 mb-1">
+                          Age <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="age"
+                          v-model="contestantForm.age"
+                          type="number"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. 24"
+                          required
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's age</p>
+                      </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                      <div>
+                        <label for="origin" class="block text-sm font-medium text-gray-700 mb-1">
+                          Location <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          id="origin"
+                          v-model="contestantForm.origin"
+                          type="text"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. New York, USA"
+                          required
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's hometown or representation</p>
+                      </div>
+
+                      <div>
+                        <label for="bio" class="block text-sm font-medium text-gray-700 mb-1">
+                          Biography <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          id="bio"
+                          v-model="contestantForm.bio"
+                          rows="4"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="Share the contestant's background, achievements, interests..."
+                          required
+                        ></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Add a brief biography for the contestant</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Photos Section (Full Width) -->
+                  <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Photos <span class="text-red-500">*</span>
+                    </label>
+                    
+                    <!-- Current Photos Preview (if editing) -->
+                    <div v-if="contestantForm.photos && contestantForm.photos.length > 0" class="mb-4">
+                      <div class="flex flex-wrap gap-3">
+                        <div 
+                          v-for="(photo, index) in contestantForm.photos" 
+                          :key="index" 
+                          class="relative w-24 h-24 rounded-lg overflow-hidden group"
+                        >
+                          <img :src="photo" class="w-full h-full object-cover" />
+                          <button 
+                            @click.prevent="removePhoto(index)"
+                            class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                          >
+                            <Trash class="h-5 w-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Upload New Photos -->
+                    <div class="flex flex-col w-full">
+                      <label
+                        class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-orange-400 hover:bg-orange-50 transition-colors cursor-pointer"
+                      >
+                        <div class="flex flex-col items-center justify-center pt-7">
+                          <Camera class="w-8 h-8 text-orange-400 group-hover:text-orange-600" />
+                          <p class="pt-1 text-sm tracking-wider text-gray-600 group-hover:text-gray-600">
+                            Upload contestant photos
+                          </p>
+                          <p class="text-xs text-gray-500 mt-1">
+                            Drag & drop files here or click to browse
+                          </p>
+                        </div>
+                        <input
+                          type="file"
+                          @change="handlePhotoChange"
+                          class="opacity-0 absolute"
+                          accept="image/*"
+                          multiple
+                        />
+                      </label>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Upload photos of the contestant. First photo will be used as the main profile image.</p>
+                  </div>
+
+                  <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      @click="closeContestantModal"
+                      class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                    >
+                      {{ editingContestant ? 'Save Changes' : 'Add Contestant' }}
+                    </button>
+                  </div>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+    
+    <!-- Delete Contestant Confirmation Modal -->
+    <div v-if="showDeleteContestantModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+          <div class="flex items-center mb-4">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+              <AlertCircle class="h-6 w-6 text-red-600" />
+            </div>
+          </div>
+          <div class="text-center">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">Remove Contestant</h3>
+            <p class="text-sm text-gray-500 mb-6">
+              Are you sure you want to remove "{{ contestantToDelete?.name }}" from this pageant? This action cannot be undone.
+            </p>
+          </div>
+          <div class="flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="closeDeleteContestantModal"
+              class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="deleteContestant"
+              :disabled="deleteContestantProcessing"
+              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ deleteContestantProcessing ? 'Removing...' : 'Remove Contestant' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { 
   ChevronLeft, 
   ChevronRight,
+  ChevronDown,
   Edit, 
   Info, 
   Calendar, 
@@ -1035,8 +1366,10 @@ import {
   Calculator,
   ChartBar,
   Flag,
-  Tag
-} from 'lucide-vue-next'
+  Tag,
+  XCircle,
+  Camera
+, Target} from 'lucide-vue-next'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue'
@@ -1071,6 +1404,15 @@ const selectedTabulator = ref(null)
 const showDeleteTabulatorConfirm = ref(false)
 const deleteTabulatorProcessing = ref(false)
 
+// Contestant modal states
+const showContestantModal = ref(false)
+const showDeleteContestantModal = ref(false)
+const editingContestant = ref(null)
+const contestantToDelete = ref(null)
+const deleteContestantProcessing = ref(false)
+const photoPreview = ref(null)
+const photoInput = ref(null)
+
 // Form state
 const requiredJudgesForm = ref({
   required_judges: props.pageant.required_judges || 0,
@@ -1082,6 +1424,21 @@ const tabulatorForm = ref({
   notes: '',
   processing: false
 })
+
+// Contestant form state
+const contestantForm = ref({
+  number: '',
+  name: '',
+  age: '',
+  origin: '',
+  bio: '',
+  photos: [], // Array to store multiple photos
+  photo: null,
+  processing: false
+})
+
+// Quick settings state
+const quickRequiredJudges = ref(props.pageant.required_judges || 0)
 
 // Computed properties
 const tabulatorOptions = computed(() => {
@@ -1119,6 +1476,22 @@ const updateRequiredJudges = () => {
     },
     onError: () => {
       requiredJudgesForm.value.processing = false
+    }
+  })
+}
+
+// Quick update for required judges from overview
+const updateRequiredJudgesQuick = () => {
+  router.put(route('organizer.pageant.required-judges.update', props.pageant.id), {
+    required_judges: quickRequiredJudges.value
+  }, {
+    onSuccess: () => {
+      // Update the main form as well
+      requiredJudgesForm.value.required_judges = quickRequiredJudges.value
+    },
+    onError: () => {
+      // Reset to original value on error
+      quickRequiredJudges.value = props.pageant.required_judges || 0
     }
   })
 }
@@ -1473,6 +1846,177 @@ const checkForAutoCompletion = () => {
     // You could automatically trigger the completion here, but it's better to let the user decide
     // by showing the auto-completion option in the UI
   }
+}
+
+// Contestant management functions
+const openAddContestantModal = () => {
+  editingContestant.value = null
+  resetContestantForm()
+  showContestantModal.value = true
+}
+
+const openEditContestantModal = (contestant) => {
+  editingContestant.value = contestant
+  contestantForm.value = {
+    number: contestant.number || '',
+    name: contestant.name || '',
+    age: contestant.age || '',
+    origin: contestant.origin || '',
+    bio: contestant.bio || '',
+    photos: contestant.photos || [contestant.photo],
+    photo: null,
+    processing: false
+  }
+  photoPreview.value = null
+  showContestantModal.value = true
+}
+
+const closeContestantModal = () => {
+  showContestantModal.value = false
+  editingContestant.value = null
+  resetContestantForm()
+  photoPreview.value = null
+  if (photoInput.value) {
+    photoInput.value.value = ''
+  }
+}
+
+const resetContestantForm = () => {
+  contestantForm.value = {
+    number: '',
+    name: '',
+    age: '',
+    origin: '',
+    bio: '',
+    photos: [],
+    photo: null,
+    processing: false
+  }
+}
+
+const handlePhotoChange = (event) => {
+  const files = event.target.files
+  if (!files || files.length === 0) return
+  
+  // Process multiple files
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const reader = new FileReader()
+    
+    reader.onloadend = () => {
+      contestantForm.value.photos.push(reader.result)
+    }
+    
+    reader.readAsDataURL(file)
+  }
+}
+
+const removePhoto = (index) => {
+  contestantForm.value.photos.splice(index, 1)
+}
+
+const submitContestantForm = async () => {
+  contestantForm.value.processing = true
+  
+  try {
+    const formData = new FormData()
+    formData.append('name', contestantForm.value.name)
+    formData.append('number', contestantForm.value.number)
+    formData.append('age', contestantForm.value.age)
+    formData.append('origin', contestantForm.value.origin)
+    formData.append('bio', contestantForm.value.bio || '')
+    
+    // Handle photos array
+    if (contestantForm.value.photos && contestantForm.value.photos.length > 0) {
+      contestantForm.value.photos.forEach((photo, index) => {
+        if (photo instanceof File) {
+          formData.append(`photos[${index}]`, photo)
+        } else {
+          formData.append(`existing_photos[${index}]`, photo)
+        }
+      })
+    }
+    
+    const url = editingContestant.value 
+      ? route('organizer.pageant.contestants.update', { 
+          id: props.pageant.id, 
+          contestantId: editingContestant.value.id 
+        })
+      : route('organizer.pageant.contestants.store', props.pageant.id)
+    
+    const method = editingContestant.value ? 'put' : 'post'
+    
+    if (editingContestant.value) {
+      formData.append('_method', 'PUT')
+      router.post(url, formData, {
+        onSuccess: () => {
+          closeContestantModal()
+          // Reload page to get updated data
+          router.reload({ only: ['pageant'] })
+        },
+        onError: (errors) => {
+          console.error('Update contestant error:', errors)
+          alert('Error updating contestant. Please try again.')
+        },
+        onFinish: () => {
+          contestantForm.value.processing = false
+        }
+      })
+    } else {
+      router.post(url, formData, {
+        onSuccess: () => {
+          closeContestantModal()
+          // Reload page to get updated data
+          router.reload({ only: ['pageant'] })
+        },
+        onError: (errors) => {
+          console.error('Add contestant error:', errors)
+          alert('Error adding contestant. Please try again.')
+        },
+        onFinish: () => {
+          contestantForm.value.processing = false
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Form submission error:', error)
+    alert('Error submitting form. Please try again.')
+    contestantForm.value.processing = false
+  }
+}
+
+const confirmDeleteContestant = (contestant) => {
+  contestantToDelete.value = contestant
+  showDeleteContestantModal.value = true
+}
+
+const closeDeleteContestantModal = () => {
+  showDeleteContestantModal.value = false
+  contestantToDelete.value = null
+}
+
+const deleteContestant = () => {
+  if (!contestantToDelete.value) return
+  
+  deleteContestantProcessing.value = true
+  
+  router.delete(route('organizer.pageant.contestants.remove', {
+    id: props.pageant.id,
+    contestantId: contestantToDelete.value.id
+  }), {
+    onSuccess: () => {
+      closeDeleteContestantModal()
+      // Reload page to get updated data
+      router.reload({ only: ['pageant'] })
+    },
+    onError: (errors) => {
+      console.error('Delete contestant error:', errors)
+      alert('Error removing contestant. Please try again.')
+    },
+    onFinish: () => {
+      deleteContestantProcessing.value = false
+    }
+  })
 }
 
 // Check for auto-completion on mount

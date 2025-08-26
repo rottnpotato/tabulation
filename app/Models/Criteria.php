@@ -24,6 +24,7 @@ class Criteria extends Model
      */
     protected $fillable = [
         'pageant_id',
+        'round_id',
         'segment_id',
         'category_id',
         'name',
@@ -72,5 +73,13 @@ class Criteria extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Get the round that owns the criteria.
+     */
+    public function round(): BelongsTo
+    {
+        return $this->belongsTo(Round::class);
     }
 } 

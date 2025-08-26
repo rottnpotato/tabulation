@@ -79,6 +79,22 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     Route::get('/pageant/{id}/contestants-management', [OrganizerController::class, 'pageantContestants'])->name('organizer.pageant.contestants-management');
     Route::get('/pageant/{id}/criteria-management', [OrganizerController::class, 'pageantCriteria'])->name('organizer.pageant.criteria-management');
     Route::get('/pageant/{id}/judges-management', [OrganizerController::class, 'pageantJudges'])->name('organizer.pageant.judges-management');
+    Route::get('/pageant/{id}/rounds-management', [OrganizerController::class, 'pageantRounds'])->name('organizer.pageant.rounds-management');
+    
+    // Rounds management routes
+    Route::post('/pageant/{pageantId}/rounds', [OrganizerController::class, 'storeRound'])->name('organizer.pageant.rounds.store');
+    Route::put('/pageant/{pageantId}/rounds/{roundId}', [OrganizerController::class, 'updateRound'])->name('organizer.pageant.rounds.update');
+    Route::delete('/pageant/{pageantId}/rounds/{roundId}', [OrganizerController::class, 'destroyRound'])->name('organizer.pageant.rounds.destroy');
+    
+    // Round criteria management routes
+    Route::post('/pageant/{pageantId}/rounds/{roundId}/criteria', [OrganizerController::class, 'storeRoundCriteria'])->name('organizer.pageant.rounds.criteria.store');
+    Route::put('/pageant/{pageantId}/rounds/{roundId}/criteria/{criteriaId}', [OrganizerController::class, 'updateRoundCriteria'])->name('organizer.pageant.rounds.criteria.update');
+    Route::delete('/pageant/{pageantId}/rounds/{roundId}/criteria/{criteriaId}', [OrganizerController::class, 'destroyRoundCriteria'])->name('organizer.pageant.rounds.criteria.destroy');
+    
+    // Contestant management within pageant context
+    Route::post('/pageant/{id}/contestants/store', [OrganizerController::class, 'storeContestant'])->name('organizer.pageant.contestants.store');
+    Route::put('/pageant/{id}/contestants/{contestantId}', [OrganizerController::class, 'updateContestant'])->name('organizer.pageant.contestants.update');
+    Route::delete('/pageant/{id}/contestants/{contestantId}', [OrganizerController::class, 'removeContestant'])->name('organizer.pageant.contestants.remove');
 });
 
 // Admin Routes
@@ -159,10 +175,10 @@ Route::prefix('judge')->group(function () {
 
 
 // Tabulator Routes
-Route::prefix('tabulator')->group(function () {
-    Route::get('/dashboard', [TabulatorController::class, 'dashboard'])->name('tabulator.dashboard');
-    Route::get('/judges', [TabulatorController::class, 'judges'])->name('tabulator.judges');
-    Route::get('/scores', [TabulatorController::class, 'scores'])->name('tabulator.scores');
-    Route::get('/results', [TabulatorController::class, 'results'])->name('tabulator.results');
-    Route::get('/print', [TabulatorController::class, 'print'])->name('tabulator.print');
+Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulator')->group(function () {
+    Route::get('/dashboard/{pageantId?}', [TabulatorController::class, 'dashboard'])->name('tabulator.dashboard');
+    Route::get('/{pageantId}/judges', [TabulatorController::class, 'judges'])->name('tabulator.judges');
+    Route::get('/{pageantId}/scores/{roundId?}', [TabulatorController::class, 'scores'])->name('tabulator.scores');
+    Route::get('/{pageantId}/results', [TabulatorController::class, 'results'])->name('tabulator.results');
+    Route::get('/{pageantId}/print', [TabulatorController::class, 'print'])->name('tabulator.print');
 });

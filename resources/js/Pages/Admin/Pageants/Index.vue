@@ -196,7 +196,40 @@
                     </div>
                   </div>
                   
-                  <div class="mt-3 flex items-center justify-end">
+                  <div class="mt-3 flex items-center justify-end space-x-2">
+                    <!-- Approve/Reject buttons for pending pageants on mobile -->
+                    <template v-if="pageant.status === 'Pending_Approval'">
+                      <button
+                        @click.stop="approvePageant(pageant)"
+                        :disabled="processingPageants.includes(pageant.id)"
+                        class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <template v-if="processingPageants.includes(pageant.id) && lastAction === 'approve' && lastActionPageant === pageant.id">
+                          <div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                          Approving
+                        </template>
+                        <template v-else>
+                          <CheckCircle class="h-3 w-3 mr-1" />
+                          Approve
+                        </template>
+                      </button>
+                      
+                      <button
+                        @click.stop="rejectPageant(pageant)"
+                        :disabled="processingPageants.includes(pageant.id)"
+                        class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <template v-if="processingPageants.includes(pageant.id) && lastAction === 'reject' && lastActionPageant === pageant.id">
+                          <div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                          Rejecting
+                        </template>
+                        <template v-else>
+                          <XCircle class="h-3 w-3 mr-1" />
+                          Reject
+                        </template>
+                      </button>
+                    </template>
+                    
                     <Link 
                       :href="route('admin.pageants.detail', pageant.id)"
                       class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded text-teal-700 bg-teal-100 hover:bg-teal-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
@@ -238,7 +271,7 @@
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
                   Edit Permission
                 </th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                   Actions
                 </th>
               </tr>
@@ -340,10 +373,45 @@
                   </div>
                 </td>
                 <td class="px-4 py-4 text-sm text-right whitespace-nowrap">
-                  <div class="inline-flex items-center">
+                  <div class="inline-flex items-center space-x-2">
+                    <!-- Approve/Reject buttons for pending pageants -->
+                    <template v-if="pageant.status === 'Pending_Approval'">
+                      <button
+                        @click.stop="approvePageant(pageant)"
+                        :disabled="processingPageants.includes(pageant.id)"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Approve Pageant"
+                      >
+                        <template v-if="processingPageants.includes(pageant.id) && lastAction === 'approve' && lastActionPageant === pageant.id">
+                          <div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                          Approving
+                        </template>
+                        <template v-else>
+                          <CheckCircle class="h-3 w-3 mr-1" />
+                          Approve
+                        </template>
+                      </button>
+                      
+                      <button
+                        @click.stop="rejectPageant(pageant)"
+                        :disabled="processingPageants.includes(pageant.id)"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Reject Pageant"
+                      >
+                        <template v-if="processingPageants.includes(pageant.id) && lastAction === 'reject' && lastActionPageant === pageant.id">
+                          <div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                          Rejecting
+                        </template>
+                        <template v-else>
+                          <XCircle class="h-3 w-3 mr-1" />
+                          Reject
+                        </template>
+                      </button>
+                    </template>
+                    
                     <Link 
                       :href="route('admin.pageants.detail', pageant.id)"
-                      class="text-teal-600 hover:text-teal-900 mr-3"
+                      class="text-teal-600 hover:text-teal-900"
                       @click.stop
                     >
                       <Eye class="h-4 w-4" />
@@ -409,6 +477,63 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <Modal :show="showConfirmModal" @close="closeConfirmModal">
+      <div class="p-6">
+        <div class="flex items-center space-x-3 mb-4">
+          <div :class="[
+            'w-12 h-12 rounded-full flex items-center justify-center',
+            confirmAction === 'approve' ? 'bg-green-100' : 'bg-red-100'
+          ]">
+            <CheckCircle v-if="confirmAction === 'approve'" class="h-6 w-6 text-green-600" />
+            <XCircle v-else class="h-6 w-6 text-red-600" />
+          </div>
+          <div>
+            <h3 class="text-lg font-medium text-gray-900">
+              {{ confirmAction === 'approve' ? 'Approve Pageant' : 'Reject Pageant' }}
+            </h3>
+            <p class="text-sm text-gray-500">{{ selectedPageant?.name }}</p>
+          </div>
+        </div>
+        
+        <p class="text-gray-700 mb-6">
+          <template v-if="confirmAction === 'approve'">
+            Are you sure you want to approve this pageant? The organizer will be able to start managing contestants, criteria, and other pageant details.
+          </template>
+          <template v-else>
+            Are you sure you want to reject this pageant? This action cannot be undone and the organizer will need to resubmit.
+          </template>
+        </p>
+        
+        <div class="flex justify-end space-x-3">
+          <button
+            @click="closeConfirmModal"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Cancel
+          </button>
+          <button
+            @click="confirmActionHandler"
+            :disabled="isProcessing"
+            :class="[
+              'px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+              confirmAction === 'approve' 
+                ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' 
+                : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+            ]"
+          >
+            <template v-if="isProcessing">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 inline-block"></div>
+              Processing...
+            </template>
+            <template v-else>
+              {{ confirmAction === 'approve' ? 'Approve' : 'Reject' }}
+            </template>
+          </button>
+        </div>
+      </div>
+    </Modal>
   </AdminLayout>
 </template>
 
@@ -433,10 +558,13 @@ import {
   ChevronDown,
   ChevronLeft, 
   ChevronRight,
-  Eye
+  Eye,
+  CheckCircle,
+  XCircle
 } from 'lucide-vue-next';
 import { useNotification } from '@/Composables/useNotification';
 import CustomSelect from '@/Components/CustomSelect.vue';
+import Modal from '@/Components/Modal.vue';
 
 // Define props from controller
 const props = defineProps({
@@ -480,6 +608,15 @@ const sortDirection = ref('desc');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 
+// Approve/Reject state management
+const showConfirmModal = ref(false);
+const confirmAction = ref('');
+const selectedPageant = ref(null);
+const isProcessing = ref(false);
+const processingPageants = ref([]);
+const lastAction = ref('');
+const lastActionPageant = ref(null);
+
 // Filter options for CustomSelect components
 const dateFilterOptions = [
   { value: 'all', label: 'All Time' },
@@ -512,6 +649,7 @@ const sortDirectionOptions = [
 // Status filters
 const statusFilters = [
   { label: 'All Pageants', value: 'all', icon: LayoutList },
+  { label: 'Pending Approval', value: 'pending_approval', icon: Clock },
   { label: 'Draft & Setup', value: 'setup', icon: ClipboardCheck },
   { label: 'Active', value: 'active', icon: Calendar },
   { label: 'Completed', value: 'completed', icon: Award },
@@ -547,6 +685,8 @@ const getStatusClass = (status) => {
       return 'bg-gray-100 text-gray-800';
     case 'Cancelled':
       return 'bg-red-100 text-red-800';
+    case 'Pending_Approval':
+      return 'bg-orange-100 text-orange-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
@@ -560,6 +700,10 @@ const getPageantCount = (statusFilter) => {
   
   if (statusFilter === 'setup') {
     return props.pageantCounts.draft + props.pageantCounts.setup;
+  }
+  
+  if (statusFilter === 'pending_approval') {
+    return props.pageants.filter(p => p.status === 'Pending_Approval').length;
   }
   
   return props.pageantCounts[statusFilter] || 0;
@@ -602,6 +746,8 @@ const filteredPageants = computed(() => {
   if (currentStatusFilter.value !== 'all') {
     if (currentStatusFilter.value === 'setup') {
       result = result.filter(p => p.status === 'Draft' || p.status === 'Setup');
+    } else if (currentStatusFilter.value === 'pending_approval') {
+      result = result.filter(p => p.status === 'Pending_Approval');
     } else {
       result = result.filter(p => p.status.toLowerCase() === currentStatusFilter.value);
     }
@@ -711,6 +857,85 @@ watch([currentStatusFilter, dateFilter, organizerFilter, searchQuery, sortBy, so
 
 // Mobile filter toggle state
 const showFilters = ref(false);
+
+// Initialize notification system
+const notify = useNotification();
+
+// Approve/Reject methods
+const approvePageant = (pageant) => {
+  selectedPageant.value = pageant;
+  confirmAction.value = 'approve';
+  showConfirmModal.value = true;
+};
+
+const rejectPageant = (pageant) => {
+  selectedPageant.value = pageant;
+  confirmAction.value = 'reject';
+  showConfirmModal.value = true;
+};
+
+const closeConfirmModal = () => {
+  showConfirmModal.value = false;
+  selectedPageant.value = null;
+  confirmAction.value = '';
+  isProcessing.value = false;
+};
+
+const confirmActionHandler = () => {
+  if (!selectedPageant.value) return;
+  
+  isProcessing.value = true;
+  processingPageants.value.push(selectedPageant.value.id);
+  lastAction.value = confirmAction.value;
+  lastActionPageant.value = selectedPageant.value.id;
+  
+  const action = confirmAction.value === 'approve' ? 'approve' : 'reject';
+  const url = route(`admin.pageants.${action}`, selectedPageant.value.id);
+  
+  router.post(url, {}, {
+    onSuccess: (page) => {
+      notify.success(
+        `Pageant "${selectedPageant.value.name}" has been ${confirmAction.value}d successfully!`
+      );
+      closeConfirmModal();
+      
+      // Refresh the data to show updated list
+      refreshData();
+    },
+    onError: (errors) => {
+      console.error('Error processing pageant:', errors);
+      
+      // Check for specific error types
+      if (errors && errors.message) {
+        notify.error(errors.message);
+      } else if (typeof errors === 'string') {
+        notify.error(errors);
+      } else if (errors && Object.keys(errors).length > 0) {
+        const firstError = Object.values(errors)[0];
+        notify.error(Array.isArray(firstError) ? firstError[0] : firstError);
+      } else {
+        notify.error(`Failed to ${confirmAction.value} pageant. Please try again.`);
+      }
+      
+      closeConfirmModal();
+    },
+    onFinish: () => {
+      isProcessing.value = false;
+      const index = processingPageants.value.indexOf(selectedPageant.value.id);
+      if (index > -1) {
+        processingPageants.value.splice(index, 1);
+      }
+      lastAction.value = '';
+      lastActionPageant.value = null;
+    }
+  });
+};
+
+const refreshData = () => {
+  router.reload({ 
+    only: ['pageants', 'organizers', 'pageantCounts'],
+  });
+};
 
 // Icon references for dynamic component usage
 const filterIcon = Filter;
