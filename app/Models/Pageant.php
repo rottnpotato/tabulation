@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\DB;
 
 class Pageant extends Model
 {
@@ -38,6 +37,7 @@ class Pageant extends Model
         'is_locked',
         'locked_at',
         'locked_by',
+        'current_round_id',
     ];
 
     /**
@@ -80,6 +80,14 @@ class Pageant extends Model
     }
 
     /**
+     * Get the current round for this pageant.
+     */
+    public function currentRound(): BelongsTo
+    {
+        return $this->belongsTo(Round::class, 'current_round_id');
+    }
+
+    /**
      * Get the organizers associated with this pageant.
      */
     public function organizers(): BelongsToMany
@@ -118,8 +126,6 @@ class Pageant extends Model
     {
         return $this->hasMany(Contestant::class);
     }
-
-
 
     /**
      * Get the categories associated with this pageant.
@@ -161,8 +167,6 @@ class Pageant extends Model
         return $this->hasMany(Activity::class)->latest();
     }
 
-
-
     /**
      * Get the active segments for this pageant.
      */
@@ -202,7 +206,7 @@ class Pageant extends Model
             'Archived' => 100,
             'Cancelled' => 100,
         ];
-        
+
         return $statusMap[$this->status] ?? 0;
     }
 
@@ -264,7 +268,7 @@ class Pageant extends Model
 
         return $activities->map(function ($activity) {
             $icon = 'CheckCircle';
-            
+
             switch ($activity->action_type) {
                 case 'CONTESTANT_ADDED':
                 case 'CONTESTANT_UPDATED':
@@ -287,7 +291,7 @@ class Pageant extends Model
                     $icon = 'List';
                     break;
             }
-            
+
             return [
                 'icon' => $icon,
                 'description' => $activity->description,
@@ -302,46 +306,46 @@ class Pageant extends Model
     public function getPageantPhasesAttribute()
     {
         $phases = [];
-        
+
         // Setup phase - based on status
         $setupCompleted = in_array($this->status, ['Active', 'Completed', 'Unlocked_For_Edit', 'Archived']);
         $setupCurrent = $this->status === 'Setup';
-        
+
         $phases[] = [
             'name' => 'Setup',
             'description' => 'Initial pageant configuration and planning',
             'icon' => 'File',
             'completed' => $setupCompleted,
             'current' => $setupCurrent,
-            'milestones' => []
+            'milestones' => [],
         ];
-        
+
         // Registration phase
         $regCompleted = in_array($this->status, ['Active', 'Completed', 'Unlocked_For_Edit', 'Archived']);
         $regCurrent = $this->status === 'Draft';
-        
+
         $phases[] = [
             'name' => 'Contestant Registration',
             'description' => 'Registering and documenting pageant contestants',
             'icon' => 'Users',
             'completed' => $regCompleted,
             'current' => $regCurrent,
-            'milestones' => []
+            'milestones' => [],
         ];
-        
+
         // Competition phase
         $compCompleted = in_array($this->status, ['Completed', 'Unlocked_For_Edit', 'Archived']);
         $compCurrent = $this->status === 'Active';
-        
+
         $phases[] = [
             'name' => 'Competition',
             'description' => 'Main pageant competition and judging',
             'icon' => 'Clock',
             'completed' => $compCompleted,
             'current' => $compCurrent,
-            'milestones' => []
+            'milestones' => [],
         ];
-        
+
         return $phases;
     }
 
@@ -379,23 +383,23 @@ class Pageant extends Model
             'percentage' => [
                 'type' => 'percentage',
                 'maxScore' => 100,
-                'description' => 'Percentage-based scoring (0-100%)'
+                'description' => 'Percentage-based scoring (0-100%)',
             ],
             '1-10' => [
                 'type' => '1-10',
                 'maxScore' => 10,
-                'description' => 'Scale scoring from 1 to 10 points'
+                'description' => 'Scale scoring from 1 to 10 points',
             ],
             '1-5' => [
                 'type' => '1-5',
                 'maxScore' => 5,
-                'description' => 'Scale scoring from 1 to 5 points'
+                'description' => 'Scale scoring from 1 to 5 points',
             ],
             'points' => [
                 'type' => 'points',
                 'maxScore' => 50,
-                'description' => 'Point-based scoring with a maximum of 50 points'
-            ]
+                'description' => 'Point-based scoring with a maximum of 50 points',
+            ],
         ];
 
         return [
@@ -411,7 +415,8 @@ class Pageant extends Model
             'progress' => $this->calculateProgress(),
             'contestants_count' => $this->contestants()->count(),
             'judges_count' => $this->judges()->count(),
-            'coverImage' => '/images/placeholders/pageant-cover.jpg', // Placeholder until actual cover images are implemented
+            'coverImage' => $this->cover_image ?: '/images/placeholders/pageant-cover.jpg',
+            'logo' => $this->logo,
             'phases' => $this->PageantPhases,
             'topCategories' => $this->TopCategories,
             'judges' => $this->PageantJudges,
@@ -542,7 +547,7 @@ class Pageant extends Model
             'is_locked' => true,
             'locked_at' => now(),
             'locked_by' => $userId,
-            'status' => 'Setup' // Move to Setup when locked
+            'status' => 'Setup', // Move to Setup when locked
         ]);
     }
 
@@ -555,7 +560,7 @@ class Pageant extends Model
             'is_locked' => false,
             'locked_at' => null,
             'locked_by' => null,
-            'status' => 'Draft' // Move back to Draft when unlocked
+            'status' => 'Draft', // Move back to Draft when unlocked
         ]);
     }
 
@@ -577,5 +582,43 @@ class Pageant extends Model
         } else {
             $this->update(['status' => 'Draft']);
         }
+    }
+
+    /**
+     * Set the current round for this pageant
+     */
+    public function setCurrentRound($roundId): void
+    {
+        $round = $this->rounds()->findOrFail($roundId);
+        $this->update(['current_round_id' => $roundId]);
+    }
+
+    /**
+     * Get the current active round for this pageant
+     */
+    public function getCurrentRound()
+    {
+        if ($this->current_round_id) {
+            return $this->currentRound;
+        }
+
+        // If no current round is set, return the first active round
+        return $this->rounds()->active()->ordered()->first();
+    }
+
+    /**
+     * Check if there's a current round set
+     */
+    public function hasCurrentRound(): bool
+    {
+        return $this->current_round_id !== null;
+    }
+
+    /**
+     * Clear the current round
+     */
+    public function clearCurrentRound(): void
+    {
+        $this->update(['current_round_id' => null]);
     }
 }

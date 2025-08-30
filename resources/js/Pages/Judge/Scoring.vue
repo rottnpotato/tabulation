@@ -7,10 +7,18 @@
           <div>
             <h1 class="text-2xl md:text-3xl font-bold text-white">Judge Scoring Panel</h1>
             <p class="text-amber-100 mt-1" v-if="pageant">{{ pageant.name }}</p>
-            <p class="text-amber-200 text-sm mt-1" v-if="currentRound">{{ currentRound.name }}</p>
+            <div v-if="currentRound" class="flex items-center gap-2 mt-1">
+              <p class="text-amber-200 text-sm">{{ currentRound.name }}</p>
+              <div v-if="pageant.current_round_id === currentRound.id" class="inline-flex items-center px-2 py-0.5 bg-amber-400 text-amber-900 text-xs font-medium rounded-full">
+                Current Round
+              </div>
+              <div v-if="currentRound.is_locked" class="inline-flex items-center px-2 py-0.5 bg-red-500 text-white text-xs font-medium rounded-full">
+                🔒 Locked
+              </div>
+            </div>
           </div>
-          <div v-if="rounds.length > 1" class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
-            <span class="text-amber-50 font-medium px-3">Current Round:</span>
+          <div v-if="rounds.length > 0" class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
+            <span class="text-amber-50 font-medium px-3">Switch Round:</span>
             <div class="min-w-[160px]">
               <CustomSelect
                 v-model="currentRoundId"
@@ -45,16 +53,33 @@
       </div>
     </div>
 
+    <!-- Round Locked Warning -->
+    <div v-else-if="!canEditScores && currentRound" class="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+      <div class="flex items-center">
+        <AlertCircle class="h-6 w-6 text-yellow-600 mr-3" />
+        <div>
+          <h3 class="text-lg font-medium text-yellow-900">Round Locked for Editing</h3>
+          <p class="text-yellow-700 mt-1">
+            The "{{ currentRound.name }}" round has been locked by the tabulator. 
+            You can view existing scores but cannot make changes.
+            <span v-if="currentRound.locked_by">
+              Locked by {{ currentRound.locked_by.name }}.
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Scoring Criteria Overview Cards -->
-    <div v-else-if="criteria.length > 0" class="bg-white shadow-md rounded-xl border border-gray-100 p-6">
+    <div v-if="criteria.length > 0 && contestants.length === 0" class="bg-white shadow-md rounded-xl border border-gray-100 p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
         <Star class="h-5 w-5 text-amber-500 mr-2" />
         Scoring Criteria
       </h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div 
-          v-for="criterion in criteria" 
-          :key="criterion.id" 
+        <div
+          v-for="criterion in criteria"
+          :key="criterion.id"
           class="relative overflow-hidden rounded-xl border border-amber-100 transition-all hover:shadow-md group"
         >
           <div class="absolute top-0 left-0 h-full w-1 bg-amber-500"></div>
@@ -76,6 +101,34 @@
 
     <!-- Contestant Scoring Cards -->
     <div v-else-if="contestants.length > 0" class="space-y-6">
+      <!-- Show criteria overview at the top when we have both criteria and contestants -->
+      <div v-if="criteria.length > 0" class="bg-white shadow-md rounded-xl border border-gray-100 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Star class="h-5 w-5 text-amber-500 mr-2" />
+          Scoring Criteria
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            v-for="criterion in criteria"
+            :key="criterion.id"
+            class="relative overflow-hidden rounded-xl border border-amber-100 transition-all hover:shadow-md group"
+          >
+            <div class="absolute top-0 left-0 h-full w-1 bg-amber-500"></div>
+            <div class="p-4 pl-5">
+              <h3 class="font-medium text-gray-900 group-hover:text-amber-700 transition-colors">{{ criterion.name }}</h3>
+              <p class="text-sm text-gray-600 mt-1">{{ criterion.description }}</p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                  Weight: {{ criterion.weight }}%
+                </div>
+                <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {{ criterion.min_score }}-{{ criterion.max_score }} pts
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div v-for="contestant in contestants" :key="contestant.id" class="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
         <!-- Contestant Header -->
         <div class="p-6 border-b border-gray-100">
@@ -124,7 +177,8 @@
                   :min="criterion.min_score"
                   :max="criterion.max_score"
                   :step="criterion.allow_decimals ? 0.1 : 1"
-                  class="w-28 sm:w-36 accent-amber-500"
+                  :disabled="!canEditScores"
+                  class="w-28 sm:w-36 accent-amber-500 disabled:opacity-50"
                   @input="validateScore($event, contestant.id, criterion.id, criterion)"
                 />
                 <input
@@ -133,7 +187,8 @@
                   :min="criterion.min_score"
                   :max="criterion.max_score"
                   :step="criterion.allow_decimals ? 0.1 : 1"
-                  class="w-16 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-center"
+                  :disabled="!canEditScores"
+                  class="w-16 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-center disabled:opacity-50 disabled:bg-gray-100"
                   @change="validateScore($event, contestant.id, criterion.id, criterion)"
                 />
               </div>
@@ -147,19 +202,20 @@
               <textarea 
                 v-model="notes[contestant.id]" 
                 rows="2" 
-                class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm resize-none"
+                :disabled="!canEditScores"
+                class="w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm resize-none disabled:opacity-50 disabled:bg-gray-100"
                 placeholder="Add any comments or observations about this contestant's performance..."
               ></textarea>
             </div>
             <div class="flex items-end">
               <button
                 @click="submitScores(contestant.id)"
-                class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 shadow-sm hover:shadow transition-all"
-                :disabled="!isContestantScoreComplete(contestant.id) || submitLoading"
-                :class="{ 'opacity-50 cursor-not-allowed': !isContestantScoreComplete(contestant.id) || submitLoading }"
+                class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!canEditScores || !isContestantScoreComplete(contestant.id) || submitLoading[contestant.id]"
               >
                 <Save class="h-5 w-5" />
-                <span>{{ submitLoading ? 'Submitting...' : 'Submit Scores' }}</span>
+                <span v-if="!canEditScores">Round Locked</span>
+                <span v-else>{{ submitLoading[contestant.id] ? 'Submitting...' : 'Submit Scores' }}</span>
               </button>
             </div>
           </div>
@@ -235,22 +291,26 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   },
+  canEditScores: {
+    type: Boolean,
+    default: true
+  },
   error: {
     type: String,
     default: null
   }
 })
 
-const currentRoundId = ref(props.currentRound?.id)
+const currentRoundId = ref(props.currentRound?.id?.toString())
 const showConfirmation = ref(false)
 const submittedContestantId = ref(null)
 const isLoading = ref(false)
-const submitLoading = ref(false)
+const submitLoading = ref({})
 
 const roundOptions = computed(() => {
   return props.rounds.map(round => ({
     value: round.id.toString(),
-    label: round.name
+    label: round.name + (round.is_locked ? ' (Locked)' : '') + (props.pageant.current_round_id === round.id ? ' (Current)' : '')
   }))
 })
 
@@ -311,9 +371,9 @@ const isContestantScoreComplete = (contestantId) => {
 }
 
 const submitScores = async (contestantId) => {
-  if (submitLoading.value) return
-  
-  submitLoading.value = true
+  if (submitLoading.value[contestantId]) return
+
+  submitLoading.value[contestantId] = true
   
   try {
     const contestantScores = {}
@@ -336,7 +396,7 @@ const submitScores = async (contestantId) => {
     // Handle error (show toast notification, etc.)
     alert('Error submitting scores. Please try again.')
   } finally {
-    submitLoading.value = false
+    submitLoading.value[contestantId] = false
   }
 }
 

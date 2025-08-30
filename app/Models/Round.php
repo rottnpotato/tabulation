@@ -25,6 +25,9 @@ class Round extends Model
         'display_order',
         'is_active',
         'scoring_config',
+        'is_locked',
+        'locked_at',
+        'locked_by',
     ];
 
     /**
@@ -37,6 +40,8 @@ class Round extends Model
         'display_order' => 'integer',
         'is_active' => 'boolean',
         'scoring_config' => 'array',
+        'is_locked' => 'boolean',
+        'locked_at' => 'datetime',
     ];
 
     /**
@@ -45,6 +50,14 @@ class Round extends Model
     public function pageant(): BelongsTo
     {
         return $this->belongsTo(Pageant::class);
+    }
+
+    /**
+     * Get the user who locked this round.
+     */
+    public function lockedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'locked_by');
     }
 
     /**
@@ -69,5 +82,45 @@ class Round extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('display_order');
+    }
+
+    /**
+     * Check if the round is locked for editing
+     */
+    public function isLocked(): bool
+    {
+        return $this->is_locked === true;
+    }
+
+    /**
+     * Check if the round can be edited (not locked)
+     */
+    public function canBeEdited(): bool
+    {
+        return ! $this->isLocked();
+    }
+
+    /**
+     * Lock the round for editing
+     */
+    public function lock($userId = null): void
+    {
+        $this->update([
+            'is_locked' => true,
+            'locked_at' => now(),
+            'locked_by' => $userId,
+        ]);
+    }
+
+    /**
+     * Unlock the round for editing
+     */
+    public function unlock(): void
+    {
+        $this->update([
+            'is_locked' => false,
+            'locked_at' => null,
+            'locked_by' => null,
+        ]);
     }
 }

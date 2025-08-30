@@ -33,18 +33,28 @@
               placeholder="Enter your email"
             />
           </div>
-
           <div class="transition-all duration-300 ease-in-out transform hover:scale-[1.02] focus-within:scale-[1.02]">
             <label for="password" class="block text-sm font-medium text-gray-200 mb-2">Password</label>
-            <input 
-              id="password" 
-              v-model="form.password" 
-              type="password" 
-              autocomplete="current-password" 
-              required 
-              class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all duration-300"
-              placeholder="Enter your password"
-            />
+            <div class="relative">
+              <input
+                id="password"
+                :type="showPassword ? 'text' : 'password'"
+                v-model="form.password"
+                autocomplete="current-password"
+                required
+                class="w-full px-4 py-3 pr-12 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all duration-300"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors duration-300"
+                tabindex="-1"
+              >
+                <Eye v-if="!showPassword" class="h-5 w-5" />
+                <EyeOff v-else class="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           <div class="flex items-center justify-between text-sm">
@@ -87,9 +97,10 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
-import { Crown, AlertCircle, Loader2, ChevronLeft } from 'lucide-vue-next';
+import { Crown, AlertCircle, Loader2, ChevronLeft, Eye, EyeOff } from 'lucide-vue-next';
 
 const processing = ref(false);
+const showPassword = ref(false);
 
 // Pre-fill credentials for easier testing
 const form = useForm({

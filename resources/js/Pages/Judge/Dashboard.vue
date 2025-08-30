@@ -159,15 +159,41 @@
             </div>
           </div>
 
+          <!-- Current Round Status -->
+          <div v-if="pageant.current_round" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-amber-800">
+                  <span class="font-medium">Current Round:</span> {{ pageant.current_round.name }}
+                </p>
+                <p v-if="pageant.current_round.is_locked" class="text-xs text-amber-600 mt-1">
+                  🔒 Round is locked for editing
+                </p>
+              </div>
+            </div>
+          </div>
+
           <!-- Action Button -->
           <div class="flex justify-end">
             <Link 
-              :href="route('judge.scoring', pageant.id)"
+              v-if="pageant.id && pageant.rounds_count > 0"
+              :href="getScoringUrl(pageant.id)"
               class="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               <Star class="h-4 w-4 mr-2" />
-              Start Scoring
+              {{ pageant.current_round ? 'Continue Scoring' : 'Start Scoring' }}
             </Link>
+            <div 
+              v-else
+              class="inline-flex items-center px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg cursor-not-allowed"
+              title="No rounds available for scoring"
+            >
+              <Star class="h-4 w-4 mr-2" />
+              No Rounds Available
+            </div>
           </div>
         </div>
       </div>
@@ -215,6 +241,23 @@ const totalScoresSubmitted = computed(() => {
 
 const refreshData = () => {
   router.reload()
+}
+
+const getScoringUrl = (pageantId) => {
+  try {
+    // Find the pageant and use its current round ID, or default to no round ID
+    const pageant = props.pageants.find(p => p.id === pageantId)
+    const roundId = pageant?.current_round?.id
+
+    if (roundId) {
+      return route('judge.scoring', [pageantId, roundId])
+    } else {
+      return route('judge.scoring', [pageantId])
+    }
+  } catch (error) {
+    console.error('Error generating scoring URL:', error)
+    return '#'
+  }
 }
 
 const formatDate = (dateString) => {

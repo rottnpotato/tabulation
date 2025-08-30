@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Pageant;
-use App\Models\User;
-use App\Models\Round;
 use App\Models\Contestant;
 use App\Models\Criteria;
+use App\Models\Pageant;
+use App\Models\Round;
+use App\Models\Score;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -21,15 +21,15 @@ class TabulatorController extends Controller
     public function dashboard($pageantId = null)
     {
         $tabulator = Auth::user();
-        
+
         // If no pageant specified, get all pageants this tabulator is assigned to
-        if (!$pageantId) {
-            $pageants = Pageant::whereHas('tabulators', function($query) use ($tabulator) {
+        if (! $pageantId) {
+            $pageants = Pageant::whereHas('tabulators', function ($query) use ($tabulator) {
                 $query->where('user_id', $tabulator->id);
             })->with(['contestants', 'judges', 'rounds.criteria'])->get();
-            
+
             return Inertia::render('Tabulator/Dashboard', [
-                'pageants' => $pageants->map(function($pageant) {
+                'pageants' => $pageants->map(function ($pageant) {
                     return [
                         'id' => $pageant->id,
                         'name' => $pageant->name,
@@ -37,28 +37,28 @@ class TabulatorController extends Controller
                         'contestants_count' => $pageant->contestants->count(),
                         'judges_count' => $pageant->judges->count(),
                         'rounds_count' => $pageant->rounds->count(),
-                        'criteria_count' => $pageant->rounds->sum(function($round) {
+                        'criteria_count' => $pageant->rounds->sum(function ($round) {
                             return $round->criteria->count();
                         }),
                     ];
-                })
+                }),
             ]);
         }
-        
+
         // Get specific pageant data
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
+
         // Calculate summary statistics
         $totalContestants = $pageant->contestants->count();
         $totalJudges = $pageant->judges->count();
         $totalRounds = $pageant->rounds->count();
-        $totalCriteria = $pageant->rounds->sum(function($round) {
+        $totalCriteria = $pageant->rounds->sum(function ($round) {
             return $round->criteria->count();
         });
-        
+
         // Get recent activity (this would be from actual scoring activity)
         $recentActivity = collect([]);
-        
+
         return Inertia::render('Tabulator/Dashboard', [
             'pageant' => [
                 'id' => $pageant->id,
@@ -83,8 +83,8 @@ class TabulatorController extends Controller
     {
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
-        $judges = $pageant->judges->map(function($judge) {
+
+        $judges = $pageant->judges->map(function ($judge) {
             return [
                 'id' => $judge->id,
                 'name' => $judge->name,
@@ -94,7 +94,7 @@ class TabulatorController extends Controller
                 'scoresSubmitted' => 0, // TODO: Calculate actual scores submitted
             ];
         });
-        
+
         // Get available judges not yet assigned to this pageant
         $assignedJudgeIds = $pageant->judges->pluck('id')->toArray();
         $availableJudges = User::where('role', 'judge')
@@ -103,7 +103,7 @@ class TabulatorController extends Controller
             ->select('id', 'name', 'email', 'username')
             ->orderBy('name')
             ->get();
-        
+
         return Inertia::render('Tabulator/Judges', [
             'pageant' => [
                 'id' => $pageant->id,
@@ -128,23 +128,23 @@ class TabulatorController extends Controller
 
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
+
         // Check if pageant has reached required judges limit
         if ($pageant->required_judges && $pageant->judges()->count() >= $pageant->required_judges) {
             return back()->withErrors(['message' => 'This pageant has already reached the maximum number of judges.']);
         }
-        
+
         // Check if judge is already assigned
         if ($pageant->judges()->where('user_id', $request->judge_id)->exists()) {
             return back()->withErrors(['message' => 'This judge is already assigned to this pageant.']);
         }
-        
+
         // Assign the judge
         $pageant->judges()->attach($request->judge_id, [
             'role' => $request->role ?? 'judge',
             'active' => true,
         ]);
-        
+
         return back()->with('success', 'Judge assigned successfully.');
     }
 
@@ -155,9 +155,9 @@ class TabulatorController extends Controller
     {
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
+
         $pageant->judges()->detach($judgeId);
-        
+
         return back()->with('success', 'Judge removed successfully.');
     }
 
@@ -168,15 +168,15 @@ class TabulatorController extends Controller
     {
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
+
         $judge = $pageant->judges()->where('user_id', $judgeId)->first();
         if ($judge) {
-            $newStatus = !$judge->pivot->active;
+            $newStatus = ! $judge->pivot->active;
             $pageant->judges()->updateExistingPivot($judgeId, ['active' => $newStatus]);
-            
+
             return back()->with('success', 'Judge status updated successfully.');
         }
-        
+
         return back()->withErrors(['message' => 'Judge not found.']);
     }
 
@@ -187,19 +187,19 @@ class TabulatorController extends Controller
     {
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
+
         $judge = User::find($judgeId);
         if ($judge && $pageant->judges()->where('user_id', $judgeId)->exists()) {
             // Generate a new password
             $newPassword = Str::random(8);
             $judge->update(['password' => bcrypt($newPassword)]);
-            
+
             // TODO: Send email with new password
             // Mail::to($judge->email)->send(new PasswordReset($judge, $newPassword));
-            
+
             return back()->with('success', "Judge password reset. New password: {$newPassword}");
         }
-        
+
         return back()->withErrors(['message' => 'Judge not found.']);
     }
 
@@ -210,9 +210,9 @@ class TabulatorController extends Controller
     {
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
+
         // Get available rounds
-        $rounds = $pageant->rounds->map(function($round) {
+        $rounds = $pageant->rounds->map(function ($round) {
             return [
                 'id' => $round->id,
                 'name' => $round->name,
@@ -220,15 +220,15 @@ class TabulatorController extends Controller
                 'weight' => $round->weight,
             ];
         });
-        
+
         // If no round specified, use first round
-        if (!$roundId && $rounds->count() > 0) {
+        if (! $roundId && $rounds->count() > 0) {
             $roundId = $rounds->first()['id'];
         }
-        
+
         $currentRound = $pageant->rounds->find($roundId);
-        
-        if (!$currentRound) {
+
+        if (! $currentRound) {
             return Inertia::render('Tabulator/Scores', [
                 'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
                 'rounds' => $rounds,
@@ -238,8 +238,8 @@ class TabulatorController extends Controller
                 'scores' => [],
             ]);
         }
-        
-        $contestants = $pageant->contestants->map(function($contestant) {
+
+        $contestants = $pageant->contestants->map(function ($contestant) {
             return [
                 'id' => $contestant->id,
                 'number' => $contestant->number,
@@ -247,17 +247,25 @@ class TabulatorController extends Controller
                 'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
             ];
         });
-        
-        $judges = $pageant->judges->map(function($judge) {
+
+        $judges = $pageant->judges->map(function ($judge) {
             return [
                 'id' => $judge->id,
                 'name' => $judge->name,
             ];
         });
-        
-        // TODO: Implement actual scoring data retrieval
-        $scores = collect([]);
-        
+
+        // Get scores in the format expected by frontend: {contestant_id}-{criteria_id} => score
+        $scoresQuery = Score::where('pageant_id', $pageantId)
+            ->where('round_id', $roundId)
+            ->get();
+
+        $scores = [];
+        foreach ($scoresQuery as $score) {
+            $key = $score->contestant_id.'-'.$score->criteria_id;
+            $scores[$key] = $score->score;
+        }
+
         return Inertia::render('Tabulator/Scores', [
             'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
             'rounds' => $rounds,
@@ -278,22 +286,22 @@ class TabulatorController extends Controller
     {
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
-        $rounds = $pageant->rounds->map(function($round) {
+
+        $rounds = $pageant->rounds->map(function ($round) {
             return [
                 'id' => $round->id,
                 'name' => $round->name,
                 'weight' => $round->weight,
             ];
         });
-        
-        $contestants = $pageant->contestants->map(function($contestant) {
+
+        $contestants = $pageant->contestants->map(function ($contestant) {
             // TODO: Calculate actual scores from scoring data
             $mockScores = [];
             foreach ($pageant->rounds as $round) {
                 $mockScores[$round->name] = rand(85, 98) + (rand(0, 99) / 100);
             }
-            
+
             return [
                 'id' => $contestant->id,
                 'number' => $contestant->number,
@@ -304,10 +312,10 @@ class TabulatorController extends Controller
                 'totalScore' => collect($mockScores)->avg(),
             ];
         });
-        
+
         // Sort contestants by total score (descending)
         $contestants = $contestants->sortByDesc('totalScore')->values();
-        
+
         return Inertia::render('Tabulator/Results', [
             'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
             'contestants' => $contestants,
@@ -322,15 +330,15 @@ class TabulatorController extends Controller
     {
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
-        
+
         // Get top contestants for printing
-        $contestants = $pageant->contestants->map(function($contestant) {
+        $contestants = $pageant->contestants->map(function ($contestant) {
             // TODO: Calculate actual scores
             $mockScores = [];
             foreach ($pageant->rounds as $round) {
                 $mockScores[$round->name] = rand(85, 98);
             }
-            
+
             return [
                 'id' => $contestant->id,
                 'number' => $contestant->number,
@@ -340,7 +348,7 @@ class TabulatorController extends Controller
                 'final_score' => collect($mockScores)->avg(),
             ];
         })->sortByDesc('final_score')->take(10)->values();
-        
+
         return Inertia::render('Tabulator/Print', [
             'pageant' => [
                 'id' => $pageant->id,
@@ -354,6 +362,94 @@ class TabulatorController extends Controller
     }
 
     /**
+     * Set the current round for a pageant
+     */
+    public function setCurrentRound(Request $request, $pageantId)
+    {
+        $request->validate([
+            'round_id' => 'required|exists:rounds,id',
+        ]);
+
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        // Verify the round belongs to this pageant
+        $round = $pageant->rounds()->findOrFail($request->round_id);
+
+        $pageant->setCurrentRound($request->round_id);
+
+        return back()->with('success', 'Current round set to: '.$round->name);
+    }
+
+    /**
+     * Lock a round for editing
+     */
+    public function lockRound($pageantId, $roundId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $round = $pageant->rounds()->findOrFail($roundId);
+        $round->lock($tabulator->id);
+
+        return back()->with('success', 'Round "'.$round->name.'" has been locked for editing.');
+    }
+
+    /**
+     * Unlock a round for editing
+     */
+    public function unlockRound($pageantId, $roundId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $round = $pageant->rounds()->findOrFail($roundId);
+        $round->unlock();
+
+        return back()->with('success', 'Round "'.$round->name.'" has been unlocked for editing.');
+    }
+
+    /**
+     * Get round management data for tabulator
+     */
+    public function roundManagement($pageantId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $rounds = $pageant->rounds()->with('lockedBy')->get()->map(function ($round) {
+            return [
+                'id' => $round->id,
+                'name' => $round->name,
+                'description' => $round->description,
+                'type' => $round->type,
+                'weight' => $round->weight,
+                'display_order' => $round->display_order,
+                'is_active' => $round->is_active,
+                'is_locked' => $round->is_locked,
+                'locked_at' => $round->locked_at,
+                'locked_by' => $round->lockedBy ? [
+                    'id' => $round->lockedBy->id,
+                    'name' => $round->lockedBy->name,
+                ] : null,
+            ];
+        });
+
+        return Inertia::render('Tabulator/RoundManagement', [
+            'pageant' => [
+                'id' => $pageant->id,
+                'name' => $pageant->name,
+                'current_round_id' => $pageant->current_round_id,
+                'current_round' => $pageant->getCurrentRound() ? [
+                    'id' => $pageant->getCurrentRound()->id,
+                    'name' => $pageant->getCurrentRound()->name,
+                ] : null,
+            ],
+            'rounds' => $rounds,
+        ]);
+    }
+
+    /**
      * Get pageant data with tabulator access validation
      */
     private function getPageantForTabulator($pageantId, $tabulatorId)
@@ -362,10 +458,10 @@ class TabulatorController extends Controller
             'contestants',
             'judges',
             'rounds.criteria',
-        ])->whereHas('tabulators', function($query) use ($tabulatorId) {
+        ])->whereHas('tabulators', function ($query) use ($tabulatorId) {
             $query->where('user_id', $tabulatorId);
         })->findOrFail($pageantId);
-        
+
         return $pageant;
     }
-} 
+}

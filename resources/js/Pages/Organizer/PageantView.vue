@@ -2,18 +2,18 @@
   <div class="space-y-6">
     <!-- Delete Confirmation Modal -->
     <ConfirmDeleteModal
-      :visible="showDeleteConfirm"
+      :show="showDeleteConfirm"
       :message="'this item'"
-      :processing="deleteProcessing"
-      @confirm="confirmDelete"
+      :isLoading="deleteProcessing"
+      @confirm="confirmDeleteItem"
       @cancel="showDeleteConfirm = false"
     />
     
     <!-- Tabulator Delete Confirmation Modal -->
     <ConfirmDeleteModal
-      :visible="showDeleteTabulatorConfirm"
+      :show="showDeleteTabulatorConfirm"
       :message="selectedTabulator ? `tabulator '${selectedTabulator.name}'` : 'this tabulator'"
-      :processing="deleteTabulatorProcessing"
+      :isLoading="deleteTabulatorProcessing"
       @confirm="removeTabulator"
       @cancel="showDeleteTabulatorConfirm = false"
     />
@@ -44,10 +44,11 @@
     <div class="bg-white rounded-xl shadow-md overflow-hidden">
       <div class="relative h-48 sm:h-64 md:h-72">
         <!-- Cover Image with Fallback -->
-        <img 
-          :src="pageant.coverImage || '/images/placeholders/pageant-cover.jpg'" 
-          alt="Pageant cover" 
+        <img
+          :src="pageant.coverImage || '/images/placeholders/pageant-cover.jpg'"
+          alt="Pageant cover"
           class="w-full h-full object-cover"
+          @error="handleCoverImageError"
         />
         
         <!-- Gradient Overlay -->
@@ -55,7 +56,7 @@
         
         <!-- Pageant Logo (if exists) -->
         <div v-if="pageant.logo" class="absolute top-4 right-4 h-16 w-16 sm:h-24 sm:w-24 md:h-32 md:w-32 bg-white/80 rounded-lg p-2 shadow-lg">
-          <img :src="pageant.logo" alt="Pageant logo" class="w-full h-full object-contain" />
+          <img :src="pageant.logo" alt="Pageant logo" class="w-full h-full object-contain" @error="handleLogoImageError" />
         </div>
         
         <!-- Pageant Info Overlay -->
@@ -450,24 +451,39 @@
           </div>
           
           <!-- Contestants Grid -->
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             <div 
               v-for="contestant in pageant.contestants" 
-              :key="contestant.id"
+              :key="`contestant-${contestant.id}`"
+              :data-contestant-id="contestant.id"
               class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
-              <div class="aspect-[3/4] bg-gray-100 relative">
+              <div class="aspect-[4/5] bg-gray-100 relative">
                 <img 
-                  :src="contestant.photo || '/images/placeholders/contestant.jpg'" 
-                  :alt="contestant.name"
+                  :src="getContestantDisplayImage(contestant)" 
+                  :alt="`${contestant.name} - Contestant #${contestant.number}`"
                   class="w-full h-full object-cover object-center"
+                  @error="(event) => handleImageError(event, contestant.id)"
+                  @load="(event) => handleImageLoad(event, contestant.id)"
+                  loading="lazy"
+                  :data-contestant-id="contestant.id"
                 />
+                <div class="absolute inset-0 bg-gray-200 flex items-center justify-center" v-if="imageLoadingStates[contestant.id] === 'error'">
+                  <div class="text-center text-gray-500">
+                    <Users class="h-8 w-8 mx-auto mb-2" />
+                    <span class="text-sm">No Image</span>
+                  </div>
+                </div>
                 <div class="absolute top-2 left-2 bg-white rounded-full h-8 w-8 flex items-center justify-center shadow-md">
                   <span class="font-bold text-orange-600">{{ contestant.number || '?' }}</span>
                 </div>
+                <!-- Debug info (remove in production) -->
+                <div v-if="isDevelopment" class="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white text-xs p-1 rounded">
+                  ID: {{ contestant.id }}
+                </div>
               </div>
-              <div class="p-4">
-                <h4 class="font-medium text-gray-900">{{ contestant.name }}</h4>
+              <div class="p-3">
+                <h4 class="font-medium text-gray-900 truncate">{{ contestant.name }}</h4>
                 <div class="mt-1 flex items-center justify-between text-sm text-gray-500">
                   <span>{{ contestant.age ? `${contestant.age} years` : 'Age not specified' }}</span>
                   <span>{{ contestant.origin || 'Unknown origin' }}</span>
@@ -1290,10 +1306,13 @@
                     
                     <!-- Current Photos Preview (if editing) -->
                     <div v-if="contestantForm.photos && contestantForm.photos.length > 0" class="mb-4">
+                      <p class="text-sm text-gray-600 mb-2">
+                        Current photos for {{ editingContestant?.name || 'this contestant' }} (ID: {{ contestantForm.contestant_id }})
+                      </p>
                       <div class="flex flex-wrap gap-3">
                         <div 
                           v-for="(photo, index) in contestantForm.photos" 
-                          :key="index" 
+                          :key="`${contestantForm.contestant_id}-${index}`" 
                           class="relative w-24 h-24 rounded-lg overflow-hidden group"
                         >
                           <img :src="photo" class="w-full h-full object-cover" />
@@ -1736,18 +1755,18 @@
     
     <!-- Delete Round Confirmation Modal -->
     <ConfirmDeleteModal
-      :visible="showDeleteRoundModal"
+      :show="showDeleteRoundModal"
       :message="roundToDelete ? `round '${roundToDelete.name}' and all its criteria` : 'this round'"
-      :processing="deleteRoundProcessing"
+      :isLoading="deleteRoundProcessing"
       @confirm="deleteRound"
       @cancel="closeDeleteRoundModal"
     />
     
     <!-- Delete Criteria Confirmation Modal -->
     <ConfirmDeleteModal
-      :visible="showDeleteCriteriaModal"
+      :show="showDeleteCriteriaModal"
       :message="criteriaToDelete ? `criteria '${criteriaToDelete.name}'` : 'this criteria'"
-      :processing="deleteCriteriaProcessing"
+      :isLoading="deleteCriteriaProcessing"
       @confirm="deleteCriteria"
       @cancel="closeDeleteCriteriaModal"
     />
@@ -1757,6 +1776,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import axios from 'axios'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { 
   ChevronLeft, 
@@ -1860,7 +1880,8 @@ const contestantForm = ref({
   age: '',
   origin: '',
   bio: '',
-  photos: [], // Array to store multiple photos
+  photos: [], // Array to store photo URLs for display
+  photoFiles: [], // Array to store actual File objects for upload
   photo: null,
   processing: false
 })
@@ -1893,6 +1914,9 @@ const criteriaForm = ref({
 
 // Quick settings state
 const quickRequiredJudges = ref(props.pageant.required_judges || 0)
+
+// Image loading states
+const imageLoadingStates = ref({})
 
 // Computed properties
 const tabulatorOptions = computed(() => {
@@ -2061,6 +2085,73 @@ const scoringSystemForm = ref({
   scoring_system: props.pageant.scoring_system || 'percentage',
   processing: false
 })
+
+// Development flag for debugging
+const isDevelopment = computed(() => {
+  return import.meta.env.DEV || false
+})
+
+// Get the correct display image for a contestant with validation
+const getContestantDisplayImage = (contestant) => {
+  // Validate that we have a contestant object with ID
+  if (!contestant || !contestant.id) {
+    console.warn('Invalid contestant object provided to getContestantDisplayImage')
+    return '/images/placeholders/placeholder-contestant.jpg'
+  }
+  
+  // Check if primary_image exists and is valid
+  if (contestant.primary_image && typeof contestant.primary_image === 'string') {
+    // Additional validation: check if photos array contains this image (extra safety)
+    if (contestant.photos && Array.isArray(contestant.photos) && contestant.photos.length > 0) {
+      if (contestant.photos.includes(contestant.primary_image)) {
+        return contestant.primary_image
+      }
+    } else {
+      // If no photos array, trust primary_image
+      return contestant.primary_image
+    }
+  }
+  
+  // Fallback to first photo if available
+  if (contestant.photos && Array.isArray(contestant.photos) && contestant.photos.length > 0) {
+    return contestant.photos[0]
+  }
+  
+  // Fallback to legacy photo field
+  if (contestant.photo && typeof contestant.photo === 'string') {
+    return contestant.photo
+  }
+  
+  // Ultimate fallback
+  return '/images/placeholders/placeholder-contestant.jpg'
+}
+
+// Image handling functions with enhanced validation
+const handleImageError = (event, contestantId = null) => {
+  const img = event.target
+  
+  // Get contestant ID from parameter or DOM
+  const targetContestantId = contestantId || img.closest('[data-contestant-id]')?.dataset.contestantId
+  
+  if (targetContestantId) {
+    imageLoadingStates.value[targetContestantId] = 'error'
+    console.warn(`Image load error for contestant ID: ${targetContestantId}`)
+  }
+  
+  // Set a fallback image
+  img.src = '/images/placeholders/placeholder-contestant.jpg'
+}
+
+const handleImageLoad = (event, contestantId = null) => {
+  const img = event.target
+  
+  // Get contestant ID from parameter or DOM
+  const targetContestantId = contestantId || img.closest('[data-contestant-id]')?.dataset.contestantId
+  
+  if (targetContestantId) {
+    imageLoadingStates.value[targetContestantId] = 'loaded'
+  }
+}
 
 // Update scoring system function
 const updateScoringSystem = () => {
@@ -2552,15 +2643,50 @@ const openAddContestantModal = () => {
 
 const openEditContestantModal = (contestant) => {
   editingContestant.value = contestant
+  
+  // Ensure we only use photos that belong to this specific contestant with strict validation
+  let contestantPhotos = []
+  
+  // First, try to get photos from photo_details with strict contestant ID filtering
+  if (contestant.photo_details && Array.isArray(contestant.photo_details)) {
+    contestantPhotos = contestant.photo_details
+      .filter(detail => detail && detail.contestant_id === contestant.id)
+      .map(detail => detail.url)
+      .filter(url => url) // Remove any empty URLs
+  }
+  
+  // If no photos from photo_details, try the photos array
+  if (contestantPhotos.length === 0 && contestant.photos && Array.isArray(contestant.photos)) {
+    contestantPhotos = contestant.photos.filter(photo => photo && typeof photo === 'string')
+  }
+  
+  // If still no photos, check for legacy photo field
+  if (contestantPhotos.length === 0 && contestant.photo && typeof contestant.photo === 'string') {
+    contestantPhotos = [contestant.photo]
+  }
+  
+  // Log for debugging (remove in production)
+  if (isDevelopment.value) {
+    console.log(`Opening edit modal for contestant ${contestant.id}:`, {
+      contestant_id: contestant.id,
+      photo_details_count: contestant.photo_details?.length || 0,
+      photos_count: contestant.photos?.length || 0,
+      filtered_photos_count: contestantPhotos.length,
+      legacy_photo: contestant.photo
+    })
+  }
+  
   contestantForm.value = {
     number: contestant.number || '',
     name: contestant.name || '',
     age: contestant.age || '',
     origin: contestant.origin || '',
     bio: contestant.bio || '',
-    photos: contestant.photos || [contestant.photo],
+    photos: contestantPhotos,
+    photoFiles: [],
     photo: null,
-    processing: false
+    processing: false,
+    contestant_id: contestant.id // Include contestant ID for validation
   }
   photoPreview.value = null
   showContestantModal.value = true
@@ -2584,8 +2710,10 @@ const resetContestantForm = () => {
     origin: '',
     bio: '',
     photos: [],
+    photoFiles: [],
     photo: null,
-    processing: false
+    processing: false,
+    contestant_id: null
   }
 }
 
@@ -2596,24 +2724,77 @@ const handlePhotoChange = (event) => {
   // Process multiple files
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
-    const reader = new FileReader()
     
+    // Store the actual file for upload
+    contestantForm.value.photoFiles.push(file)
+    
+    // Create preview URL for display
+    const reader = new FileReader()
     reader.onloadend = () => {
       contestantForm.value.photos.push(reader.result)
     }
-    
     reader.readAsDataURL(file)
   }
 }
 
-const removePhoto = (index) => {
+const removePhoto = async (index) => {
+  // If we're editing an existing contestant and this is an existing photo (not a new upload)
+  if (editingContestant.value && contestantForm.value.contestant_id) {
+    // Check if this is an existing photo (not in photoFiles array or photoFiles array is empty/shorter)
+    const isExistingPhoto = !contestantForm.value.photoFiles ||
+                            !contestantForm.value.photoFiles[index] ||
+                            index >= contestantForm.value.photoFiles.length
+
+    if (isExistingPhoto) {
+      try {
+        // Call the backend to delete the photo from the server
+        const response = await axios.delete(route('organizer.pageant.contestants.photos.destroy', {
+          pageantId: props.pageant.id,
+          contestantId: contestantForm.value.contestant_id,
+          photoIndex: index
+        }))
+
+        // Remove from local photos array after successful server deletion
+        contestantForm.value.photos.splice(index, 1)
+        console.log(`Photo at index ${index} deleted successfully`)
+        
+        // Close modal first, then show success message
+        closeContestantModal()
+        
+        // Show success message after modal is closed
+        setTimeout(() => {
+          alert(response.data.message || 'Photo deleted successfully')
+        }, 100)
+        
+      } catch (error) {
+        console.error('Error deleting photo:', error)
+        const errorMessage = error.response?.data?.message || 'Failed to delete photo. Please try again.'
+        alert(errorMessage)
+      }
+      return
+    }
+  }
+
+  // For new uploads or non-editing mode, just remove from local arrays
   contestantForm.value.photos.splice(index, 1)
+  // Also remove from photoFiles if it exists (for new uploads)
+  if (contestantForm.value.photoFiles && contestantForm.value.photoFiles[index]) {
+    contestantForm.value.photoFiles.splice(index, 1)
+  }
 }
 
 const submitContestantForm = async () => {
   contestantForm.value.processing = true
   
   try {
+    // Validation: Ensure we have a valid contestant when editing
+    if (editingContestant.value && contestantForm.value.contestant_id !== editingContestant.value.id) {
+      console.error('Contestant ID mismatch detected!')
+      alert('Error: Contestant data mismatch. Please close and reopen the form.')
+      contestantForm.value.processing = false
+      return
+    }
+    
     const formData = new FormData()
     formData.append('name', contestantForm.value.name)
     formData.append('number', contestantForm.value.number)
@@ -2621,58 +2802,42 @@ const submitContestantForm = async () => {
     formData.append('origin', contestantForm.value.origin)
     formData.append('bio', contestantForm.value.bio || '')
     
-    // Handle photos array
-    if (contestantForm.value.photos && contestantForm.value.photos.length > 0) {
-      contestantForm.value.photos.forEach((photo, index) => {
-        if (photo instanceof File) {
-          formData.append(`photos[${index}]`, photo)
-        } else {
-          formData.append(`existing_photos[${index}]`, photo)
-        }
+    // Add contestant ID for backend validation
+    if (contestantForm.value.contestant_id) {
+      formData.append('contestant_id', contestantForm.value.contestant_id)
+    }
+    
+    // Handle new photo files
+    if (contestantForm.value.photoFiles && contestantForm.value.photoFiles.length > 0) {
+      contestantForm.value.photoFiles.forEach((file, index) => {
+        formData.append(`images[]`, file)
       })
     }
     
     const url = editingContestant.value 
       ? route('organizer.pageant.contestants.update', { 
-          id: props.pageant.id, 
+          pageantId: props.pageant.id, 
           contestantId: editingContestant.value.id 
         })
       : route('organizer.pageant.contestants.store', props.pageant.id)
     
-    const method = editingContestant.value ? 'put' : 'post'
-    
     if (editingContestant.value) {
       formData.append('_method', 'PUT')
-      router.post(url, formData, {
-        onSuccess: () => {
-          closeContestantModal()
-          // Reload page to get updated data
-          router.reload({ only: ['pageant'] })
-        },
-        onError: (errors) => {
-          console.error('Update contestant error:', errors)
-          alert('Error updating contestant. Please try again.')
-        },
-        onFinish: () => {
-          contestantForm.value.processing = false
-        }
-      })
-    } else {
-      router.post(url, formData, {
-        onSuccess: () => {
-          closeContestantModal()
-          // Reload page to get updated data
-          router.reload({ only: ['pageant'] })
-        },
-        onError: (errors) => {
-          console.error('Add contestant error:', errors)
-          alert('Error adding contestant. Please try again.')
-        },
-        onFinish: () => {
-          contestantForm.value.processing = false
-        }
-      })
     }
+    
+    router.post(url, formData, {
+      onSuccess: () => {
+        closeContestantModal()
+        router.reload({ only: ['pageant'] })
+      },
+      onError: (errors) => {
+        console.error('Contestant form error:', errors)
+        alert('Error saving contestant. Please try again.')
+      },
+      onFinish: () => {
+        contestantForm.value.processing = false
+      }
+    })
   } catch (error) {
     console.error('Form submission error:', error)
     alert('Error submitting form. Please try again.')
@@ -2692,11 +2857,11 @@ const closeDeleteContestantModal = () => {
 
 const deleteContestant = () => {
   if (!contestantToDelete.value) return
-  
+
   deleteContestantProcessing.value = true
-  
-  router.delete(route('organizer.pageant.contestants.remove', {
-    id: props.pageant.id,
+
+  router.delete(route('organizer.pageant.contestants.destroy', {
+    pageantId: props.pageant.id,
     contestantId: contestantToDelete.value.id
   }), {
     onSuccess: () => {
@@ -2712,6 +2877,26 @@ const deleteContestant = () => {
       deleteContestantProcessing.value = false
     }
   })
+}
+
+// Generic delete method for the unused modal
+const confirmDeleteItem = () => {
+  // This is a placeholder for the generic delete modal
+  // Currently not used, but prevents JavaScript errors
+  console.log('Generic delete confirmed')
+  showDeleteConfirm.value = false
+}
+
+// Image error handling
+const handleCoverImageError = (event) => {
+  console.warn('Cover image failed to load, using fallback')
+  event.target.src = '/images/placeholders/pageant-cover.jpg'
+}
+
+const handleLogoImageError = (event) => {
+  console.warn('Logo image failed to load, hiding logo')
+  // Hide the logo container if the image fails to load
+  event.target.parentElement.style.display = 'none'
 }
 
 // Check for auto-completion on mount

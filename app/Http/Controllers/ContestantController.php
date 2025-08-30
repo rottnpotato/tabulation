@@ -7,12 +7,10 @@ use App\Models\ContestantImage;
 use App\Models\Pageant;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
 
 class ContestantController extends Controller
 {
@@ -40,6 +38,7 @@ class ContestantController extends Controller
             ->get()
             ->map(function ($contestant) {
                 $primaryImage = $contestant->images->firstWhere('is_primary', true);
+
                 return [
                     'id' => $contestant->id,
                     'name' => $contestant->name,
@@ -47,12 +46,12 @@ class ContestantController extends Controller
                     'origin' => $contestant->origin,
                     'age' => $contestant->age,
                     'bio' => $contestant->bio,
-                    'photo' => $primaryImage ? asset('storage/' . $primaryImage->image_path) : null,
+                    'photo' => $primaryImage ? asset('storage/'.$primaryImage->image_path) : null,
                     'active' => $contestant->active,
                     'images' => $contestant->images->map(function ($image) {
                         return [
                             'id' => $image->id,
-                            'path' => asset('storage/' . $image->image_path),
+                            'path' => asset('storage/'.$image->image_path),
                             'is_primary' => $image->is_primary,
                             'caption' => $image->caption,
                             'display_order' => $image->display_order,
@@ -62,7 +61,7 @@ class ContestantController extends Controller
             });
 
         return response()->json([
-            'contestants' => $contestants
+            'contestants' => $contestants,
         ]);
     }
 
@@ -94,7 +93,7 @@ class ContestantController extends Controller
         DB::beginTransaction();
         try {
             // Create the contestant
-            $contestant = new Contestant();
+            $contestant = new Contestant;
             $contestant->pageant_id = $pageantId;
             $contestant->name = $validated['name'];
             $contestant->number = $validated['number'];
@@ -108,6 +107,13 @@ class ContestantController extends Controller
             // Handle images if present
             if ($request->hasFile('images')) {
                 $this->handleContestantImages($request->file('images'), $contestant);
+
+                // Update the main photo field with the primary image
+                $primaryImage = $contestant->primaryImage();
+                if ($primaryImage) {
+                    $contestant->photo = '/storage/'.$primaryImage->image_path;
+                    $contestant->save();
+                }
             }
 
             DB::commit();
@@ -120,17 +126,13 @@ class ContestantController extends Controller
                 "Created contestant '{$contestant->name}' for pageant ID {$pageantId}"
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Contestant created successfully',
-                'contestant' => $contestant->load('images')
-            ], 201);
+            return redirect()->back()->with('success', 'Contestant created successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create contestant: ' . $e->getMessage()
-            ], 500);
+
+            return redirect()->back()
+                ->withErrors(['general' => 'Failed to create contestant: '.$e->getMessage()])
+                ->withInput();
         }
     }
 
@@ -148,8 +150,9 @@ class ContestantController extends Controller
 
         // Transform the images to include full URLs
         $contestant->images->transform(function ($image) {
-            $image->image_url = asset('storage/' . $image->image_path);
-            $image->path = asset('storage/' . $image->image_path); // Add path property for frontend
+            $image->image_url = asset('storage/'.$image->image_path);
+            $image->path = asset('storage/'.$image->image_path); // Add path property for frontend
+
             return $image;
         });
 
@@ -162,7 +165,7 @@ class ContestantController extends Controller
         );
 
         return response()->json([
-            'contestant' => $contestant
+            'contestant' => $contestant,
         ]);
     }
 
@@ -206,19 +209,19 @@ class ContestantController extends Controller
             $contestant->age = $validated['age'] ?? null;
             $contestant->bio = $validated['bio'] ?? null;
             $contestant->metadata = $validated['metadata'] ?? [];
-            
+
             if (isset($validated['active'])) {
                 $contestant->active = $validated['active'];
             }
-            
+
             $contestant->save();
 
             // Handle image removals if specified
-            if (!empty($validated['remove_image_ids'])) {
+            if (! empty($validated['remove_image_ids'])) {
                 $imagesToRemove = ContestantImage::where('contestant_id', $contestantId)
                     ->whereIn('id', $validated['remove_image_ids'])
                     ->get();
-                
+
                 foreach ($imagesToRemove as $image) {
                     Storage::disk('public')->delete($image->image_path);
                     $image->delete();
@@ -226,11 +229,11 @@ class ContestantController extends Controller
             }
 
             // Set primary image if specified
-            if (!empty($validated['primary_image_id'])) {
+            if (! empty($validated['primary_image_id'])) {
                 // Reset all images to non-primary
                 ContestantImage::where('contestant_id', $contestantId)
                     ->update(['is_primary' => false]);
-                
+
                 // Set the new primary image
                 ContestantImage::where('contestant_id', $contestantId)
                     ->where('id', $validated['primary_image_id'])
@@ -240,6 +243,17 @@ class ContestantController extends Controller
             // Handle new images if present
             if ($request->hasFile('images')) {
                 $this->handleContestantImages($request->file('images'), $contestant);
+            }
+
+            // Update the main photo field with the current primary image for backward compatibility
+            $primaryImage = $contestant->primaryImage();
+            if ($primaryImage) {
+                $contestant->photo = '/storage/'.$primaryImage->image_path;
+                $contestant->save();
+            } elseif ($contestant->images()->count() === 0) {
+                // If no images left, clear the photo field
+                $contestant->photo = null;
+                $contestant->save();
             }
 
             DB::commit();
@@ -252,17 +266,13 @@ class ContestantController extends Controller
                 "Updated contestant '{$contestant->name}' for pageant ID {$pageantId}"
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Contestant updated successfully',
-                'contestant' => $contestant->load('images')
-            ]);
+            return redirect()->back()->with('success', 'Contestant updated successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update contestant: ' . $e->getMessage()
-            ], 500);
+
+            return redirect()->back()
+                ->withErrors(['general' => 'Failed to update contestant: '.$e->getMessage()])
+                ->withInput();
         }
     }
 
@@ -295,10 +305,87 @@ class ContestantController extends Controller
             "Deleted contestant '{$contestantName}' from pageant ID {$pageantId}"
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Contestant deleted successfully'
-        ]);
+        return redirect()->back()->with('success', 'Contestant deleted successfully');
+    }
+
+    /**
+     * Delete a specific photo from a contestant
+     */
+    public function deletePhoto($pageantId, $contestantId, $photoIndex)
+    {
+        $pageant = Pageant::findOrFail($pageantId);
+        Gate::authorize('update', $pageant);
+
+        $contestant = Contestant::where('pageant_id', $pageantId)
+            ->findOrFail($contestantId);
+
+        // Get the contestant's images ordered by display_order
+        $images = $contestant->images()
+            ->orderBy('display_order')
+            ->get();
+
+        // Validate photo index
+        if (! is_numeric($photoIndex) || $photoIndex < 0 || $photoIndex >= $images->count()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid photo index',
+            ], 400);
+        }
+
+        $image = $images[$photoIndex];
+        $wasPrimary = $image->is_primary;
+
+        DB::beginTransaction();
+        try {
+            // Delete the physical file
+            Storage::disk('public')->delete($image->image_path);
+
+            // Delete the database record
+            $image->delete();
+
+            // If this was the primary image, set another image as primary if available
+            if ($wasPrimary && $images->count() > 1) {
+                $nextPrimary = $contestant->images()
+                    ->orderBy('display_order')
+                    ->first();
+
+                if ($nextPrimary) {
+                    $nextPrimary->is_primary = true;
+                    $nextPrimary->save();
+
+                    // Update the main photo field for backward compatibility
+                    $contestant->photo = '/storage/'.$nextPrimary->image_path;
+                    $contestant->save();
+                }
+            } elseif ($images->count() === 1) {
+                // No images left, clear the photo field
+                $contestant->photo = null;
+                $contestant->save();
+            }
+
+            DB::commit();
+
+            // Log the action
+            $this->auditLogService->log(
+                'CONTESTANT_PHOTO_DELETED',
+                'Contestant',
+                $contestant->id,
+                "Deleted photo from contestant '{$contestant->name}' (index: {$photoIndex})"
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Photo deleted successfully',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete photo: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -308,25 +395,29 @@ class ContestantController extends Controller
     {
         $primaryImageExists = $contestant->images()->where('is_primary', true)->exists();
         $displayOrder = $contestant->images()->max('display_order') ?? 0;
-        
+
         foreach ($images as $index => $image) {
             $displayOrder++;
-            $path = $image->store('contestants/' . $contestant->pageant_id, 'public');
-            
-            $contestantImage = new ContestantImage();
+            $path = $image->store('contestants/'.$contestant->pageant_id, 'public');
+
+            $contestantImage = new ContestantImage;
             $contestantImage->contestant_id = $contestant->id;
             $contestantImage->image_path = $path;
             $contestantImage->display_order = $displayOrder;
-            
+
             // Set the first image as primary if no primary image exists yet
-            if (!$primaryImageExists && $index === 0) {
+            if (! $primaryImageExists && $index === 0) {
                 $contestantImage->is_primary = true;
                 $primaryImageExists = true;
+
+                // Update the main photo field for backward compatibility
+                $contestant->photo = '/storage/'.$path;
+                $contestant->save();
             } else {
                 $contestantImage->is_primary = false;
             }
-            
+
             $contestantImage->save();
         }
     }
-} 
+}

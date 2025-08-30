@@ -258,7 +258,6 @@ import {
   Menu,
   X,
   User2,
-  Star,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -270,7 +269,8 @@ import {
   Shield,
   Gavel,
   UsersRound,
-  ClipboardSignature
+  ClipboardSignature,
+  Star
 } from 'lucide-vue-next'
 import Tooltip from '@/Components/Tooltip.vue'
 
@@ -415,13 +415,15 @@ const navigation = computed(() => {
       return [
         { name: 'Dashboard', href: route('tabulator.dashboard', currentPageantId), route: 'tabulator.dashboard', icon: LayoutDashboard },
         { name: 'Judges', href: route('tabulator.judges', currentPageantId), route: 'tabulator.judges', icon: Users },
+        { name: 'Round Management', href: route('tabulator.rounds', currentPageantId), route: 'tabulator.rounds', icon: Settings },
         { name: 'Scores', href: route('tabulator.scores', currentPageantId), route: 'tabulator.scores', icon: ClipboardList },
         { name: 'Results', href: route('tabulator.results', currentPageantId), route: 'tabulator.results', icon: Award },
         { name: 'Print', href: route('tabulator.print', currentPageantId), route: 'tabulator.print', icon: Printer }
       ]
     case 'judge':
       return [
-        { name: 'Dashboard', href: route('judge.dashboard'), route: 'judge.dashboard', icon: LayoutDashboard }
+        { name: 'Dashboard', href: route('judge.dashboard'), route: 'judge.dashboard', icon: LayoutDashboard },
+        { name: 'Scoring', href: route('judge.dashboard'), route: 'judge.scoring', icon: Star }
       ]
     default:
       return []

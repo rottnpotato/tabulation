@@ -19,6 +19,32 @@
       </div>
     </div>
 
+    <!-- Success Message -->
+    <div v-if="successMessage" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-sm flex items-center justify-between transition-all duration-500 ease-in-out">
+      <div class="flex items-center">
+        <svg class="h-5 w-5 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <p>{{ successMessage }}</p>
+      </div>
+      <button @click="successMessage = ''" class="text-green-700 hover:text-green-900">
+        <XCircle class="h-5 w-5" />
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="formErrors.general" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-sm flex items-center justify-between transition-all duration-500 ease-in-out">
+      <div class="flex items-center">
+        <svg class="h-5 w-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
+        <p>{{ formErrors.general }}</p>
+      </div>
+      <button @click="delete formErrors.general" class="text-red-700 hover:text-red-900">
+        <XCircle class="h-5 w-5" />
+      </button>
+    </div>
+
     <!-- Contestant List -->
     <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
       <div class="px-6 py-5 border-b border-gray-200">
@@ -100,19 +126,29 @@
         </div>
 
         <!-- Contestants Grid -->
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <div 
             v-for="contestant in filteredContestants" 
             :key="contestant.id"
+            :data-contestant-id="contestant.id"
             class="bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group"
             @click="ViewContestantDetails(contestant)"
           >
-            <div class="relative h-64">
+            <div class="relative aspect-[4/5]">
               <img 
-                :src="contestant.photo" 
+                :src="contestant.photo || '/images/placeholders/placeholder-contestant.jpg'" 
                 :alt="contestant.name" 
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                @error="handleImageError"
+                @load="handleImageLoad"
+                loading="lazy"
               />
+              <div class="absolute inset-0 bg-gray-200 flex items-center justify-center" v-if="imageLoadingStates[contestant.id] === 'error'">
+                <div class="text-center text-gray-500">
+                  <Users class="h-8 w-8 mx-auto mb-2" />
+                  <span class="text-sm">No Image</span>
+                </div>
+              </div>
               <!-- Gradient overlay -->
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-70"></div>
               
@@ -358,9 +394,19 @@
                     </button>
                     <button
                       type="submit"
-                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                      :disabled="isSubmitting"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {{ EditingContestant ? 'Save Changes' : 'Add Contestant' }}
+                      <span v-if="isSubmitting" class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {{ EditingContestant ? 'Saving...' : 'Adding...' }}
+                      </span>
+                      <span v-else>
+                        {{ EditingContestant ? 'Save Changes' : 'Add Contestant' }}
+                      </span>
                     </button>
                   </div>
                 </form>
@@ -585,6 +631,15 @@ const currentPhotoIndex = ref(0)
 const activePhoto = ref(null)
 const selectedPageant = ref('')
 
+// Form submission states
+const isSubmitting = ref(false)
+const formErrors = ref({})
+const successMessage = ref('')
+const imageFiles = ref([])
+
+// Image loading states
+const imageLoadingStates = ref({})
+
 // Create options for pageant filter
 const pageantOptions = computed(() => [
   { value: '', label: 'All Pageants' },
@@ -613,51 +668,7 @@ const Form = ref({
   contestNumber: ''
 })
 
-// Mock data with multiple photos for each contestant
-const Contestants = ref([
-  {
-    id: 1,
-    name: 'Jane Smith',
-    age: 23,
-    city: 'New York',
-    bio: 'Fashion model and entrepreneur with a passion for environmental activism',
-    photo: 'https://randomuser.me/api/portraits/women/44.jpg',
-    photos: [
-      'https://randomuser.me/api/portraits/women/44.jpg',
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80',
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80'
-    ],
-    contestNumber: '001'
-  },
-  {
-    id: 2,
-    name: 'Maria Rodriguez',
-    age: 25,
-    city: 'Miami',
-    bio: 'Classical pianist and medical student working on healthcare initiatives',
-    photo: 'https://randomuser.me/api/portraits/women/65.jpg',
-    photos: [
-      'https://randomuser.me/api/portraits/women/65.jpg',
-      'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80',
-      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80'
-    ],
-    contestNumber: '002'
-  },
-  {
-    id: 3,
-    name: 'Sarah Johnson',
-    age: 22,
-    city: 'Los Angeles',
-    bio: 'Actress and volunteer teaching arts to underprivileged children',
-    photo: 'https://randomuser.me/api/portraits/women/58.jpg',
-    photos: [
-      'https://randomuser.me/api/portraits/women/58.jpg',
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80',
-      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?ixlib=rb-4.0.3&auto=format&fit=crop&w=700&q=80'
-    ],
-    contestNumber: '003'
-  }
-])
+
 
 // Computed property to get all photos for current selected contestant
 const contestantPhotos = computed(() => {
@@ -665,30 +676,90 @@ const contestantPhotos = computed(() => {
   return SelectedContestant.value.photos || [SelectedContestant.value.photo]
 })
 
-const HandleSubmit = () => {
-  if (EditingContestant.value) {
-    const index = Contestants.value.findIndex(c => c.id === EditingContestant.value?.id)
-    if (index !== -1) {
-      // Ensure the main photo is updated from the first photo in array
-      const updatedContestant = { 
-        ...EditingContestant.value, 
-        ...Form.value,
-        photo: Form.value.photos[0] || EditingContestant.value.photo 
-      }
-      Contestants.value[index] = updatedContestant
-    }
-  } else {
-    // Create new contestant with main photo from first upload
-    Contestants.value.push({
-      id: Contestants.value.length + 1,
-      ...Form.value,
-      photo: Form.value.photos[0] || 'https://randomuser.me/api/portraits/women/32.jpg' // Default photo for demo
-    })
-  }
+const HandleSubmit = async () => {
+  isSubmitting.value = true
+  Object.keys(formErrors.value).forEach(key => delete formErrors.value[key])
   
-  ShowAddModal.value = false
-  EditingContestant.value = null
-  resetForm()
+  try {
+    const formData = new FormData()
+    formData.append('name', Form.value.name)
+    formData.append('number', Form.value.contestNumber)
+    
+    if (Form.value.age) formData.append('age', Form.value.age)
+    if (Form.value.city) formData.append('origin', Form.value.city)
+    if (Form.value.bio) formData.append('bio', Form.value.bio)
+    
+    // Add images from file inputs
+    imageFiles.value.forEach(file => {
+      formData.append('images[]', file)
+    })
+    
+    if (EditingContestant.value) {
+      // Update existing contestant
+      const response = await fetch(`/organizer/pageant/${EditingContestant.value.pageant.id}/contestants/${EditingContestant.value.id}`, {
+        method: 'POST',
+        headers: {
+          'X-HTTP-Method-Override': 'PUT',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: formData
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update contestant')
+      }
+      
+      const result = await response.json()
+      if (result.success) {
+        await fetchContestants() // Refresh the list
+        successMessage.value = 'Contestant updated successfully!'
+      }
+    } else {
+      // Create new contestant - need pageant selection
+      if (!selectedPageant.value) {
+        formErrors.value.pageant = 'Please select a pageant first'
+        return
+      }
+      
+      const response = await fetch(`/organizer/pageant/${selectedPageant.value}/contestants`, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: formData
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to create contestant')
+      }
+      
+      const result = await response.json()
+      if (result.success) {
+        await fetchContestants() // Refresh the list
+        successMessage.value = 'Contestant created successfully!'
+      }
+    }
+    
+    ShowAddModal.value = false
+    EditingContestant.value = null
+    resetForm()
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 5000)
+    
+  } catch (error) {
+    console.error('Error submitting contestant:', error)
+    
+    if (error.response && error.response.data && error.response.data.errors) {
+      Object.assign(formErrors.value, error.response.data.errors)
+    } else {
+      formErrors.value.general = 'An error occurred while saving the contestant. Please try again.'
+    }
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 const ViewContestantDetails = (contestant) => {
@@ -701,15 +772,56 @@ const ViewContestantDetails = (contestant) => {
 const EditContestant = (contestant) => {
   EditingContestant.value = contestant
   Form.value = { 
-    ...contestant,
-    photos: contestant.photos || [contestant.photo]
+    name: contestant.name || '',
+    contestNumber: contestant.number || contestant.contestNumber || '',
+    age: contestant.age || '',
+    city: contestant.origin || contestant.city || '',
+    bio: contestant.bio || '',
+    photos: contestant.photos || (contestant.photo ? [contestant.photo] : [])
   }
+  
+  // Reset image files for editing
+  imageFiles.value = []
+  
   ShowAddModal.value = true
 }
 
-const DeleteContestant = (id) => {
-  if (confirm('Are you sure you want to delete this contestant?')) {
-    Contestants.value = Contestants.value.filter(c => c.id !== id)
+const DeleteContestant = async (id) => {
+  if (!confirm('Are you sure you want to delete this contestant?')) {
+    return
+  }
+  
+  try {
+    const contestant = filteredContestants.value.find(c => c.id === id)
+    const pageantId = contestant?.pageant?.id
+    
+    if (!pageantId) {
+      formErrors.value.general = 'Could not determine pageant for this contestant'
+      return
+    }
+    
+    const response = await fetch(`/organizer/pageant/${pageantId}/contestants/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      }
+    })
+    
+    if (response.ok) {
+      successMessage.value = 'Contestant deleted successfully!'
+      // Refresh data - in real app this would trigger a parent component refresh
+      // For now we'll just show success message
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 5000)
+    } else {
+      throw new Error('Failed to delete contestant')
+    }
+  } catch (error) {
+    console.error('Error deleting contestant:', error)
+    formErrors.value.general = 'Failed to delete contestant. Please try again.'
   }
 }
 
@@ -717,15 +829,16 @@ const handlePhotoChange = (event) => {
   const files = event.target.files
   if (!files || files.length === 0) return
   
-  // Process multiple files
+  // Store actual File objects for upload
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
-    const reader = new FileReader()
+    imageFiles.value.push(file)
     
+    // Create preview URLs for display
+    const reader = new FileReader()
     reader.onloadend = () => {
       Form.value.photos.push(reader.result)
     }
-    
     reader.readAsDataURL(file)
   }
 }
@@ -761,6 +874,23 @@ const resetForm = () => {
     bio: '', 
     photos: [], 
     contestNumber: '' 
+  }
+  imageFiles.value = []
+  Object.keys(formErrors.value).forEach(key => delete formErrors.value[key])
+}
+
+const fetchContestants = async () => {
+  if (!selectedPageant.value) return
+  
+  try {
+    const response = await fetch(`/organizer/pageant/${selectedPageant.value}/contestants`)
+    if (response.ok) {
+      const data = await response.json()
+      // Update the contestants data - this would ideally be handled by parent component
+      // For now, we'll work with the existing props structure
+    }
+  } catch (error) {
+    console.error('Error fetching contestants:', error)
   }
 }
 
@@ -799,6 +929,25 @@ const formatDate = (dateString) => {
     month: 'short',
     day: 'numeric'
   })
+}
+
+// Image handling functions
+const handleImageError = (event) => {
+  const img = event.target
+  const contestantId = img.closest('[data-contestant-id]')?.dataset.contestantId
+  if (contestantId) {
+    imageLoadingStates.value[contestantId] = 'error'
+  }
+  // Set a fallback image
+  img.src = '/images/placeholders/placeholder-contestant.jpg'
+}
+
+const handleImageLoad = (event) => {
+  const img = event.target
+  const contestantId = img.closest('[data-contestant-id]')?.dataset.contestantId
+  if (contestantId) {
+    imageLoadingStates.value[contestantId] = 'loaded'
+  }
 }
 </script>
 

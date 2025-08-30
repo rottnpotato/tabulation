@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contestant;
-use App\Models\User;
+use App\Models\Criteria;
 use App\Models\Pageant;
 use App\Models\Round;
-use App\Models\Criteria;
-
+use App\Models\User;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +32,7 @@ class OrganizerController extends Controller
     public function checkUsername(Request $request)
     {
         $request->validate([
-            'username' => 'required|string'
+            'username' => 'required|string',
         ]);
 
         $exists = User::where('username', $request->username)->exists();
@@ -41,13 +40,13 @@ class OrganizerController extends Controller
         // Check if this is an AJAX request (Inertia expects redirects)
         if ($request->wantsJson()) {
             return response()->json([
-                'usernameExists' => $exists
+                'usernameExists' => $exists,
             ]);
         }
 
         // Return a redirect for Inertia requests
         return redirect()->back()->with([
-            'usernameExists' => $exists
+            'usernameExists' => $exists,
         ]);
     }
 
@@ -99,7 +98,7 @@ class OrganizerController extends Controller
                     'id' => $organizer->id,
                     'name' => $organizer->name,
                     'email' => $organizer->email,
-                ]
+                ],
             ]);
         }
 
@@ -111,7 +110,7 @@ class OrganizerController extends Controller
                 'id' => $organizer->id,
                 'name' => $organizer->name,
                 'email' => $organizer->email,
-            ]
+            ],
         ]);
     }
 
@@ -126,7 +125,7 @@ class OrganizerController extends Controller
             ->where('verification_expires_at', '>', now())
             ->first();
 
-        if (!$organizer) {
+        if (! $organizer) {
             return Inertia::render('VerificationFailed', [
                 'message' => 'Verification link is invalid or has expired.',
             ]);
@@ -165,16 +164,16 @@ class OrganizerController extends Controller
     private function generatePasswordResetToken(User $user)
     {
         $token = Str::random(64);
-        
+
         // Store the token in the password reset table
         DB::table('password_resets')->updateOrInsert(
             ['email' => $user->email],
             [
                 'token' => Hash::make($token),
-                'created_at' => now()
+                'created_at' => now(),
             ]
         );
-        
+
         return $token;
     }
 
@@ -193,24 +192,24 @@ class OrganizerController extends Controller
     public function resendVerification(Request $request, $id)
     {
         $organizer = User::findOrFail($id);
-        
+
         // Only allow resending if not verified and is an organizer
         if ($organizer->is_verified || $organizer->role !== 'organizer') {
             return back()->with('error', 'Cannot resend verification for this account.');
         }
-        
+
         // Generate new token
         $verificationToken = Str::random(64);
         $expiresAt = now()->addHours(48);
-        
+
         $organizer->update([
             'verification_token' => $verificationToken,
             'verification_expires_at' => $expiresAt,
         ]);
-        
+
         // Send verification email
         $this->sendVerificationEmail($organizer, $verificationToken);
-        
+
         // Log the action
         $this->auditLogService->log(
             'VERIFICATION_EMAIL_RESENT',
@@ -218,7 +217,7 @@ class OrganizerController extends Controller
             $organizer->id,
             "Resent verification email to organizer '{$organizer->name}' ({$organizer->email})"
         );
-        
+
         return back()->with('success', 'Verification email has been resent.');
     }
 
@@ -226,12 +225,12 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Get pageant IDs assigned to this organizer
         $pageantIds = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->pluck('pageant_id');
-        
+
         // Get counts by status
         $pageantsByStatus = [
             'pending_approval' => Pageant::whereIn('id', $pageantIds)->where('status', 'Pending_Approval')->count(),
@@ -241,7 +240,7 @@ class OrganizerController extends Controller
             'completed' => Pageant::whereIn('id', $pageantIds)->where('status', 'Completed')->count(),
             'unlocked_for_edit' => Pageant::whereIn('id', $pageantIds)->where('status', 'Unlocked_For_Edit')->count(),
         ];
-        
+
         // Get recent pageants
         $recentPageants = Pageant::whereIn('id', $pageantIds)
             ->orderBy('updated_at', 'desc')
@@ -258,8 +257,6 @@ class OrganizerController extends Controller
                     'location' => $pageant->location,
                 ];
             });
-            
-
 
         return Inertia::render('Organizer/Dashboard', [
             'pageantCounts' => $pageantsByStatus,
@@ -277,12 +274,12 @@ class OrganizerController extends Controller
     public function contestants()
     {
         $organizer = Auth::user();
-        
+
         // Get pageant IDs that this organizer has access to
         $pageantIds = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->pluck('pageant_id');
-        
+
         // Get contestants only from pageants this organizer manages
         $contestants = Contestant::with(['pageant:id,name,status,pageant_date'])
             ->whereIn('pageant_id', $pageantIds)
@@ -312,10 +309,11 @@ class OrganizerController extends Controller
 
         // Group contestants by pageant
         $contestantsByPageant = $contestants->groupBy('pageant.id');
-        
+
         // Get pageant summaries
         $pageantSummaries = $contestantsByPageant->map(function ($contestants, $pageantId) {
             $firstContestant = $contestants->first();
+
             return [
                 'id' => $pageantId,
                 'name' => $firstContestant['pageant']['name'],
@@ -324,7 +322,7 @@ class OrganizerController extends Controller
                 'contestant_count' => $contestants->count(),
             ];
         })->values();
-        
+
         return Inertia::render('Organizer/Contestants', [
             'Contestants' => $contestants->values(),
             'PageantSummaries' => $pageantSummaries,
@@ -345,12 +343,12 @@ class OrganizerController extends Controller
         try {
             // Get the currently logged in organizer
             $organizer = Auth::user();
-            
+
             // Get pageant IDs assigned to this organizer
             $pageantIds = DB::table('pageant_organizers')
                 ->where('user_id', $organizer->id)
                 ->pluck('pageant_id');
-            
+
             // Get all pageants
             $pageants = Pageant::whereIn('id', $pageantIds)
                 ->orderBy('pageant_date')
@@ -360,10 +358,10 @@ class OrganizerController extends Controller
                     $startDate = $pageant->start_date ? $pageant->start_date->format('M d, Y') : null;
                     $endDate = $pageant->end_date ? $pageant->end_date->format('M d, Y') : null;
                     $pageantDate = $pageant->pageant_date ? $pageant->pageant_date->format('M d, Y') : null;
-                    
+
                     // Calculate progress
                     $progress = $pageant->calculateProgress();
-                    
+
                     return [
                         'id' => $pageant->id,
                         'name' => $pageant->name,
@@ -378,17 +376,17 @@ class OrganizerController extends Controller
                         'cover_image' => $pageant->cover_image,
                     ];
                 });
-            
+
             return Inertia::render('Organizer/Timeline', [
                 'pageants' => $pageants,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error in timeline page: ' . $e->getMessage());
-            
+            Log::error('Error in timeline page: '.$e->getMessage());
+
             // Return the page with an empty pageants array and error message
             return Inertia::render('Organizer/Timeline', [
                 'pageants' => [],
-                'error' => 'An error occurred while loading your timeline. Please try again.'
+                'error' => 'An error occurred while loading your timeline. Please try again.',
             ]);
         }
     }
@@ -401,30 +399,30 @@ class OrganizerController extends Controller
         try {
             // Get the currently logged in organizer
             $organizer = Auth::user();
-            
+
             // Check if this organizer has access to this pageant
             $hasAccess = DB::table('pageant_organizers')
                 ->where('user_id', $organizer->id)
                 ->where('pageant_id', $id)
                 ->exists();
-                
-            if (!$hasAccess) {
+
+            if (! $hasAccess) {
                 return redirect()->route('organizer.timeline')
                     ->with('error', 'You do not have access to this pageant');
             }
-            
-                    // Get the pageant details
-        $pageant = Pageant::findOrFail($id);
-            
+
+            // Get the pageant details
+            $pageant = Pageant::findOrFail($id);
+
             // Format dates for display
             $startDate = $pageant->start_date ? $pageant->start_date->format('M d, Y') : null;
             $endDate = $pageant->end_date ? $pageant->end_date->format('M d, Y') : null;
-            
+
             // Events have been removed from the system
-            
+
             // Calculate progress
             $progress = $pageant->calculateProgress();
-            
+
             $pageantData = [
                 'id' => $pageant->id,
                 'name' => $pageant->name,
@@ -440,13 +438,13 @@ class OrganizerController extends Controller
                 'events_count' => 0,
                 'completed_events_count' => 0,
             ];
-            
+
             return Inertia::render('Organizer/PageantTimeline', [
                 'pageant' => $pageantData,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error in pageant timeline: ' . $e->getMessage());
-            
+            Log::error('Error in pageant timeline: '.$e->getMessage());
+
             return redirect()->route('organizer.timeline')
                 ->with('error', 'An error occurred while loading the pageant timeline. Please try again.');
         }
@@ -459,12 +457,12 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Get pageant IDs assigned to this organizer
         $pageantIds = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->pluck('pageant_id');
-        
+
         // Get all pageants assigned to this organizer
         $pageants = Pageant::whereIn('id', $pageantIds)
             ->orderBy('created_at', 'desc')
@@ -483,7 +481,7 @@ class OrganizerController extends Controller
                     'judges_count' => DB::table('pageant_judges')->where('pageant_id', $pageant->id)->count(),
                 ];
             });
-        
+
         $pageantCounts = [
             'active' => Pageant::whereIn('id', $pageantIds)->where('status', 'Active')->count(),
             'draft' => Pageant::whereIn('id', $pageantIds)->where('status', 'Draft')->count(),
@@ -492,13 +490,13 @@ class OrganizerController extends Controller
             'unlocked_for_edit' => Pageant::whereIn('id', $pageantIds)->where('status', 'Unlocked_For_Edit')->count(),
             'total' => count($pageantIds),
         ];
-        
+
         return Inertia::render('Organizer/MyPageants', [
             'pageants' => $pageants,
             'pageantCounts' => $pageantCounts,
         ]);
     }
-    
+
     /**
      * Display detailed view of a specific pageant
      */
@@ -506,41 +504,42 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Get the pageant details with relationships
         $pageant = Pageant::with([
-                'contestants' => function($query) {
-                    $query->where('active', true)->orderBy('number');
-                }, 
-                'criteria',
-                'rounds' => function ($query) {
-                    $query->orderBy('display_order');
-                },
-                'rounds.criteria' => function ($query) {
-                    $query->orderBy('display_order');
-                },
-                'judges',
-                'tabulators',
-                'organizers'
-            ])
+            'contestants' => function ($query) {
+                $query->where('active', true)->orderBy('number');
+            },
+            'contestants.images',
+            'criteria',
+            'rounds' => function ($query) {
+                $query->orderBy('display_order');
+            },
+            'rounds.criteria' => function ($query) {
+                $query->orderBy('display_order');
+            },
+            'judges',
+            'tabulators',
+            'organizers',
+        ])
             ->findOrFail($id);
-            
+
         // Get all tabulators for selection
         $availableTabulators = User::where('role', 'tabulator')
             ->orderBy('name')
             ->get()
-            ->map(function($tabulator) {
+            ->map(function ($tabulator) {
                 return [
                     'id' => $tabulator->id,
                     'name' => $tabulator->name,
@@ -548,7 +547,7 @@ class OrganizerController extends Controller
                     'email' => $tabulator->email,
                 ];
             });
-            
+
         // Transform data for frontend consumption
         $pageantData = [
             'id' => $pageant->id,
@@ -560,13 +559,72 @@ class OrganizerController extends Controller
             'venue' => $pageant->venue,
             'location' => $pageant->location,
             'coverImage' => $pageant->cover_image,
+            'logo' => $pageant->logo,
             'scoring_system' => $pageant->scoring_system,
             'contestants_count' => $pageant->contestants->count(),
             'criteria_count' => $pageant->criteria->count(),
             'judges_count' => $pageant->judges->count(),
             'required_judges' => $pageant->required_judges,
             'progress' => $pageant->calculateProgress(),
-            'contestants' => $pageant->contestants->map(function($contestant) {
+            'contestants' => $pageant->contestants->map(function ($contestant) {
+                // Get images that belong ONLY to this specific contestant with explicit database filtering
+                $contestantImages = $contestant->images()
+                    ->where('contestant_id', $contestant->id)
+                    ->orderBy('is_primary', 'desc')
+                    ->orderBy('display_order', 'asc')
+                    ->get();
+
+                // Find primary image with strict contestant ID verification
+                $primaryImage = $contestantImages
+                    ->where('contestant_id', $contestant->id)
+                    ->where('is_primary', true)
+                    ->first();
+
+                // Get other images with strict contestant ID verification
+                $otherImages = $contestantImages
+                    ->where('contestant_id', $contestant->id)
+                    ->where('is_primary', false)
+                    ->sortBy('display_order');
+
+                // Build photos array with explicit contestant ID validation
+                $photos = collect();
+                $photoDetails = collect();
+
+                if ($primaryImage && $primaryImage->contestant_id === $contestant->id) {
+                    $photos->push('/storage/'.$primaryImage->image_path);
+                    $photoDetails->push([
+                        'id' => $primaryImage->id,
+                        'url' => '/storage/'.$primaryImage->image_path,
+                        'is_primary' => true,
+                        'display_order' => $primaryImage->display_order,
+                        'contestant_id' => $primaryImage->contestant_id,
+                    ]);
+                }
+
+                $otherImages->each(function ($image) use ($photos, $photoDetails, $contestant) {
+                    // Double-check contestant ID matches before adding
+                    if ($image->contestant_id === $contestant->id) {
+                        $photos->push('/storage/'.$image->image_path);
+                        $photoDetails->push([
+                            'id' => $image->id,
+                            'url' => '/storage/'.$image->image_path,
+                            'is_primary' => false,
+                            'display_order' => $image->display_order,
+                            'contestant_id' => $image->contestant_id,
+                        ]);
+                    }
+                });
+
+                // Determine the best primary image to display
+                $displayImage = null;
+                if ($primaryImage && $primaryImage->contestant_id === $contestant->id) {
+                    $displayImage = '/storage/'.$primaryImage->image_path;
+                } elseif ($photos->isNotEmpty()) {
+                    $displayImage = $photos->first();
+                } else {
+                    $displayImage = $contestant->photo;
+                }
+
                 return [
                     'id' => $contestant->id,
                     'number' => $contestant->number,
@@ -574,9 +632,15 @@ class OrganizerController extends Controller
                     'age' => $contestant->age,
                     'photo' => $contestant->photo,
                     'origin' => $contestant->origin,
+                    'bio' => $contestant->bio,
+                    'primary_image' => $displayImage,
+                    'photos' => $photos->toArray(),
+                    'photo_details' => $photoDetails->toArray(),
+                    'images_count' => $contestantImages->count(),
+                    'contestant_id' => $contestant->id, // Explicit contestant ID for frontend validation
                 ];
             }),
-            'criteria' => $pageant->criteria->map(function($criterion) {
+            'criteria' => $pageant->criteria->map(function ($criterion) {
                 return [
                     'id' => $criterion->id,
                     'name' => $criterion->name,
@@ -586,14 +650,14 @@ class OrganizerController extends Controller
                     'max_score' => $criterion->max_score,
                 ];
             }),
-            'judges' => $pageant->judges->map(function($judge) {
+            'judges' => $pageant->judges->map(function ($judge) {
                 return [
                     'id' => $judge->id,
                     'name' => $judge->name,
                     'username' => $judge->username,
                 ];
             }),
-            'tabulators' => $pageant->tabulators->map(function($tabulator) {
+            'tabulators' => $pageant->tabulators->map(function ($tabulator) {
                 return [
                     'id' => $tabulator->id,
                     'name' => $tabulator->name,
@@ -629,12 +693,12 @@ class OrganizerController extends Controller
             }),
             'events' => [], // Events functionality has been removed
         ];
-        
+
         return Inertia::render('Organizer/PageantView', [
             'pageant' => $pageantData,
             'availableTabulators' => $availableTabulators,
             'auth' => [
-                'user' => Auth::user()
+                'user' => Auth::user(),
             ],
         ]);
     }
@@ -643,49 +707,49 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Check if the pageant status allows editing
         $pageant = Pageant::findOrFail($id);
-        
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'This pageant cannot be edited in its current status');
         }
-        
+
         // Get the pageant details with relationships
         $pageant = Pageant::with([
-                'contestants' => function($query) {
-                    $query->where('active', true)->orderBy('number');
-                }, 
-                'criteria',
-                'rounds' => function ($query) {
-                    $query->orderBy('display_order');
-                },
-                'rounds.criteria' => function ($query) {
-                    $query->orderBy('display_order');
-                },
-                'judges',
-                'tabulators',
-                'organizers'
-            ])
+            'contestants' => function ($query) {
+                $query->where('active', true)->orderBy('number');
+            },
+            'criteria',
+            'rounds' => function ($query) {
+                $query->orderBy('display_order');
+            },
+            'rounds.criteria' => function ($query) {
+                $query->orderBy('display_order');
+            },
+            'judges',
+            'tabulators',
+            'organizers',
+        ])
             ->findOrFail($id);
-            
+
         // Get all tabulators for selection
         $availableTabulators = User::where('role', 'tabulator')
             ->orderBy('name')
             ->get()
-            ->map(function($tabulator) {
+            ->map(function ($tabulator) {
                 return [
                     'id' => $tabulator->id,
                     'name' => $tabulator->name,
@@ -693,7 +757,7 @@ class OrganizerController extends Controller
                     'email' => $tabulator->email,
                 ];
             });
-            
+
         // Transform data for frontend consumption
         $pageantData = [
             'id' => $pageant->id,
@@ -705,13 +769,14 @@ class OrganizerController extends Controller
             'venue' => $pageant->venue,
             'location' => $pageant->location,
             'coverImage' => $pageant->cover_image,
+            'logo' => $pageant->logo,
             'scoring_system' => $pageant->scoring_system,
             'contestants_count' => $pageant->contestants->count(),
             'criteria_count' => $pageant->criteria->count(),
             'judges_count' => $pageant->judges->count(),
             'required_judges' => $pageant->required_judges,
             'progress' => $pageant->calculateProgress(),
-            'contestants' => $pageant->contestants->map(function($contestant) {
+            'contestants' => $pageant->contestants->map(function ($contestant) {
                 return [
                     'id' => $contestant->id,
                     'number' => $contestant->number,
@@ -721,7 +786,7 @@ class OrganizerController extends Controller
                     'origin' => $contestant->origin,
                 ];
             }),
-            'criteria' => $pageant->criteria->map(function($criterion) {
+            'criteria' => $pageant->criteria->map(function ($criterion) {
                 return [
                     'id' => $criterion->id,
                     'name' => $criterion->name,
@@ -731,14 +796,14 @@ class OrganizerController extends Controller
                     'max_score' => $criterion->max_score,
                 ];
             }),
-            'judges' => $pageant->judges->map(function($judge) {
+            'judges' => $pageant->judges->map(function ($judge) {
                 return [
                     'id' => $judge->id,
                     'name' => $judge->name,
                     'username' => $judge->username,
                 ];
             }),
-            'tabulators' => $pageant->tabulators->map(function($tabulator) {
+            'tabulators' => $pageant->tabulators->map(function ($tabulator) {
                 return [
                     'id' => $tabulator->id,
                     'name' => $tabulator->name,
@@ -748,38 +813,38 @@ class OrganizerController extends Controller
             }),
             'events' => [], // Events functionality has been removed
         ];
-        
+
         return Inertia::render('Organizer/PageantEdit', [
             'pageant' => $pageantData,
             'availableTabulators' => $availableTabulators,
         ]);
     }
-    
+
     public function updatePageant(Request $request, $id)
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Find the pageant
         $pageant = Pageant::findOrFail($id);
-        
+
         // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'This pageant cannot be edited in its current status');
         }
-        
+
         // Validate request
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -791,29 +856,29 @@ class OrganizerController extends Controller
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-        
+
         // Remove cover_image and logo from validated data since we'll handle them separately
         $pageantData = collect($validated)->except(['cover_image', 'logo'])->toArray();
-        
+
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             $coverImage = $request->file('cover_image');
-            $coverImageName = 'pageant_cover_' . $pageant->id . '_' . time() . '.' . $coverImage->getClientOriginalExtension();
+            $coverImageName = 'pageant_cover_'.$pageant->id.'_'.time().'.'.$coverImage->getClientOriginalExtension();
             $coverImage->storeAs('public/pageants/covers', $coverImageName);
-            $pageantData['cover_image'] = '/storage/pageants/covers/' . $coverImageName;
+            $pageantData['cover_image'] = '/storage/pageants/covers/'.$coverImageName;
         }
-        
+
         // Handle logo upload
         if ($request->hasFile('logo')) {
             $logo = $request->file('logo');
-            $logoName = 'pageant_logo_' . $pageant->id . '_' . time() . '.' . $logo->getClientOriginalExtension();
+            $logoName = 'pageant_logo_'.$pageant->id.'_'.time().'.'.$logo->getClientOriginalExtension();
             $logo->storeAs('public/pageants/logos', $logoName);
-            $pageantData['logo'] = '/storage/pageants/logos/' . $logoName;
+            $pageantData['logo'] = '/storage/pageants/logos/'.$logoName;
         }
-        
+
         // Update the pageant
         $pageant->update($pageantData);
-        
+
         // Log the action
         $this->auditLogService->log(
             'PAGEANT_UPDATED',
@@ -821,14 +886,10 @@ class OrganizerController extends Controller
             $pageant->id,
             "Updated pageant '{$pageant->name}'"
         );
-        
+
         return redirect()->route('organizer.pageant.view', $id)
             ->with('success', 'Pageant updated successfully');
     }
-    
-
-
-    
 
     /**
      * Update the number of required judges for a pageant
@@ -837,37 +898,37 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Find the pageant
         $pageant = Pageant::findOrFail($id);
-        
+
         // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'This pageant cannot be edited in its current status');
         }
-        
+
         // Validate request
         $validated = $request->validate([
             'required_judges' => 'required|integer|min:0|max:20',
         ]);
-        
+
         // Update the pageant
         $pageant->update([
-            'required_judges' => $validated['required_judges']
+            'required_judges' => $validated['required_judges'],
         ]);
-        
+
         // Log the action
         $this->auditLogService->log(
             'REQUIRED_JUDGES_UPDATED',
@@ -875,11 +936,11 @@ class OrganizerController extends Controller
             $pageant->id,
             "Updated required judges count for pageant '{$pageant->name}' to {$validated['required_judges']}"
         );
-        
+
         return redirect()->route('organizer.pageant.view', $id)
             ->with('success', 'Required judges updated successfully');
     }
-    
+
     /**
      * Update the scoring system for a pageant.
      */
@@ -887,37 +948,37 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Find the pageant
         $pageant = Pageant::findOrFail($id);
-        
+
         // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'This pageant cannot be edited in its current status');
         }
-        
+
         // Validate request
         $validated = $request->validate([
             'scoring_system' => 'required|string|in:percentage,1-10,1-5,points',
         ]);
-        
+
         // Update the pageant
         $pageant->update([
-            'scoring_system' => $validated['scoring_system']
+            'scoring_system' => $validated['scoring_system'],
         ]);
-        
+
         // Log the action
         $this->auditLogService->log(
             'SCORING_SYSTEM_UPDATED',
@@ -925,11 +986,11 @@ class OrganizerController extends Controller
             $pageant->id,
             "Updated scoring system for pageant '{$pageant->name}' to {$validated['scoring_system']}"
         );
-        
+
         return redirect()->route('organizer.pageant.view', $id)
             ->with('success', 'Scoring system updated successfully');
     }
-    
+
     /**
      * Assign a tabulator to a pageant
      */
@@ -937,57 +998,57 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Find the pageant
         $pageant = Pageant::findOrFail($id);
-        
+
         // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'This pageant cannot be edited in its current status');
         }
-        
+
         // Validate request
         $validated = $request->validate([
             'tabulator_id' => 'required|exists:users,id',
             'notes' => 'nullable|string',
         ]);
-        
+
         // Check if the user is a tabulator
         $tabulator = User::findOrFail($validated['tabulator_id']);
-        if (!$tabulator->isTabulator()) {
+        if (! $tabulator->isTabulator()) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'Selected user is not a tabulator');
         }
-        
+
         // Check if the tabulator is already assigned to this pageant
         $exists = DB::table('pageant_tabulators')
             ->where('pageant_id', $id)
             ->where('user_id', $validated['tabulator_id'])
             ->exists();
-            
+
         if ($exists) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'Tabulator is already assigned to this pageant');
         }
-        
+
         // Assign the tabulator to the pageant
         $pageant->tabulators()->attach($validated['tabulator_id'], [
             'active' => true,
             'notes' => $validated['notes'] ?? null,
         ]);
-        
+
         // Log the action
         $this->auditLogService->log(
             'TABULATOR_ASSIGNED',
@@ -995,11 +1056,11 @@ class OrganizerController extends Controller
             $pageant->id,
             "Assigned tabulator '{$tabulator->name}' to pageant '{$pageant->name}'"
         );
-        
+
         return redirect()->route('organizer.pageant.view', $id)
             ->with('success', 'Tabulator assigned successfully');
     }
-    
+
     /**
      * Remove a tabulator from a pageant
      */
@@ -1007,44 +1068,44 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Find the pageant
         $pageant = Pageant::findOrFail($id);
-        
+
         // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'This pageant cannot be edited in its current status');
         }
-        
+
         // Check if the tabulator is assigned to this pageant
         $exists = DB::table('pageant_tabulators')
             ->where('pageant_id', $id)
             ->where('user_id', $tabulatorId)
             ->exists();
-            
-        if (!$exists) {
+
+        if (! $exists) {
             return redirect()->route('organizer.pageant.view', $id)
                 ->with('error', 'Tabulator is not assigned to this pageant');
         }
-        
+
         // Get tabulator details for the log
         $tabulator = User::findOrFail($tabulatorId);
-        
+
         // Remove the tabulator from the pageant
         $pageant->tabulators()->detach($tabulatorId);
-        
+
         // Log the action
         $this->auditLogService->log(
             'TABULATOR_REMOVED',
@@ -1052,7 +1113,7 @@ class OrganizerController extends Controller
             $pageant->id,
             "Removed tabulator '{$tabulator->name}' from pageant '{$pageant->name}'"
         );
-        
+
         return redirect()->route('organizer.pageant.view', $id)
             ->with('success', 'Tabulator removed successfully');
     }
@@ -1063,18 +1124,18 @@ class OrganizerController extends Controller
     public function pageantContestants($id)
     {
         $pageant = Pageant::findOrFail($id);
-        
+
         // Ensure this pageant belongs to the organizer
         $organizer = Auth::user();
         $hasAccess = DB::table('pageant_organizers')
             ->where('pageant_id', $pageant->id)
             ->where('user_id', $organizer->id)
             ->exists();
-        
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             abort(403, 'You do not have access to this pageant.');
         }
-        
+
         return Inertia::render('Organizer/PageantContestants', [
             'pageant' => [
                 'id' => $pageant->id,
@@ -1101,15 +1162,15 @@ class OrganizerController extends Controller
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Get the pageant details
         $pageant = Pageant::findOrFail($id);
-            
+
         // Transform pageant data for frontend consumption
         $pageantData = [
             'id' => $pageant->id,
@@ -1121,10 +1182,10 @@ class OrganizerController extends Controller
             'venue' => $pageant->venue,
             'location' => $pageant->location,
         ];
-        
+
         return Inertia::render('Organizer/Criteria', [
             'pageant' => $pageantData,
-            'pageantId' => $pageant->id
+            'pageantId' => $pageant->id,
         ]);
     }
 
@@ -1135,25 +1196,25 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user() ?? abort(401, 'Unauthenticated');
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Get the pageant with rounds and criteria
         $pageant = Pageant::with(['rounds' => function ($query) {
             $query->orderBy('display_order');
         }, 'rounds.criteria' => function ($query) {
             $query->orderBy('display_order');
         }])->findOrFail($id);
-            
+
         // Transform pageant data for frontend consumption
         $pageantData = [
             'id' => $pageant->id,
@@ -1191,10 +1252,10 @@ class OrganizerController extends Controller
                 ];
             }),
         ];
-        
+
         return Inertia::render('Organizer/Rounds', [
             'pageant' => $pageantData,
-            'pageantId' => $pageant->id
+            'pageantId' => $pageant->id,
         ]);
     }
 
@@ -1205,14 +1266,14 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user() ?? abort(401, 'Unauthenticated');
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return response()->json(['error' => 'You do not have access to this pageant'], 403);
         }
 
@@ -1252,14 +1313,14 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user() ?? abort(401, 'Unauthenticated');
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return response()->json(['error' => 'You do not have access to this pageant'], 403);
         }
 
@@ -1273,7 +1334,7 @@ class OrganizerController extends Controller
         ]);
 
         $round = Round::where('pageant_id', $pageantId)->findOrFail($roundId);
-        
+
         $round->update([
             'name' => $request->name,
             'description' => $request->description,
@@ -1301,20 +1362,20 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user() ?? abort(401, 'Unauthenticated');
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return response()->json(['error' => 'You do not have access to this pageant'], 403);
         }
 
         $round = Round::where('pageant_id', $pageantId)->findOrFail($roundId);
         $roundName = $round->name;
-        
+
         $round->delete();
 
         // Log activity
@@ -1335,14 +1396,14 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user() ?? abort(401, 'Unauthenticated');
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return response()->json(['error' => 'You do not have access to this pageant'], 403);
         }
 
@@ -1391,14 +1452,14 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user() ?? abort(401, 'Unauthenticated');
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return response()->json(['error' => 'You do not have access to this pageant'], 403);
         }
 
@@ -1414,9 +1475,9 @@ class OrganizerController extends Controller
         ]);
 
         $criteria = Criteria::where('pageant_id', $pageantId)
-                           ->where('round_id', $roundId)
-                           ->findOrFail($criteriaId);
-        
+            ->where('round_id', $roundId)
+            ->findOrFail($criteriaId);
+
         $criteria->update([
             'name' => $request->name,
             'description' => $request->description,
@@ -1446,22 +1507,22 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user() ?? abort(401, 'Unauthenticated');
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return response()->json(['error' => 'You do not have access to this pageant'], 403);
         }
 
         $criteria = Criteria::where('pageant_id', $pageantId)
-                           ->where('round_id', $roundId)
-                           ->findOrFail($criteriaId);
+            ->where('round_id', $roundId)
+            ->findOrFail($criteriaId);
         $criteriaName = $criteria->name;
-        
+
         $criteria->delete();
 
         // Log activity
@@ -1482,21 +1543,21 @@ class OrganizerController extends Controller
     {
         // Get the currently logged in organizer
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         // Get the pageant details
         $pageant = Pageant::findOrFail($id);
-            
+
         // Transform pageant data for frontend consumption
         $pageantData = [
             'id' => $pageant->id,
@@ -1508,20 +1569,20 @@ class OrganizerController extends Controller
             'venue' => $pageant->venue,
             'location' => $pageant->location,
             'required_judges' => $pageant->required_judges,
-            'judges' => $pageant->PageantJudges ?? []
+            'judges' => $pageant->PageantJudges ?? [],
         ];
-        
+
         // Get available tabulators for assignment
         $availableTabulators = User::where('role', 'tabulator')
             ->where('status', 'active')
             ->select('id', 'name', 'username')
             ->orderBy('name')
             ->get();
-        
+
         return Inertia::render('Organizer/JudgesManagement', [
             'pageant' => $pageantData,
             'pageantId' => $pageant->id,
-            'availableTabulators' => $availableTabulators
+            'availableTabulators' => $availableTabulators,
         ]);
     }
 
@@ -1532,7 +1593,7 @@ class OrganizerController extends Controller
     {
         return Inertia::render('Organizer/CreatePageant');
     }
-    
+
     /**
      * Store a newly created pageant (submitted for approval)
      */
@@ -1548,7 +1609,7 @@ class OrganizerController extends Controller
                 'location' => 'nullable|string|max:255',
                 'scoring_system' => 'required|string|in:percentage,1-10,1-5,points',
             ]);
-            
+
             // Create pageant with Pending_Approval status
             $pageant = Pageant::create([
                 'name' => $validated['name'],
@@ -1561,10 +1622,10 @@ class OrganizerController extends Controller
                 'created_by' => Auth::id(),
                 'scoring_system' => $validated['scoring_system'],
             ]);
-            
+
             // Attach the organizer who created it
             $pageant->organizers()->attach(Auth::id());
-            
+
             // Log the action
             $this->auditLogService->log(
                 'PAGEANT_CREATED',
@@ -1572,13 +1633,13 @@ class OrganizerController extends Controller
                 $pageant->id,
                 "Created pageant '{$pageant->name}' for approval"
             );
-            
+
             return redirect()->route('organizer.dashboard')
                 ->with('success', "Pageant '{$pageant->name}' has been submitted for approval!");
-            
+
         } catch (\Exception $e) {
-            Log::error('Error creating pageant for approval: ' . $e->getMessage());
-            
+            Log::error('Error creating pageant for approval: '.$e->getMessage());
+
             return back()
                 ->withErrors(['error' => 'There was an error submitting your pageant. Please try again.'])
                 ->withInput();
@@ -1591,39 +1652,39 @@ class OrganizerController extends Controller
     public function togglePageantStatus(Request $request, $id)
     {
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         $pageant = Pageant::findOrFail($id);
         $validated = $request->validate([
-            'action' => 'required|in:set_draft,set_final'
+            'action' => 'required|in:set_draft,set_final',
         ]);
-        
+
         if ($validated['action'] === 'set_final') {
-            if (!$pageant->isDraft()) {
+            if (! $pageant->isDraft()) {
                 return redirect()->back()
                     ->with('error', 'Only draft pageants can be finalized');
             }
             $pageant->setFinal($organizer->id);
             $message = 'Pageant has been finalized and locked for editing';
         } else {
-            if (!($pageant->isSetup() || $pageant->isLocked())) {
+            if (! ($pageant->isSetup() || $pageant->isLocked())) {
                 return redirect()->back()
                     ->with('error', 'Only setup/locked pageants can be set to draft');
             }
             $pageant->setDraft();
             $message = 'Pageant has been set to draft and unlocked for editing';
         }
-        
+
         // Log the action
         $this->auditLogService->log(
             'PAGEANT_STATUS_CHANGED',
@@ -1631,7 +1692,7 @@ class OrganizerController extends Controller
             $pageant->id,
             "Organizer {$organizer->name} changed pageant '{$pageant->name}' status via toggle: {$validated['action']}"
         );
-        
+
         return redirect()->back()
             ->with('success', $message);
     }
@@ -1642,32 +1703,32 @@ class OrganizerController extends Controller
     public function lockPageant(Request $request, $id)
     {
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         $pageant = Pageant::findOrFail($id);
-        
+
         if ($pageant->isLocked()) {
             return redirect()->back()
                 ->with('error', 'Pageant is already locked');
         }
-        
-        if (!in_array($pageant->status, ['Draft', 'Setup'])) {
+
+        if (! in_array($pageant->status, ['Draft', 'Setup'])) {
             return redirect()->back()
                 ->with('error', 'Only draft or setup pageants can be locked');
         }
-        
+
         $pageant->lockConfiguration($organizer->id);
-        
+
         // Log the action
         $this->auditLogService->log(
             'PAGEANT_LOCKED',
@@ -1675,7 +1736,7 @@ class OrganizerController extends Controller
             $pageant->id,
             "Organizer {$organizer->name} locked pageant '{$pageant->name}' configuration"
         );
-        
+
         return redirect()->back()
             ->with('success', 'Pageant configuration has been locked');
     }
@@ -1686,27 +1747,27 @@ class OrganizerController extends Controller
     public function unlockPageant(Request $request, $id)
     {
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         $pageant = Pageant::findOrFail($id);
-        
-        if (!$pageant->isLocked()) {
+
+        if (! $pageant->isLocked()) {
             return redirect()->back()
                 ->with('error', 'Pageant is not locked');
         }
-        
+
         $pageant->unlockConfiguration();
-        
+
         // Log the action
         $this->auditLogService->log(
             'PAGEANT_UNLOCKED',
@@ -1714,7 +1775,7 @@ class OrganizerController extends Controller
             $pageant->id,
             "Organizer {$organizer->name} unlocked pageant '{$pageant->name}' configuration"
         );
-        
+
         return redirect()->back()
             ->with('success', 'Pageant configuration has been unlocked');
     }
@@ -1725,63 +1786,63 @@ class OrganizerController extends Controller
     public function updatePageantStatus(Request $request, $id)
     {
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $id)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             return redirect()->route('organizer.my-pageants')
                 ->with('error', 'You do not have access to this pageant');
         }
-        
+
         $pageant = Pageant::findOrFail($id);
-        
+
         // Validate the status change request
         $validated = $request->validate([
             'status' => 'required|in:Draft,Setup,Active,Completed,Unlocked_For_Edit',
         ]);
-        
+
         $newStatus = $validated['status'];
         $oldStatus = $pageant->status;
-        
+
         // Check if pageant date has elapsed and should be auto-completed
         $pageantDate = $pageant->start_date ? $pageant->start_date->startOfDay() : null;
         $today = now()->startOfDay();
         $isDateElapsed = $pageantDate && $pageantDate < $today;
-        
+
         // If pageant date has elapsed and it's not completed, suggest completion
-        if ($isDateElapsed && !in_array($oldStatus, ['Completed', 'Unlocked_For_Edit'])) {
+        if ($isDateElapsed && ! in_array($oldStatus, ['Completed', 'Unlocked_For_Edit'])) {
             if ($newStatus !== 'Completed') {
                 return redirect()->back()
                     ->with('warning', 'This pageant\'s date has elapsed. It should be marked as completed.');
             }
         }
-        
+
         // Prevent invalid status transitions
         if ($oldStatus === $newStatus) {
             return redirect()->back()
                 ->with('error', 'Pageant is already in this status');
         }
-        
+
         // Check if the status transition is allowed
-        if (!$this->isValidStatusTransition($oldStatus, $newStatus)) {
+        if (! $this->isValidStatusTransition($oldStatus, $newStatus)) {
             $user = Auth::user();
             $errorMessage = "Cannot change status from {$oldStatus} to {$newStatus}";
-            
+
             // Add specific error messages for common issues
             if ($oldStatus === 'Completed' && $user->role !== 'admin') {
                 $errorMessage .= '. Only administrators can modify completed pageants.';
             } elseif ($newStatus === 'Unlocked_For_Edit' && $user->role !== 'admin') {
                 $errorMessage .= '. Only administrators can unlock pageants for editing.';
             }
-            
+
             return redirect()->back()
                 ->with('error', $errorMessage);
         }
-        
+
         // Special handling for certain status changes
         if ($newStatus === 'Setup') {
             // Moving to Setup should lock the pageant
@@ -1793,7 +1854,7 @@ class OrganizerController extends Controller
             // Regular status update
             $pageant->update(['status' => $newStatus]);
         }
-        
+
         // Log the action
         $this->auditLogService->log(
             'PAGEANT_STATUS_CHANGED',
@@ -1801,55 +1862,56 @@ class OrganizerController extends Controller
             $pageant->id,
             "Organizer {$organizer->name} changed pageant '{$pageant->name}' status from '{$oldStatus}' to '{$newStatus}'"
         );
-        
+
         return redirect()->back()
             ->with('success', "Pageant status changed from '{$oldStatus}' to '{$newStatus}'");
     }
-    
+
     /**
      * Store a new contestant for a specific pageant
      */
-    public function storeContestant(Request $request, $id)
+    public function storeContestant(Request $request, $pageantId)
     {
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
-            ->where('pageant_id', $id)
+            ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
-            return response()->json(['error' => 'You do not have access to this pageant'], 403);
+
+        if (! $hasAccess) {
+            abort(403, 'You do not have access to this pageant');
         }
-        
-        $pageant = Pageant::findOrFail($id);
-        
+
+        $pageant = Pageant::findOrFail($pageantId);
+
         // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
-            return response()->json(['error' => 'This pageant cannot be edited in its current status'], 403);
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+            abort(403, 'This pageant cannot be edited in its current status');
         }
-        
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'number' => 'required|string|max:10|unique:contestants,number,NULL,id,pageant_id,' . $id,
+            'number' => 'required|string|max:10|unique:contestants,number,NULL,id,pageant_id,'.$pageantId,
             'age' => 'required|integer|min:16|max:35',
             'origin' => 'required|string|max:255',
             'bio' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
-        
-        // Handle photo upload if provided
+
+        // Handle legacy single photo upload if provided
         $photoPath = null;
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
-            $photoName = 'contestant_' . $id . '_' . time() . '.' . $photo->getClientOriginalExtension();
+            $photoName = 'contestant_'.$pageantId.'_'.time().'.'.$photo->getClientOriginalExtension();
             $photo->storeAs('public/contestants', $photoName);
-            $photoPath = '/storage/contestants/' . $photoName;
+            $photoPath = '/storage/contestants/'.$photoName;
         }
-        
+
         $contestant = Contestant::create([
-            'pageant_id' => $id,
+            'pageant_id' => $pageantId,
             'name' => $validated['name'],
             'number' => $validated['number'],
             'age' => $validated['age'],
@@ -1858,7 +1920,26 @@ class OrganizerController extends Controller
             'photo' => $photoPath,
             'active' => true,
         ]);
-        
+
+        // Handle multiple image uploads if provided
+        if ($request->hasFile('images')) {
+            $images = $request->file('images');
+            $displayOrder = 0;
+
+            foreach ($images as $index => $image) {
+                $imageName = 'contestant_'.$contestant->id.'_'.time().'_'.$index.'.'.$image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('contestants', $imageName, 'public');
+
+                // Create contestant image record with explicit contestant_id
+                $contestant->images()->create([
+                    'contestant_id' => $contestant->id, // Explicit contestant ID
+                    'image_path' => $imagePath,
+                    'is_primary' => $index === 0, // First image is primary
+                    'display_order' => $displayOrder++,
+                ]);
+            }
+        }
+
         // Log the action
         $this->auditLogService->log(
             'CONTESTANT_CREATED',
@@ -1866,66 +1947,97 @@ class OrganizerController extends Controller
             $contestant->id,
             "Created contestant '{$contestant->name}' for pageant '{$pageant->name}'"
         );
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Contestant added successfully',
-            'contestant' => [
-                'id' => $contestant->id,
-                'number' => $contestant->number,
-                'name' => $contestant->name,
-                'age' => $contestant->age,
-                'origin' => $contestant->origin,
-                'photo' => $contestant->photo,
-                'bio' => $contestant->bio,
-            ]
-        ]);
+
+        return redirect()->back()->with('success', 'Contestant added successfully');
     }
-    
+
     /**
      * Update a contestant for a specific pageant
      */
-    public function updateContestant(Request $request, $id, $contestantId)
+    public function updateContestant(Request $request, $pageantId, $contestantId)
     {
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
-            ->where('pageant_id', $id)
+            ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
-            return response()->json(['error' => 'You do not have access to this pageant'], 403);
+
+        if (! $hasAccess) {
+            abort(403, 'You do not have access to this pageant');
         }
-        
-        $pageant = Pageant::findOrFail($id);
-        $contestant = Contestant::where('pageant_id', $id)->findOrFail($contestantId);
-        
+
+        $pageant = Pageant::findOrFail($pageantId);
+        $contestant = Contestant::where('pageant_id', $pageantId)->findOrFail($contestantId);
+
         // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
-            return response()->json(['error' => 'This pageant cannot be edited in its current status'], 403);
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+            abort(403, 'This pageant cannot be edited in its current status');
         }
-        
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'number' => 'required|string|max:10|unique:contestants,number,' . $contestantId . ',id,pageant_id,' . $id,
+            'number' => 'required|string|max:10|unique:contestants,number,'.$contestantId.',id,pageant_id,'.$pageantId,
             'age' => 'required|integer|min:16|max:35',
             'origin' => 'required|string|max:255',
             'bio' => 'nullable|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'contestant_id' => 'nullable|integer', // For frontend validation
         ]);
-        
-        // Handle photo upload if provided
+
+        // Validate contestant ID if provided (extra security)
+        if ($request->has('contestant_id') && $request->contestant_id != $contestantId) {
+            Log::warning('Contestant ID mismatch in update request', [
+                'expected' => $contestantId,
+                'provided' => $request->contestant_id,
+                'user_id' => Auth::id(),
+            ]);
+            abort(400, 'Contestant ID mismatch');
+        }
+
+        // Handle legacy single photo upload if provided
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
-            $photoName = 'contestant_' . $id . '_' . time() . '.' . $photo->getClientOriginalExtension();
+            $photoName = 'contestant_'.$pageantId.'_'.time().'.'.$photo->getClientOriginalExtension();
             $photo->storeAs('public/contestants', $photoName);
-            $validated['photo'] = '/storage/contestants/' . $photoName;
+            $validated['photo'] = '/storage/contestants/'.$photoName;
         }
-        
+
+        // Remove contestant_id from validated data before update
+        unset($validated['contestant_id']);
+
         $contestant->update($validated);
-        
+
+        // Handle multiple image uploads if provided
+        if ($request->hasFile('images')) {
+            $images = $request->file('images');
+
+            // Get the current highest display order for this contestant
+            $maxDisplayOrder = $contestant->images()
+                ->where('contestant_id', $contestant->id)
+                ->max('display_order') ?? -1;
+
+            $displayOrder = $maxDisplayOrder + 1;
+
+            foreach ($images as $index => $image) {
+                $imageName = 'contestant_'.$contestant->id.'_'.time().'_'.$index.'.'.$image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('contestants', $imageName, 'public');
+
+                // Determine if this should be primary (if no primary image exists)
+                $isPrimary = $contestant->images()->where('contestant_id', $contestant->id)->where('is_primary', true)->count() === 0 && $index === 0;
+
+                // Create contestant image record with explicit contestant_id
+                $contestant->images()->create([
+                    'contestant_id' => $contestant->id, // Explicit contestant ID
+                    'image_path' => $imagePath,
+                    'is_primary' => $isPrimary,
+                    'display_order' => $displayOrder++,
+                ]);
+            }
+        }
+
         // Log the action
         $this->auditLogService->log(
             'CONTESTANT_UPDATED',
@@ -1933,53 +2045,41 @@ class OrganizerController extends Controller
             $contestant->id,
             "Updated contestant '{$contestant->name}' for pageant '{$pageant->name}'"
         );
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Contestant updated successfully',
-            'contestant' => [
-                'id' => $contestant->id,
-                'number' => $contestant->number,
-                'name' => $contestant->name,
-                'age' => $contestant->age,
-                'origin' => $contestant->origin,
-                'photo' => $contestant->photo,
-                'bio' => $contestant->bio,
-            ]
-        ]);
+
+        return redirect()->back()->with('success', 'Contestant updated successfully');
     }
-    
+
     /**
      * Remove a contestant from a specific pageant
      */
-    public function removeContestant($id, $contestantId)
+    public function removeContestant($pageantId, $contestantId)
     {
         $organizer = Auth::user();
-        
+
         // Check if this organizer has access to this pageant
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
-            ->where('pageant_id', $id)
+            ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
-            return response()->json(['error' => 'You do not have access to this pageant'], 403);
+
+        if (! $hasAccess) {
+            abort(403, 'You do not have access to this pageant');
         }
-        
-        $pageant = Pageant::findOrFail($id);
-        $contestant = Contestant::where('pageant_id', $id)->findOrFail($contestantId);
-        
+
+        $pageant = Pageant::findOrFail($pageantId);
+        $contestant = Contestant::where('pageant_id', $pageantId)->findOrFail($contestantId);
+
         // Check if the pageant status allows editing
-        if (!($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
-            return response()->json(['error' => 'This pageant cannot be edited in its current status'], 403);
+        if (! ($pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit())) {
+            abort(403, 'This pageant cannot be edited in its current status');
         }
-        
+
         // Store contestant name for logging before deletion
         $contestantName = $contestant->name;
-        
+
         // Soft delete by setting active to false (preserve for historical data)
         $contestant->update(['active' => false]);
-        
+
         // Log the action
         $this->auditLogService->log(
             'CONTESTANT_REMOVED',
@@ -1987,11 +2087,8 @@ class OrganizerController extends Controller
             $contestant->id,
             "Removed contestant '{$contestantName}' from pageant '{$pageant->name}'"
         );
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Contestant removed successfully'
-        ]);
+
+        return redirect()->back()->with('success', 'Contestant removed successfully');
     }
 
     /**
@@ -2001,7 +2098,7 @@ class OrganizerController extends Controller
     {
         $user = Auth::user();
         $isAdmin = $user->role === 'admin';
-        
+
         // Base transitions for organizers
         $allowedTransitions = [
             'Draft' => ['Setup', 'Active'],
@@ -2010,19 +2107,19 @@ class OrganizerController extends Controller
             'Completed' => [], // Completed pageants cannot be reverted by organizers
             'Unlocked_For_Edit' => ['Completed'], // Can only go back to completed
         ];
-        
+
         // Only admins can set or modify Unlocked_For_Edit status
         if ($isAdmin) {
             $allowedTransitions['Completed'] = ['Unlocked_For_Edit'];
             // Admins can also transition any status to Unlocked_For_Edit (for emergencies)
             foreach ($allowedTransitions as $status => $transitions) {
-                if ($status !== 'Unlocked_For_Edit' && !in_array('Unlocked_For_Edit', $transitions)) {
+                if ($status !== 'Unlocked_For_Edit' && ! in_array('Unlocked_For_Edit', $transitions)) {
                     $allowedTransitions[$status][] = 'Unlocked_For_Edit';
                 }
             }
         }
-        
-        return isset($allowedTransitions[$fromStatus]) && 
+
+        return isset($allowedTransitions[$fromStatus]) &&
                in_array($toStatus, $allowedTransitions[$fromStatus]);
     }
-} 
+}

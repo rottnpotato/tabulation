@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register authorization gates/policies
+        \Illuminate\Support\Facades\Gate::policy(\App\Models\Pageant::class, \App\Policies\PageantPolicy::class);
     }
 }

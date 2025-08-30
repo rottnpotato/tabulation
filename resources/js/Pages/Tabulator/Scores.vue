@@ -85,7 +85,7 @@
           :title="`Judge Scores - ${getCurrentRoundLabel()}`"
           :contestants="contestants"
           :judges="judges"
-          :scores="scores"
+          :scores="localScores"
           :score-key="currentRound?.id.toString()"
           empty-title="No Scores Available"
           empty-message="Scores will appear here once judges start submitting their evaluations."
@@ -113,6 +113,7 @@ import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard } from 'luc
 import CustomSelect from '../../Components/CustomSelect.vue'
 import ScoreTable from '../../Components/tabulator/ScoreTable.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
+import { onMounted, onUnmounted } from 'vue'
 
 defineOptions({
   layout: TabulatorLayout
@@ -152,6 +153,25 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const localScores = ref(props.scores ? new Map(Object.entries(props.scores)) : new Map())
+
+onMounted(() => {
+  if (props.pageant) {
+    window.Echo.private(`pageant.${props.pageant.id}`)
+      .listen('ScoreUpdated', (e: any) => {
+        const { score, contestant_id, criteria_id } = e;
+        const key = `${contestant_id}-${criteria_id}`;
+        localScores.value.set(key, score);
+      });
+  }
+});
+
+onUnmounted(() => {
+    if (props.pageant) {
+        window.Echo.leave(`pageant.${props.pageant.id}`);
+    }
+});
 
 const currentRoundId = ref(props.currentRound?.id || (props.rounds[0]?.id))
 

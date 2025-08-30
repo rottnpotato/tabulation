@@ -113,18 +113,28 @@
         </div>
 
         <!-- Contestants Grid -->
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <div 
             v-for="contestant in filteredContestants" 
             :key="contestant.id" 
+            :data-contestant-id="contestant.id"
             class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group"
           >
-            <div class="relative h-64">
+            <div class="relative aspect-[4/5]">
               <img 
-                :src="contestant.photo || '/placeholder-contestant.jpg'" 
+                :src="contestant.photo || '/images/placeholders/placeholder-contestant.jpg'" 
                 :alt="contestant.name" 
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                @error="handleImageError"
+                @load="handleImageLoad"
+                loading="lazy"
               />
+              <div class="absolute inset-0 bg-gray-200 flex items-center justify-center" v-if="imageLoadingStates[contestant.id] === 'error'">
+                <div class="text-center text-gray-500">
+                  <Users class="h-8 w-8 mx-auto mb-2" />
+                  <span class="text-sm">No Image</span>
+                </div>
+              </div>
               <!-- Gradient overlay -->
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-70"></div>
               
@@ -253,6 +263,9 @@ const isDeleting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
 
+// Image loading states
+const imageLoadingStates = ref({})
+
 // Notification timeout
 let messageTimeout = null
 
@@ -373,6 +386,25 @@ const confirmDelete = async () => {
     // Keep modal open to allow retry
   } finally {
     isDeleting.value = false
+  }
+}
+
+// Image handling functions
+const handleImageError = (event) => {
+  const img = event.target
+  const contestantId = img.closest('[data-contestant-id]')?.dataset.contestantId
+  if (contestantId) {
+    imageLoadingStates.value[contestantId] = 'error'
+  }
+  // Set a fallback image
+  img.src = '/images/placeholders/placeholder-contestant.jpg'
+}
+
+const handleImageLoad = (event) => {
+  const img = event.target
+  const contestantId = img.closest('[data-contestant-id]')?.dataset.contestantId
+  if (contestantId) {
+    imageLoadingStates.value[contestantId] = 'loaded'
   }
 }
 </script> 
