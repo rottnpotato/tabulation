@@ -3,7 +3,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+         "dev": "vite",
+        "serve": "concurrently \"php artisan serve --host=0.0.0.0 --port=8000\" \"php artisan reverb:start --host=0.0.0.0 --port=8080\" \"php artisan queue:work --tries=3 --timeout=90 --sleep=3\" --names \"Laravel,Reverb,Queue\" --prefix-colors \"green,blue,yellow\"",
+        "serve:dev": "concurrently \"php artisan serve --host=0.0.0.0 --port=8000\" \"php artisan reverb:start --host=0.0.0.0 --port=8080\" \"php artisan queue:work --tries=3 --timeout=90 --sleep=3\" \"vite\" --names \"Laravel,Reverb,Queue,Vite\" --prefix-colors \"green,blue,yellow,cyan\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
@@ -11,6 +13,7 @@
         "autoprefixer": "^10.4.16",
         "axios": "^1.7.4",
         "concurrently": "^9.0.1",
+        "laravel-echo": "^2.2.0",
         "laravel-vite-plugin": "^1.2.0",
         "postcss": "^8.4.31",
         "tailwindcss": "^3.3.5",
@@ -25,7 +28,6 @@
         "chart.js": "^4.4.8",
         "html2canvas": "^1.4.1",
         "jspdf": "^3.0.1",
-        "laravel-echo": "^2.2.0",
         "lottie-web": "^5.12.2",
         "lucide-vue-next": "^0.485.0",
         "motion": "^12.6.3",

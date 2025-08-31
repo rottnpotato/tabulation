@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Pageant;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,22 +25,26 @@ Broadcast::channel('pageant.all', function ($user) {
 
 // Specific pageant channel - admins, or organizers/tabulators assigned to this pageant
 Broadcast::channel('pageant.{id}', function ($user, $id) {
-    // Admins can access all pageant channels
     if ($user->role === 'admin') {
         return true;
     }
-    
-    // Organizers and tabulators can only access their assigned pageants
-    if ($user->role === 'organizer' || $user->role === 'tabulator') {
-        $pageant = Pageant::find($id);
-        if (!$pageant) {
-            return false;
-        }
-        
-        // Check if this user is assigned to the pageant
-        return $pageant->organizers()->where('users.id', $user->id)->exists() ||
-               $pageant->tabulators()->where('users.id', $user->id)->exists();
+
+    $pageant = Pageant::find($id);
+    if (! $pageant) {
+        return false;
     }
-    
+
+    if ($user->role === 'organizer') {
+        return $pageant->organizers()->where('users.id', $user->id)->exists();
+    }
+
+    if ($user->role === 'tabulator') {
+        return $pageant->tabulators()->where('users.id', $user->id)->exists();
+    }
+
+    if ($user->role === 'judge') {
+        return $pageant->judges()->where('users.id', $user->id)->exists();
+    }
+
     return false;
-}); 
+});

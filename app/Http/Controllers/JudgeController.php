@@ -324,6 +324,148 @@ class JudgeController extends Controller
     }
 
     /**
+     * Get detailed contestant information for judges, including images and basic metadata.
+     */
+    public function contestantDetails(int $pageantId, int $contestantId)
+    {
+        $judge = Auth::user();
+        $pageant = $this->getPageantForJudge($pageantId, $judge->id);
+
+        $contestant = $pageant->contestants()->with(['images'])->findOrFail($contestantId);
+
+        $images = $contestant->images->map(function ($image) {
+            return [
+                'id' => $image->id,
+                'path' => asset($image->image_path),
+                'caption' => $image->caption,
+                'is_primary' => (bool) $image->is_primary,
+            ];
+        });
+
+        return response()->json([
+            'id' => $contestant->id,
+            'number' => $contestant->number,
+            'name' => $contestant->name,
+            'origin' => $contestant->origin,
+            'age' => $contestant->age,
+            'bio' => $contestant->bio,
+            'rank' => $contestant->rank,
+            'metadata' => $contestant->metadata,
+            'image' => $contestant->photo ? asset($contestant->photo) : asset('/images/placeholders/contestant.jpg'),
+            'images' => $images,
+            'scores' => $contestant->scores ?? [],
+        ]);
+    }
+
+    /**
+     * Compare judge's weighted scores for all contestants in the current and previous rounds.
+     */
+    public function roundComparison(Request $request, int $pageantId, int $roundId)
+    {
+        $judge = Auth::user();
+        $pageant = $this->getPageantForJudge($pageantId, $judge->id);
+
+        $request->validate([
+            'contestant_id' => 'required|exists:contestants,id',
+        ]);
+
+        $subjectContestantId = (int) $request->get('contestant_id');
+
+        $round = $pageant->rounds()->with('criteria')->findOrFail($roundId);
+        $previousRound = $pageant->rounds()
+            ->where('display_order', '<', $round->display_order)
+            ->orderByDesc('display_order')
+            ->with('criteria')
+            ->first();
+
+        $contestants = $pageant->contestants()->select(['id', 'number', 'name', 'photo'])->orderBy('number')->get();
+
+        $formatContestant = function ($c) {
+            return [
+                'id' => $c->id,
+                'number' => $c->number,
+                'name' => $c->name,
+                'image' => $c->photo ? asset($c->photo) : asset('/images/placeholders/contestant.jpg'),
+            ];
+        };
+
+        $calculateWeightedByContestant = function ($criteriaCollection, $targetRoundId) use ($judge, $pageantId) {
+            $criteriaById = $criteriaCollection->keyBy('id');
+
+            $scores = Score::where('judge_id', $judge->id)
+                ->where('pageant_id', $pageantId)
+                ->where('round_id', $targetRoundId)
+                ->get();
+
+            $grouped = $scores->groupBy('contestant_id');
+
+            $results = [];
+            foreach ($grouped as $contestantId => $scoresForContestant) {
+                $weightedSum = 0.0;
+                $weightTotal = 0.0;
+
+                foreach ($scoresForContestant as $score) {
+                    $criterion = $criteriaById->get($score->criteria_id);
+                    if (! $criterion) {
+                        continue; // skip scores not belonging to this round (safety)
+                    }
+                    $weight = (float) ($criterion->weight ?? 1);
+                    $weightedSum += ((float) $score->score) * $weight;
+                    $weightTotal += $weight;
+                }
+
+                $results[$contestantId] = $weightTotal > 0 ? round($weightedSum / $weightTotal, 2) : null;
+            }
+
+            return $results;
+        };
+
+        $currentScores = $calculateWeightedByContestant($round->criteria, $round->id);
+        $previousScores = $previousRound ? $calculateWeightedByContestant($previousRound->criteria, $previousRound->id) : [];
+
+        $buildComparison = function ($roundModel, $scoresMap) use ($contestants, $formatContestant, $subjectContestantId) {
+            if (! $roundModel) {
+                return null;
+            }
+
+            $items = $contestants->map(function ($c) use ($formatContestant, $scoresMap) {
+                $base = $formatContestant($c);
+                $base['judgeWeightedScore'] = $scoresMap[$c->id] ?? null;
+
+                return $base;
+            })->sortByDesc(function ($row) {
+                return $row['judgeWeightedScore'] ?? -INF;
+            })->values();
+
+            $position = null;
+            foreach ($items as $index => $row) {
+                if ($row['id'] === $subjectContestantId) {
+                    $position = $index + 1;
+                    break;
+                }
+            }
+
+            return [
+                'round' => [
+                    'id' => $roundModel->id,
+                    'name' => $roundModel->name,
+                ],
+                'subject' => [
+                    'contestant_id' => $subjectContestantId,
+                    'position' => $position,
+                    'score' => $scoresMap[$subjectContestantId] ?? null,
+                ],
+                'contestants' => $items,
+            ];
+        };
+
+        return response()->json([
+            'current' => $buildComparison($round, $currentScores),
+            'previous' => $previousRound ? $buildComparison($previousRound, $previousScores) : null,
+        ]);
+    }
+
+    /**
      * Get pageant data with judge access validation
      */
     private function getPageantForJudge($pageantId, $judgeId)

@@ -207,6 +207,11 @@
                           </div>
                         </div>
                       </div>
+                      
+                      <!-- Extra slot for contextual content (e.g., comparisons) -->
+                      <div class="mb-6">
+                        <slot name="extra" :contestant="contestant"></slot>
+                      </div>
                     </div>
                     
                     <!-- Action Buttons -->

@@ -48,9 +48,9 @@
       <div
         v-show="isOpen"
         :class="[
-          'absolute z-[9999] mt-2 w-full origin-top rounded-xl',
+          'absolute mt-2 w-full origin-top rounded-xl',
           'bg-white/95 backdrop-blur-md border border-gray-200/60',
-          'shadow-2xl shadow-gray-900/20 ring-1 ring-black ring-opacity-5',
+          'shadow-2xl shadow-gray-900/20 ring-1 ring-black ring-opacity-5 relative z-9999',
           dropdownPosition
         ]"
       >

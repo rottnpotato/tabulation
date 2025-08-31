@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RoundUpdated;
 use App\Models\Contestant;
 use App\Models\Criteria;
 use App\Models\Pageant;
@@ -255,15 +256,39 @@ class TabulatorController extends Controller
             ];
         });
 
-        // Get scores in the format expected by frontend: {contestant_id}-{criteria_id} => score
+        // Get aggregated scores per judge per contestant per round
+        // Calculate weighted average of all criteria scores for each judge-contestant pair
         $scoresQuery = Score::where('pageant_id', $pageantId)
             ->where('round_id', $roundId)
-            ->get();
+            ->with(['criteria'])
+            ->get()
+            ->groupBy(['contestant_id', 'judge_id']);
 
         $scores = [];
-        foreach ($scoresQuery as $score) {
-            $key = $score->contestant_id.'-'.$score->criteria_id;
-            $scores[$key] = $score->score;
+        $scoringSystem = $pageant->scoring_system ?? 'percentage';
+
+        foreach ($scoresQuery as $contestantId => $judgeScores) {
+            foreach ($judgeScores as $judgeId => $judgeScoreRecords) {
+                // Calculate weighted average for this judge's scores on this contestant
+                $totalWeightedScore = 0;
+                $totalWeight = 0;
+
+                foreach ($judgeScoreRecords as $scoreRecord) {
+                    $weight = $scoreRecord->criteria->weight ?? 1; // Default weight to 1 if not set
+                    $totalWeightedScore += $scoreRecord->score * $weight;
+                    $totalWeight += $weight;
+                }
+
+                if ($totalWeight > 0) {
+                    $averageScore = $totalWeightedScore / $totalWeight;
+
+                    // Normalize score based on scoring system
+                    $normalizedScore = $this->normalizeScore($averageScore, $scoringSystem);
+
+                    $key = $contestantId.'-'.$judgeId.'-'.$roundId;
+                    $scores[$key] = round($normalizedScore, 2);
+                }
+            }
         }
 
         return Inertia::render('Tabulator/Scores', [
@@ -378,6 +403,14 @@ class TabulatorController extends Controller
 
         $pageant->setCurrentRound($request->round_id);
 
+        // Broadcast round change
+        RoundUpdated::dispatch(
+            $round,
+            $pageant,
+            'set_current',
+            "Round '{$round->name}' is now the current round"
+        );
+
         return back()->with('success', 'Current round set to: '.$round->name);
     }
 
@@ -392,6 +425,14 @@ class TabulatorController extends Controller
         $round = $pageant->rounds()->findOrFail($roundId);
         $round->lock($tabulator->id);
 
+        // Broadcast round lock
+        RoundUpdated::dispatch(
+            $round,
+            $pageant,
+            'locked',
+            "Round '{$round->name}' has been locked for editing"
+        );
+
         return back()->with('success', 'Round "'.$round->name.'" has been locked for editing.');
     }
 
@@ -405,6 +446,14 @@ class TabulatorController extends Controller
 
         $round = $pageant->rounds()->findOrFail($roundId);
         $round->unlock();
+
+        // Broadcast round unlock
+        RoundUpdated::dispatch(
+            $round,
+            $pageant,
+            'unlocked',
+            "Round '{$round->name}' has been unlocked for editing"
+        );
 
         return back()->with('success', 'Round "'.$round->name.'" has been unlocked for editing.');
     }
@@ -447,6 +496,87 @@ class TabulatorController extends Controller
             ],
             'rounds' => $rounds,
         ]);
+    }
+
+    /**
+     * Get aggregated score for a specific judge-contestant-round combination
+     */
+    public function getAggregatedScore($pageantId, $roundId, Request $request)
+    {
+        $tabulator = Auth::user();
+
+        // Validate tabulator has access to this pageant
+        $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $request->validate([
+            'judge_id' => 'required|exists:users,id',
+            'contestant_id' => 'required|exists:contestants,id',
+        ]);
+
+        $judgeId = $request->judge_id;
+        $contestantId = $request->contestant_id;
+
+        // Get all scores for this judge-contestant-round combination
+        $scores = Score::where('pageant_id', $pageantId)
+            ->where('round_id', $roundId)
+            ->where('judge_id', $judgeId)
+            ->where('contestant_id', $contestantId)
+            ->with('criteria')
+            ->get();
+
+        if ($scores->isEmpty()) {
+            return response()->json(['aggregated_score' => null]);
+        }
+
+        // Calculate weighted average
+        $totalWeightedScore = 0;
+        $totalWeight = 0;
+
+        foreach ($scores as $score) {
+            $weight = $score->criteria->weight ?? 1;
+            $totalWeightedScore += $score->score * $weight;
+            $totalWeight += $weight;
+        }
+
+        $aggregatedScore = $totalWeight > 0 ? $totalWeightedScore / $totalWeight : null;
+
+        // Normalize score based on pageant's scoring system
+        if ($aggregatedScore !== null) {
+            $pageant = Pageant::findOrFail($pageantId);
+            $scoringSystem = $pageant->scoring_system ?? 'percentage';
+            $aggregatedScore = $this->normalizeScore($aggregatedScore, $scoringSystem);
+            $aggregatedScore = round($aggregatedScore, 2);
+        }
+
+        return response()->json(['aggregated_score' => $aggregatedScore]);
+    }
+
+    /**
+     * Normalize score based on the pageant's scoring system
+     */
+    private function normalizeScore($score, $scoringSystem)
+    {
+        switch ($scoringSystem) {
+            case 'percentage':
+                // Percentage system: ensure score is between 0-100
+                return max(0, min(100, $score));
+
+            case '1-10':
+                // 1-10 scale: ensure score is between 1-10
+                return max(1, min(10, $score));
+
+            case '1-5':
+                // 1-5 scale: ensure score is between 1-5
+                return max(1, min(5, $score));
+
+            case 'points':
+                // Points system: ensure score doesn't exceed 50
+                return max(0, min(50, $score));
+
+            default:
+                // Default to percentage system
+                return max(0, min(100, $score));
+        }
     }
 
     /**

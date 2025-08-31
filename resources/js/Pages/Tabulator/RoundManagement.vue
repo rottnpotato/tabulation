@@ -121,24 +121,27 @@
                 <button
                   v-if="pageant.current_round_id !== round.id"
                   @click="setCurrentRoundDirect(round.id)"
-                  class="text-amber-600 hover:text-amber-900 transition-colors"
+                  :disabled="actionLoading"
+                  class="text-amber-600 hover:text-amber-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Set Current
+                  {{ actionLoading ? 'Setting...' : 'Set Current' }}
                 </button>
                 
                 <button
                   v-if="!round.is_locked"
                   @click="lockRound(round.id)"
-                  class="text-red-600 hover:text-red-900 transition-colors"
+                  :disabled="actionLoading"
+                  class="text-red-600 hover:text-red-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Lock
+                  {{ actionLoading ? 'Locking...' : 'Lock' }}
                 </button>
                 <button
                   v-else
                   @click="unlockRound(round.id)"
-                  class="text-green-600 hover:text-green-900 transition-colors"
+                  :disabled="actionLoading"
+                  class="text-green-600 hover:text-green-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Unlock
+                  {{ actionLoading ? 'Unlocking...' : 'Unlock' }}
                 </button>
               </td>
             </tr>
@@ -185,16 +188,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Notification System -->
+    <NotificationSystem ref="notificationSystem" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { Circle, CheckCircle, Lock } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
+import NotificationSystem from '../../Components/NotificationSystem.vue'
 
 defineOptions({
   layout: TabulatorLayout
@@ -212,6 +219,8 @@ const props = defineProps({
 })
 
 const selectedRoundId = ref(props.pageant.current_round_id?.toString() || '')
+const notificationSystem = ref(null)
+const actionLoading = ref(false)
 
 const roundOptions = computed(() => {
   return props.rounds.map(round => ({
@@ -228,18 +237,24 @@ const lockedRoundsCount = computed(() => {
   return props.rounds.filter(round => round.is_locked).length
 })
 
-const setCurrentRound = (roundId) => {
+const setCurrentRound = (option) => {
+  // Handle both direct roundId and option object from CustomSelect
+  const roundId = typeof option === 'object' ? option.value : option
   if (!roundId) return
   
+  actionLoading.value = true
   router.post(route('tabulator.set-current-round', props.pageant.id), {
     round_id: parseInt(roundId)
   }, {
     preserveScroll: true,
     onSuccess: () => {
-      // Success message will be shown via flash message
+      // Success message will be shown via flash message and real-time event
     },
     onError: (errors) => {
       console.error('Error setting current round:', errors)
+    },
+    onFinish: () => {
+      actionLoading.value = false
     }
   })
 }
@@ -250,26 +265,95 @@ const setCurrentRoundDirect = (roundId) => {
 }
 
 const lockRound = (roundId) => {
+  actionLoading.value = true
   router.post(route('tabulator.rounds.lock', [props.pageant.id, roundId]), {}, {
     preserveScroll: true,
     onSuccess: () => {
-      // Success message will be shown via flash message
+      // Success message will be shown via flash message and real-time event
     },
     onError: (errors) => {
       console.error('Error locking round:', errors)
+    },
+    onFinish: () => {
+      actionLoading.value = false
     }
   })
 }
 
 const unlockRound = (roundId) => {
+  actionLoading.value = true
   router.post(route('tabulator.rounds.unlock', [props.pageant.id, roundId]), {}, {
     preserveScroll: true,
     onSuccess: () => {
-      // Success message will be shown via flash message
+      // Success message will be shown via flash message and real-time event
     },
     onError: (errors) => {
       console.error('Error unlocking round:', errors)
+    },
+    onFinish: () => {
+      actionLoading.value = false
     }
   })
+}
+
+// Real-time event listeners
+onMounted(() => {
+  if (props.pageant) {
+    console.log('Subscribing to pageant channel:', `pageant.${props.pageant.id}`)
+    // Listen for round updates to show confirmation notifications
+    window.Echo.private(`pageant.${props.pageant.id}`)
+      .listen('RoundUpdated', (e) => {
+        console.log('RoundUpdated event received:', e)
+        handleRoundUpdate(e)
+      })
+  }
+})
+
+onUnmounted(() => {
+  if (props.pageant) {
+    window.Echo.leave(`pageant.${props.pageant.id}`)
+  }
+})
+
+const handleRoundUpdate = (event) => {
+  const { action, round_name, message } = event
+
+  // Show confirmation notifications for tabulator actions
+  if (notificationSystem.value) {
+    switch (action) {
+      case 'set_current':
+        notificationSystem.value.success(`Current round set to: ${round_name}`, {
+          title: 'Round Changed',
+          timeout: 4000
+        })
+        // Refresh the page data to update UI
+        setTimeout(() => {
+          router.reload({ only: ['pageant', 'rounds'] })
+        }, 1000)
+        break
+      
+      case 'locked':
+        notificationSystem.value.warning(`Round "${round_name}" has been locked`, {
+          title: 'Round Locked',
+          timeout: 4000
+        })
+        // Refresh the page data to update lock status
+        setTimeout(() => {
+          router.reload({ only: ['rounds'] })
+        }, 1000)
+        break
+      
+      case 'unlocked':
+        notificationSystem.value.success(`Round "${round_name}" has been unlocked`, {
+          title: 'Round Unlocked',
+          timeout: 4000
+        })
+        // Refresh the page data to update lock status
+        setTimeout(() => {
+          router.reload({ only: ['rounds'] })
+        }, 1000)
+        break
+    }
+  }
 }
 </script>

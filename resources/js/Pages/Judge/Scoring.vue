@@ -1,5 +1,13 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8 relative">
+    <!-- Real-time Loading Overlay -->
+    <div v-if="realtimeLoading" class="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-40">
+      <div class="bg-white rounded-lg shadow-xl p-6 flex items-center space-x-3">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-600"></div>
+        <span class="text-gray-900 font-medium">Updating round information...</span>
+      </div>
+    </div>
+
     <!-- Page Header with Round Selection -->
     <div class="bg-gradient-to-r from-amber-500 to-amber-600 shadow-md rounded-xl overflow-hidden">
       <div class="p-6 md:p-8">
@@ -9,7 +17,7 @@
             <p class="text-amber-100 mt-1" v-if="pageant">{{ pageant.name }}</p>
             <div v-if="currentRound" class="flex items-center gap-2 mt-1">
               <p class="text-amber-200 text-sm">{{ currentRound.name }}</p>
-              <div v-if="pageant.current_round_id === currentRound.id" class="inline-flex items-center px-2 py-0.5 bg-amber-400 text-amber-900 text-xs font-medium rounded-full">
+              <div v-if="pageant.current_round_id === currentRound.id && !currentRound.is_locked" class="inline-flex items-center px-2 py-0.5 bg-amber-400 text-amber-900 text-xs font-medium rounded-full">
                 Current Round
               </div>
               <div v-if="currentRound.is_locked" class="inline-flex items-center px-2 py-0.5 bg-red-500 text-white text-xs font-medium rounded-full">
@@ -17,7 +25,7 @@
               </div>
             </div>
           </div>
-          <div v-if="rounds.length > 0" class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
+          <div v-if="rounds.length > 0" class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20 relative">
             <span class="text-amber-50 font-medium px-3">Switch Round:</span>
             <div class="min-w-[160px]">
               <CustomSelect
@@ -131,7 +139,7 @@
       </div>
       <div v-for="contestant in contestants" :key="contestant.id" class="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
         <!-- Contestant Header -->
-        <div class="p-6 border-b border-gray-100">
+        <div class="p-6 border-b border-gray-100 cursor-pointer hover:bg-amber-50/40 transition-colors" @click="openContestantDetails(contestant)">
           <div class="flex flex-col sm:flex-row sm:items-center gap-4">
             <div class="relative">
               <img
@@ -245,17 +253,74 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Contestant Details Modal -->
+    <ContestantDetailModal
+      v-if="showDetailModal"
+      :show="showDetailModal"
+      :contestant="selectedContestant"
+      @close="showDetailModal = false"
+    >
+      <template #extra>
+        <div class="bg-white rounded-xl border border-amber-100 p-4">
+          <div class="flex items-center mb-3">
+            <GitCompare class="h-5 w-5 text-amber-600 mr-2" />
+            <h4 class="text-sm font-semibold text-gray-800">Round Comparison</h4>
+          </div>
+          <div v-if="detailLoading" class="text-sm text-gray-500">Loading comparison...</div>
+          <div v-else>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-gray-200 p-3">
+                <div class="text-xs text-gray-500 mb-1">Current Round</div>
+                <div class="text-sm font-medium text-gray-900">{{ currentRound?.name }}</div>
+                <div class="mt-2 text-sm" v-if="comparison.current">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Your Score</span>
+                    <span class="font-semibold">{{ formatScore(comparison.current.subject.score) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between mt-1">
+                    <span class="text-gray-600">Position</span>
+                    <span class="font-semibold">{{ comparison.current.subject.position ? `#${comparison.current.subject.position}` : '-' }}</span>
+                  </div>
+                </div>
+                <div v-else class="text-xs text-gray-500">No scores yet.</div>
+              </div>
+              <div class="rounded-lg border border-gray-200 p-3">
+                <div class="text-xs text-gray-500 mb-1">Previous Round</div>
+                <div class="text-sm font-medium text-gray-900">{{ comparison.previous?.round?.name || 'None' }}</div>
+                <div class="mt-2 text-sm" v-if="comparison.previous">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Your Score</span>
+                    <span class="font-semibold">{{ formatScore(comparison.previous.subject.score) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between mt-1">
+                    <span class="text-gray-600">Position</span>
+                    <span class="font-semibold">{{ comparison.previous.subject.position ? `#${comparison.previous.subject.position}` : '-' }}</span>
+                  </div>
+                </div>
+                <div v-else class="text-xs text-gray-500">No previous round.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </ContestantDetailModal>
+
+    <!-- Notification System -->
+    <NotificationSystem ref="notificationSystem" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Star, Save, CheckCircle, AlertCircle } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Star, Save, CheckCircle, AlertCircle, GitCompare } from 'lucide-vue-next'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import CustomSelect from '../../Components/CustomSelect.vue'
 import '../../components/skeletons/skeleton.css'
 import JudgeLayout from '../../Layouts/JudgeLayout.vue'
+import ContestantDetailModal from '../../Components/ContestantDetailModal.vue'
+import NotificationSystem from '../../Components/NotificationSystem.vue'
 import axios from 'axios'
 
 defineOptions({
@@ -306,6 +371,12 @@ const showConfirmation = ref(false)
 const submittedContestantId = ref(null)
 const isLoading = ref(false)
 const submitLoading = ref({})
+const showDetailModal = ref(false)
+const selectedContestant = ref(null)
+const detailLoading = ref(false)
+const comparison = ref({ current: null, previous: null })
+const notificationSystem = ref(null)
+const realtimeLoading = ref(false)
 
 const roundOptions = computed(() => {
   return props.rounds.map(round => ({
@@ -317,8 +388,8 @@ const roundOptions = computed(() => {
 const scores = ref({ ...props.existingScores })
 const notes = ref({ ...props.existingNotes })
 
-const handleRoundChange = (value) => {
-  const roundId = parseInt(value)
+const handleRoundChange = (option) => {
+  const roundId = parseInt(option.value)
   router.visit(route('judge.scoring', [props.pageant.id, roundId]))
 }
 
@@ -390,6 +461,14 @@ const submitScores = async (contestantId) => {
     if (response.data.success) {
       submittedContestantId.value = contestantId
       showConfirmation.value = true
+      
+      // Show real-time update notification
+      if (notificationSystem.value) {
+        notificationSystem.value.success('Scores submitted successfully! Other judges and tabulators will see your update in real-time.', {
+          title: 'Scores Submitted',
+          timeout: 5000
+        })
+      }
     }
   } catch (error) {
     console.error('Error submitting scores:', error)
@@ -404,5 +483,123 @@ const getSubmittedContestantName = () => {
   if (!submittedContestantId.value) return ''
   const contestant = props.contestants.find(c => c.id === submittedContestantId.value)
   return contestant?.name || ''
+}
+
+const openContestantDetails = async (contestant) => {
+  try {
+    detailLoading.value = true
+    showDetailModal.value = true
+    // Fetch full contestant details
+    const detailRes = await axios.get(route('judge.contestants.details', [props.pageant.id, contestant.id]))
+    selectedContestant.value = detailRes.data
+    // Fetch comparison for current vs previous round
+    const compRes = await axios.get(route('judge.rounds.comparison', [props.pageant.id, props.currentRound.id]), {
+      params: { contestant_id: contestant.id }
+    })
+    comparison.value = compRes.data
+  } catch (e) {
+    // Fallback to minimal data
+    selectedContestant.value = contestant
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+const formatScore = (val) => {
+  if (val === null || val === undefined) return '-'
+  const num = Number(val)
+  return isNaN(num) ? '-' : num.toFixed(2)
+}
+
+// Real-time event listeners
+onMounted(() => {
+  if (props.pageant) {
+    console.log('Judge subscribing to pageant channel:', `pageant.${props.pageant.id}`)
+    // Listen for round updates
+    window.Echo.private(`pageant.${props.pageant.id}`)
+      .listen('RoundUpdated', (e) => {
+        console.log('Judge received RoundUpdated event:', e)
+        handleRoundUpdate(e)
+      })
+  }
+})
+
+onUnmounted(() => {
+  if (props.pageant) {
+    window.Echo.leave(`pageant.${props.pageant.id}`)
+  }
+})
+
+const handleRoundUpdate = (event) => {
+  console.log('RoundUpdated event received:', event)
+  const { action, round_name, is_locked, is_current, message } = event
+
+  // Show notification based on action
+  if (notificationSystem.value) {
+    switch (action) {
+      case 'set_current':
+        if (is_current) {
+          notificationSystem.value.info(`Current round changed to: ${round_name}`, {
+            title: 'Round Changed',
+            timeout: 6000
+          })
+          // Show loading state and use Inertia visit to refresh data
+          realtimeLoading.value = true
+          setTimeout(() => {
+            router.visit(route('judge.scoring', [props.pageant.id, event.round_id]), {
+              preserveState: false,
+              preserveScroll: true,
+              only: ['currentRound', 'rounds', 'contestants', 'criteria', 'existingScores', 'existingNotes', 'canEditScores'],
+              onFinish: () => {
+                realtimeLoading.value = false
+              }
+            })
+          }, 1000)
+        }
+        break
+      
+      case 'locked':
+        notificationSystem.value.warning(`Round "${round_name}" has been locked for editing`, {
+          title: 'Round Locked',
+          timeout: 8000
+        })
+        // If this is the current round being viewed, refresh to update UI
+        if (props.currentRound && props.currentRound.id === event.round_id) {
+          realtimeLoading.value = true
+          setTimeout(() => {
+            router.visit(route('judge.scoring', [props.pageant.id, props.currentRound.id]), {
+              preserveState: false,
+              preserveScroll: true,
+              only: ['currentRound', 'rounds', 'canEditScores'],
+              onFinish: () => {
+                realtimeLoading.value = false
+              }
+            })
+          }, 2000)
+        }
+        break
+      
+      case 'unlocked':
+        notificationSystem.value.success(`Round "${round_name}" has been unlocked for editing`, {
+          title: 'Round Unlocked',
+          timeout: 6000
+        })
+        // If this is the current round being viewed, refresh to update UI
+        if (props.currentRound && props.currentRound.id === event.round_id) {
+          realtimeLoading.value = true
+          setTimeout(() => {
+            router.visit(route('judge.scoring', [props.pageant.id, props.currentRound.id]), {
+              preserveState: false,
+              preserveScroll: true,
+              only: ['currentRound', 'rounds', 'canEditScores'],
+              onFinish: () => {
+                realtimeLoading.value = false
+              }
+            })
+          }, 2000)
+        }
+        break
+    }
+  }
 }
 </script>

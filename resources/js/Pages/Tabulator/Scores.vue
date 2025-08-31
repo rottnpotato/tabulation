@@ -50,11 +50,10 @@
           <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <h2 class="text-lg font-semibold text-gray-900">Current Round:</h2>
             <div class="w-full sm:w-48">
-              <CustomSelect 
+              <CustomSelect
                 v-model="currentRoundId"
                 :options="roundOptions"
                 placeholder="Select Round"
-                @change="handleRoundChange"
               />
             </div>
           </div>
@@ -102,17 +101,21 @@
         </ScoreTable>
       </div>
     </div>
+
+    <!-- Notification System -->
+    <NotificationSystem ref="notificationSystem" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
 import ScoreTable from '../../Components/tabulator/ScoreTable.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
+import NotificationSystem from '../../Components/NotificationSystem.vue'
 import { onMounted, onUnmounted } from 'vue'
 
 defineOptions({
@@ -155,14 +158,62 @@ interface Props {
 const props = defineProps<Props>()
 
 const localScores = ref(props.scores ? new Map(Object.entries(props.scores)) : new Map())
+const notificationSystem = ref<any>(null)
+
+// Watch for changes in props.scores and update localScores accordingly
+watch(() => props.scores, (newScores) => {
+  localScores.value = newScores ? new Map(Object.entries(newScores)) : new Map()
+}, { immediate: true })
 
 onMounted(() => {
   if (props.pageant) {
+    console.log('Subscribing to pageant channel:', `pageant.${props.pageant.id}`)
     window.Echo.private(`pageant.${props.pageant.id}`)
-      .listen('ScoreUpdated', (e: any) => {
-        const { score, contestant_id, criteria_id } = e;
-        const key = `${contestant_id}-${criteria_id}`;
-        localScores.value.set(key, score);
+      .listen('ScoreUpdated', async (e: any) => {
+        console.log('ScoreUpdated event received:', e)
+        // When a score is updated, we need to recalculate the aggregated judge score
+        // for this contestant-judge-round combination
+        const { contestant_id, judge_id, round_id } = e;
+
+        console.log('Current round ID:', currentRoundId.value, 'Event round ID:', round_id)
+        if (round_id == currentRoundId.value) {
+          // Fetch just the updated aggregated score for this specific judge-contestant-round
+          try {
+            const response = await fetch(route('tabulator.scores.aggregated', [props.pageant?.id, round_id]) + `?judge_id=${judge_id}&contestant_id=${contestant_id}`, {
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.aggregated_score !== undefined && data.aggregated_score !== null) {
+                const key = `${contestant_id}-${judge_id}-${round_id}`;
+                localScores.value.set(key, data.aggregated_score);
+                console.log(`Score updated for contestant ${contestant_id} by judge ${judge_id}: ${data.aggregated_score}`);
+                
+                // Show notification
+                if (notificationSystem.value) {
+                  notificationSystem.value.success(`Score updated in real-time: ${data.aggregated_score}`, {
+                    title: 'Live Score Update',
+                    timeout: 3000
+                  })
+                }
+              }
+            } else {
+              console.warn(`Failed to fetch aggregated score: HTTP ${response.status}`);
+              // Fallback: refresh entire scores data
+              refreshData();
+            }
+          } catch (error) {
+            console.error('Network error while refreshing aggregated score:', error);
+            // Add a small delay before fallback to avoid rapid requests
+            setTimeout(() => {
+              refreshData();
+            }, 1000);
+          }
+        }
       });
   }
 });
@@ -182,14 +233,19 @@ const roundOptions = computed(() => {
   }))
 })
 
+// Watch for round changes and navigate
+watch(currentRoundId, (newRoundId, oldRoundId) => {
+  if (newRoundId && newRoundId !== oldRoundId && props.pageant) {
+    const roundId = parseInt(newRoundId.toString())
+    if (!isNaN(roundId)) {
+      router.visit(route('tabulator.scores', { pageantId: props.pageant.id, roundId }))
+    }
+  }
+})
+
 const getCurrentRoundLabel = () => {
   const selectedRound = props.rounds.find(r => r.id.toString() === currentRoundId.value?.toString())
   return selectedRound ? selectedRound.name : 'Unknown Round'
-}
-
-const handleRoundChange = (value: string) => {
-  const roundId = parseInt(value)
-  router.visit(route('tabulator.scores', { pageantId: props.pageant?.id, roundId }))
 }
 
 const refreshData = () => {

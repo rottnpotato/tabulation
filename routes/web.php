@@ -9,6 +9,7 @@ use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\TabulatorController;
 use App\Http\Controllers\UserManagementController;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+
+// Broadcasting authentication routes
+Broadcast::routes();
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -178,6 +182,8 @@ Route::middleware(['auth', 'verified', 'check_role:judge'])->prefix('judge')->gr
     Route::get('/{pageantId}/scoring/{roundId?}', [JudgeController::class, 'scoring'])->name('judge.scoring');
     Route::post('/{pageantId}/rounds/{roundId}/scores', [JudgeController::class, 'submitScores'])->name('judge.scores.submit');
     Route::get('/{pageantId}/scores-summary', [JudgeController::class, 'scoresSummary'])->name('judge.scores.summary');
+    Route::get('/{pageantId}/contestants/{contestantId}', [JudgeController::class, 'contestantDetails'])->name('judge.contestants.details');
+    Route::get('/{pageantId}/rounds/{roundId}/comparison', [JudgeController::class, 'roundComparison'])->name('judge.rounds.comparison');
 });
 
 // Tabulator Routes
@@ -189,6 +195,7 @@ Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulat
     Route::post('/{pageantId}/judges/{judgeId}/toggle-status', [TabulatorController::class, 'toggleJudgeStatus'])->name('tabulator.judges.toggle-status');
     Route::post('/{pageantId}/judges/{judgeId}/reset-password', [TabulatorController::class, 'resetJudgePassword'])->name('tabulator.judges.reset-password');
     Route::get('/{pageantId}/scores/{roundId?}', [TabulatorController::class, 'scores'])->name('tabulator.scores');
+    Route::get('/{pageantId}/rounds/{roundId}/scores/aggregated', [TabulatorController::class, 'getAggregatedScore'])->name('tabulator.scores.aggregated');
     Route::get('/{pageantId}/results', [TabulatorController::class, 'results'])->name('tabulator.results');
     Route::get('/{pageantId}/print', [TabulatorController::class, 'print'])->name('tabulator.print');
 
