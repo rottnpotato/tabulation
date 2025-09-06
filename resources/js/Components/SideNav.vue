@@ -69,7 +69,7 @@
           <Link
             v-if="!item.children"
             :href="item.href"
-            @click="openSubmenus = {}"
+            @click="handleNavigation(item)"
             class="flex items-center px-3 py-3 rounded-md text-sm font-medium transition-all duration-300 group relative overflow-visible"
             :class="[
               isActiveLink(item) ? activeClass + ' text-white' : 'text-gray-600 hover:bg-gray-100'
@@ -222,7 +222,7 @@
 
     <!-- Main content -->
     <div
-      class="flex-1 transition-all duration-300"
+      class="flex-1 duration-300 transition-[margin-left]"
       :class="{ 
         'lg:ml-64': isOpen, 
         'lg:ml-20': !isOpen,
@@ -230,7 +230,7 @@
       }"
     >
       <!-- Wrap the slot in a div to ensure it has a proper root element -->
-      <div class="h-full pt-16 lg:pt-0">
+      <div class="h-full pt-16 lg:pt-0 transition-opacity duration-200" :class="{ 'opacity-95': isNavigating }">
         <slot></slot>
       </div>
     </div>
@@ -238,7 +238,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import { Link } from '@inertiajs/vue3'
 import {
@@ -280,6 +280,8 @@ const page = usePage()
 const isOpen = ref(window.innerWidth >= 1024) // Sidebar open/closed
 const isMobile = ref(window.innerWidth < 1024) // Mobile view active
 const openSubmenus = ref({}) // Tracks which parent submenus are open { [itemName]: boolean }
+const isNavigating = ref(false) // Loading state during navigation
+const navigationTimeout = ref(null) // Timeout for navigation debouncing
 
 // --- Computed Properties ---
 const componentPath = computed(() => {
@@ -346,7 +348,7 @@ const getCurrentPageantId = computed(() => {
   const currentUrl = page.url || '';
   // Match both dashboard/pageantId and pageantId/action patterns
   const dashboardMatch = currentUrl.match(/\/tabulator\/dashboard\/(\d+)/);
-  const actionMatch = currentUrl.match(/\/tabulator\/(\d+)\/(?:judges|scores|results|print)/);
+  const actionMatch = currentUrl.match(/\/tabulator\/(\d+)\/(?:judges|scores|results|print|rounds)/);
   
   if (dashboardMatch) {
     return dashboardMatch[1];
@@ -354,6 +356,20 @@ const getCurrentPageantId = computed(() => {
     return actionMatch[1];
   }
   
+  return null;
+})
+
+// Helper function to extract pageantId from current URL for judge users
+const getCurrentJudgePageantId = computed(() => {
+  if (user.value?.role !== 'judge') return null;
+
+  const currentUrl = page.url || '';
+  // Matches URLs like /judge/{pageantId}/scoring, /judge/{pageantId}/scoring/{roundId},
+  // /judge/{pageantId}/scores-summary, /judge/{pageantId}/contestants/{contestantId}
+  const match = currentUrl.match(/\/judge\/(\d+)\/(?:scoring(?:\/\d+)?|scores-summary|contestants\/\d+)/);
+  if (match) {
+    return match[1];
+  }
   return null;
 })
 
@@ -404,15 +420,16 @@ const navigation = computed(() => {
     case 'tabulator':
       const currentPageantId = getCurrentPageantId.value;
       
-      // If no pageant is selected, only show dashboard
+      // If no pageant is selected, only show assigned pageants
       if (!currentPageantId) {
         return [
-          { name: 'Dashboard', href: route('tabulator.dashboard'), route: 'tabulator.dashboard', icon: LayoutDashboard }
+          { name: 'Assigned Pageants', href: route('tabulator.dashboard'), route: 'tabulator.assigned-pageants', icon: ClipboardList }
         ];
       }
       
       // If pageant is selected, show full navigation with pageant context
       return [
+              { name: 'Assigned Pageants', href: route('tabulator.dashboard'), route: 'tabulator.assigned-pageants', icon: ClipboardList },
         { name: 'Dashboard', href: route('tabulator.dashboard', currentPageantId), route: 'tabulator.dashboard', icon: LayoutDashboard },
         { name: 'Judges', href: route('tabulator.judges', currentPageantId), route: 'tabulator.judges', icon: Users },
         { name: 'Round Management', href: route('tabulator.rounds', currentPageantId), route: 'tabulator.rounds', icon: Settings },
@@ -421,10 +438,20 @@ const navigation = computed(() => {
         { name: 'Print', href: route('tabulator.print', currentPageantId), route: 'tabulator.print', icon: Printer }
       ]
     case 'judge':
+      const judgePageantId = getCurrentJudgePageantId.value;
+      if(judgePageantId) {
+        return [
+          { name: 'Dashboard', href: route('judge.dashboard'), route: 'judge.dashboard', icon: LayoutDashboard },
+         { name: 'Scoring', href: judgePageantId ? route('judge.scoring', { pageantId: judgePageantId }) : route('judge.dashboard'), route: 'judge.scoring', icon: Star }
+        ];
+      }else{
       return [
         { name: 'Dashboard', href: route('judge.dashboard'), route: 'judge.dashboard', icon: LayoutDashboard },
-        { name: 'Scoring', href: route('judge.dashboard'), route: 'judge.scoring', icon: Star }
+        // If we're currently within a specific pageant context, generate the scoring URL with the pageantId
+        // Otherwise, fall back to dashboard (no pageant selected yet)
+        
       ]
+      }
     default:
       return []
   }
@@ -442,6 +469,15 @@ const isActiveLink = (item) => {
   
   // For direct top-level menu items like Dashboard, Reports, Audit Log
   if (!item.children) {
+    // Special case for Assigned Pageants - should be active when on tabulator dashboard without pageant ID
+    if (item.name === 'Assigned Pageants') {
+      const role = user.value?.role || '';
+      if (role === 'tabulator') {
+        // Active when on tabulator dashboard without a specific pageant selected
+        return route().current('tabulator.dashboard') && !getCurrentPageantId.value;
+      }
+    }
+    
     // Special cases for non-pageant section direct links
     if (item.name === 'Dashboard' || item.name === 'Reports' || item.name === 'Audit Log') {
       // Check for Reports specifically
@@ -472,7 +508,8 @@ const isActiveLink = (item) => {
           return true;
         } else if (role === 'organizer' && route().current('organizer.dashboard')) {
           return true;
-        } else if (role === 'tabulator' && route().current('tabulator.dashboard')) {
+        } else if (role === 'tabulator' && route().current('tabulator.dashboard') && getCurrentPageantId.value) {
+          // For tabulator, Dashboard is only active when a specific pageant is selected
           return true;
         } else if (role === 'judge' && route().current('judge.dashboard')) {
           return true;
@@ -537,17 +574,30 @@ const updateActiveSubmenu = () => {
 
   const newOpenState = {};
   let activeParentFound = false;
+  let hasChanges = false;
 
   for (const item of navigation.value) {
     if (!activeParentFound && item.children && isParentActive(item)) {
       newOpenState[item.name] = true;
       activeParentFound = true;
-      // If only one submenu can be active at a time, uncomment break
-      // break;
+      // Check if this is actually a change
+      if (!openSubmenus.value[item.name]) {
+        hasChanges = true;
+      }
     }
   }
-  // Replace the old state entirely on navigation/load
-  openSubmenus.value = newOpenState;
+  
+  // Check if any currently open menus should be closed
+  for (const menuName in openSubmenus.value) {
+    if (openSubmenus.value[menuName] && !newOpenState[menuName]) {
+      hasChanges = true;
+    }
+  }
+  
+  // Only update state if there are actual changes to prevent unnecessary re-renders
+  if (hasChanges) {
+    openSubmenus.value = newOpenState;
+  }
 }
 
 // Sidebar visibility toggles
@@ -583,12 +633,47 @@ const toggleSubmenu = (name) => {
 
 // Navigate to a child item, ensuring its parent is open and others closed
 const navigateToSubMenuItem = (childHref, parentName) => {
+  // Set loading state
+  isNavigating.value = true;
+  
   const newOpenState = {};
   newOpenState[parentName] = true; // Ensure the parent is open
   openSubmenus.value = newOpenState; // Update state, closing others
 
-  router.visit(childHref);
+  // Add slight delay for smooth transition
+  router.visit(childHref, {
+    onStart: () => {
+      isNavigating.value = true;
+    },
+    onFinish: () => {
+      setTimeout(() => {
+        isNavigating.value = false;
+      }, 100);
+    }
+  });
 }
+
+// Handle navigation with loading state
+const handleNavigation = (item) => {
+  isNavigating.value = true;
+  openSubmenus.value = {};
+  
+  // Add small delay to allow UI to update before navigation
+  setTimeout(() => {
+    if (item.href) {
+      router.visit(item.href, {
+        onStart: () => {
+          isNavigating.value = true;
+        },
+        onFinish: () => {
+          setTimeout(() => {
+            isNavigating.value = false;
+          }, 100);
+        }
+      });
+    }
+  }, 50);
+};
 
 const logout = () => {
   openSubmenus.value = {}; // Clear open menus on logout
@@ -635,15 +720,37 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateSidebarState);
   document.body.style.overflow = ''; // Cleanup body style on component unmount
+  
+  // Clear any pending navigation timeout
+  if (navigationTimeout.value) {
+    clearTimeout(navigationTimeout.value);
+  }
 })
 
 // Watch for page navigation to update the active submenu and handle mobile sidebar
 watch(() => page.url, () => {
-  updateActiveSubmenu();
-  // If on mobile and sidebar is open, close it on navigation
+  // Clear any existing navigation timeout
+  if (navigationTimeout.value) {
+    clearTimeout(navigationTimeout.value);
+  }
+  
+  // Use nextTick to ensure DOM is ready, then update submenu state
+  nextTick(() => {
+    updateActiveSubmenu();
+  });
+  
+  // Delayed mobile sidebar handling to prevent visual glitches
   if (isMobile.value && isOpen.value) {
-    isOpen.value = false;
-    document.body.style.overflow = ''; // Release scroll lock
+    navigationTimeout.value = setTimeout(() => {
+      isOpen.value = false;
+      document.body.style.overflow = ''; // Release scroll lock
+      isNavigating.value = false;
+    }, 150); // Small delay to allow page transition to start
+  } else {
+    // Reset navigation state for non-mobile
+    setTimeout(() => {
+      isNavigating.value = false;
+    }, 100);
   }
 });
 </script>
@@ -667,10 +774,5 @@ watch(() => page.url, () => {
   border-radius: 20px;
 }
 
-/* Ensure content area has padding when mobile menu button is visible */
-@media (max-width: 1023px) {
-  .flex-1 > div {
-    padding-top: 4rem; /* Adjust as needed based on button size/position */
-  }
-}
+/* Content padding is handled by utility classes (pt-16 lg:pt-0) to avoid layout shift */
 </style>

@@ -21,6 +21,10 @@ const notify = useNotification();
 
 // Watch for flash messages
 watch(() => page.props.flash, (flash) => {
+  if (flash?.message) {
+    notify.warning(flash.message);
+  }
+  
   if (flash?.success) {
     notify.success(flash.success);
   }

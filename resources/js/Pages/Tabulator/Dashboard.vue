@@ -27,68 +27,116 @@
       </div>
 
       <!-- Pageant Selection (if no specific pageant) -->
-      <div v-if="!pageant && pageants && pageants.length > 0" class="mb-8">
-        <div class="mb-6">
-          <h2 class="text-2xl font-bold text-gray-900 mb-2">Your Assigned Pageants</h2>
-          <p class="text-gray-600">Select a pageant to manage and monitor scoring progress</p>
+      <div v-if="!pageant && pageants && pageants.length > 0" class="mb-10 mt-3">
+        <!-- Elegant Section Header -->
+        <div class="mb-8">
+          <div class="flex items-center gap-4">
+            <div class="p-3 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white shadow-md ring-1 ring-blue-300/60">
+              <Crown class="h-6 w-6" />
+            </div>
+            <div>
+              <h2 class="text-2xl sm:text-3xl font-semibold font-figtree text-gray-900 tracking-wide">
+                Your Assigned Pageants
+              </h2>
+              <p class="text-gray-600 dark:text-gray-900">
+                Select a pageant to manage scoring and view results
+              </p>
+            </div>
+          </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div 
-            v-for="pageantItem in pageants" 
+
+        <!-- Pageant Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+          <div
+            v-for="pageantItem in pageants"
             :key="pageantItem.id"
-            class="group bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+            class="group relative bg-white rounded-2xl border border-blue-100 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden justify-items-center"
             @click="$inertia.visit(route('tabulator.dashboard', pageantItem.id))"
           >
-            <div class="flex items-start justify-between mb-4">
-              <div class="flex-1">
-                <h3 class="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                  {{ pageantItem.name }}
-                </h3>
-                <div class="flex items-center mt-1">
-                  <div class="w-2 h-2 rounded-full mr-2" 
-                       :class="pageantItem.status === 'active' ? 'bg-green-400' : 'bg-yellow-400'"></div>
-                  <p class="text-sm text-gray-500 capitalize">{{ pageantItem.status }}</p>
+            <!-- Decorative top accent -->
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500"></div>
+            <!-- Soft glow orbs -->
+            <div class="pointer-events-none absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br from-blue-200/40 to-transparent rounded-full blur-2xl"></div>
+            <div class="pointer-events-none absolute -left-12 -bottom-12 w-48 h-48 bg-gradient-to-tr from-blue-200/30 to-transparent rounded-full blur-2xl"></div>
+
+            <div class="relative">
+              <!-- Header Row -->
+              <div class="flex items-start justify-between mb-5">
+                <div class="flex-1 pr-4 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <Crown class="h-5 w-5 text-blue-600" />
+                    <span class="text-xs uppercase tracking-wider text-blue-600 dark:text-blue-400 font-medium">Pageant</span>
+                  </div>
+                  <h3 class="truncate text-xl font-semibold font-figtree text-gray-500 group-hover:text-blue-700 transition-colors">
+                    {{ pageantItem.name }}
+                  </h3>
+                  <div class="mt-2 flex items-center gap-2">
+                    <span
+                      class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium border"
+                      :class="pageantItem.status === 'active'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:text-emerald-300'
+                        : 'bg-amber-50 text-amber-700 border-amber-200 '"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full mr-1.5" :class="pageantItem.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                      <span class="capitalize">{{ pageantItem.status }}</span>
+                    </span>
+                  </div>
                 </div>
+                <ChevronRight class="mt-1 h-5 w-5 text-blue-400 group-hover:text-blue-600 dark:text-blue-500 dark:group-hover:text-blue-300 transition-colors flex-shrink-0" />
               </div>
-              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-blue-50 rounded-lg p-3">
-                <div class="flex items-center">
-                  <Users class="h-4 w-4 text-blue-600 mr-2" />
-                  <div>
-                    <p class="text-xs text-blue-600 font-medium">Contestants</p>
-                    <p class="text-lg font-bold text-gray-900">{{ pageantItem.contestants_count }}</p>
+
+              <!-- Stats Grid -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-xl border border-gray-100 bg-white  p-3">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-blue-100 text-blue-700 ">
+                      <Users class="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p class="text-[11px] uppercase tracking-wide text-gray-500 ">Contestants</p>
+                      <p class="text-lg font-semibold text-gray-900 ">{{ pageantItem.contestants_count }}</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="rounded-xl border border-gray-100 bg-white p-3">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-blue-100 text-blue-700 ">
+                      <Award class="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p class="text-[11px] uppercase tracking-wide text-gray-500 ">Judges</p>
+                      <p class="text-lg font-semibold text-gray-900 ">{{ pageantItem.judges_count }}</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="rounded-xl border border-gray-100 bg-white  p-3">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-blue-100 text-blue-700 ">
+                      <Clock class="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p class="text-[11px] uppercase tracking-wide text-gray-500 ">Rounds</p>
+                      <p class="text-lg font-semibold text-gray-900 ">{{ pageantItem.rounds_count }}</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="rounded-xl border border-gray-100 bg-white  p-3">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-blue-100 text-blue-700 ">
+                      <Target class="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p class="text-[11px] uppercase tracking-wide text-gray-500 ">Criteria</p>
+                      <p class="text-lg font-semibold text-gray-900 ">{{ pageantItem.criteria_count }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="bg-green-50 rounded-lg p-3">
-                <div class="flex items-center">
-                  <Award class="h-4 w-4 text-green-600 mr-2" />
-                  <div>
-                    <p class="text-xs text-green-600 font-medium">Judges</p>
-                    <p class="text-lg font-bold text-gray-900">{{ pageantItem.judges_count }}</p>
-                  </div>
-                </div>
-              </div>
-              <div class="bg-purple-50 rounded-lg p-3">
-                <div class="flex items-center">
-                  <Clock class="h-4 w-4 text-purple-600 mr-2" />
-                  <div>
-                    <p class="text-xs text-purple-600 font-medium">Rounds</p>
-                    <p class="text-lg font-bold text-gray-900">{{ pageantItem.rounds_count }}</p>
-                  </div>
-                </div>
-              </div>
-              <div class="bg-orange-50 rounded-lg p-3">
-                <div class="flex items-center">
-                  <Target class="h-4 w-4 text-orange-600 mr-2" />
-                  <div>
-                    <p class="text-xs text-orange-600 font-medium">Criteria</p>
-                    <p class="text-lg font-bold text-gray-900">{{ pageantItem.criteria_count }}</p>
-                  </div>
-                </div>
+
+              <!-- Subtle CTA -->
+              <div class="mt-5 flex items-center text-sm text-blue-700 dark:text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="mr-2">Open pageant</span>
+                <ChevronRight class="h-4 w-4" />
               </div>
             </div>
           </div>
@@ -353,9 +401,9 @@ import {
   Printer, 
   ChevronRight,
   Activity,
-  Calculator
+  Calculator,
+  Crown
 } from 'lucide-vue-next'
-import TabulatorCard from '../../Components/tabulator/TabulatorCard.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 
 defineOptions({

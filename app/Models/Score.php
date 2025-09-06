@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Services\ScoreCalculationService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\App;
 
 class Score extends Model
 {
@@ -25,6 +27,24 @@ class Score extends Model
         'notes',
         'submitted_at',
     ];
+
+    /**
+     * Boot the model and add event listeners for cache invalidation
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function ($score) {
+            $scoreService = App::make(ScoreCalculationService::class);
+            $scoreService->invalidateContestantCache($score->pageant_id, $score->contestant_id);
+        });
+
+        static::deleted(function ($score) {
+            $scoreService = App::make(ScoreCalculationService::class);
+            $scoreService->invalidateContestantCache($score->pageant_id, $score->contestant_id);
+        });
+    }
 
     /**
      * The attributes that should be cast.
@@ -83,11 +103,11 @@ class Score extends Model
     {
         $query = static::where('judge_id', $judgeId)
             ->where('pageant_id', $pageantId);
-            
+
         if ($roundId) {
             $query->where('round_id', $roundId);
         }
-        
+
         return $query->with(['criteria', 'contestant', 'round'])->get();
     }
 

@@ -16,6 +16,15 @@ import 'nprogress/nprogress.css';
 router.on('start', () => NProgress.start());
 router.on('finish', () => NProgress.done());
 
+// Handle 419 CSRF errors globally - let server handle redirects
+router.on('error', (event) => {
+  if (event.detail.response?.status === 419) {
+    // Let the server handle the redirect with flash message
+    // Don't show any client-side error modal
+    return
+  }
+})
+
 // Configure NProgress
 NProgress.configure({ 
     showSpinner: false,

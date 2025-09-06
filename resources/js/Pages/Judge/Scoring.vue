@@ -8,8 +8,8 @@
       </div>
     </div>
 
-    <!-- Page Header with Round Selection -->
-    <div class="bg-gradient-to-r from-amber-500 to-amber-600 shadow-md rounded-xl overflow-hidden">
+    <!-- Page Header with Round Selection (sticky) -->
+    <div class="bg-gradient-to-r from-amber-500 to-amber-600 shadow-md rounded-xl overflow-visible sticky top-3 z-30">
       <div class="p-6 md:p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -25,9 +25,9 @@
               </div>
             </div>
           </div>
-          <div v-if="rounds.length > 0" class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20 relative">
+          <div v-if="rounds.length > 0" class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
             <span class="text-amber-50 font-medium px-3">Switch Round:</span>
-            <div class="min-w-[160px]">
+            <div class="min-w-[200px] relative">
               <CustomSelect
                 v-model="currentRoundId"
                 :options="roundOptions"
@@ -137,7 +137,7 @@
           </div>
         </div>
       </div>
-      <div v-for="contestant in contestants" :key="contestant.id" class="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
+  <div v-for="contestant in contestants" :key="contestant.id" class="bg-white shadow-md rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all">
         <!-- Contestant Header -->
         <div class="p-6 border-b border-gray-100 cursor-pointer hover:bg-amber-50/40 transition-colors" @click="openContestantDetails(contestant)">
           <div class="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -172,34 +172,22 @@
             <div 
               v-for="criterion in criteria" 
               :key="criterion.id" 
-              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg hover:bg-amber-50 transition-colors"
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-100"
             >
               <div>
                 <div class="font-medium text-gray-900">{{ criterion.name }}</div>
                 <div class="text-xs text-gray-500">Score {{ criterion.min_score }}-{{ criterion.max_score }}</div>
               </div>
-              <div class="flex items-center gap-3">
-                <input
-                  type="range"
-                  v-model="scores[`${contestant.id}-${criterion.id}`]"
-                  :min="criterion.min_score"
-                  :max="criterion.max_score"
-                  :step="criterion.allow_decimals ? 0.1 : 1"
-                  :disabled="!canEditScores"
-                  class="w-28 sm:w-36 accent-amber-500 disabled:opacity-50"
-                  @input="validateScore($event, contestant.id, criterion.id, criterion)"
-                />
-                <input
-                  type="number"
-                  v-model="scores[`${contestant.id}-${criterion.id}`]"
-                  :min="criterion.min_score"
-                  :max="criterion.max_score"
-                  :step="criterion.allow_decimals ? 0.1 : 1"
-                  :disabled="!canEditScores"
-                  class="w-16 rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-center disabled:opacity-50 disabled:bg-gray-100"
-                  @change="validateScore($event, contestant.id, criterion.id, criterion)"
-                />
-              </div>
+              <ScoreInput
+                :min="criterion.min_score"
+                :max="criterion.max_score"
+                :step="criterion.allow_decimals ? 0.1 : 1"
+                :allow-decimals="criterion.allow_decimals"
+                :decimal-places="criterion.decimal_places || 1"
+                :disabled="!canEditScores"
+                v-model="scores[`${contestant.id}-${criterion.id}`]"
+                @change="(val) => handleScoreChange(val, contestant.id, criterion.id, criterion)"
+              />
             </div>
           </div>
 
@@ -317,6 +305,7 @@ import { Star, Save, CheckCircle, AlertCircle, GitCompare } from 'lucide-vue-nex
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import CustomSelect from '../../Components/CustomSelect.vue'
+import ScoreInput from '../../Components/ScoreInput.vue'
 import '../../components/skeletons/skeleton.css'
 import JudgeLayout from '../../Layouts/JudgeLayout.vue'
 import ContestantDetailModal from '../../Components/ContestantDetailModal.vue'
@@ -393,21 +382,19 @@ const handleRoundChange = (option) => {
   router.visit(route('judge.scoring', [props.pageant.id, roundId]))
 }
 
-const validateScore = (event, contestantId, criterionId, criterion) => {
-  const input = event.target
-  let value = parseFloat(input.value)
-  
-  if (value < criterion.min_score) value = criterion.min_score
-  if (value > criterion.max_score) value = criterion.max_score
-  
-  // Handle decimal places
-  if (!criterion.allow_decimals) {
-    value = Math.round(value)
-  } else if (criterion.decimal_places) {
-    value = parseFloat(value.toFixed(criterion.decimal_places))
+const handleScoreChange = (value, contestantId, criterionId, criterion) => {
+  let v = Number(value)
+  if (Number.isNaN(v)) {
+    v = criterion.min_score
   }
-  
-  scores.value[`${contestantId}-${criterionId}`] = value
+  if (v < criterion.min_score) v = criterion.min_score
+  if (v > criterion.max_score) v = criterion.max_score
+  if (!criterion.allow_decimals) {
+    v = Math.round(v)
+  } else if (criterion.decimal_places) {
+    v = Number(v.toFixed(criterion.decimal_places))
+  }
+  scores.value[`${contestantId}-${criterionId}`] = v
 }
 
 const calculateAverage = (contestantId) => {

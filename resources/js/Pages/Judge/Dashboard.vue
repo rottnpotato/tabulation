@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <!-- Header Section -->
-    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-md overflow-hidden">
+  <div class="bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl shadow-md overflow-hidden">
       <div class="p-6 md:p-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div class="text-white">
@@ -19,7 +19,7 @@
 
     <!-- Quick Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center">
           <div class="p-3 bg-orange-100 rounded-lg">
             <Calendar class="h-6 w-6 text-orange-600" />
@@ -31,7 +31,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center">
           <div class="p-3 bg-blue-100 rounded-lg">
             <FileText class="h-6 w-6 text-blue-600" />
@@ -43,7 +43,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center">
           <div class="p-3 bg-green-100 rounded-lg">
             <CheckCircle class="h-6 w-6 text-green-600" />
@@ -58,7 +58,7 @@
 
     <!-- No Pageants State -->
     <div v-if="pageants.length === 0" class="text-center py-16">
-      <div class="bg-white rounded-xl shadow-md border border-gray-100 p-12">
+  <div class="bg-white rounded-xl shadow-md border border-gray-100 p-12">
         <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-orange-200 mb-6">
           <Calendar class="h-12 w-12 text-orange-600" />
         </div>
@@ -68,7 +68,7 @@
         </p>
         <button 
           @click="refreshData"
-          class="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+          class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
         >
           <RefreshCw class="w-4 h-4 mr-2" />
           Refresh
@@ -181,7 +181,7 @@
             <Link 
               v-if="pageant.id && pageant.rounds_count > 0"
               :href="getScoringUrl(pageant.id)"
-              class="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"
+              class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               <Star class="h-4 w-4 mr-2" />
               {{ pageant.current_round ? 'Continue Scoring' : 'Start Scoring' }}

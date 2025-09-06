@@ -109,26 +109,33 @@
       </div>
     </div>
 
-    <!-- Signatures -->
-    <div class="mt-12 pt-8 border-t-2 border-gray-200">
-      <div class="grid grid-cols-2 gap-8">
-        <div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Certified by:</h3>
-          <div class="mt-8 border-b border-gray-400 w-64"></div>
-          <p class="text-sm text-gray-600 mt-1">Head Tabulator</p>
-          <p class="text-xs text-gray-500 mt-4">Date: {{ new Date().toLocaleDateString() }}</p>
-        </div>
-        <div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Witnessed by:</h3>
-          <div class="mt-8 border-b border-gray-400 w-64"></div>
-          <p class="text-sm text-gray-600 mt-1">Event Organizer</p>
-          <p class="text-xs text-gray-500 mt-4">Date: {{ new Date().toLocaleDateString() }}</p>
+    <!-- Judges Section -->
+    <div class="mt-12 pt-6 border-t-2 border-gray-200">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">Panel of Judges</h3>
+      <div class="flex flex-wrap justify-center gap-x-8 gap-y-2 mb-8">
+        <div 
+          v-for="judge in judges" 
+          :key="judge.id"
+          class="text-center"
+        >
+          <div class="border-b border-gray-400 w-40 mb-1"></div>
+          <p class="text-sm font-medium text-gray-900">{{ judge.name }}</p>
+          <p class="text-xs text-gray-600">{{ judge.role }}</p>
         </div>
       </div>
     </div>
 
+    <!-- Tabulator Certification -->
+    <div class="mt-8 pt-6 border-t border-gray-300">
+      <div class="text-center">
+        <div class="border-b border-gray-400 w-64 mx-auto mb-2"></div>
+        <p class="text-sm font-semibold text-gray-900">Certified by: Head Tabulator</p>
+        <p class="text-xs text-gray-500 mt-2">Date: {{ new Date().toLocaleDateString() }}</p>
+      </div>
+    </div>
+
     <!-- Footer -->
-    <div class="mt-8 text-center text-xs text-gray-500 border-t pt-4">
+    <div class="mt-6 text-center text-xs text-gray-500">
       <p>This report was generated on {{ new Date().toLocaleString() }}</p>
       <p>{{ pageant.name }} - Official Results</p>
     </div>
@@ -155,9 +162,16 @@ interface Pageant {
   location?: string
 }
 
+interface Judge {
+  id: number
+  name: string
+  role: string
+}
+
 interface Props {
   pageant: Pageant
   results: Result[]
+  judges: Judge[]
 }
 
 const props = defineProps<Props>()
@@ -192,7 +206,7 @@ const getOrdinalSuffix = (rank: number): string => {
 @media print {
   .bg-white {
     -webkit-print-color-adjust: exact !important;
-    color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 </style>

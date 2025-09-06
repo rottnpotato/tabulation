@@ -15,19 +15,27 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->use([
             // Global middleware
         ]);
-        
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
-        
+
         $middleware->api(append: [
             // API middleware
         ]);
-        
+
         $middleware->alias([
             'check_role' => \App\Http\Middleware\CheckRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->respond(function (\Symfony\Component\HttpFoundation\Response $response) {
+            if ($response->getStatusCode() === 419) {
+                return back()->with([
+                    'message' => 'The page expired, please try again.',
+                ]);
+            }
+
+            return $response;
+        });
     })->create();

@@ -48,13 +48,16 @@
       <div
         v-show="isOpen"
         :class="[
-          'absolute mt-2 w-full origin-top rounded-xl',
+          'absolute left-0 top-full mt-2 origin-top rounded-xl',
           'bg-white/95 backdrop-blur-md border border-gray-200/60',
-          'shadow-2xl shadow-gray-900/20 ring-1 ring-black ring-opacity-5 relative z-9999',
+          'shadow-2xl shadow-gray-900/20 ring-1 ring-black ring-opacity-5 z-50',
+          'min-w-[100%]',
           dropdownPosition
         ]"
+        role="listbox"
+        aria-orientation="vertical"
       >
-        <div class="max-h-60 overflow-auto rounded-xl py-2">
+        <div class="max-h-64 overflow-auto rounded-xl py-2">
           <div
             v-for="option in options"
             :key="option.value"
@@ -65,6 +68,8 @@
                 ? 'bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md' 
                 : 'text-gray-900 hover:bg-gradient-to-r hover:from-orange-50 hover:to-rose-50 hover:text-orange-900'
             ]"
+            role="option"
+            :aria-selected="option.value === modelValue"
           >
             <div class="flex items-center">
               <span 

@@ -9,6 +9,7 @@ use App\Models\Pageant;
 use App\Models\Round;
 use App\Models\Score;
 use App\Models\User;
+use App\Services\ScoreCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -16,6 +17,13 @@ use Inertia\Inertia;
 
 class TabulatorController extends Controller
 {
+    protected ScoreCalculationService $scoreCalculationService;
+
+    public function __construct(ScoreCalculationService $scoreCalculationService)
+    {
+        $this->scoreCalculationService = $scoreCalculationService;
+    }
+
     /**
      * Show tabulator dashboard for a specific pageant
      */
@@ -320,26 +328,22 @@ class TabulatorController extends Controller
             ];
         });
 
-        $contestants = $pageant->contestants->map(function ($contestant) {
-            // TODO: Calculate actual scores from scoring data
-            $mockScores = [];
-            foreach ($pageant->rounds as $round) {
-                $mockScores[$round->name] = rand(85, 98) + (rand(0, 99) / 100);
-            }
+        // Calculate real final scores using the service
+        $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant);
 
+        // Convert to collection for consistency with frontend expectations
+        $contestants = collect($contestants)->map(function ($contestant) {
             return [
-                'id' => $contestant->id,
-                'number' => $contestant->number,
-                'name' => $contestant->name,
-                'region' => $contestant->origin,
-                'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
-                'scores' => $mockScores,
-                'totalScore' => collect($mockScores)->avg(),
+                'id' => $contestant['id'],
+                'number' => $contestant['number'],
+                'name' => $contestant['name'],
+                'region' => $contestant['region'],
+                'image' => $contestant['image'],
+                'scores' => $contestant['scores'],
+                'totalScore' => $contestant['finalScore'],
+                'rank' => $contestant['rank'],
             ];
         });
-
-        // Sort contestants by total score (descending)
-        $contestants = $contestants->sortByDesc('totalScore')->values();
 
         return Inertia::render('Tabulator/Results', [
             'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
@@ -356,23 +360,30 @@ class TabulatorController extends Controller
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
-        // Get top contestants for printing
-        $contestants = $pageant->contestants->map(function ($contestant) {
-            // TODO: Calculate actual scores
-            $mockScores = [];
-            foreach ($pageant->rounds as $round) {
-                $mockScores[$round->name] = rand(85, 98);
-            }
+        // Get top contestants using real score calculations
+        $contestants = $this->scoreCalculationService->getTopContestants($pageantId, 10);
 
+        // Format for frontend
+        $contestants = collect($contestants)->map(function ($contestant) {
             return [
-                'id' => $contestant->id,
-                'number' => $contestant->number,
-                'name' => $contestant->name,
-                'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
-                'scores' => $mockScores,
-                'final_score' => collect($mockScores)->avg(),
+                'id' => $contestant['id'],
+                'number' => $contestant['number'],
+                'name' => $contestant['name'],
+                'image' => $contestant['image'],
+                'scores' => $contestant['scores'],
+                'final_score' => $contestant['finalScore'],
+                'rank' => $contestant['rank'],
             ];
-        })->sortByDesc('final_score')->take(10)->values();
+        });
+
+        // Get judges for this pageant
+        $judges = $pageant->judges->map(function ($judge) {
+            return [
+                'id' => $judge->id,
+                'name' => $judge->name,
+                'role' => $judge->pivot->role ?? 'Judge',
+            ];
+        });
 
         return Inertia::render('Tabulator/Print', [
             'pageant' => [
@@ -383,6 +394,7 @@ class TabulatorController extends Controller
                 'location' => $pageant->location,
             ],
             'results' => $contestants,
+            'judges' => $judges,
         ]);
     }
 
@@ -528,23 +540,15 @@ class TabulatorController extends Controller
             return response()->json(['aggregated_score' => null]);
         }
 
-        // Calculate weighted average
-        $totalWeightedScore = 0;
-        $totalWeight = 0;
+        // Calculate weighted average using the service
+        $aggregatedScore = $this->scoreCalculationService->calculateJudgeContestantScore(
+            $judgeId,
+            $contestantId,
+            $roundId,
+            $pageantId
+        );
 
-        foreach ($scores as $score) {
-            $weight = $score->criteria->weight ?? 1;
-            $totalWeightedScore += $score->score * $weight;
-            $totalWeight += $weight;
-        }
-
-        $aggregatedScore = $totalWeight > 0 ? $totalWeightedScore / $totalWeight : null;
-
-        // Normalize score based on pageant's scoring system
         if ($aggregatedScore !== null) {
-            $pageant = Pageant::findOrFail($pageantId);
-            $scoringSystem = $pageant->scoring_system ?? 'percentage';
-            $aggregatedScore = $this->normalizeScore($aggregatedScore, $scoringSystem);
             $aggregatedScore = round($aggregatedScore, 2);
         }
 
