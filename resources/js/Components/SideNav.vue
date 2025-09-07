@@ -198,19 +198,26 @@
       <div class="absolute bottom-0 w-full p-4 border-t">
         <button
           @click="logout"
-          class="flex items-center w-full px-3 py-3 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-700 rounded-md transition-all group relative transform hover:scale-105"
+          :disabled="isLoggingOut"
+          class="flex items-center w-full px-3 py-3 text-sm font-medium rounded-md transition-all group relative transform"
+          :class="[
+            isLoggingOut
+              ? 'text-gray-400 bg-gray-50 cursor-wait'
+              : 'text-gray-600 hover:bg-red-50 hover:text-red-700 hover:scale-105'
+          ]"
         >
-          <LogOut class="h-6 w-6 flex-shrink-0" />
+          <LogOut v-if="!isLoggingOut" class="h-6 w-6 flex-shrink-0" />
+          <div v-else class="h-6 w-6 flex-shrink-0 animate-spin rounded-full border-2 border-gray-300 border-t-red-600"></div>
           <span 
             class="ml-3 transition-all duration-300 whitespace-nowrap"
             :class="[isOpen ? 'opacity-100 max-w-full' : 'opacity-0 max-w-0 hidden']"
           >
-            Logout
+            {{ isLoggingOut ? 'Logging out...' : 'Logout' }}
           </span>
           
           <!-- Expandable hover popup for collapsed state (desktop only) -->
           <div 
-            v-if="!isOpen && !isMobile" 
+            v-if="!isOpen && !isMobile && !isLoggingOut" 
             class="absolute left-full bottom-0 ml-2 px-4 py-3 bg-white shadow-xl rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 ease-out z-50 whitespace-nowrap border border-gray-200 min-w-[150px] transform -translate-x-2 group-hover:translate-x-0 flex items-center hover:shadow-2xl hover:bg-red-50 border-l-4 border-l-red-500"
           >
             <LogOut class="h-5 w-5 mr-3 text-red-500" />
@@ -232,6 +239,13 @@
       <!-- Wrap the slot in a div to ensure it has a proper root element -->
       <div class="h-full pt-16 lg:pt-0 transition-opacity duration-200" :class="{ 'opacity-95': isNavigating }">
         <slot></slot>
+      </div>
+    </div>
+    <!-- Logout overlay notification -->
+    <div v-if="isLoggingOut" class="fixed inset-0 z-[60] bg-white/60 backdrop-blur-sm flex items-center justify-center">
+      <div class="flex items-center gap-3 px-4 py-3 rounded-lg bg-white shadow-lg border border-gray-200">
+        <div class="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-red-600"></div>
+        <span class="text-sm text-gray-700 font-medium">Signing you out…</span>
       </div>
     </div>
   </div>
@@ -282,6 +296,7 @@ const isMobile = ref(window.innerWidth < 1024) // Mobile view active
 const openSubmenus = ref({}) // Tracks which parent submenus are open { [itemName]: boolean }
 const isNavigating = ref(false) // Loading state during navigation
 const navigationTimeout = ref(null) // Timeout for navigation debouncing
+const isLoggingOut = ref(false) // Loading state during logout
 
 // --- Computed Properties ---
 const componentPath = computed(() => {
@@ -676,8 +691,33 @@ const handleNavigation = (item) => {
 };
 
 const logout = () => {
+  if (isLoggingOut.value) {
+    return;
+  }
+  isLoggingOut.value = true;
   openSubmenus.value = {}; // Clear open menus on logout
-  router.post(route('logout'));
+  
+  router.post(route('logout'), {}, {
+    preserveScroll: true,
+    onStart: () => {
+      isLoggingOut.value = true;
+    },
+    onSuccess: () => {
+      // Ensure we land on the login screen
+      window.location.href = route('login');
+    },
+    onError: () => {
+      isLoggingOut.value = false;
+      // Minimal notification without introducing dependencies
+      alert('Logout failed. Please try again.');
+    },
+    onCancel: () => {
+      isLoggingOut.value = false;
+    },
+    onFinish: () => {
+      // Keep spinner active until redirect happens on success
+    }
+  });
 }
 
 // Window resize handling

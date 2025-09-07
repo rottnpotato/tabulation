@@ -153,6 +153,8 @@ class JudgeController extends Controller
                 'weight' => $criterion->weight,
                 'min_score' => $criterion->min_score,
                 'max_score' => $criterion->max_score,
+                'allow_decimals' => (bool) ($criterion->allow_decimals ?? false),
+                'decimal_places' => (int) ($criterion->decimal_places ?? 0),
             ];
         });
 
@@ -225,10 +227,10 @@ class JudgeController extends Controller
             ], 403);
         }
 
+        // Basic validation first
         $validator = Validator::make($request->all(), [
             'contestant_id' => 'required|exists:contestants,id',
             'scores' => 'required|array',
-            'scores.*' => 'required|numeric|min:0|max:100',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -247,7 +249,7 @@ class JudgeController extends Controller
         // Verify contestant belongs to this pageant
         $contestant = $pageant->contestants()->findOrFail($contestantId);
 
-        // Verify all criteria belong to this round
+        // Get criteria for detailed validation
         $criteria = $round->criteria()->whereIn('id', array_keys($scores))->get();
 
         if ($criteria->count() !== count($scores)) {
@@ -257,15 +259,63 @@ class JudgeController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($judge, $pageantId, $roundId, $contestantId, $scores, $notes, $criteria) {
-            foreach ($scores as $criteriaId => $score) {
-                $criterion = $criteria->find($criteriaId);
+        // Validate each score against its criteria
+        foreach ($scores as $criteriaId => $score) {
+            $criterion = $criteria->find($criteriaId);
 
-                // Validate score is within criteria range
-                if ($score < $criterion->min_score || $score > $criterion->max_score) {
-                    throw new \Exception("Score for {$criterion->name} must be between {$criterion->min_score} and {$criterion->max_score}");
+            // Validate data type
+            if (! is_numeric($score)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Score for '{$criterion->name}' must be a number.",
+                    'field' => "scores.{$criteriaId}",
+                ], 422);
+            }
+
+            $score = (float) $score;
+
+            // Validate range
+            if ($score < $criterion->min_score || $score > $criterion->max_score) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Score for '{$criterion->name}' must be between {$criterion->min_score} and {$criterion->max_score}.",
+                    'field' => "scores.{$criteriaId}",
+                    'expected_range' => [
+                        'min' => $criterion->min_score,
+                        'max' => $criterion->max_score,
+                    ],
+                ], 422);
+            }
+
+            // Validate decimals
+            if (! $criterion->allow_decimals && floor($score) != $score) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Score for '{$criterion->name}' must be a whole number (no decimals allowed).",
+                    'field' => "scores.{$criteriaId}",
+                ], 422);
+            }
+
+            // Validate decimal places
+            if ($criterion->allow_decimals && $criterion->decimal_places > 0) {
+                $scoreStr = (string) $score;
+                if (strpos($scoreStr, '.') !== false) {
+                    $decimalPart = substr($scoreStr, strpos($scoreStr, '.') + 1);
+                    if (strlen($decimalPart) > $criterion->decimal_places) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Score for '{$criterion->name}' can have maximum {$criterion->decimal_places} decimal places.",
+                            'field' => "scores.{$criteriaId}",
+                            'max_decimal_places' => $criterion->decimal_places,
+                        ], 422);
+                    }
                 }
+            }
+        }
 
+        // Continue with transaction for saving scores
+        DB::transaction(function () use ($judge, $pageantId, $roundId, $contestantId, $scores, $notes) {
+            foreach ($scores as $criteriaId => $score) {
                 $newScore = Score::updateOrCreate(
                     [
                         'judge_id' => $judge->id,

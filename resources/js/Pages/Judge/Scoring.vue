@@ -383,18 +383,53 @@ const handleRoundChange = (option) => {
 }
 
 const handleScoreChange = (value, contestantId, criterionId, criterion) => {
-  let v = Number(value)
-  if (Number.isNaN(v)) {
-    v = criterion.min_score
+  try {
+    let v = Number(value);
+    
+    // Handle invalid numbers
+    if (Number.isNaN(v) || !Number.isFinite(v)) {
+      console.warn('Invalid score value provided:', value);
+      v = criterion.min_score || 0;
+    }
+    
+    // Range validation with safety checks
+    const minScore = criterion.min_score || 0;
+    const maxScore = criterion.max_score || 100;
+    
+    if (v < minScore) v = minScore;
+    if (v > maxScore) v = maxScore;
+    
+    // Decimal handling with error protection
+    if (!criterion.allow_decimals) {
+      v = Math.round(v);
+    } else if (criterion.decimal_places > 0) {
+      try {
+        v = Number(v.toFixed(Math.min(criterion.decimal_places, 10))); // Cap at 10 decimal places for safety
+      } catch (error) {
+        console.error('Error formatting decimal places:', error);
+        v = Math.round(v); // Fallback to integer
+      }
+    }
+    
+    // Final safety check
+    if (!Number.isFinite(v)) {
+      console.error('Final score value is not finite:', v);
+      v = minScore;
+    }
+    
+    scores.value[`${contestantId}-${criterionId}`] = v;
+    
+  } catch (error) {
+    console.error('Error in handleScoreChange:', error, { 
+      value, 
+      contestantId, 
+      criterionId, 
+      criterion 
+    });
+    
+    // Fallback to minimum score on any error
+    scores.value[`${contestantId}-${criterionId}`] = criterion.min_score || 0;
   }
-  if (v < criterion.min_score) v = criterion.min_score
-  if (v > criterion.max_score) v = criterion.max_score
-  if (!criterion.allow_decimals) {
-    v = Math.round(v)
-  } else if (criterion.decimal_places) {
-    v = Number(v.toFixed(criterion.decimal_places))
-  }
-  scores.value[`${contestantId}-${criterionId}`] = v
 }
 
 const calculateAverage = (contestantId) => {
@@ -404,11 +439,30 @@ const calculateAverage = (contestantId) => {
   
   if (contestantScores.some(score => score === 0)) return '-'
   
-  const weightedSum = contestantScores.reduce((sum, score, index) => 
-    sum + (score * props.criteria[index].weight / 100), 0
-  )
+  // Defensive programming for weight calculation
+  const totalWeight = props.criteria.reduce((sum, criterion) => {
+    const weight = criterion.weight || 1; // Default weight
+    return sum + Math.max(weight, 0); // Ensure positive weight
+  }, 0);
   
-  return weightedSum.toFixed(1)
+  if (totalWeight === 0) {
+    console.warn('Total criteria weight is zero for contestant', contestantId);
+    return '-';
+  }
+  
+  const weightedSum = contestantScores.reduce((sum, score, index) => {
+    const weight = props.criteria[index].weight || 1;
+    const safeWeight = Math.max(weight, 0); // Ensure positive weight
+    return sum + (score * safeWeight / Math.max(totalWeight, 1));
+  }, 0);
+  
+  // Defensive rounding
+  try {
+    return Number(weightedSum).toFixed(1);
+  } catch (error) {
+    console.error('Error calculating weighted average:', error, { contestantId, weightedSum });
+    return '-';
+  }
 }
 
 const getAverageScoreColor = (score) => {
@@ -435,9 +489,32 @@ const submitScores = async (contestantId) => {
   
   try {
     const contestantScores = {}
+    
+    // Validate scores before submission
+    let hasInvalidScores = false;
     props.criteria.forEach(criterion => {
-      contestantScores[criterion.id] = scores.value[`${contestantId}-${criterion.id}`]
-    })
+      const score = scores.value[`${contestantId}-${criterion.id}`];
+      
+      // Validate score exists and is valid
+      if (score === undefined || score === null || !Number.isFinite(score)) {
+        console.error(`Invalid score for criterion ${criterion.id}:`, score);
+        hasInvalidScores = true;
+        return;
+      }
+      
+      // Validate score is within range
+      if (score < criterion.min_score || score > criterion.max_score) {
+        console.error(`Score ${score} out of range for criterion ${criterion.id} (${criterion.min_score}-${criterion.max_score})`);
+        hasInvalidScores = true;
+        return;
+      }
+      
+      contestantScores[criterion.id] = score;
+    });
+    
+    if (hasInvalidScores) {
+      throw new Error('Some scores are invalid. Please check your inputs.');
+    }
     
     const response = await axios.post(route('judge.scores.submit', [props.pageant.id, props.currentRound.id]), {
       contestant_id: contestantId,
@@ -456,11 +533,39 @@ const submitScores = async (contestantId) => {
           timeout: 5000
         })
       }
+    } else {
+      throw new Error(response.data.message || 'Failed to submit scores');
     }
   } catch (error) {
-    console.error('Error submitting scores:', error)
-    // Handle error (show toast notification, etc.)
-    alert('Error submitting scores. Please try again.')
+    console.error('Error submitting scores:', error);
+    
+    let errorMessage = 'Error submitting scores. Please try again.';
+    
+    // Handle specific error types
+    if (error.response?.status === 422) {
+      // Validation errors
+      const errors = error.response.data.errors || {};
+      const firstError = Object.values(errors)[0];
+      if (firstError) {
+        errorMessage = firstError[0] || error.response.data.message || errorMessage;
+      }
+    } else if (error.response?.status === 403) {
+      errorMessage = 'This round has been locked for editing.';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    // Show error notification
+    if (notificationSystem.value) {
+      notificationSystem.value.error(errorMessage, {
+        title: 'Submission Failed',
+        timeout: 8000
+      });
+    } else {
+      alert(errorMessage);
+    }
   } finally {
     submitLoading.value[contestantId] = false
   }

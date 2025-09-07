@@ -7,6 +7,7 @@ use App\Models\Contestant;
 use App\Models\Pageant;
 use App\Models\Score;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class ScoreCalculationService
 {
@@ -15,60 +16,82 @@ class ScoreCalculationService
      */
     public function calculatePageantFinalScores(Pageant $pageant, bool $useCache = true): array
     {
-        $cacheKey = "pageant_final_scores_{$pageant->id}";
+        try {
+            $cacheKey = "pageant_final_scores_{$pageant->id}";
 
-        if ($useCache && Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
-        }
-
-        $contestants = [];
-
-        foreach ($pageant->contestants as $contestant) {
-            $roundScores = [];
-            $totalWeightedScore = 0;
-            $totalRoundWeight = 0;
-
-            foreach ($pageant->rounds as $round) {
-                $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
-
-                if ($roundScore !== null) {
-                    $roundScores[$round->name] = $roundScore;
-
-                    $roundWeight = $round->weight ?? 1;
-                    $totalWeightedScore += $roundScore * $roundWeight;
-                    $totalRoundWeight += $roundWeight;
-                }
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
             }
 
-            $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+            $contestants = [];
 
-            $contestants[] = [
-                'id' => $contestant->id,
-                'number' => $contestant->number,
-                'name' => $contestant->name,
-                'region' => $contestant->origin,
-                'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
-                'scores' => $roundScores,
-                'finalScore' => round($finalScore, 2),
-            ];
+            foreach ($pageant->contestants as $contestant) {
+                $roundScores = [];
+                $totalWeightedScore = 0;
+                $totalRoundWeight = 0;
+
+                foreach ($pageant->rounds as $round) {
+                    $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
+
+                    if ($roundScore !== null) {
+                        $roundScores[$round->name] = $roundScore;
+
+                        $roundWeight = $round->weight ?? 1;
+
+                        // Safety check for round weight
+                        if ($roundWeight <= 0) {
+                            Log::warning("Invalid round weight for round {$round->id}: {$roundWeight}. Using weight of 1.", [
+                                'pageant_id' => $pageant->id,
+                                'round_id' => $round->id,
+                                'contestant_id' => $contestant->id,
+                            ]);
+                            $roundWeight = 1;
+                        }
+
+                        $totalWeightedScore += $roundScore * $roundWeight;
+                        $totalRoundWeight += $roundWeight;
+                    }
+                }
+
+                $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+
+                $contestants[] = [
+                    'id' => $contestant->id,
+                    'number' => $contestant->number,
+                    'name' => $contestant->name,
+                    'region' => $contestant->origin,
+                    'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                    'scores' => $roundScores,
+                    'finalScore' => round($finalScore, 2),
+                ];
+            }
+
+            // Sort by final score descending and add ranks
+            usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+
+            foreach ($contestants as $index => &$contestant) {
+                $contestant['rank'] = $index + 1;
+            }
+
+            $result = $contestants;
+
+            // Cache for 30 minutes
+            Cache::put($cacheKey, $result, now()->addMinutes(30));
+
+            // Broadcast rankings update
+            RankingsUpdated::dispatch($pageant->id, $result);
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating pageant final scores: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Return empty array on error to prevent system crashes
+            return [];
         }
-
-        // Sort by final score descending and add ranks
-        usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-
-        foreach ($contestants as $index => &$contestant) {
-            $contestant['rank'] = $index + 1;
-        }
-
-        $result = $contestants;
-
-        // Cache for 30 minutes
-        Cache::put($cacheKey, $result, now()->addMinutes(30));
-
-        // Broadcast rankings update
-        RankingsUpdated::dispatch($pageant->id, $result);
-
-        return $result;
     }
 
     /**
@@ -76,33 +99,45 @@ class ScoreCalculationService
      */
     public function calculateContestantRoundScore(Contestant $contestant, $round, Pageant $pageant): ?float
     {
-        $cacheKey = "contestant_round_score_{$contestant->id}_{$round->id}";
+        try {
+            $cacheKey = "contestant_round_score_{$contestant->id}_{$round->id}";
 
-        if (Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
-        }
-
-        $judgeAverages = [];
-
-        // Get all judges for this pageant
-        foreach ($pageant->judges as $judge) {
-            $judgeScore = $this->calculateJudgeContestantScore($judge->id, $contestant->id, $round->id, $pageant->id);
-
-            if ($judgeScore !== null) {
-                $judgeAverages[] = $judgeScore;
+            if (Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
             }
+
+            $judgeAverages = [];
+
+            // Get all judges for this pageant
+            foreach ($pageant->judges as $judge) {
+                $judgeScore = $this->calculateJudgeContestantScore($judge->id, $contestant->id, $round->id, $pageant->id);
+
+                if ($judgeScore !== null) {
+                    $judgeAverages[] = $judgeScore;
+                }
+            }
+
+            // Average across all judges for this round
+            $roundScore = null;
+            if (! empty($judgeAverages)) {
+                $roundScore = array_sum($judgeAverages) / count($judgeAverages);
+            }
+
+            // Cache for 15 minutes
+            Cache::put($cacheKey, $roundScore, now()->addMinutes(15));
+
+            return $roundScore;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating contestant round score: '.$e->getMessage(), [
+                'contestant_id' => $contestant->id,
+                'round_id' => $round->id,
+                'pageant_id' => $pageant->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return null;
         }
-
-        // Average across all judges for this round
-        $roundScore = null;
-        if (! empty($judgeAverages)) {
-            $roundScore = array_sum($judgeAverages) / count($judgeAverages);
-        }
-
-        // Cache for 15 minutes
-        Cache::put($cacheKey, $roundScore, now()->addMinutes(15));
-
-        return $roundScore;
     }
 
     /**
@@ -110,27 +145,75 @@ class ScoreCalculationService
      */
     public function calculateJudgeContestantScore(int $judgeId, int $contestantId, int $roundId, int $pageantId): ?float
     {
-        $scores = Score::where('pageant_id', $pageantId)
-            ->where('round_id', $roundId)
-            ->where('judge_id', $judgeId)
-            ->where('contestant_id', $contestantId)
-            ->with('criteria')
-            ->get();
+        try {
+            $scores = Score::where('pageant_id', $pageantId)
+                ->where('round_id', $roundId)
+                ->where('judge_id', $judgeId)
+                ->where('contestant_id', $contestantId)
+                ->with('criteria')
+                ->get();
 
-        if ($scores->isEmpty()) {
+            if ($scores->isEmpty()) {
+                return null;
+            }
+
+            $criteriaWeightedSum = 0;
+            $criteriaWeightTotal = 0;
+
+            foreach ($scores as $score) {
+                $weight = $score->criteria->weight ?? 1;
+
+                // Safety checks for weight
+                if ($weight <= 0) {
+                    Log::warning("Invalid weight for criteria {$score->criteria->id}: {$weight}. Using weight of 1.", [
+                        'judge_id' => $judgeId,
+                        'contestant_id' => $contestantId,
+                        'round_id' => $roundId,
+                        'pageant_id' => $pageantId,
+                        'criteria_id' => $score->criteria->id,
+                    ]);
+                    $weight = 1;
+                }
+
+                // Safety check for score value
+                if (! is_numeric($score->score)) {
+                    Log::error("Non-numeric score found: {$score->score} for criteria {$score->criteria->id}", [
+                        'judge_id' => $judgeId,
+                        'contestant_id' => $contestantId,
+                        'round_id' => $roundId,
+                        'pageant_id' => $pageantId,
+                        'score_id' => $score->id,
+                    ]);
+
+                    continue;
+                }
+
+                $criteriaWeightedSum += $score->score * $weight;
+                $criteriaWeightTotal += $weight;
+            }
+
+            if ($criteriaWeightTotal <= 0) {
+                Log::warning("Total criteria weight is zero or negative for judge {$judgeId}, contestant {$contestantId}, round {$roundId}", [
+                    'total_weight' => $criteriaWeightTotal,
+                    'pageant_id' => $pageantId,
+                ]);
+
+                return null;
+            }
+
+            return $criteriaWeightedSum / $criteriaWeightTotal;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating judge contestant score: '.$e->getMessage(), [
+                'judge_id' => $judgeId,
+                'contestant_id' => $contestantId,
+                'round_id' => $roundId,
+                'pageant_id' => $pageantId,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return null;
         }
-
-        $criteriaWeightedSum = 0;
-        $criteriaWeightTotal = 0;
-
-        foreach ($scores as $score) {
-            $weight = $score->criteria->weight ?? 1;
-            $criteriaWeightedSum += $score->score * $weight;
-            $criteriaWeightTotal += $weight;
-        }
-
-        return $criteriaWeightTotal > 0 ? $criteriaWeightedSum / $criteriaWeightTotal : null;
     }
 
     /**
@@ -138,38 +221,65 @@ class ScoreCalculationService
      */
     public function getContestantFinalScore(int $pageantId, int $contestantId, bool $useCache = true): ?float
     {
-        $cacheKey = "contestant_final_score_{$pageantId}_{$contestantId}";
+        try {
+            $cacheKey = "contestant_final_score_{$pageantId}_{$contestantId}";
 
-        if ($useCache && Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
-        }
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
 
-        $pageant = Pageant::with(['contestants', 'rounds', 'judges'])->findOrFail($pageantId);
-        $contestant = $pageant->contestants->find($contestantId);
+            $pageant = Pageant::with(['contestants', 'rounds', 'judges'])->findOrFail($pageantId);
+            $contestant = $pageant->contestants->find($contestantId);
 
-        if (! $contestant) {
+            if (! $contestant) {
+                Log::warning('Contestant not found in pageant', [
+                    'pageant_id' => $pageantId,
+                    'contestant_id' => $contestantId,
+                ]);
+
+                return null;
+            }
+
+            $totalWeightedScore = 0;
+            $totalRoundWeight = 0;
+
+            foreach ($pageant->rounds as $round) {
+                $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
+
+                if ($roundScore !== null) {
+                    $roundWeight = $round->weight ?? 1;
+
+                    // Safety check for round weight
+                    if ($roundWeight <= 0) {
+                        Log::warning("Invalid round weight for round {$round->id}: {$roundWeight}. Using weight of 1.", [
+                            'pageant_id' => $pageantId,
+                            'round_id' => $round->id,
+                            'contestant_id' => $contestantId,
+                        ]);
+                        $roundWeight = 1;
+                    }
+
+                    $totalWeightedScore += $roundScore * $roundWeight;
+                    $totalRoundWeight += $roundWeight;
+                }
+            }
+
+            $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : null;
+
+            // Cache for 30 minutes
+            Cache::put($cacheKey, $finalScore, now()->addMinutes(30));
+
+            return $finalScore;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating contestant final score: '.$e->getMessage(), [
+                'pageant_id' => $pageantId,
+                'contestant_id' => $contestantId,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return null;
         }
-
-        $totalWeightedScore = 0;
-        $totalRoundWeight = 0;
-
-        foreach ($pageant->rounds as $round) {
-            $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
-
-            if ($roundScore !== null) {
-                $roundWeight = $round->weight ?? 1;
-                $totalWeightedScore += $roundScore * $roundWeight;
-                $totalRoundWeight += $roundWeight;
-            }
-        }
-
-        $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : null;
-
-        // Cache for 30 minutes
-        Cache::put($cacheKey, $finalScore, now()->addMinutes(30));
-
-        return $finalScore;
     }
 
     /**

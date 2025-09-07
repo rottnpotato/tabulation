@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Poppins', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            sand: {
+              50: '#fbfbf8', 100: '#f7f3ea', 200: '#eee7d5', 300: '#e6dcbc',
+              400: '#e0d4aa', 500: '#d7c88e', 600: '#b7a773', 700: '#9a8c62',
+              800: '#7b6f4d', 900: '#5f553c'
+            },
+            ink: { 50: '#f6f6f7', 100: '#eaeaec', 200: '#cfd0d6', 300: '#a8aab4', 400: '#7b7e8c', 500: '#545766', 600: '#3d4050', 700: '#2d2f3b', 800: '#1f212b', 900: '#161822' },
+            yolk: '#f4c53d',
+          },
+          boxShadow: {
+            smooth: '0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.08)'
+          },
+          borderRadius: {
+            xl2: '1.25rem',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body { height: 100%; }
+    .glass { backdrop-filter: blur(8px); background: rgba(255,255,255,0.65); }
+    .ring-progress { background: conic-gradient(#f4c53d var(--p,0%), #e9e7df 0); }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-full bg-gradient-to-br from-sand-100 via-sand-50 to-yellow-50 text-ink-800">
+  <!-- Container -->
+  <div class="mx-auto max-w-[1200px] px-4 py-6">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl2 bg-ink-900 text-white grid place-content-center font-semibold">C</div>
+        <div class="text-ink-700 font-semibold tracking-wide">Crextio</div>
+      </div>
+      <nav class="flex items-center gap-2 rounded-full bg-white/70 p-1 shadow-smooth">
+        <button class="px-4 py-2 rounded-full bg-ink-900 text-white text-sm font-medium">Dashboard</button>
+        <button class="px-4 py-2 rounded-full text-ink-600 text-sm hover:bg-white">People</button>
+        <button class="px-4 py-2 rounded-full text-ink-600 text-sm hover:bg-white">Hiring</button>
+        <button class="px-4 py-2 rounded-full text-ink-600 text-sm hover:bg-white">Devices</button>
+        <button class="px-4 py-2 rounded-full text-ink-600 text-sm hover:bg-white">Apps</button>
+        <button class="px-4 py-2 rounded-full text-ink-600 text-sm hover:bg-white">Salary</button>
+        <button class="px-4 py-2 rounded-full text-ink-600 text-sm hover:bg-white">Calendar</button>
+        <button class="px-4 py-2 rounded-full text-ink-600 text-sm hover:bg-white">Reviews</button>
+        <button class="px-4 py-2 rounded-full text-ink-600 text-sm hover:bg-white">Setting</button>
+      </nav>
+      <div class="flex items-center gap-2">
+        <button class="size-9 rounded-full bg-white/80 shadow-smooth grid place-content-center"><span class="sr-only">Alerts</span>🔔</button>
+        <button class="size-9 rounded-full bg-white/80 shadow-smooth grid place-content-center"><span class="sr-only">Search</span>🔎</button>
+        <div class="size-9 rounded-full overflow-hidden shadow-smooth">
+          <svg viewBox="0 0 40 40" class="w-full h-full">
+            <circle cx="20" cy="13" r="8" fill="#ffdbac"/>
+            <rect x="0" y="22" width="40" height="18" fill="#2d2f3b"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header + KPIs -->
+    <div class="mt-8 grid grid-cols-12 gap-5">
+      <div class="col-span-12 lg:col-span-7">
+        <h1 class="text-4xl lg:text-5xl font-semibold tracking-tight">Welcome in, Nixtio</h1>
+        <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- stat -->
+          <div class="glass rounded-xl2 p-4 shadow-smooth">
+            <div class="text-sm text-ink-600">Interviews</div>
+            <div class="mt-2 h-2 w-full rounded-full bg-ink-100 overflow-hidden">
+              <div class="h-full w-[15%] rounded-full bg-ink-800"></div>
+            </div>
+            <div class="mt-1 text-xs text-ink-600">15%</div>
+          </div>
+          <div class="glass rounded-xl2 p-4 shadow-smooth">
+            <div class="text-sm text-ink-600">Hired</div>
+            <div class="mt-2 h-2 w-full rounded-full bg-ink-100 overflow-hidden">
+              <div class="h-full w-[15%] rounded-full bg-yellow-400"></div>
+            </div>
+            <div class="mt-1 text-xs text-ink-600">15%</div>
+          </div>
+          <div class="glass rounded-xl2 p-4 shadow-smooth">
+            <div class="text-sm text-ink-600">Project time</div>
+            <div class="mt-2 h-2 w-full rounded-full bg-ink-100 overflow-hidden">
+              <div class="h-full w-[60%] rounded-full bg-ink-300"></div>
+            </div>
+            <div class="mt-1 text-xs text-ink-600">60%</div>
+          </div>
+          <div class="glass rounded-xl2 p-4 shadow-smooth">
+            <div class="text-sm text-ink-600">Output</div>
+            <div class="mt-2 h-2 w-full rounded-full bg-ink-100 overflow-hidden">
+              <div class="h-full w-[10%] rounded-full bg-ink-300 bg-[repeating-linear-gradient(45deg,#e5e7eb_0_8px,#ffffff_8px_16px)]"></div>
+            </div>
+            <div class="mt-1 text-xs text-ink-600">10%</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-span-12 lg:col-span-5 grid grid-cols-3 gap-4 items-end">
+        <div class="glass rounded-xl2 p-4 text-center shadow-smooth">
+          <div class="text-3xl font-semibold">78</div>
+          <div class="text-xs text-ink-600 mt-1">Employee</div>
+        </div>
+        <div class="glass rounded-xl2 p-4 text-center shadow-smooth">
+          <div class="text-3xl font-semibold">56</div>
+          <div class="text-xs text-ink-600 mt-1">Hirings</div>
+        </div>
+        <div class="glass rounded-xl2 p-4 text-center shadow-smooth">
+          <div class="text-3xl font-semibold">203</div>
+          <div class="text-xs text-ink-600 mt-1">Projects</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="mt-5 grid grid-cols-12 gap-5">
+      <!-- Profile Card -->
+      <section class="col-span-12 md:col-span-4 glass rounded-[1.5rem] p-5 shadow-smooth">
+        <div class="aspect-[16/10] w-full overflow-hidden rounded-[1.25rem] bg-gradient-to-tr from-ink-300/40 to-white grid place-items-center">
+          <svg viewBox="0 0 160 100" class="w-full h-full">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#f7e7b8"/>
+                <stop offset="1" stop-color="#fff"/>
+              </linearGradient>
+            </defs>
+            <rect width="160" height="100" fill="url(#g)"/>
+            <circle cx="52" cy="50" r="26" fill="#ffdbac"/>
+            <rect x="0" y="62" width="160" height="38" fill="#2d2f3b"/>
+          </svg>
+        </div>
+        <div class="mt-4 flex items-center justify-between">
+          <div>
+            <div class="font-medium">Lora Piterson</div>
+            <div class="text-xs text-ink-600">UX/UI Designer</div>
+          </div>
+          <div class="rounded-full bg-ink-900 text-white text-xs px-3 py-1 shadow-smooth">$1,200</div>
+        </div>
+        <div class="mt-6 divide-y divide-ink-100 rounded-xl2 bg-white/70 shadow-smooth">
+          <details open class="group p-4">
+            <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-ink-700">
+              Pension contributions <span class="transition group-open:rotate-180">⌃</span>
+            </summary>
+            <div class="mt-3 text-xs text-ink-600">Current plan: Silver • Employer match 4%</div>
+          </details>
+          <details class="group p-4">
+            <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-ink-700">
+              Devices <span class="transition group-open:rotate-180">⌃</span>
+            </summary>
+            <div class="mt-3 flex items-center gap-3 text-sm">
+              <div class="h-10 w-16 rounded-lg bg-gradient-to-br from-ink-200 to-ink-50 grid place-content-center">💻</div>
+              <div>
+                <div class="font-medium">MacBook Air</div>
+                <div class="text-xs text-ink-600">Version M1</div>
+              </div>
+            </div>
+          </details>
+          <details class="group p-4">
+            <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-ink-700">
+              Compensation Summary <span class="transition group-open:rotate-180">⌃</span>
+            </summary>
+            <div class="mt-3 text-xs text-ink-600">Base $1,200 • Bonus $300 • Equity 0.1%</div>
+          </details>
+          <details class="group p-4">
+            <summary class="flex cursor-pointer list-none items-center justify-between text-sm font-medium text-ink-700">
+              Employee Benefits <span class="transition group-open:rotate-180">⌃</span>
+            </summary>
+            <div class="mt-3 text-xs text-ink-600">Health, Dental, Vision, Remote stipend</div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Progress Card -->
+      <section class="col-span-12 md:col-span-4 glass rounded-[1.5rem] p-5 shadow-smooth">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-lg font-medium">Progress</div>
+            <div class="text-xs text-ink-600">6.1h Work Time this week</div>
+          </div>
+          <button class="size-8 rounded-full grid place-content-center bg-white/70 shadow-smooth">↗</button>
+        </div>
+        <!-- Bar chart -->
+        <div class="mt-6 grid grid-cols-7 gap-3 items-end h-36">
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-3 rounded-full bg-ink-100" style="height:40%"></div>
+            <div class="text-[10px] text-ink-500">S</div>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-3 rounded-full bg-ink-100" style="height:55%"></div>
+            <div class="text-[10px] text-ink-500">M</div>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-3 rounded-full bg-ink-300" style="height:65%"></div>
+            <div class="text-[10px] text-ink-500">T</div>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-3 rounded-full bg-ink-300" style="height:70%"></div>
+            <div class="text-[10px] text-ink-500">W</div>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-3 rounded-full bg-ink-900" style="height:85%"></div>
+            <div class="text-[10px] text-ink-500">T</div>
+          </div>
+          <div class="flex flex-col items-center gap-2 relative">
+            <div class="w-3 rounded-full bg-yellow-400" style="height:95%"></div>
+            <span class="absolute -top-5 right-1 text-[10px] rounded-full bg-yellow-100 px-2 py-0.5 text-ink-700">5h 23m</span>
+            <div class="text-[10px] text-ink-500">F</div>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="w-3 rounded-full bg-ink-100" style="height:35%"></div>
+            <div class="text-[10px] text-ink-500">S</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Time Tracker -->
+      <section class="col-span-12 md:col-span-4 glass rounded-[1.5rem] p-5 shadow-smooth">
+        <div class="flex items-start justify-between">
+          <div class="text-lg font-medium">Time tracker</div>
+          <button class="size-8 rounded-full grid place-content-center bg-white/70 shadow-smooth">↗</button>
+        </div>
+        <div class="mt-6 grid place-items-center">
+          <div class="relative size-40 rounded-full ring-progress" style="--p:72%">
+            <div class="absolute inset-3 rounded-full bg-white/90 grid place-items-center shadow-inner">
+              <div class="text-center">
+                <div class="text-3xl font-semibold">02:35</div>
+                <div class="text-xs text-ink-600">Work Time</div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center gap-3">
+            <button class="size-9 rounded-full bg-white/80 grid place-content-center shadow-smooth">⏵</button>
+            <button class="size-9 rounded-full bg-white/80 grid place-content-center shadow-smooth">⏸</button>
+            <button class="size-9 rounded-full bg-ink-900 text-white grid place-content-center shadow-smooth">⚙</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Onboarding Card -->
+      <section class="col-span-12 md:col-span-4 glass rounded-[1.5rem] p-5 shadow-smooth">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="text-lg font-medium">Onboarding</div>
+            <div class="text-xs text-ink-600">18%</div>
+          </div>
+        </div>
+        <div class="mt-4 flex items-center gap-2">
+          <span class="px-3 py-1 rounded-full bg-yellow-200 text-xs text-ink-800">Task</span>
+          <span class="px-3 py-1 rounded-full bg-ink-200 text-xs text-ink-700">Docs</span>
+          <span class="px-3 py-1 rounded-full bg-ink-100 text-xs text-ink-600">HR</span>
+        </div>
+        <div class="mt-5 rounded-[1.25rem] bg-ink-900 text-white p-4">
+          <div class="flex items-center justify-between text-sm">
+            <div>Onboarding Task</div>
+            <div>2/8</div>
+          </div>
+          <ul class="mt-4 space-y-3 text-sm">
+            <li class="flex items-center gap-3"><span class="size-6 grid place-content-center rounded-full bg-ink-700">📄</span> Interview <span class="ml-auto text-ink-400">Sep 15, 08:30</span> <span class="ml-2">✔</span></li>
+            <li class="flex items-center gap-3"><span class="size-6 grid place-content-center rounded-full bg-ink-700">👥</span> Team Meeting <span class="ml-auto text-ink-400">Sep 15, 10:30</span> <span class="ml-2">✔</span></li>
+            <li class="flex items-center gap-3"><span class="size-6 grid place-content-center rounded-full bg-ink-700">📝</span> Project Update <span class="ml-auto text-ink-400">Sep 15, 13:00</span></li>
+            <li class="flex items-center gap-3"><span class="size-6 grid place-content-center rounded-full bg-ink-700">💬</span> Discuss Q3 Goals <span class="ml-auto text-ink-400">Sep 15, 14:45</span></li>
+            <li class="flex items-center gap-3"><span class="size-6 grid place-content-center rounded-full bg-ink-700">📚</span> HR Policy Review <span class="ml-auto text-ink-400">Sep 16, 10:30</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Calendar Timeline -->
+      <section class="col-span-12 md:col-span-8 glass rounded-[1.5rem] p-5 shadow-smooth">
+        <div class="flex items-center justify-between">
+          <div class="flex items-end gap-3">
+            <div class="text-sm text-ink-600">August</div>
+            <div class="text-xl font-medium">September 2024</div>
+            <div class="text-sm text-ink-600">October</div>
+          </div>
+          <div class="flex gap-2">
+            <button class="size-8 rounded-full bg-white/80 grid place-content-center shadow-smooth">‹</button>
+            <button class="size-8 rounded-full bg-white/80 grid place-content-center shadow-smooth">›</button>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-7 gap-4 text-center text-xs text-ink-600">
+          <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+        </div>
+        <div class="mt-2 relative h-40 rounded-xl2 bg-white/70 p-4 shadow-inner">
+          <div class="absolute left-[8%] top-6 w-40 rounded-full bg-ink-900 text-white text-xs px-3 py-1 shadow-smooth">Weekly Team Sync <span class="opacity-70">• Discuss progress</span></div>
+          <div class="absolute left-[38%] top-24 w-48 rounded-full bg-yellow-300/90 text-ink-900 text-xs px-3 py-1 shadow-smooth">Onboarding Session <span class="opacity-70">• Introduction</span></div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="mt-10 text-center text-xs text-ink-500">
+      Standalone preview • No app code touched.
+    </footer>
+  </div>
+</body>
+</html>

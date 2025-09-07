@@ -167,9 +167,21 @@ watch(() => props.scores, (newScores) => {
 
 onMounted(() => {
   if (props.pageant) {
-    console.log('Subscribing to pageant channel:', `pageant.${props.pageant.id}`)
-    window.Echo.private(`pageant.${props.pageant.id}`)
-      .listen('ScoreUpdated', async (e: any) => {
+    const channelName = `pageant.${props.pageant.id}`
+    console.log('Subscribing to pageant channel:', channelName)
+
+    // Ensure we do not attach multiple listeners when the component remounts (HMR / navigation)
+    const channel = window.Echo.private(channelName)
+    channel.stopListening('ScoreUpdated')
+
+    // Track in-flight fetches to avoid parallel requests for the same key
+    const inFlightAggregations = new Set<string>()
+
+    // Notification cooldown per (contestant-judge-round)
+    const NOTIFICATION_COOLDOWN_MS = 1500
+    const notificationCooldowns = new Map<string, number>()
+
+    channel.listen('ScoreUpdated', async (e: any) => {
         console.log('ScoreUpdated event received:', e)
         // When a score is updated, we need to recalculate the aggregated judge score
         // for this contestant-judge-round combination
@@ -177,6 +189,14 @@ onMounted(() => {
 
         console.log('Current round ID:', currentRoundId.value, 'Event round ID:', round_id)
         if (round_id == currentRoundId.value) {
+          const key = `${contestant_id}-${judge_id}-${round_id}`
+
+          // Avoid duplicate work if a fetch for this key is already in progress
+          if (inFlightAggregations.has(key)) {
+            return
+          }
+          inFlightAggregations.add(key)
+
           // Fetch just the updated aggregated score for this specific judge-contestant-round
           try {
             const response = await fetch(route('tabulator.scores.aggregated', [props.pageant?.id, round_id]) + `?judge_id=${judge_id}&contestant_id=${contestant_id}`, {
@@ -189,16 +209,25 @@ onMounted(() => {
             if (response.ok) {
               const data = await response.json();
               if (data.aggregated_score !== undefined && data.aggregated_score !== null) {
-                const key = `${contestant_id}-${judge_id}-${round_id}`;
-                localScores.value.set(key, data.aggregated_score);
-                console.log(`Score updated for contestant ${contestant_id} by judge ${judge_id}: ${data.aggregated_score}`);
-                
-                // Show notification
-                if (notificationSystem.value) {
-                  notificationSystem.value.success(`Score updated in real-time: ${data.aggregated_score}`, {
+                const oldScore = localScores.value.get(key)
+                const newScore = Number(data.aggregated_score)
+                const changed = oldScore === undefined || Math.abs(Number(oldScore) - newScore) > 1e-9
+
+                // Update local cache
+                localScores.value.set(key, newScore)
+                console.log(`Score updated for contestant ${contestant_id} by judge ${judge_id}: ${newScore}`)
+
+                // Only notify if the value actually changed and not within cooldown window
+                const now = Date.now()
+                const lastNotified = notificationCooldowns.get(key) ?? 0
+                const withinCooldown = now - lastNotified < NOTIFICATION_COOLDOWN_MS
+
+                if (changed && !withinCooldown && notificationSystem.value) {
+                  notificationSystem.value.success(`Score updated in real-time: ${newScore}`, {
                     title: 'Live Score Update',
                     timeout: 3000
                   })
+                  notificationCooldowns.set(key, now)
                 }
               }
             } else {
@@ -208,10 +237,12 @@ onMounted(() => {
             }
           } catch (error) {
             console.error('Network error while refreshing aggregated score:', error);
-            // Add a small delay before fallback to avoid rapid requests
+            // small delay before fallback to avoid rapid requests
             setTimeout(() => {
               refreshData();
             }, 1000);
+          } finally {
+            inFlightAggregations.delete(key)
           }
         }
       });
@@ -220,7 +251,8 @@ onMounted(() => {
 
 onUnmounted(() => {
     if (props.pageant) {
-        window.Echo.leave(`pageant.${props.pageant.id}`);
+        const channelName = `pageant.${props.pageant.id}`
+        window.Echo.leave(channelName);
     }
 });
 
