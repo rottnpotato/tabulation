@@ -230,6 +230,10 @@ const props = defineProps({
   }
 })
 
+for(const pageant of props.pageants) {
+  console.log(pageant)
+}
+
 // State
 const isLoading = ref(false)
 const showFilters = ref(false)

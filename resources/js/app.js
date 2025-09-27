@@ -42,7 +42,7 @@ createInertiaApp({
         // No need to override it since Laravel generates the correct URL with port
         
         createApp({ render: () => h(App, props) })
-            .use(plugin)
+            .use(plugin)    
             .use(pinia)
             .use(ZiggyVue, Ziggy)
             .use(NotificationPlugin, {

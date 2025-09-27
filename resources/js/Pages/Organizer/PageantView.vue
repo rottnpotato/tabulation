@@ -431,11 +431,20 @@
             <h3 class="text-lg font-semibold text-gray-900">Contestants</h3>
             <div v-if="canEdit" class="flex items-center space-x-2">
               <button
+                v-if="allowsSoloContestants"
                 @click="openAddContestantModal"
                 class="inline-flex items-center px-3 py-2 bg-orange-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
               >
                 <Plus class="h-4 w-4 mr-1.5" />
                 Add Contestant
+              </button>
+              <button
+                v-if="allowsPairContestants"
+                @click="openAddPairModal"
+                class="inline-flex items-center px-3 py-2 bg-emerald-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+              >
+                <Users class="h-4 w-4 mr-1.5" />
+                Add Pair
               </button>
               <Link 
                 :href="route('organizer.pageant.contestants-management', pageant.id)"
@@ -1399,6 +1408,16 @@
         </div>
       </Dialog>
     </TransitionRoot>
+
+    <!-- Add Pair Modal -->
+    <ContestantFormModal
+      :show="showPairModal"
+      :pageant-id="pageant.id"
+      :pageant="pageant"
+      mode="pair"
+      @close="showPairModal = false"
+      @saved="handlePairSaved"
+    />
     
     <!-- Delete Contestant Confirmation Modal -->
     <div v-if="showDeleteContestantModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
@@ -1835,6 +1854,7 @@ import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue'
 import Tooltip from '@/Components/Tooltip.vue'
 import CustomSelect from '@/Components/CustomSelect.vue'
+import ContestantFormModal from '@/Components/ContestantFormModal.vue'
 
 defineOptions({
   layout: OrganizerLayout
@@ -1854,6 +1874,7 @@ const props = defineProps({
     required: true
   }
 })
+console.log(props.pageant)
 
 // State
 const activeTab = ref('overview')
@@ -1872,6 +1893,7 @@ const contestantToDelete = ref(null)
 const deleteContestantProcessing = ref(false)
 const photoPreview = ref(null)
 const photoInput = ref(null)
+const showPairModal = ref(false)
 
 // Rounds modal states
 const showRoundModal = ref(false)
@@ -2117,6 +2139,15 @@ const scoringSystemForm = ref({
 const isDevelopment = computed(() => {
   return import.meta.env.DEV || false
 })
+
+// Whether pairs are allowed in this pageant
+const allowsPairContestants = computed(() => {
+  return ['pairs', 'both'].includes(props.pageant.contestant_type)
+})
+const allowsSoloContestants = computed(() => {
+  return !['pairs'].includes(props.pageant.contestant_type) && props.pageant.contestant_type !== 'both'
+})
+
 
 // Get the correct display image for a contestant with validation
 const getContestantDisplayImage = (contestant) => {
@@ -2720,6 +2751,15 @@ const openAddContestantModal = () => {
   editingContestant.value = null
   resetContestantForm()
   showContestantModal.value = true
+}
+
+const openAddPairModal = () => {
+  showPairModal.value = true
+}
+
+const handlePairSaved = () => {
+  showPairModal.value = false
+  router.reload({ only: ['pageant'] })
 }
 
 const openEditContestantModal = (contestant) => {
