@@ -18,24 +18,58 @@
                 Back to Pageant
               </Link>
             </Tooltip>
-            <Tooltip v-if="allowsSoloContestants" :text="isPairsOnly ? 'Register individual contestants to create pairs' : 'Register a new individual contestant for this pageant'" position="bottom">
-              <button
-                @click="showAddModal = true"
-                class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
-              >
-                <Plus class="h-4 w-4 mr-2" />
-                {{ isPairsOnly ? 'Add Individual' : 'Add Contestant' }}
-              </button>
-            </Tooltip>
-            <Tooltip v-if="allowsPairContestants" text="Create a pair from existing individual contestants" position="bottom">
-              <button
-                @click="showPairModal = true"
-                class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
-              >
-                <Users class="h-4 w-4 mr-2" />
-                Create Pair
-              </button>
-            </Tooltip>
+            
+            <!-- For pairs-only pageants, show pair creation as primary action -->
+            <template v-if="isPairsOnly">
+              <Tooltip text="Create a new pair entry for this pairs-only pageant" position="bottom">
+                <button
+                  @click="openPairCreationModal"
+                  class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
+                >
+                  <Users class="h-4 w-4 mr-2" />
+                  Add Pair
+                </button>
+              </Tooltip>
+            </template>
+            
+            <!-- For solo-only pageants, show individual creation -->
+            <template v-else-if="isSoloOnly">
+              <Tooltip text="Add a new individual contestant for this solo pageant" position="bottom">
+                <button
+                  @click="openIndividualCreationModal"
+                  class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
+                >
+                  <Plus class="h-4 w-4 mr-2" />
+                  Add Contestant
+                </button>
+              </Tooltip>
+            </template>
+            
+            <!-- For mixed pageants, show toggle options -->
+            <template v-else-if="allowsBothTypes">
+              <div class="flex rounded-lg border border-gray-300 bg-white shadow-sm">
+                <Tooltip text="Add an individual contestant" position="bottom">
+                  <button
+                    @click="openIndividualCreationModal"
+                    class="px-4 py-2 text-sm font-medium transition-all flex items-center rounded-l-lg border-r border-gray-300"
+                    :class="selectedCreationType === 'individual' ? 'text-white bg-orange-500 hover:bg-orange-600' : 'text-gray-700 hover:bg-gray-50'"
+                  >
+                    <Plus class="h-4 w-4 mr-2" />
+                    Add Individual
+                  </button>
+                </Tooltip>
+                <Tooltip text="Create a pair entry" position="bottom">
+                  <button
+                    @click="openPairCreationModal"
+                    class="px-4 py-2 text-sm font-medium transition-all flex items-center rounded-r-lg"
+                    :class="selectedCreationType === 'pair' ? 'text-white bg-emerald-500 hover:bg-emerald-600' : 'text-gray-700 hover:bg-gray-50'"
+                  >
+                    <Users class="h-4 w-4 mr-2" />
+                    Add Pair
+                  </button>
+                </Tooltip>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -49,7 +83,7 @@
         <div>
           <p class="font-semibold">{{ isPairsOnly ? 'Pairs Only Pageant' : 'Solo Only Pageant' }}</p>
           <p v-if="isPairsOnly" class="mt-1 text-sm text-blue-600">
-            This pageant only accepts paired contestants (Mr & Ms style). You need to add individual contestants first, then create pairs from them.
+            This pageant only accepts paired contestants (Mr & Ms style). Create pair entries directly using the pair creation form.
           </p>
           <p v-else class="mt-1 text-sm text-blue-600">
             This pageant only accepts individual solo contestants. Each contestant competes independently.
@@ -129,15 +163,55 @@
             </span>
           </p>
           <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
-            <Tooltip v-if="allowsSoloContestants" :text="isPairsOnly ? 'Add individual contestants to create pairs later' : 'Add contestants to this specific pageant'" position="top">
-              <button
-                @click="showAddModal = true"
-                class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
-              >
-                <Plus class="h-4 w-4 inline mr-2" />
-                {{ isPairsOnly ? 'Add First Individual' : 'Add First Contestant' }}
-              </button>
-            </Tooltip>
+            <!-- For pairs-only pageants -->
+            <template v-if="isPairsOnly">
+              <Tooltip text="Create your first pair entry for this pairs-only pageant" position="top">
+                <button
+                  @click="openPairCreationModal"
+                  class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+                >
+                  <Users class="h-4 w-4 inline mr-2" />
+                  Add First Pair
+                </button>
+              </Tooltip>
+            </template>
+            
+            <!-- For solo-only pageants -->
+            <template v-else-if="isSoloOnly">
+              <Tooltip text="Add your first contestant to this solo pageant" position="top">
+                <button
+                  @click="openIndividualCreationModal"
+                  class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+                >
+                  <Plus class="h-4 w-4 inline mr-2" />
+                  Add First Contestant
+                </button>
+              </Tooltip>
+            </template>
+            
+            <!-- For mixed pageants -->
+            <template v-else-if="allowsBothTypes">
+              <div class="flex flex-col sm:flex-row gap-3">
+                <Tooltip text="Add an individual contestant" position="top">
+                  <button
+                    @click="openIndividualCreationModal"
+                    class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+                  >
+                    <Plus class="h-4 w-4 inline mr-2" />
+                    Add Individual
+                  </button>
+                </Tooltip>
+                <Tooltip text="Create a pair entry" position="top">
+                  <button
+                    @click="openPairCreationModal"
+                    class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+                  >
+                    <Users class="h-4 w-4 inline mr-2" />
+                    Add Pair
+                  </button>
+                </Tooltip>
+              </div>
+            </template>
             <Tooltip text="Return to pageant overview to manage other settings" position="top">
               <Link
                 :href="route('organizer.pageant.view', pageant.id)"
@@ -177,6 +251,7 @@
       :pageant-id="pageant.id"
       :pageant="pageant"
       :contestant="contestantToEdit"
+      :mode="contestantModalMode"
       @close="closeAddModal"
       @saved="handleContestantSaved"
     />
@@ -188,15 +263,7 @@
       @close="showDetailModal = false"
       @edit="editContestant"
     />
-    <!-- Pair Form Modal -->
-    <PairFormModal
-      :show="showPairModal"
-      :pageant-id="pageant.id"
-      :pageant="pageant"
-      :contestants="contestants"
-      @close="showPairModal = false"
-      @created="async () => { showPairModal = false; await fetchContestants(); }"
-    />
+    <!-- Remove the old PairFormModal as we're now using ContestantFormModal for pairs -->
   </div>
 </template>
 
@@ -205,7 +272,6 @@ import { ref, computed, onMounted } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { ArrowLeft, Plus, Users, Search, MapPin, Calendar, Edit, Trash2, Eye, CheckCircle, X, AlertCircle } from 'lucide-vue-next'
 import ContestantFormModal from '@/Components/ContestantFormModal.vue'
-import PairFormModal from '@/Components/PairFormModal.vue'
 import ContestantsGrid from '@/Components/ContestantsGrid.vue'
 import ContestantDetailModal from '@/Components/ContestantDetailModal.vue'
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue'
@@ -231,7 +297,8 @@ const error = ref(null)
 
 // Modal states
 const showAddModal = ref(false)
-const showPairModal = ref(false)
+const contestantModalMode = ref('individual') // 'individual' or 'pair'
+const selectedCreationType = ref('individual')
 const showDetailModal = ref(false)
 const showDeleteModal = ref(false)
 const contestantToEdit = ref(null)
@@ -320,6 +387,8 @@ const openContestantDetail = async (contestant) => {
 
 const editContestant = (contestant) => {
   contestantToEdit.value = contestant
+  contestantModalMode.value = 'individual' // Always individual for editing existing contestants
+  selectedCreationType.value = 'individual'
   showAddModal.value = true
   
   // If the detail modal is open, close it
@@ -331,6 +400,22 @@ const editContestant = (contestant) => {
 const closeAddModal = () => {
   showAddModal.value = false
   contestantToEdit.value = null
+  contestantModalMode.value = 'individual'
+  selectedCreationType.value = 'individual'
+}
+
+const openIndividualCreationModal = () => {
+  contestantModalMode.value = 'individual'
+  selectedCreationType.value = 'individual'
+  contestantToEdit.value = null
+  showAddModal.value = true
+}
+
+const openPairCreationModal = () => {
+  contestantModalMode.value = 'pair'
+  selectedCreationType.value = 'pair'
+  contestantToEdit.value = null
+  showAddModal.value = true
 }
 
 const handleContestantSaved = async (savedContestant) => {

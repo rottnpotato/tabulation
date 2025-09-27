@@ -38,18 +38,8 @@ createInertiaApp({
     setup({ el, App, props, plugin }) {
         const pinia = createPinia();
 
-        // Normalize Ziggy base URL to current origin to avoid cross-origin during dev
-        // This prevents generating absolute URLs pointing to a different host (e.g., localhost vs 127.0.0.1)
-        try {
-            if (typeof window !== 'undefined' && window.location) {
-                // Use protocol + hostname without port for Ziggy.url and set port explicitly
-                const { protocol, hostname, port } = window.location;
-                Ziggy.url = `${protocol}//${hostname}`;
-                Ziggy.port = port ? parseInt(port, 10) : (protocol === 'https:' ? 443 : 80);
-            }
-        } catch (e) {
-            // noop - fall back to generated Ziggy config
-        }
+        // Use the Ziggy configuration as-is from Laravel
+        // No need to override it since Laravel generates the correct URL with port
         
         createApp({ render: () => h(App, props) })
             .use(plugin)

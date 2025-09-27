@@ -850,6 +850,48 @@ const paginationEnd = computed(() => {
   return Math.min(currentPage.value * itemsPerPage.value, filteredPageants.value.length);
 });
 
+// Pagination computed properties for visible page numbers
+const visiblePageNumbers = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const visible = [];
+  
+  if (total <= 7) {
+    // Show all pages if 7 or fewer
+    for (let i = 1; i <= total; i++) {
+      visible.push(i);
+    }
+  } else {
+    // Always show first page
+    visible.push(1);
+    
+    if (current <= 4) {
+      // Near the beginning
+      for (let i = 2; i <= 5; i++) {
+        visible.push(i);
+      }
+      visible.push('...');
+      visible.push(total);
+    } else if (current >= total - 3) {
+      // Near the end
+      visible.push('...');
+      for (let i = total - 4; i <= total; i++) {
+        visible.push(i);
+      }
+    } else {
+      // In the middle
+      visible.push('...');
+      for (let i = current - 1; i <= current + 1; i++) {
+        visible.push(i);
+      }
+      visible.push('...');
+      visible.push(total);
+    }
+  }
+  
+  return visible;
+});
+
 // Watch for filter changes
 watch([currentStatusFilter, dateFilter, organizerFilter, searchQuery, sortBy, sortDirection], () => {
   currentPage.value = 1;

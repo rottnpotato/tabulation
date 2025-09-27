@@ -25,10 +25,10 @@
             <DialogPanel class="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
               <div class="relative bg-gradient-to-r from-purple-600 to-pink-500 p-6 text-white">
                 <DialogTitle as="h3" class="text-2xl font-bold leading-6">
-                  {{ contestant ? 'Edit Contestant' : 'Add New Contestant' }}
+                  {{ contestant ? 'Edit Contestant' : (mode === 'pair' ? 'Add New Pair' : 'Add New Contestant') }}
                 </DialogTitle>
                 <p class="mt-2 text-purple-100 max-w-2xl">
-                  {{ contestant ? 'Update contestant details and photos' : 'Enter contestant information and upload photos' }}
+                  {{ contestant ? 'Update contestant details and photos' : (mode === 'pair' ? 'Enter pair information and upload photos for both members' : 'Enter contestant information and upload photos') }}
                 </p>
                 <!-- Pageant Type Context -->
                 <div v-if="pageant && pageant.contestant_type && !contestant" class="mt-3 p-3 bg-purple-500/30 rounded-lg border border-purple-400/30">
@@ -46,7 +46,7 @@
               <form @submit.prevent="handleSubmit" enctype="multipart/form-data" class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <!-- Left Column -->
-                  <div class="space-y-6">
+                  <div class="space-y-6" v-if="mode === 'individual' || contestant">
                     <div>
                       <div class="flex items-center mb-1">
                         <label for="contestantNumber" class="block text-sm font-medium text-gray-700">
@@ -135,7 +135,7 @@
                   </div>
 
                   <!-- Right Column -->
-                  <div class="space-y-6">
+                  <div class="space-y-6" v-if="mode === 'individual' || contestant">
                     <div>
                       <div class="flex items-center mb-1">
                         <label for="gender" class="block text-sm font-medium text-gray-700">
@@ -261,6 +261,218 @@
                       </div>
                     </div>
                   </div>
+
+                  <!-- Pair Creation Form -->
+                  <div v-if="mode === 'pair' && !contestant" class="space-y-6">
+                    <!-- Pair Number -->
+                    <div class="mb-6">
+                      <div class="flex items-center mb-1">
+                        <label for="pairNumber" class="block text-sm font-medium text-gray-700">
+                          Pair Number <span class="text-red-500">*</span>
+                        </label>
+                        <Tooltip text="This number will be shared by both members of the pair for identification during the pageant." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
+                      <input
+                        id="pairNumber"
+                        v-model="form.number"
+                        type="number"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.number }"
+                        placeholder="e.g. 1"
+                        required
+                      />
+                      <p v-if="errors.number" class="mt-1 text-sm text-red-500">{{ errors.number }}</p>
+                      <p v-else class="mt-1 text-xs text-gray-500">Enter the pair's competition number (both members will share this number)</p>
+                    </div>
+
+                    <!-- Pair Name (Optional) -->
+                    <div class="mb-6">
+                      <div class="flex items-center mb-1">
+                        <label for="pairName" class="block text-sm font-medium text-gray-700">
+                          Pair Name (Optional)
+                        </label>
+                        <Tooltip text="Optional custom name for the pair. If left blank, names will be auto-generated from member names." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
+                      <input
+                        id="pairName"
+                        v-model="form.name"
+                        type="text"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        placeholder="e.g. Golden Couple"
+                      />
+                      <p class="mt-1 text-xs text-gray-500">Optional. If not provided, will be auto-generated from member names</p>
+                    </div>
+
+                    <!-- Member 1 -->
+                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <Users class="h-5 w-5 mr-2 text-blue-600" />
+                        Member 1
+                      </h4>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Full Name <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            v-model="form.member1.name"
+                            type="text"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member1.name'] }"
+                            placeholder="e.g. John Smith"
+                            required
+                          />
+                          <p v-if="errors['member1.name']" class="mt-1 text-sm text-red-500">{{ errors['member1.name'] }}</p>
+                        </div>
+                        
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Gender <span class="text-red-500">*</span>
+                          </label>
+                          <select
+                            v-model="form.member1.gender"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member1.gender'] }"
+                            required
+                          >
+                            <option value="" disabled>Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </select>
+                          <p v-if="errors['member1.gender']" class="mt-1 text-sm text-red-500">{{ errors['member1.gender'] }}</p>
+                        </div>
+
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Age <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            v-model="form.member1.age"
+                            type="number"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member1.age'] }"
+                            placeholder="e.g. 24"
+                            min="16"
+                            max="35"
+                            required
+                          />
+                          <p v-if="errors['member1.age']" class="mt-1 text-sm text-red-500">{{ errors['member1.age'] }}</p>
+                        </div>
+
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Origin/Location <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            v-model="form.member1.origin"
+                            type="text"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member1.origin'] }"
+                            placeholder="e.g. New York, USA"
+                            required
+                          />
+                          <p v-if="errors['member1.origin']" class="mt-1 text-sm text-red-500">{{ errors['member1.origin'] }}</p>
+                        </div>
+
+                        <div class="md:col-span-2">
+                          <label class="block text-sm font-medium text-gray-700 mb-1">Biography</label>
+                          <textarea
+                            v-model="form.member1.bio"
+                            rows="3"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            placeholder="Share this member's background, achievements, interests..."
+                          ></textarea>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Member 2 -->
+                    <div class="bg-pink-50 rounded-lg p-4 border border-pink-200">
+                      <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <Users class="h-5 w-5 mr-2 text-pink-600" />
+                        Member 2
+                      </h4>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Full Name <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            v-model="form.member2.name"
+                            type="text"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member2.name'] }"
+                            placeholder="e.g. Jane Smith"
+                            required
+                          />
+                          <p v-if="errors['member2.name']" class="mt-1 text-sm text-red-500">{{ errors['member2.name'] }}</p>
+                        </div>
+                        
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Gender <span class="text-red-500">*</span>
+                          </label>
+                          <select
+                            v-model="form.member2.gender"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member2.gender'] }"
+                            required
+                          >
+                            <option value="" disabled>Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                          </select>
+                          <p v-if="errors['member2.gender']" class="mt-1 text-sm text-red-500">{{ errors['member2.gender'] }}</p>
+                        </div>
+
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Age <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            v-model="form.member2.age"
+                            type="number"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member2.age'] }"
+                            placeholder="e.g. 22"
+                            min="16"
+                            max="35"
+                            required
+                          />
+                          <p v-if="errors['member2.age']" class="mt-1 text-sm text-red-500">{{ errors['member2.age'] }}</p>
+                        </div>
+
+                        <div>
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Origin/Location <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            v-model="form.member2.origin"
+                            type="text"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member2.origin'] }"
+                            placeholder="e.g. California, USA"
+                            required
+                          />
+                          <p v-if="errors['member2.origin']" class="mt-1 text-sm text-red-500">{{ errors['member2.origin'] }}</p>
+                        </div>
+
+                        <div class="md:col-span-2">
+                          <label class="block text-sm font-medium text-gray-700 mb-1">Biography</label>
+                          <textarea
+                            v-model="form.member2.bio"
+                            rows="3"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
+                            placeholder="Share this member's background, achievements, interests..."
+                          ></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end space-x-3">
@@ -281,7 +493,7 @@
                       Processing...
                     </span>
                     <span v-else>
-                      {{ contestant ? 'Save Changes' : 'Add Contestant' }}
+                      {{ contestant ? 'Save Changes' : (mode === 'pair' ? 'Create Pair' : 'Add Contestant') }}
                     </span>
                   </button>
                 </div>
@@ -297,7 +509,7 @@
 <script setup>
 import { ref, reactive, watch, computed, onMounted } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
-import { XCircle, Camera, Loader2, HelpCircle } from 'lucide-vue-next'
+import { XCircle, Camera, Loader2, HelpCircle, Users } from 'lucide-vue-next'
 import Tooltip from '@/Components/Tooltip.vue'
 import axios from 'axios'
 
@@ -317,6 +529,11 @@ const props = defineProps({
   contestant: {
     type: Object,
     default: null
+  },
+  mode: {
+    type: String,
+    default: 'individual', // 'individual' or 'pair'
+    validator: value => ['individual', 'pair'].includes(value)
   }
 })
 
@@ -329,6 +546,21 @@ const form = reactive({
   origin: '',
   age: '',
   bio: '',
+  // Pair-specific fields
+  member1: {
+    name: '',
+    gender: '',
+    age: '',
+    origin: '',
+    bio: '',
+  },
+  member2: {
+    name: '',
+    gender: '',
+    age: '',
+    origin: '',
+    bio: '',
+  }
 })
 
 const errors = reactive({})
@@ -340,9 +572,24 @@ const imagePreviewUrls = ref([])
 const resetForm = () => {
   form.name = ''
   form.number = ''
+  form.gender = ''
   form.origin = ''
   form.age = ''
   form.bio = ''
+  form.member1 = {
+    name: '',
+    gender: '',
+    age: '',
+    origin: '',
+    bio: '',
+  }
+  form.member2 = {
+    name: '',
+    gender: '',
+    age: '',
+    origin: '',
+    bio: '',
+  }
   Object.keys(errors).forEach(key => delete errors[key])
   imageFiles.value = []
   existingImages.value = []
@@ -423,13 +670,116 @@ const handleSubmit = async () => {
   
   try {
     const formData = new FormData()
-    formData.append('name', form.name)
-    formData.append('number', form.number)
-    formData.append('gender', form.gender)
     
-    if (form.origin) formData.append('origin', form.origin)
-    if (form.age) formData.append('age', form.age)
-    if (form.bio) formData.append('bio', form.bio)
+    if (props.mode === 'pair' && !props.contestant) {
+      // Client-side validation for pairs
+      if (form.member1.gender === form.member2.gender) {
+        errors['member2.gender'] = 'Pair members must have different genders'
+        isLoading.value = false
+        return
+      }
+      
+      // Validate required fields for both members
+      if (!form.member1.name || !form.member1.gender) {
+        errors['member1.name'] = !form.member1.name ? 'Member 1 name is required' : ''
+        errors['member1.gender'] = !form.member1.gender ? 'Member 1 gender is required' : ''
+        isLoading.value = false
+        return
+      }
+      
+      if (!form.member2.name || !form.member2.gender) {
+        errors['member2.name'] = !form.member2.name ? 'Member 2 name is required' : ''
+        errors['member2.gender'] = !form.member2.gender ? 'Member 2 gender is required' : ''
+        isLoading.value = false
+        return
+      }
+      
+      // For pair creation, we need to create individual contestants first, then create the pair
+      // This is a two-step process to work with the existing backend
+      
+      try {
+        // Step 1: Create member 1
+        const member1FormData = new FormData()
+        member1FormData.append('name', form.member1.name)
+        member1FormData.append('number', form.number)
+        member1FormData.append('gender', form.member1.gender)
+        // Required fields based on backend validation
+        member1FormData.append('age', form.member1.age || '18') // Default age if not provided
+        member1FormData.append('origin', form.member1.origin || 'Not specified') // Default origin if not provided
+        if (form.member1.bio) member1FormData.append('bio', form.member1.bio)
+        
+        const member1Response = await axios.post(
+          `/organizer/pageant/${props.pageantId}/contestants`, 
+          member1FormData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        )
+        
+        if (!member1Response.data.success) {
+          throw new Error('Failed to create first member')
+        }
+        
+        // Step 2: Create member 2
+        const member2FormData = new FormData()
+        member2FormData.append('name', form.member2.name)
+        member2FormData.append('number', form.number)
+        member2FormData.append('gender', form.member2.gender)
+        // Required fields based on backend validation
+        member2FormData.append('age', form.member2.age || '18') // Default age if not provided
+        member2FormData.append('origin', form.member2.origin || 'Not specified') // Default origin if not provided
+        if (form.member2.bio) member2FormData.append('bio', form.member2.bio)
+        
+        const member2Response = await axios.post(
+          `/organizer/pageant/${props.pageantId}/contestants`, 
+          member2FormData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        )
+        
+        if (!member2Response.data.success) {
+          throw new Error('Failed to create second member')
+        }
+        
+        // Step 3: Create pair from the two members
+        const pairData = {
+          name: form.name || null,
+          member_ids: [member1Response.data.contestant.id, member2Response.data.contestant.id]
+        }
+        
+        const pairResponse = await axios.post(
+          `/organizer/pageant/${props.pageantId}/pairs`, 
+          pairData
+        )
+        
+        if (pairResponse.data.success) {
+          emit('saved', pairResponse.data.contestant)
+          closeModal()
+        } else {
+          errors.general = 'Failed to create pair. Please try again.'
+        }
+        
+      } catch (error) {
+        console.error('Error creating pair:', error)
+        if (error.response && error.response.data && error.response.data.errors) {
+          Object.assign(errors, error.response.data.errors)
+        } else if (error.response && error.response.data && error.response.data.message) {
+          errors.general = error.response.data.message
+        } else {
+          errors.general = 'An error occurred while creating the pair. Please try again.'
+        }
+      } finally {
+        isLoading.value = false
+      }
+      return
+      
+    } else {
+      // Individual contestant submission
+      formData.append('name', form.name)
+      formData.append('number', form.number)
+      formData.append('gender', form.gender)
+      
+      if (form.origin) formData.append('origin', form.origin)
+      if (form.age) formData.append('age', form.age)
+      if (form.bio) formData.append('bio', form.bio)
+    }
     
     // Add images
     imageFiles.value.forEach(file => {
@@ -468,7 +818,7 @@ const handleSubmit = async () => {
         }
       )
     } else {
-      // Create new contestant
+      // Create new individual contestant
       response = await axios.post(
         `/organizer/pageant/${props.pageantId}/contestants`, 
         formData,
@@ -480,7 +830,7 @@ const handleSubmit = async () => {
       )
     }
     
-    if (response.data.success) {
+    if (response && response.data.success) {
       emit('saved', response.data.contestant)
       closeModal()
     }

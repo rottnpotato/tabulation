@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class OrganizerController extends Controller
@@ -1902,7 +1903,16 @@ class OrganizerController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'number' => 'required|string|max:10|unique:contestants,number,NULL,id,pageant_id,'.$pageantId,
+            'number' => [
+                'required',
+                'integer',
+                Rule::unique('contestants')->where(function ($query) use ($pageantId, $request) {
+                    return $query->where('pageant_id', $pageantId)
+                        ->where('gender', $request->input('gender'))
+                        ->where('is_pair', false);
+                }),
+            ],
+            'gender' => ['required', 'string', Rule::in(['male', 'female'])],
             'age' => 'required|integer|min:16|max:35',
             'origin' => 'required|string|max:255',
             'bio' => 'nullable|string',
@@ -1922,7 +1932,8 @@ class OrganizerController extends Controller
         $contestant = Contestant::create([
             'pageant_id' => $pageantId,
             'name' => $validated['name'],
-            'number' => $validated['number'],
+            'number' => (int) $validated['number'],
+            'gender' => $validated['gender'],
             'age' => $validated['age'],
             'origin' => $validated['origin'],
             'bio' => $validated['bio'],
@@ -1987,7 +1998,16 @@ class OrganizerController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'number' => 'required|string|max:10|unique:contestants,number,'.$contestantId.',id,pageant_id,'.$pageantId,
+            'number' => [
+                'required',
+                'integer',
+                Rule::unique('contestants')->where(function ($query) use ($pageantId, $request) {
+                    return $query->where('pageant_id', $pageantId)
+                        ->where('gender', $request->input('gender'))
+                        ->where('is_pair', false);
+                })->ignore($contestantId),
+            ],
+            'gender' => ['required', 'string', Rule::in(['male', 'female'])],
             'age' => 'required|integer|min:16|max:35',
             'origin' => 'required|string|max:255',
             'bio' => 'nullable|string',
