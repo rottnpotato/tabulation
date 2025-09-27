@@ -47,6 +47,7 @@ class ContestantController extends Controller
                     'id' => $contestant->id,
                     'name' => $contestant->name,
                     'number' => $contestant->number,
+                    'gender' => $contestant->gender,
                     'origin' => $contestant->origin,
                     'age' => $contestant->age,
                     'bio' => $contestant->bio,
@@ -94,10 +95,14 @@ class ContestantController extends Controller
             'number' => [
                 'required',
                 'integer',
-                Rule::unique('contestants')->where(function ($query) use ($pageantId) {
-                    return $query->where('pageant_id', $pageantId);
+                // Allow same number per pageant as long as gender differs
+                Rule::unique('contestants')->where(function ($query) use ($pageantId, $request) {
+                    return $query->where('pageant_id', $pageantId)
+                        ->where('gender', $request->input('gender'))
+                        ->where('is_pair', false);
                 }),
             ],
+            'gender' => ['required', 'string', Rule::in(['male', 'female'])],
             'origin' => 'nullable|string|max:255',
             'age' => 'nullable|integer|min:1|max:150',
             'bio' => 'nullable|string',
@@ -113,6 +118,7 @@ class ContestantController extends Controller
             $contestant->pageant_id = $pageantId;
             $contestant->name = $validated['name'];
             $contestant->number = $validated['number'];
+            $contestant->gender = $validated['gender'];
             $contestant->origin = $validated['origin'] ?? null;
             $contestant->age = $validated['age'] ?? null;
             $contestant->bio = $validated['bio'] ?? null;
@@ -142,13 +148,57 @@ class ContestantController extends Controller
                 "Created contestant '{$contestant->name}' for pageant ID {$pageantId}"
             );
 
-            return redirect()->back()->with('success', 'Contestant created successfully');
+            // Build response payload consistent with index/show
+            $primaryImage = $contestant->primaryImage();
+            $responseContestant = [
+                'id' => $contestant->id,
+                'name' => $contestant->name,
+                'number' => $contestant->number,
+                'gender' => $contestant->gender,
+                'origin' => $contestant->origin,
+                'age' => $contestant->age,
+                'bio' => $contestant->bio,
+                'photo' => $primaryImage ? asset('storage/'.$primaryImage->image_path) : null,
+                'active' => $contestant->active,
+                'is_pair' => (bool) $contestant->is_pair,
+                'members' => [],
+                'members_text' => null,
+                'images' => $contestant->images->map(function ($image) {
+                    return [
+                        'id' => $image->id,
+                        'path' => asset('storage/'.$image->image_path),
+                        'is_primary' => $image->is_primary,
+                        'caption' => $image->caption,
+                        'display_order' => $image->display_order,
+                    ];
+                })->values(),
+            ];
+
+            // If this was an Inertia request, respond with a redirect (required by Inertia)
+            if ($request->header('X-Inertia')) {
+                return to_route('organizer.pageant.contestants-management', ['id' => $pageantId])
+                    ->with('success', "Contestant '{$contestant->name}' created.");
+            }
+
+            // Otherwise, return JSON for axios/AJAX consumers
+            // If this was an Inertia request, respond with a redirect (required by Inertia)
+            if ($request->header('X-Inertia')) {
+                return to_route('organizer.pageant.contestants-management', ['id' => $pageantId])
+                    ->with('success', "Contestant '{$contestant->name}' updated.");
+            }
+
+            // Otherwise, return JSON for axios/AJAX consumers
+            return response()->json([
+                'success' => true,
+                'contestant' => $responseContestant,
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return redirect()->back()
-                ->withErrors(['general' => 'Failed to create contestant: '.$e->getMessage()])
-                ->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create contestant: '.$e->getMessage(),
+            ], 500);
         }
     }
 
@@ -205,11 +255,6 @@ class ContestantController extends Controller
         Gate::authorize('update', $pageant);
 
         $validated = $request->validate([
-            'number' => [
-                'required',
-                'integer',
-                Rule::unique('contestants')->where(fn ($q) => $q->where('pageant_id', $pageantId)),
-            ],
             'name' => 'nullable|string|max:255',
             'member_ids' => 'required|array|size:2',
             'member_ids.*' => 'integer|distinct|exists:contestants,id',
@@ -235,6 +280,28 @@ class ContestantController extends Controller
             }
         }
 
+        // Enforce opposite genders and same contestant number
+        $genders = $members->pluck('gender')->filter()->values();
+        if ($genders->count() !== 2 || $genders->unique()->count() !== 2 || ! $genders->contains('male') || ! $genders->contains('female')) {
+            return response()->json(['success' => false, 'message' => 'Selected members must be one male and one female.'], 422);
+        }
+
+        $numbers = $members->pluck('number')->unique();
+        if ($numbers->count() !== 1) {
+            return response()->json(['success' => false, 'message' => 'Selected members must share the same contestant number.'], 422);
+        }
+
+        $pairNumber = $numbers->first();
+
+        // Ensure no existing pair with this number in this pageant
+        $existingPair = Contestant::where('pageant_id', $pageantId)
+            ->where('is_pair', true)
+            ->where('number', $pairNumber)
+            ->exists();
+        if ($existingPair) {
+            return response()->json(['success' => false, 'message' => 'A pair with this number already exists.'], 422);
+        }
+
         // Derive default pair name if not provided
         $pairName = $validated['name'] ?? ($members[0]->name.' & '.$members[1]->name);
 
@@ -243,7 +310,7 @@ class ContestantController extends Controller
             $pair = Contestant::create([
                 'pageant_id' => $pageantId,
                 'name' => $pairName,
-                'number' => $validated['number'],
+                'number' => $pairNumber,
                 'active' => true,
                 'is_pair' => true,
             ]);
@@ -260,6 +327,13 @@ class ContestantController extends Controller
 
             DB::commit();
 
+            // If this was an Inertia request, respond with a redirect (required by Inertia)
+            if ($request->header('X-Inertia')) {
+                return to_route('organizer.pageant.contestants-management', ['id' => $pageantId])
+                    ->with('success', "Pair '{$pair->name}' created.");
+            }
+
+            // Otherwise, return JSON for axios/AJAX consumers
             return response()->json([
                 'success' => true,
                 'contestant' => [
@@ -272,6 +346,7 @@ class ContestantController extends Controller
                     'photo' => $pair->photo ? asset($pair->photo) : null,
                     'active' => $pair->active,
                     'is_pair' => true,
+                    'members_required_same_number' => true,
                     'members' => $members->map(function ($m) {
                         return [
                             'id' => $m->id,
@@ -324,10 +399,13 @@ class ContestantController extends Controller
             'number' => [
                 'required',
                 'integer',
-                Rule::unique('contestants')->where(function ($query) use ($pageantId) {
-                    return $query->where('pageant_id', $pageantId);
+                Rule::unique('contestants')->where(function ($query) use ($pageantId, $request) {
+                    return $query->where('pageant_id', $pageantId)
+                        ->where('gender', $request->input('gender'))
+                        ->where('is_pair', false);
                 })->ignore($contestantId),
             ],
+            'gender' => ['required', 'string', Rule::in(['male', 'female'])],
             'origin' => 'nullable|string|max:255',
             'age' => 'nullable|integer|min:1|max:150',
             'bio' => 'nullable|string',
@@ -344,6 +422,7 @@ class ContestantController extends Controller
         try {
             $contestant->name = $validated['name'];
             $contestant->number = $validated['number'];
+            $contestant->gender = $validated['gender'];
             $contestant->origin = $validated['origin'] ?? null;
             $contestant->age = $validated['age'] ?? null;
             $contestant->bio = $validated['bio'] ?? null;
@@ -405,13 +484,50 @@ class ContestantController extends Controller
                 "Updated contestant '{$contestant->name}' for pageant ID {$pageantId}"
             );
 
-            return redirect()->back()->with('success', 'Contestant updated successfully');
+            // Build response payload consistent with index/show
+            $primaryImage = $contestant->primaryImage();
+            $responseContestant = [
+                'id' => $contestant->id,
+                'name' => $contestant->name,
+                'number' => $contestant->number,
+                'gender' => $contestant->gender,
+                'origin' => $contestant->origin,
+                'age' => $contestant->age,
+                'bio' => $contestant->bio,
+                'photo' => $primaryImage ? asset('storage/'.$primaryImage->image_path) : null,
+                'active' => $contestant->active,
+                'is_pair' => (bool) $contestant->is_pair,
+                'members' => $contestant->is_pair ? $contestant->members->map(function ($m) {
+                    return [
+                        'id' => $m->id,
+                        'name' => $m->name,
+                        'number' => $m->number,
+                        'photo' => $m->photo ? asset($m->photo) : null,
+                    ];
+                })->values() : [],
+                'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
+                'images' => $contestant->images->map(function ($image) {
+                    return [
+                        'id' => $image->id,
+                        'path' => asset('storage/'.$image->image_path),
+                        'is_primary' => $image->is_primary,
+                        'caption' => $image->caption,
+                        'display_order' => $image->display_order,
+                    ];
+                })->values(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'contestant' => $responseContestant,
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return redirect()->back()
-                ->withErrors(['general' => 'Failed to update contestant: '.$e->getMessage()])
-                ->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update contestant: '.$e->getMessage(),
+            ], 500);
         }
     }
 

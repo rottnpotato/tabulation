@@ -138,6 +138,30 @@
                   <div class="space-y-6">
                     <div>
                       <div class="flex items-center mb-1">
+                        <label for="gender" class="block text-sm font-medium text-gray-700">
+                          Gender <span class="text-red-500">*</span>
+                        </label>
+                        <Tooltip text="Select the contestant's gender. Used to enforce pairing rules (one male and one female)." position="top">
+                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                        </Tooltip>
+                      </div>
+                      <select
+                        id="gender"
+                        v-model="form.gender"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.gender }"
+                        required
+                      >
+                        <option value="" disabled>Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
+                      <p v-if="errors.gender" class="mt-1 text-sm text-red-500">{{ errors.gender }}</p>
+                      <p v-else class="mt-1 text-xs text-gray-500">Required. Determines valid pair combinations.</p>
+                    </div>
+
+                    <div>
+                      <div class="flex items-center mb-1">
                         <label for="bio" class="block text-sm font-medium text-gray-700">
                           Biography
                         </label>
@@ -301,6 +325,7 @@ const emit = defineEmits(['close', 'saved'])
 const form = reactive({
   name: '',
   number: '',
+  gender: '',
   origin: '',
   age: '',
   bio: '',
@@ -330,6 +355,7 @@ watch(() => props.contestant, (newValue) => {
   if (newValue) {
     form.name = newValue.name || ''
     form.number = newValue.number || ''
+    form.gender = newValue.gender || ''
     form.origin = newValue.origin || ''
     form.age = newValue.age || ''
     form.bio = newValue.bio || ''
@@ -399,6 +425,7 @@ const handleSubmit = async () => {
     const formData = new FormData()
     formData.append('name', form.name)
     formData.append('number', form.number)
+    formData.append('gender', form.gender)
     
     if (form.origin) formData.append('origin', form.origin)
     if (form.age) formData.append('age', form.age)

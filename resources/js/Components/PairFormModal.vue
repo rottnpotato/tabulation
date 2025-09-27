@@ -23,11 +23,7 @@
               </div>
 
               <form @submit.prevent="handleSubmit" class="p-6 space-y-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Pair Number <span class="text-red-500">*</span></label>
-                  <input v-model="form.number" type="number" class="mt-1 w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-200" required />
-                  <p v-if="errors.number" class="text-sm text-red-600 mt-1">{{ errors.number }}</p>
-                </div>
+                <!-- Pair Number removed: will be derived from selected members' shared number -->
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Pair Name (optional)</label>
@@ -97,7 +93,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'created'])
 
-const form = reactive({ number: '', name: '', member_ids: [] })
+const form = reactive({ name: '', member_ids: [] })
 const errors = reactive({})
 const isSubmitting = ref(false)
 
@@ -109,7 +105,6 @@ const availableContestants = computed(() => {
 
 watch(() => props.show, (val) => {
   if (val) {
-    form.number = ''
     form.name = ''
     form.member_ids = []
     Object.keys(errors).forEach(k => delete errors[k])
@@ -124,10 +119,24 @@ const handleSubmit = async () => {
     errors.member_ids = 'Please select exactly two members.'
     return
   }
+
+  // Client-side validation: enforce opposite genders and same number
+  const selected = availableContestants.value.filter(c => form.member_ids.includes(c.id))
+  if (selected.length === 2) {
+    const genders = selected.map(c => (c.gender || '').toLowerCase())
+    if (!(genders.includes('male') && genders.includes('female'))) {
+      errors.member_ids = 'Selected members must be one male and one female.'
+      return
+    }
+    const numbers = [...new Set(selected.map(c => c.number))]
+    if (numbers.length !== 1) {
+      errors.member_ids = 'Selected members must share the same contestant number.'
+      return
+    }
+  }
   isSubmitting.value = true
   try {
     const res = await axios.post(`/organizer/pageant/${props.pageantId}/pairs`, {
-      number: Number(form.number),
       name: form.name || null,
       member_ids: form.member_ids,
     })

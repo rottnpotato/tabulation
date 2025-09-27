@@ -22,6 +22,7 @@ class Contestant extends Model
         'user_id',
         'name',
         'number',
+        'gender',
         'origin',
         'age',
         'photo',

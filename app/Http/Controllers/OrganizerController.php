@@ -292,6 +292,7 @@ class OrganizerController extends Controller
                     'id' => $contestant->id,
                     'name' => $contestant->name,
                     'number' => $contestant->number,
+                    'gender' => $contestant->gender,
                     'age' => $contestant->age,
                     'origin' => $contestant->origin,
                     'photo' => $contestant->photo,
@@ -310,16 +311,22 @@ class OrganizerController extends Controller
         // Group contestants by pageant
         $contestantsByPageant = $contestants->groupBy('pageant.id');
 
-        // Get pageant summaries
-        $pageantSummaries = $contestantsByPageant->map(function ($contestants, $pageantId) {
-            $firstContestant = $contestants->first();
+        // Build pageant summaries for ALL managed pageants (including those with 0 contestants)
+        $managedPageants = Pageant::whereIn('id', $pageantIds)
+            ->select('id', 'name', 'status', 'pageant_date')
+            ->get();
+
+        $pageantSummaries = $managedPageants->map(function ($pageant) use ($contestantsByPageant) {
+            $count = $contestantsByPageant->has($pageant->id)
+                ? $contestantsByPageant->get($pageant->id)->count()
+                : 0;
 
             return [
-                'id' => $pageantId,
-                'name' => $firstContestant['pageant']['name'],
-                'status' => $firstContestant['pageant']['status'],
-                'pageant_date' => $firstContestant['pageant']['pageant_date'],
-                'contestant_count' => $contestants->count(),
+                'id' => $pageant->id,
+                'name' => $pageant->name,
+                'status' => $pageant->status,
+                'pageant_date' => $pageant->pageant_date,
+                'contestant_count' => $count,
             ];
         })->values();
 
@@ -629,6 +636,7 @@ class OrganizerController extends Controller
                     'id' => $contestant->id,
                     'number' => $contestant->number,
                     'name' => $contestant->name,
+                    'gender' => $contestant->gender,
                     'age' => $contestant->age,
                     'photo' => $contestant->photo,
                     'origin' => $contestant->origin,
@@ -1145,6 +1153,7 @@ class OrganizerController extends Controller
                 'end_date' => $pageant->end_date?->format('Y-m-d'),
                 'venue' => $pageant->venue,
                 'location' => $pageant->location,
+                'contestant_type' => $pageant->contestant_type,
             ],
         ]);
     }

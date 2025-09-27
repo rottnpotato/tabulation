@@ -1276,6 +1276,22 @@
                     <!-- Right Column -->
                     <div class="space-y-6">
                       <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">
+                          Gender <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                          id="gender"
+                          v-model="contestantForm.gender"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          required
+                        >
+                          <option value="" disabled>Select gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Select the contestant's gender</p>
+                      </div>
+                      <div>
                         <label for="origin" class="block text-sm font-medium text-gray-700 mb-1">
                           Location <span class="text-red-500">*</span>
                         </label>
@@ -1888,6 +1904,7 @@ const contestantForm = ref({
   number: '',
   name: '',
   age: '',
+  gender: '',
   origin: '',
   bio: '',
   photos: [], // Array to store photo URLs for display
@@ -2744,6 +2761,7 @@ const openEditContestantModal = (contestant) => {
     number: contestant.number || '',
     name: contestant.name || '',
     age: contestant.age || '',
+    gender: contestant.gender || '',
     origin: contestant.origin || '',
     bio: contestant.bio || '',
     photos: contestantPhotos,
@@ -2771,6 +2789,7 @@ const resetContestantForm = () => {
     number: '',
     name: '',
     age: '',
+    gender: '',
     origin: '',
     bio: '',
     photos: [],
@@ -2863,6 +2882,7 @@ const submitContestantForm = async () => {
     formData.append('name', contestantForm.value.name)
     formData.append('number', contestantForm.value.number)
     formData.append('age', contestantForm.value.age)
+    formData.append('gender', contestantForm.value.gender)
     formData.append('origin', contestantForm.value.origin)
     formData.append('bio', contestantForm.value.bio || '')
     
@@ -2878,30 +2898,37 @@ const submitContestantForm = async () => {
       })
     }
     
-    const url = editingContestant.value 
-      ? route('organizer.pageant.contestants.update', { 
-          pageantId: props.pageant.id, 
-          contestantId: editingContestant.value.id 
-        })
-      : route('organizer.pageant.contestants.store', props.pageant.id)
-    
+    // Use axios to hit JSON API endpoints to avoid Inertia response mismatch
+    let response
     if (editingContestant.value) {
-      formData.append('_method', 'PUT')
+      response = await axios.post(
+        `/organizer/pageant/${props.pageant.id}/contestants/${editingContestant.value.id}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'X-HTTP-Method-Override': 'PUT'
+          }
+        }
+      )
+    } else {
+      response = await axios.post(
+        `/organizer/pageant/${props.pageant.id}/contestants`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      )
     }
-    
-    router.post(url, formData, {
-      onSuccess: () => {
-        closeContestantModal()
-        router.reload({ only: ['pageant'] })
-      },
-      onError: (errors) => {
-        console.error('Contestant form error:', errors)
-        alert('Error saving contestant. Please try again.')
-      },
-      onFinish: () => {
-        contestantForm.value.processing = false
-      }
-    })
+
+    if (response.data?.success) {
+      closeContestantModal()
+      router.reload({ only: ['pageant'] })
+    } else {
+      alert('Unexpected response when saving contestant.')
+    }
   } catch (error) {
     console.error('Form submission error:', error)
     alert('Error submitting form. Please try again.')

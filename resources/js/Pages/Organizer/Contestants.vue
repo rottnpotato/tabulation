@@ -126,86 +126,13 @@
         </div>
 
         <!-- Contestants Grid -->
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <div 
-            v-for="contestant in filteredContestants" 
-            :key="contestant.id"
-            :data-contestant-id="contestant.id"
-            class="bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group"
-            @click="ViewContestantDetails(contestant)"
-          >
-            <div class="relative aspect-[4/5]">
-              <img 
-                :src="contestant.photo || '/images/placeholders/placeholder-contestant.jpg'" 
-                :alt="contestant.name" 
-                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                @error="handleImageError"
-                @load="handleImageLoad"
-                loading="lazy"
-              />
-              <div class="absolute inset-0 bg-gray-200 flex items-center justify-center" v-if="imageLoadingStates[contestant.id] === 'error'">
-                <div class="text-center text-gray-500">
-                  <Users class="h-8 w-8 mx-auto mb-2" />
-                  <span class="text-sm">No Image</span>
-                </div>
-              </div>
-              <!-- Gradient overlay -->
-              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-70"></div>
-              
-              <!-- Contestant number badge -->
-              <div class="absolute top-3 right-3">
-                <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-500 text-white text-sm font-bold shadow-md">
-                  #{{ contestant.contestNumber }}
-                </span>
-              </div>
-              
-              <!-- Action buttons overlay - visible on hover -->
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                <button 
-                  @click.stop="ViewContestantDetails(contestant)" 
-                  class="bg-orange-500/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm border border-orange-500/30 hover:bg-orange-500/30 transition-colors"
-                >
-                  <Eye class="h-4 w-4 inline-block mr-1" />
-                  View
-                </button>
-                <button 
-                  @click.stop="EditContestant(contestant)" 
-                  class="bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm border border-white/30 hover:bg-white/30 transition-colors"
-                >
-                  <Edit2 class="h-4 w-4 inline-block mr-1" />
-                  Edit
-                </button>
-                <button 
-                  @click.stop="DeleteContestant(contestant.id)" 
-                  class="bg-red-500/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm border border-red-500/30 hover:bg-red-500/30 transition-colors"
-                >
-                  <Trash2 class="h-4 w-4 inline-block mr-1" />
-                  Delete
-                </button>
-              </div>
-              
-              <!-- Contestant info at bottom -->
-              <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
-                <h3 class="text-lg font-bold truncate">{{ contestant.name }}</h3>
-                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                  <div class="flex items-center text-sm text-orange-100">
-                    <MapPin class="h-3.5 w-3.5 mr-1 text-orange-300" />
-                    <span class="truncate">{{ contestant.city }}</span>
-                  </div>
-                  <div class="flex items-center text-sm text-orange-100">
-                    <Calendar class="h-3.5 w-3.5 mr-1 text-orange-300" />
-                    <span>{{ contestant.age }} years</span>
-                  </div>
-                </div>
-                <!-- Pageant info -->
-                <div class="mt-2 flex items-center text-xs bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 w-fit">
-                  <Award class="h-3 w-3 mr-1" />
-                  <span class="truncate">{{ contestant.pageant.name }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ContestantsGrid
+          v-else
+          :contestants="filteredContestants"
+          @view="ViewContestantDetails"
+          @edit="EditContestant"
+          @delete="(c) => DeleteContestant(c.id)"
+        />
       </div>
     </div>
 
@@ -314,6 +241,23 @@
                           required
                         />
                         <p class="mt-1 text-xs text-gray-500">Enter the contestant's hometown or representation</p>
+                      </div>
+
+                      <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">
+                          Gender <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                          id="gender"
+                          v-model="Form.gender"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          required
+                        >
+                          <option value="" disabled>Select gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">Used for pairing rules.</p>
                       </div>
 
                       <div>
@@ -609,6 +553,7 @@ import {
   ChevronRight,
   Award
 } from 'lucide-vue-next'
+import ContestantsGrid from '@/Components/ContestantsGrid.vue'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import CustomSelect from '@/Components/CustomSelect.vue'
 import { motion } from 'motion-v'
@@ -662,6 +607,7 @@ const filteredContestants = computed(() => {
 const Form = ref({
   name: '',
   age: '',
+  gender: '',
   city: '',
   bio: '',
   photos: [], // Array to store multiple photos
@@ -686,6 +632,7 @@ const HandleSubmit = async () => {
     formData.append('number', Form.value.contestNumber)
     
     if (Form.value.age) formData.append('age', Form.value.age)
+    if (Form.value.gender) formData.append('gender', Form.value.gender)
     if (Form.value.city) formData.append('origin', Form.value.city)
     if (Form.value.bio) formData.append('bio', Form.value.bio)
     
@@ -775,6 +722,7 @@ const EditContestant = (contestant) => {
     name: contestant.name || '',
     contestNumber: contestant.number || contestant.contestNumber || '',
     age: contestant.age || '',
+    gender: contestant.gender || '',
     city: contestant.origin || contestant.city || '',
     bio: contestant.bio || '',
     photos: contestant.photos || (contestant.photo ? [contestant.photo] : [])
@@ -870,6 +818,7 @@ const resetForm = () => {
   Form.value = { 
     name: '', 
     age: '', 
+    gender: '',
     city: '', 
     bio: '', 
     photos: [], 
