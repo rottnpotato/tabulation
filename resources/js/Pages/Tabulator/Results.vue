@@ -26,6 +26,13 @@
                 <Printer class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
                 <span>Print Results</span>
               </Link>
+              <Link 
+                :href="route('tabulator.minor-awards', pageant.id)"
+                class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
+              >
+                <Trophy class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
+                <span>Minor Awards</span>
+              </Link>
             </div>
           </div>
         </div>

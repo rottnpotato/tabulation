@@ -203,6 +203,10 @@ Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulat
     Route::get('/{pageantId}/results', [TabulatorController::class, 'results'])->name('tabulator.results');
     Route::get('/{pageantId}/print', [TabulatorController::class, 'print'])->name('tabulator.print');
 
+    // Minor awards (per-round best in semi-final stage)
+    Route::get('/{pageantId}/minor-awards', [TabulatorController::class, 'minorAwards'])->name('tabulator.minor-awards');
+    Route::get('/{pageantId}/minor-awards/print', [TabulatorController::class, 'minorAwardsPrint'])->name('tabulator.minor-awards.print');
+
     // Round management routes
     Route::get('/{pageantId}/rounds', [TabulatorController::class, 'roundManagement'])->name('tabulator.rounds');
     Route::post('/{pageantId}/set-current-round', [TabulatorController::class, 'setCurrentRound'])->name('tabulator.set-current-round');

@@ -92,6 +92,74 @@ class ScoreCalculationService
     }
 
     /**
+     * Compute per-round minor awards for a pageant's semi-final stage.
+     * For each round in the given stage, find the contestant(s) with the highest average score.
+     *
+     * @param  string  $stage  Typically 'semi-final'
+     * @return array<string, array<int, array<string, mixed>>> keyed by round name
+     */
+    public function calculateMinorAwardsByStage(Pageant $pageant, string $stage = 'semi-final'): array
+    {
+        try {
+            $resultsByRound = [];
+
+            $stageRounds = $pageant->rounds->filter(function ($round) use ($stage) {
+                return ($round->type ?? null) === $stage;
+            });
+
+            foreach ($stageRounds as $round) {
+                $contestantScores = [];
+
+                foreach ($pageant->contestants as $contestant) {
+                    $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
+                    if ($roundScore !== null) {
+                        $contestantScores[] = [
+                            'id' => $contestant->id,
+                            'number' => $contestant->number,
+                            'name' => $contestant->name,
+                            'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                            'score' => round($roundScore, 2),
+                        ];
+                    }
+                }
+
+                if (empty($contestantScores)) {
+                    $resultsByRound[$round->name] = [];
+
+                    continue;
+                }
+
+                // Determine the highest score and include ties
+                usort($contestantScores, fn ($a, $b) => $b['score'] <=> $a['score']);
+                $topScore = $contestantScores[0]['score'];
+                $topContestants = array_values(array_filter($contestantScores, function ($row) use ($topScore) {
+                    return abs($row['score'] - $topScore) < 0.00001;
+                }));
+
+                $resultsByRound[$round->name] = [
+                    'round' => [
+                        'id' => $round->id,
+                        'name' => $round->name,
+                        'type' => $round->type,
+                        'weight' => $round->weight,
+                    ],
+                    'winners' => $topContestants,
+                ];
+            }
+
+            return $resultsByRound;
+        } catch (\Exception $e) {
+            Log::error('Error calculating minor awards by stage: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'stage' => $stage,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
      * Calculate final scores for all contestants in a pageant
      */
     public function calculatePageantFinalScores(Pageant $pageant, bool $useCache = true): array

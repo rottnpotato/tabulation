@@ -431,6 +431,71 @@ class TabulatorController extends Controller
     }
 
     /**
+     * Show Minor Awards (best per semi-final round) page
+     */
+    public function minorAwards($pageantId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $awardsByRound = $this->scoreCalculationService->calculateMinorAwardsByStage($pageant, 'semi-final');
+
+        // Judges for attestations
+        $judges = $pageant->judges->map(function ($judge) {
+            return [
+                'id' => $judge->id,
+                'name' => $judge->name,
+                'role' => $judge->pivot->role ?? 'Judge',
+            ];
+        });
+
+        return Inertia::render('Tabulator/MinorAwards', [
+            'pageant' => [
+                'id' => $pageant->id,
+                'name' => $pageant->name,
+                'logo' => $pageant->logo,
+                'date' => $pageant->pageant_date?->format('F j, Y'),
+                'venue' => $pageant->venue,
+                'location' => $pageant->location,
+            ],
+            'awardsByRound' => $awardsByRound,
+            'judges' => $judges,
+        ]);
+    }
+
+    /**
+     * Printable Minor Awards (semi-final)
+     */
+    public function minorAwardsPrint($pageantId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $awardsByRound = $this->scoreCalculationService->calculateMinorAwardsByStage($pageant, 'semi-final');
+
+        $judges = $pageant->judges->map(function ($judge) {
+            return [
+                'id' => $judge->id,
+                'name' => $judge->name,
+                'role' => $judge->pivot->role ?? 'Judge',
+            ];
+        });
+
+        return Inertia::render('Tabulator/MinorAwardsPrint', [
+            'pageant' => [
+                'id' => $pageant->id,
+                'name' => $pageant->name,
+                'logo' => $pageant->logo,
+                'date' => $pageant->pageant_date?->format('F j, Y'),
+                'venue' => $pageant->venue,
+                'location' => $pageant->location,
+            ],
+            'awardsByRound' => $awardsByRound,
+            'judges' => $judges,
+        ]);
+    }
+
+    /**
      * Set the current round for a pageant
      */
     public function setCurrentRound(Request $request, $pageantId)

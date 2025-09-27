@@ -26,7 +26,7 @@
             <div class="text-2xl font-bold text-gray-600 mb-1">2nd</div>
             <h3 class="font-semibold text-gray-900">#{{ topThree[1].number }}</h3>
             <h3 class="font-semibold text-gray-900">{{ topThree[1].name }}</h3>
-            <p class="text-sm text-gray-500 mt-1">{{ formatScore(topThree[1].final_score) }}</p>
+            
           </div>
         </div>
 
@@ -41,7 +41,7 @@
             <div class="text-3xl font-bold text-yellow-600 mb-1">👑 1st</div>
             <h3 class="font-semibold text-gray-900">#{{ topThree[0].number }}</h3>
             <h3 class="font-semibold text-gray-900">{{ topThree[0].name }}</h3>
-            <p class="text-sm text-gray-500 mt-1">{{ formatScore(topThree[0].final_score) }}</p>
+            
           </div>
         </div>
 
@@ -56,7 +56,7 @@
             <div class="text-2xl font-bold text-orange-600 mb-1">3rd</div>
             <h3 class="font-semibold text-gray-900">#{{ topThree[2].number }}</h3>
             <h3 class="font-semibold text-gray-900">{{ topThree[2].name }}</h3>
-            <p class="text-sm text-gray-500 mt-1">{{ formatScore(topThree[2].final_score) }}</p>
+            
           </div>
         </div>
       </div>
