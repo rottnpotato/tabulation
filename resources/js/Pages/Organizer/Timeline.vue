@@ -70,7 +70,7 @@
       <Link 
         v-for="pageant in filteredPageants" 
         :key="pageant.id" 
-        :href="route('organizer.pageant.timeline', pageant.id)"
+        :href="route('organizer.pageant.timeline', pageant.id, false)"
         class="pageant-card bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
       >
         <div class="flex flex-col md:flex-row">

@@ -27,6 +27,15 @@
                 Add Contestant
               </button>
             </Tooltip>
+            <Tooltip text="Create a pair from two contestants" position="bottom">
+              <button
+                @click="showPairModal = true"
+                class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
+              >
+                <Users class="h-4 w-4 mr-2" />
+                Create Pair
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -144,6 +153,12 @@
                   #{{ contestant.number }}
                 </span>
               </div>
+              <!-- Pair badge -->
+              <div v-if="contestant.is_pair" class="absolute top-3 left-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[11px] font-semibold shadow-md">
+                  Pair
+                </span>
+              </div>
               
               <!-- Action buttons overlay - visible on hover -->
               <div class="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
@@ -179,6 +194,7 @@
               <!-- Contestant info at bottom -->
               <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
                 <h3 class="text-lg font-bold truncate">{{ contestant.name }}</h3>
+                <p v-if="contestant.is_pair && contestant.members_text" class="text-xs text-emerald-200 mt-0.5 truncate">{{ contestant.members_text }}</p>
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                   <div class="flex items-center text-sm text-orange-100">
                     <MapPin class="h-3.5 w-3.5 mr-1 text-orange-300" />
@@ -222,6 +238,14 @@
       @close="showDetailModal = false"
       @edit="editContestant"
     />
+    <!-- Pair Form Modal -->
+    <PairFormModal
+      :show="showPairModal"
+      :pageant-id="pageant.id"
+      :contestants="contestants"
+      @close="showPairModal = false"
+      @created="async () => { showPairModal = false; await fetchContestants(); }"
+    />
   </div>
 </template>
 
@@ -230,6 +254,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { ArrowLeft, Plus, Users, Search, MapPin, Calendar, Edit, Trash2, Eye, CheckCircle, X, AlertCircle } from 'lucide-vue-next'
 import ContestantFormModal from '@/Components/ContestantFormModal.vue'
+import PairFormModal from '@/Components/PairFormModal.vue'
 import ContestantDetailModal from '@/Components/ContestantDetailModal.vue'
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal.vue'
 import Tooltip from '@/Components/Tooltip.vue'
@@ -254,6 +279,7 @@ const error = ref(null)
 
 // Modal states
 const showAddModal = ref(false)
+const showPairModal = ref(false)
 const showDetailModal = ref(false)
 const showDeleteModal = ref(false)
 const contestantToEdit = ref(null)

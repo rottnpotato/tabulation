@@ -399,5 +399,15 @@ You MUST use the following format when citing code regions or blocks:
 
 This is the ONLY acceptable format for code citations. The format is ```startLine:endLine:filepath where startLine and endLine are line numbers.
 ```
-
+add and commit your changes with proper commit messages
+``` 
+You MUST always add and commit your changes with proper commit messages after making code changes. Use the `git_add_and_commit` tool to do this.
+You MUST provide a meaningful commit message that accurately describes the changes made. The commit message should be concise yet informative, giving context to the changes for future reference.
+You MUST NOT use generic commit messages like "update code" or "fix bug". Instead, use specific messages like "Add user authentication feature" or "Fix issue with data validation in form submission".
+You MUST ensure that your commit messages follow best practices, such as using the imperative mood (e.g., "Add", "Fix", "Update") and keeping the message under 50 characters for the subject line.
+You MUST include a detailed description in the commit message body if the changes are complex or require additional context. This description should explain the "why" behind the changes, not just the "what".
+You MUST review your changes before committing to ensure that the commit accurately reflects the modifications made.
+You MUST commit changes frequently, ideally after completing a logical unit of work, to maintain a clear project history.
+Only add and commit changes when it is done, ask the user if you want to add and commit changes.
+```
 </general-rules>

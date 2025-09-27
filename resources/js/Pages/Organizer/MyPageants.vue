@@ -106,8 +106,16 @@
             class="bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
             @click="managePageant(pageant)"
           >
-            <!-- Card Header with Gradient Background -->
-            <div class="h-32 bg-gradient-to-r from-orange-500 to-orange-300 relative">
+            <!-- Card Header with Banner + Logo -->
+            <div class="h-32 relative overflow-hidden rounded-t-xl">
+              <!-- Banner image when available; fallback to existing gradient -->
+              <div v-if="getBannerUrl(pageant)" class="absolute inset-0">
+                <img :src="getBannerUrl(pageant)" alt="Pageant banner"
+                     class="w-full h-full object-cover" />
+                <div class="absolute inset-0 bg-black/30"></div>
+              </div>
+              <div v-else class="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-300"></div>
+
               <!-- Status Badge -->
               <Tooltip :text="getStatusTooltip(pageant.status)" position="right">
                 <span :class="[
@@ -117,9 +125,15 @@
                   {{ pageant.status }}
                 </span>
               </Tooltip>
+
+              <!-- Logo, if present -->
+              <div v-if="getLogoUrl(pageant)" class="absolute top-3 right-3">
+                <img :src="getLogoUrl(pageant)" alt="Pageant logo"
+                     class="w-10 h-10 rounded-full object-cover border border-white shadow-md" />
+              </div>
               
               <!-- Overlay with Title -->
-              <div class="absolute inset-0 bg-black bg-opacity-20 p-4 flex flex-col justify-end">
+              <div class="absolute inset-0 bg-black/20 p-4 flex flex-col justify-end">
                 <h3 class="text-lg font-bold text-white truncate">{{ pageant.name }}</h3>
                 <div class="flex items-center text-white/80 text-xs mt-1">
                   <Calendar class="h-3.5 w-3.5 mr-1" />
@@ -271,6 +285,30 @@ const formatDateRange = (pageant) => {
   return ''
 }
 
+// Asset helpers
+const resolveAssetUrl = (path) => {
+  if (!path || typeof path !== 'string') {
+    return null
+  }
+  if (path.startsWith('http') || path.startsWith('//') || path.startsWith('/')) {
+    return path
+  }
+  // Assume storage-relative path
+  return `/storage/${path}`
+}
+
+const getBannerUrl = (pageant) => {
+  return resolveAssetUrl(
+    pageant.coverImage || pageant.cover_image || pageant.banner || pageant.banner_image || null
+  )
+}
+
+const getLogoUrl = (pageant) => {
+  return resolveAssetUrl(
+    pageant.logo || pageant.logo_path || null
+  )
+}
+
 // Get status styling
 const getStatusClass = (status) => {
   switch (status) {
@@ -395,6 +433,7 @@ onMounted(() => {
 /* Line clamp utility for multi-line text truncation */
 .line-clamp-2 {
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;

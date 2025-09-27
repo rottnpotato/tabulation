@@ -33,6 +33,7 @@
               v-model="selectedRoundId"
               :options="roundOptions"
               placeholder="Select Round"
+              :disabled="!isChannelReady || actionLoading"
               @change="setCurrentRound"
             />
           </div>
@@ -121,7 +122,7 @@
                 <button
                   v-if="pageant.current_round_id !== round.id"
                   @click="setCurrentRoundDirect(round.id)"
-                  :disabled="actionLoading"
+                  :disabled="actionLoading || !isChannelReady"
                   class="text-amber-600 hover:text-amber-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {{ actionLoading ? 'Setting...' : 'Set Current' }}
@@ -130,7 +131,7 @@
                 <button
                   v-if="!round.is_locked"
                   @click="lockRound(round.id)"
-                  :disabled="actionLoading"
+                  :disabled="actionLoading || !isChannelReady"
                   class="text-red-600 hover:text-red-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {{ actionLoading ? 'Locking...' : 'Lock' }}
@@ -138,7 +139,7 @@
                 <button
                   v-else
                   @click="unlockRound(round.id)"
-                  :disabled="actionLoading"
+                  :disabled="actionLoading || !isChannelReady"
                   class="text-green-600 hover:text-green-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {{ actionLoading ? 'Unlocking...' : 'Unlock' }}
@@ -221,6 +222,8 @@ const props = defineProps({
 const selectedRoundId = ref(props.pageant.current_round_id?.toString() || '')
 const notificationSystem = ref(null)
 const actionLoading = ref(false)
+const isChannelReady = ref(false)
+let pageantChannel = null
 
 const roundOptions = computed(() => {
   return props.rounds.map(round => ({
@@ -301,7 +304,10 @@ onMounted(() => {
   if (props.pageant) {
     console.log('Subscribing to pageant channel:', `pageant.${props.pageant.id}`)
     // Listen for round updates to show confirmation notifications
-    window.Echo.private(`pageant.${props.pageant.id}`)
+    pageantChannel = window.Echo.private(`pageant.${props.pageant.id}`)
+      .subscribed(() => {
+        isChannelReady.value = true
+      })
       .listen('RoundUpdated', (e) => {
         console.log('RoundUpdated event received:', e)
         handleRoundUpdate(e)

@@ -248,12 +248,14 @@ class TabulatorController extends Controller
             ]);
         }
 
-        $contestants = $pageant->contestants->map(function ($contestant) {
+        $contestants = $pageant->contestants()->with('members:id,name')->get()->map(function ($contestant) {
             return [
                 'id' => $contestant->id,
                 'number' => $contestant->number,
-                'name' => $contestant->name,
+                'name' => $contestant->is_pair ? ($contestant->display_name ?? $contestant->name) : $contestant->name,
                 'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                'is_pair' => (bool) $contestant->is_pair,
+                'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
             ];
         });
 
@@ -324,12 +326,17 @@ class TabulatorController extends Controller
             return [
                 'id' => $round->id,
                 'name' => $round->name,
+                'type' => $round->type,
                 'weight' => $round->weight,
             ];
         });
 
         // Calculate real final scores using the service
         $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant);
+
+        // Stage-specific results
+        $semiFinalResults = $this->scoreCalculationService->calculatePageantStageScores($pageant, 'semi-final');
+        $finalResults = $this->scoreCalculationService->calculatePageantStageScores($pageant, 'final');
 
         // Convert to collection for consistency with frontend expectations
         $contestants = collect($contestants)->map(function ($contestant) {
@@ -348,6 +355,8 @@ class TabulatorController extends Controller
         return Inertia::render('Tabulator/Results', [
             'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
             'contestants' => $contestants,
+            'contestantsSemiFinal' => $semiFinalResults,
+            'contestantsFinal' => $finalResults,
             'rounds' => $rounds,
         ]);
     }
@@ -360,11 +369,32 @@ class TabulatorController extends Controller
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
-        // Get top contestants using real score calculations
-        $contestants = $this->scoreCalculationService->getTopContestants($pageantId, 10);
+        // Compute results for each stage
+        $overallResults = collect($this->scoreCalculationService->calculatePageantFinalScores($pageant))->map(function ($contestant) {
+            return [
+                'id' => $contestant['id'],
+                'number' => $contestant['number'],
+                'name' => $contestant['name'],
+                'image' => $contestant['image'],
+                'scores' => $contestant['scores'],
+                'final_score' => $contestant['finalScore'],
+                'rank' => $contestant['rank'],
+            ];
+        });
 
-        // Format for frontend
-        $contestants = collect($contestants)->map(function ($contestant) {
+        $semiResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'semi-final'))->map(function ($contestant) {
+            return [
+                'id' => $contestant['id'],
+                'number' => $contestant['number'],
+                'name' => $contestant['name'],
+                'image' => $contestant['image'],
+                'scores' => $contestant['scores'],
+                'final_score' => $contestant['finalScore'],
+                'rank' => $contestant['rank'],
+            ];
+        });
+
+        $finalResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'final'))->map(function ($contestant) {
             return [
                 'id' => $contestant['id'],
                 'number' => $contestant['number'],
@@ -393,7 +423,9 @@ class TabulatorController extends Controller
                 'venue' => $pageant->venue,
                 'location' => $pageant->location,
             ],
-            'results' => $contestants,
+            'resultsOverall' => $overallResults,
+            'resultsSemiFinal' => $semiResults,
+            'resultsFinal' => $finalResults,
             'judges' => $judges,
         ]);
     }

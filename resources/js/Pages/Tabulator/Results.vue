@@ -64,6 +64,31 @@
               />
             </div>
           </div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-600">Stage:</span>
+            <div class="inline-flex rounded-md shadow-sm border overflow-hidden">
+              <button
+                class="px-3 py-1.5 text-sm"
+                :class="stage === 'overall' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'"
+                @click="stage = 'overall'"
+              >Overall</button>
+              <button
+                class="px-3 py-1.5 text-sm border-l"
+                :class="stage === 'semi-final' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'"
+                @click="stage = 'semi-final'"
+              >Semi-Final</button>
+              <button
+                class="px-3 py-1.5 text-sm border-l"
+                :class="stage === 'final' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'"
+                @click="stage = 'final'"
+              >Final</button>
+              <button
+                class="px-3 py-1.5 text-sm border-l"
+                :class="stage === 'final-top3' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'"
+                @click="stage = 'final-top3'"
+              >Top 3</button>
+            </div>
+          </div>
           <div class="flex items-center space-x-3">
             <button 
               @click="refreshData"
@@ -88,7 +113,7 @@
         <ResultsRanking 
           :title="getResultsTitle()"
           :contestants="displayedContestants"
-          :rounds="rounds"
+          :rounds="displayedRounds"
         />
 
         <!-- Summary Statistics -->
@@ -150,6 +175,7 @@ defineOptions({
 interface Round {
   id: number
   name: string
+  type?: string
   weight: number
 }
 
@@ -171,12 +197,15 @@ interface Pageant {
 interface Props {
   pageant?: Pageant
   contestants: Contestant[]
+  contestantsSemiFinal: Contestant[]
+  contestantsFinal: Contestant[]
   rounds: Round[]
 }
 
 const props = defineProps<Props>()
 
 const activeRound = ref('overall')
+const stage = ref<'overall' | 'semi-final' | 'final' | 'final-top3'>('overall')
 
 const roundOptions = computed(() => {
   const options = [
@@ -194,13 +223,35 @@ const roundOptions = computed(() => {
 })
 
 const displayedContestants = computed(() => {
-  if (activeRound.value === 'overall') {
-    return props.contestants
+  let baseList: Contestant[]
+  switch (stage.value) {
+    case 'semi-final':
+      baseList = props.contestantsSemiFinal
+      break
+    case 'final':
+      baseList = props.contestantsFinal
+      break
+    case 'final-top3':
+      baseList = props.contestantsFinal.slice(0, 3)
+      break
+    default:
+      baseList = props.contestants
   }
-  
-  // For individual rounds, we would need to calculate scores for that specific round
-  // For now, return all contestants - this would be enhanced with proper round-specific scoring
-  return props.contestants
+
+  // Round filter selection currently does not recalc per round; we keep the list as-is
+  return baseList
+})
+
+const displayedRounds = computed(() => {
+  switch (stage.value) {
+    case 'semi-final':
+      return props.rounds.filter(r => r.type === 'semi-final')
+    case 'final':
+    case 'final-top3':
+      return props.rounds.filter(r => r.type === 'final')
+    default:
+      return props.rounds
+  }
 })
 
 const highestScore = computed(() => {
@@ -216,12 +267,10 @@ const averageScore = computed(() => {
 })
 
 const getResultsTitle = () => {
-  if (activeRound.value === 'overall') {
-    return 'Final Rankings'
-  }
-  
-  const round = props.rounds.find(r => r.id.toString() === activeRound.value)
-  return round ? `${round.name} Results` : 'Round Results'
+  if (stage.value === 'semi-final') return 'Semi-Final Rankings'
+  if (stage.value === 'final') return 'Final Rankings'
+  if (stage.value === 'final-top3') return 'Top 3 (Final)'
+  return 'Overall Rankings'
 }
 
 const refreshData = () => {

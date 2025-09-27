@@ -123,7 +123,7 @@ class JudgeController extends Controller
         $criteria = $currentRound->criteria()->orderBy('display_order')->get();
 
         // Get contestants for this pageant
-        $contestants = $pageant->contestants()->orderBy('number')->get();
+        $contestants = $pageant->contestants()->with('members:id,name')->orderBy('number')->get();
 
         // Get existing scores for this judge in this round
         $existingScores = Score::where('judge_id', $judge->id)
@@ -139,9 +139,11 @@ class JudgeController extends Controller
             return [
                 'id' => $contestant->id,
                 'number' => $contestant->number,
-                'name' => $contestant->name,
+                'name' => $contestant->is_pair ? ($contestant->display_name ?? $contestant->name) : $contestant->name,
                 'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                 'origin' => $contestant->origin,
+                'is_pair' => (bool) $contestant->is_pair,
+                'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
             ];
         });
 
@@ -151,8 +153,8 @@ class JudgeController extends Controller
                 'name' => $criterion->name,
                 'description' => $criterion->description,
                 'weight' => $criterion->weight,
-                'min_score' => $criterion->min_score,
-                'max_score' => $criterion->max_score,
+                'min_score' => (float) $criterion->min_score,
+                'max_score' => (float) $criterion->max_score,
                 'allow_decimals' => (bool) ($criterion->allow_decimals ?? false),
                 'decimal_places' => (int) ($criterion->decimal_places ?? 0),
             ];
@@ -381,7 +383,7 @@ class JudgeController extends Controller
         $judge = Auth::user();
         $pageant = $this->getPageantForJudge($pageantId, $judge->id);
 
-        $contestant = $pageant->contestants()->with(['images'])->findOrFail($contestantId);
+        $contestant = $pageant->contestants()->with(['images', 'members:id,name,number,photo'])->findOrFail($contestantId);
 
         $images = $contestant->images->map(function ($image) {
             return [
@@ -395,7 +397,7 @@ class JudgeController extends Controller
         return response()->json([
             'id' => $contestant->id,
             'number' => $contestant->number,
-            'name' => $contestant->name,
+            'name' => $contestant->is_pair ? ($contestant->display_name ?? $contestant->name) : $contestant->name,
             'origin' => $contestant->origin,
             'age' => $contestant->age,
             'bio' => $contestant->bio,
@@ -404,6 +406,16 @@ class JudgeController extends Controller
             'image' => $contestant->photo ? asset($contestant->photo) : asset('/images/placeholders/contestant.jpg'),
             'images' => $images,
             'scores' => $contestant->scores ?? [],
+            'is_pair' => (bool) $contestant->is_pair,
+            'members' => $contestant->is_pair ? $contestant->members->map(function ($m) {
+                return [
+                    'id' => $m->id,
+                    'name' => $m->name,
+                    'number' => $m->number,
+                    'photo' => $m->photo ? asset($m->photo) : null,
+                ];
+            })->values() : [],
+            'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
         ]);
     }
 

@@ -21,7 +21,7 @@
     <!-- Back Button and Page Header -->
     <div class="flex flex-col md:flex-row justify-between md:items-center space-y-3 md:space-y-0">
       <Link 
-        :href="route('organizer.my-pageants')"
+        :href="route('organizer.my-pageants', {}, false)"
         class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition-colors btn-transition w-max"
       >
         <ChevronLeft class="h-4 w-4 mr-1.5" />
@@ -2182,6 +2182,7 @@ const assignTabulator = () => {
       tabulatorForm.value.processing = false
       tabulatorForm.value.tabulator_id = ''
       tabulatorForm.value.notes = ''
+      router.reload()
     },
     onError: () => {
       tabulatorForm.value.processing = false
@@ -2207,6 +2208,7 @@ const removeTabulator = () => {
       deleteTabulatorProcessing.value = false
       showDeleteTabulatorConfirm.value = false
       selectedTabulator.value = null
+      router.reload()
     },
     onError: () => {
       deleteTabulatorProcessing.value = false

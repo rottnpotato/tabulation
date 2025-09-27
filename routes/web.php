@@ -80,6 +80,10 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     Route::delete('/pageant/{pageantId}/contestants/{contestantId}', [ContestantController::class, 'destroy'])->name('organizer.pageant.contestants.destroy');
     Route::delete('/pageant/{pageantId}/contestants/{contestantId}/photos/{photoIndex}', [ContestantController::class, 'deletePhoto'])->name('organizer.pageant.contestants.photos.destroy');
 
+    // Pair contestant routes
+    Route::post('/pageant/{pageantId}/pairs', [ContestantController::class, 'storePair'])->name('organizer.pageant.pairs.store');
+    Route::delete('/pageant/{pageantId}/pairs/{pairId}', [ContestantController::class, 'destroyPair'])->name('organizer.pageant.pairs.destroy');
+
     Route::get('/pageant/{id}/contestants-management', [OrganizerController::class, 'pageantContestants'])->name('organizer.pageant.contestants-management');
     Route::get('/pageant/{id}/criteria-management', [OrganizerController::class, 'pageantCriteria'])->name('organizer.pageant.criteria-management');
     Route::get('/pageant/{id}/judges-management', [OrganizerController::class, 'pageantJudges'])->name('organizer.pageant.judges-management');

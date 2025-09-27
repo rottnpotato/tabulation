@@ -30,10 +30,14 @@ class ContestantController extends Controller
         Gate::authorize('view', $pageant);
 
         $contestants = $pageant->contestants()
-            ->with(['images' => function ($query) {
-                $query->orderBy('is_primary', 'desc')
-                    ->orderBy('display_order');
-            }])
+            ->with([
+                'images' => function ($query) {
+                    $query->orderBy('is_primary', 'desc')
+                        ->orderBy('display_order');
+                },
+                'members:id,name,number,photo',
+            ])
+            ->withCount('pairs')
             ->orderBy('number')
             ->get()
             ->map(function ($contestant) {
@@ -48,6 +52,18 @@ class ContestantController extends Controller
                     'bio' => $contestant->bio,
                     'photo' => $primaryImage ? asset('storage/'.$primaryImage->image_path) : null,
                     'active' => $contestant->active,
+                    'is_pair' => (bool) $contestant->is_pair,
+                    // For single contestants, indicate if they already belong to a pair
+                    'in_pair' => isset($contestant->pairs_count) ? $contestant->pairs_count > 0 : false,
+                    'members' => $contestant->is_pair ? $contestant->members->map(function ($m) {
+                        return [
+                            'id' => $m->id,
+                            'name' => $m->name,
+                            'number' => $m->number,
+                            'photo' => $m->photo ? asset($m->photo) : null,
+                        ];
+                    })->values() : [],
+                    'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
                     'images' => $contestant->images->map(function ($image) {
                         return [
                             'id' => $image->id,
@@ -144,7 +160,7 @@ class ContestantController extends Controller
         $pageant = Pageant::findOrFail($pageantId);
         Gate::authorize('view', $pageant);
 
-        $contestant = Contestant::with('images')
+        $contestant = Contestant::with(['images', 'members:id,name,number,photo'])
             ->where('pageant_id', $pageantId)
             ->findOrFail($contestantId);
 
@@ -165,8 +181,131 @@ class ContestantController extends Controller
         );
 
         return response()->json([
-            'contestant' => $contestant,
+            'contestant' => array_merge($contestant->toArray(), [
+                'is_pair' => (bool) $contestant->is_pair,
+                'members' => $contestant->is_pair ? $contestant->members->map(function ($m) {
+                    return [
+                        'id' => $m->id,
+                        'name' => $m->name,
+                        'number' => $m->number,
+                        'photo' => $m->photo ? asset($m->photo) : null,
+                    ];
+                })->values()->all() : [],
+                'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
+            ]),
         ]);
+    }
+
+    /**
+     * Create a pair contestant from two existing contestants within the same pageant
+     */
+    public function storePair(Request $request, int $pageantId)
+    {
+        $pageant = Pageant::findOrFail($pageantId);
+        Gate::authorize('update', $pageant);
+
+        $validated = $request->validate([
+            'number' => [
+                'required',
+                'integer',
+                Rule::unique('contestants')->where(fn ($q) => $q->where('pageant_id', $pageantId)),
+            ],
+            'name' => 'nullable|string|max:255',
+            'member_ids' => 'required|array|size:2',
+            'member_ids.*' => 'integer|distinct|exists:contestants,id',
+        ]);
+
+        // Load members and validate they belong to the same pageant and are not pairs
+        $members = Contestant::whereIn('id', $validated['member_ids'])->get();
+
+        if ($members->count() !== 2) {
+            return response()->json(['success' => false, 'message' => 'Exactly two members are required.'], 422);
+        }
+
+        foreach ($members as $member) {
+            if ($member->pageant_id !== (int) $pageantId) {
+                return response()->json(['success' => false, 'message' => 'Members must belong to this pageant.'], 422);
+            }
+            if ($member->is_pair) {
+                return response()->json(['success' => false, 'message' => 'A pair cannot be a member of another pair.'], 422);
+            }
+            // Ensure member not already in another pair (DB constraint also enforces)
+            if ($member->pairs()->exists()) {
+                return response()->json(['success' => false, 'message' => "{$member->name} is already a member of another pair."], 422);
+            }
+        }
+
+        // Derive default pair name if not provided
+        $pairName = $validated['name'] ?? ($members[0]->name.' & '.$members[1]->name);
+
+        DB::beginTransaction();
+        try {
+            $pair = Contestant::create([
+                'pageant_id' => $pageantId,
+                'name' => $pairName,
+                'number' => $validated['number'],
+                'active' => true,
+                'is_pair' => true,
+            ]);
+
+            // Attach members
+            $pair->members()->attach($members->pluck('id')->all());
+
+            // Optionally use first member's primary image as pair photo
+            $firstPhoto = $members[0]->photo ?? null;
+            if ($firstPhoto) {
+                $pair->photo = $firstPhoto;
+                $pair->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'contestant' => [
+                    'id' => $pair->id,
+                    'name' => $pair->name,
+                    'number' => $pair->number,
+                    'origin' => $pair->origin,
+                    'age' => $pair->age,
+                    'bio' => $pair->bio,
+                    'photo' => $pair->photo ? asset($pair->photo) : null,
+                    'active' => $pair->active,
+                    'is_pair' => true,
+                    'members' => $members->map(function ($m) {
+                        return [
+                            'id' => $m->id,
+                            'name' => $m->name,
+                            'number' => $m->number,
+                            'photo' => $m->photo ? asset($m->photo) : null,
+                        ];
+                    })->values(),
+                    'members_text' => $members->pluck('name')->implode(' & '),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create pair: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a pair contestant
+     */
+    public function destroyPair(int $pageantId, int $pairId)
+    {
+        $pageant = Pageant::findOrFail($pageantId);
+        Gate::authorize('update', $pageant);
+
+        $pair = Contestant::where('pageant_id', $pageantId)->where('is_pair', true)->findOrFail($pairId);
+        $name = $pair->name;
+        $pair->delete();
+
+        return response()->json(['success' => true, 'message' => "Pair '{$name}' deleted."]);
     }
 
     /**

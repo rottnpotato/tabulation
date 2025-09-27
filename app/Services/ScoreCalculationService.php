@@ -12,6 +12,86 @@ use Illuminate\Support\Facades\Log;
 class ScoreCalculationService
 {
     /**
+     * Calculate stage-specific final scores (e.g., only semi-final or only final rounds)
+     *
+     * @param  string  $stage  Accepts 'semi-final' or 'final'
+     * @return array<int, array<string, mixed>>
+     */
+    public function calculatePageantStageScores(Pageant $pageant, string $stage, bool $useCache = true): array
+    {
+        try {
+            $cacheKey = "pageant_stage_scores_{$pageant->id}_{$stage}";
+
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            $contestants = [];
+
+            // Filter rounds by stage/type
+            $stageRounds = $pageant->rounds->filter(function ($round) use ($stage) {
+                return ($round->type ?? null) === $stage;
+            });
+
+            foreach ($pageant->contestants as $contestant) {
+                $roundScores = [];
+                $totalWeightedScore = 0;
+                $totalRoundWeight = 0;
+
+                foreach ($stageRounds as $round) {
+                    $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
+
+                    if ($roundScore !== null) {
+                        $roundScores[$round->name] = $roundScore;
+
+                        $roundWeight = $round->weight ?? 1;
+                        if ($roundWeight <= 0) {
+                            $roundWeight = 1;
+                        }
+
+                        $totalWeightedScore += $roundScore * $roundWeight;
+                        $totalRoundWeight += $roundWeight;
+                    }
+                }
+
+                $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+
+                $contestants[] = [
+                    'id' => $contestant->id,
+                    'number' => $contestant->number,
+                    'name' => $contestant->name,
+                    'region' => $contestant->origin,
+                    'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                    'scores' => $roundScores,
+                    'finalScore' => round($finalScore, 2),
+                ];
+            }
+
+            // Sort by final score descending and add ranks
+            usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+
+            foreach ($contestants as $index => &$contestant) {
+                $contestant['rank'] = $index + 1;
+            }
+
+            $result = $contestants;
+
+            // Cache for 30 minutes
+            Cache::put($cacheKey, $result, now()->addMinutes(30));
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Error calculating pageant stage scores: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'stage' => $stage,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
      * Calculate final scores for all contestants in a pageant
      */
     public function calculatePageantFinalScores(Pageant $pageant, bool $useCache = true): array

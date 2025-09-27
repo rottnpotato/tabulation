@@ -46,6 +46,9 @@
                   <div class="text-sm font-medium text-gray-900">
                     {{ contestant.name }}
                   </div>
+                  <div v-if="contestant.is_pair && contestant.members_text" class="text-xs text-gray-500">
+                    {{ contestant.members_text }}
+                  </div>
                   <div class="text-sm text-gray-500">
                     #{{ contestant.number }}
                   </div>
@@ -96,6 +99,8 @@ interface Contestant {
   name: string
   number: number
   image: string
+  is_pair?: boolean
+  members_text?: string
 }
 
 interface Judge {

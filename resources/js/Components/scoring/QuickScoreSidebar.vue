@@ -49,8 +49,8 @@
             </div>
           </div>
           <ScoreInput
-            :min="criterion.min_score"
-            :max="criterion.max_score"
+            :min="Number(criterion.min_score)"
+            :max="Number(criterion.max_score)"
             :step="criterion.allow_decimals ? 0.1 : 1"
             :allow-decimals="criterion.allow_decimals"
             :decimal-places="criterion.decimal_places || 1"

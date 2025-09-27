@@ -31,7 +31,7 @@
               <CustomSelect
                 v-model="currentRoundId"
                 :options="roundOptions"
-                :disabled="isLoading"
+                :disabled="isLoading || !isChannelReady"
                 variant="amber"
                 placeholder="Select Round"
                 @change="handleRoundChange"
@@ -153,6 +153,7 @@
             </div>
             <div>
               <h3 class="text-xl font-semibold text-gray-900">{{ contestant.name }}</h3>
+              <p v-if="contestant.is_pair && contestant.members_text" class="text-xs text-gray-500">{{ contestant.members_text }}</p>
               <p class="text-sm text-gray-500" v-if="contestant.origin">{{ contestant.origin }}</p>
             </div>
             <div class="sm:ml-auto flex items-center">
@@ -179,8 +180,8 @@
                 <div class="text-xs text-gray-500">Score {{ criterion.min_score }}-{{ criterion.max_score }}</div>
               </div>
               <ScoreInput
-                :min="criterion.min_score"
-                :max="criterion.max_score"
+                :min="Number(criterion.min_score)"
+                :max="Number(criterion.max_score)"
                 :step="criterion.allow_decimals ? 0.1 : 1"
                 :allow-decimals="criterion.allow_decimals"
                 :decimal-places="criterion.decimal_places || 1"
@@ -366,6 +367,8 @@ const detailLoading = ref(false)
 const comparison = ref({ current: null, previous: null })
 const notificationSystem = ref(null)
 const realtimeLoading = ref(false)
+const isChannelReady = ref(false)
+let pageantChannel = null
 
 const roundOptions = computed(() => {
   return props.rounds.map(round => ({
@@ -389,12 +392,12 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
     // Handle invalid numbers
     if (Number.isNaN(v) || !Number.isFinite(v)) {
       console.warn('Invalid score value provided:', value);
-      v = criterion.min_score || 0;
+      v = Number(criterion.min_score) || 0;
     }
     
     // Range validation with safety checks
-    const minScore = criterion.min_score || 0;
-    const maxScore = criterion.max_score || 100;
+    const minScore = Number(criterion.min_score) || 0;
+    const maxScore = Number(criterion.max_score) || 100;
     
     if (v < minScore) v = minScore;
     if (v > maxScore) v = maxScore;
@@ -414,7 +417,7 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
     // Final safety check
     if (!Number.isFinite(v)) {
       console.error('Final score value is not finite:', v);
-      v = minScore;
+      v = Number(minScore);
     }
     
     scores.value[`${contestantId}-${criterionId}`] = v;
@@ -428,7 +431,7 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
     });
     
     // Fallback to minimum score on any error
-    scores.value[`${contestantId}-${criterionId}`] = criterion.min_score || 0;
+    scores.value[`${contestantId}-${criterionId}`] = Number(criterion.min_score) || 0;
   }
 }
 
@@ -496,15 +499,17 @@ const submitScores = async (contestantId) => {
       const score = scores.value[`${contestantId}-${criterion.id}`];
       
       // Validate score exists and is valid
-      if (score === undefined || score === null || !Number.isFinite(score)) {
+      if (score === undefined || score === null) {
         console.error(`Invalid score for criterion ${criterion.id}:`, score);
         hasInvalidScores = true;
         return;
       }
       
       // Validate score is within range
-      if (score < criterion.min_score || score > criterion.max_score) {
-        console.error(`Score ${score} out of range for criterion ${criterion.id} (${criterion.min_score}-${criterion.max_score})`);
+      const minScore = Number(criterion.min_score);
+      const maxScore = Number(criterion.max_score);
+      if (score < minScore || score > maxScore) {
+        console.error(`Score ${score} out of range for criterion ${criterion.id} (${minScore}-${maxScore})`);
         hasInvalidScores = true;
         return;
       }
@@ -608,7 +613,10 @@ onMounted(() => {
   if (props.pageant) {
     console.log('Judge subscribing to pageant channel:', `pageant.${props.pageant.id}`)
     // Listen for round updates
-    window.Echo.private(`pageant.${props.pageant.id}`)
+    pageantChannel = window.Echo.private(`pageant.${props.pageant.id}`)
+      .subscribed(() => {
+        isChannelReady.value = true
+      })
       .listen('RoundUpdated', (e) => {
         console.log('Judge received RoundUpdated event:', e)
         handleRoundUpdate(e)

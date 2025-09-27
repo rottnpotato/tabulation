@@ -130,7 +130,11 @@ interface Props {
 const props = defineProps<Props>()
 
 const rankedContestants = computed(() => {
-  return [...props.contestants].sort((a, b) => b.totalScore - a.totalScore)
+  return [...props.contestants].sort((a, b) => {
+    const aTotal = toNumber(a.totalScore) ?? 0
+    const bTotal = toNumber(b.totalScore) ?? 0
+    return bTotal - aTotal
+  })
 })
 
 const getRankDisplay = (rank: number): string => {
@@ -153,14 +157,43 @@ const getRankBadgeClass = (rank: number): string => {
   }
 }
 
-const getScoreClass = (score: number): string => {
-  if (score >= 95) return 'text-green-600'
-  if (score >= 90) return 'text-blue-600'
-  if (score >= 85) return 'text-yellow-600'
+const getScoreClass = (score: number | null | undefined): string => {
+  const n = typeof score === 'number' && Number.isFinite(score) ? score : 0
+  if (n >= 95) {
+    return 'text-green-600'
+  }
+  if (n >= 90) {
+    return 'text-blue-600'
+  }
+  if (n >= 85) {
+    return 'text-yellow-600'
+  }
   return 'text-gray-900'
 }
 
-const formatScore = (score: number): string => {
-  return score.toFixed(2)
+const toNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined) {
+    return null
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.length === 0) {
+      return null
+    }
+    const parsed = Number(trimmed)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
+const formatScore = (score: unknown, decimals = 2, empty = '-'): string => {
+  const n = toNumber(score)
+  if (n === null) {
+    return empty
+  }
+  return n.toFixed(decimals)
 }
 </script>

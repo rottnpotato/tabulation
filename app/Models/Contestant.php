@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Contestant extends Model
 {
     use HasFactory;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -29,8 +30,9 @@ class Contestant extends Model
         'metadata',
         'active',
         'rank',
+        'is_pair',
     ];
-    
+
     /**
      * The attributes that should be cast.
      *
@@ -43,8 +45,50 @@ class Contestant extends Model
         'age' => 'integer',
         'number' => 'integer',
         'rank' => 'integer',
+        'is_pair' => 'boolean',
     ];
-    
+
+    /**
+     * Members of this pair (if this contestant represents a pair)
+     */
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Contestant::class,
+            'contestant_members',
+            'pair_contestant_id',
+            'member_contestant_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Pairs that this contestant is a member of.
+     */
+    public function pairs(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Contestant::class,
+            'contestant_members',
+            'member_contestant_id',
+            'pair_contestant_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Accessor for a nicely formatted display name.
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->is_pair) {
+            $names = $this->members->pluck('name')->filter()->values();
+            if ($names->count() === 2) {
+                return $names[0].' & '.$names[1];
+            }
+        }
+
+        return (string) $this->name;
+    }
+
     /**
      * Get the pageant that owns the contestant.
      */
@@ -60,7 +104,7 @@ class Contestant extends Model
     {
         return $this->belongsTo(User::class);
     }
-    
+
     /**
      * Get the images associated with this contestant.
      */
@@ -68,7 +112,7 @@ class Contestant extends Model
     {
         return $this->hasMany(ContestantImage::class)->orderBy('display_order');
     }
-    
+
     /**
      * Get the primary image for this contestant.
      */
@@ -78,7 +122,7 @@ class Contestant extends Model
             ->where('is_primary', true)
             ->first();
     }
-    
+
     /**
      * Calculate the contestant's average score across all categories.
      */
@@ -87,13 +131,13 @@ class Contestant extends Model
         if (empty($this->scores)) {
             return null;
         }
-        
+
         $scores = collect($this->scores);
-        
+
         if ($scores->isEmpty()) {
             return null;
         }
-        
+
         return $scores->avg();
     }
 }

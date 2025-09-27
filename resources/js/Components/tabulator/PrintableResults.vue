@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="text-center mb-8 border-b-2 border-gray-200 pb-6">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ pageant.name }}</h1>
-      <p class="text-lg text-gray-600">Final Results Report</p>
+  <p class="text-lg text-gray-600">{{ reportTitle || 'Final Results Report' }}</p>
       <div class="mt-4 text-sm text-gray-500 space-y-1">
         <p v-if="pageant.date">Date: {{ pageant.date }}</p>
         <p v-if="pageant.venue">Venue: {{ pageant.venue }}</p>
@@ -172,6 +172,7 @@ interface Props {
   pageant: Pageant
   results: Result[]
   judges: Judge[]
+  reportTitle?: string
 }
 
 const props = defineProps<Props>()

@@ -2,7 +2,7 @@
   <div class="print-container">
     <!-- Screen View -->
     <div class="screen-only bg-gray-50 min-h-screen py-8">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- No Pageant Assigned -->
         <div v-if="!pageant" class="text-center py-16">
           <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-blue-200 mb-6">
@@ -28,6 +28,28 @@
               <p class="text-gray-600 mt-2">{{ pageant.name }} - Final Results Report</p>
             </div>
             <div class="flex items-center gap-4">
+              <!-- Stage Selector -->
+              <div class="relative">
+                <button
+                  @click="showStageDropdown = !showStageDropdown"
+                  class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {{ stageLabels[selectedStage] }}
+                  <ChevronDown class="w-4 h-4 ml-2" />
+                </button>
+                <div v-if="showStageDropdown" class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  <div class="py-1">
+                    <button v-for="(label, key) in stageLabels" :key="key"
+                      @click="selectedStage = key as StageKey; showStageDropdown = false"
+                      class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors duration-150"
+                      :class="{
+                        'bg-blue-50 text-blue-700': selectedStage === (key as StageKey),
+                        'text-gray-700': selectedStage !== (key as StageKey)
+                      }"
+                    >{{ label }}</button>
+                  </div>
+                </div>
+              </div>
               <!-- Paper Size Selector -->
               <div class="relative">
                 <button
@@ -74,8 +96,9 @@
           <div class="bg-white rounded-lg shadow-lg print-content" ref="printArea">
             <PrintableResults 
               :pageant="pageant"
-              :results="results"
+              :results="resultsToShow"
               :judges="judges"
+              :report-title="reportTitle"
             />
           </div>
         </div>
@@ -86,15 +109,16 @@
     <div v-if="pageant" class="print-only">
       <PrintableResults 
         :pageant="pageant"
-        :results="results"
+        :results="resultsToShow"
         :judges="judges"
+        :report-title="reportTitle"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Printer, LayoutDashboard, ChevronDown } from 'lucide-vue-next'
 import { Link } from '@inertiajs/vue3'
 import PrintableResults from '../../Components/tabulator/PrintableResults.vue'
@@ -129,15 +153,20 @@ interface Judge {
 
 interface Props {
   pageant?: Pageant
-  results: Result[]
+  resultsOverall: Result[]
+  resultsSemiFinal: Result[]
+  resultsFinal: Result[]
   judges: Judge[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const printArea = ref<HTMLElement | null>(null)
 const selectedPaperSize = ref<keyof typeof paperSizes>('letter')
 const showPaperSizeDropdown = ref(false)
+type StageKey = 'overall' | 'semi-final' | 'final' | 'final-top3'
+const selectedStage = ref<StageKey>('overall')
+const showStageDropdown = ref(false)
 
 const paperSizes = {
   letter: { name: 'Letter (8.5" × 11")', size: 'letter', margin: '0.5in' },
@@ -145,6 +174,28 @@ const paperSizes = {
   legal: { name: 'Legal (8.5" × 14")', size: 'legal', margin: '0.5in' },
   oficio: { name: 'Oficio (8.5" × 13")', size: '8.5in 13in', margin: '0.5in' }
 } as const
+
+const stageLabels: Record<StageKey, string> = {
+  overall: 'Overall Results',
+  'semi-final': 'Semi-Final Results',
+  final: 'Final Results',
+  'final-top3': 'Final - Top 3 Only',
+}
+
+const resultsToShow = computed<Result[]>(() => {
+  switch (selectedStage.value) {
+    case 'semi-final':
+      return props.resultsSemiFinal
+    case 'final':
+      return props.resultsFinal
+    case 'final-top3':
+      return props.resultsFinal.slice(0, 3)
+    default:
+      return props.resultsOverall
+  }
+})
+
+const reportTitle = computed(() => stageLabels[selectedStage.value])
 
 const printResults = () => {
   // Get the printable content
