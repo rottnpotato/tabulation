@@ -28,24 +28,47 @@
       </div>
 
       <!-- Awards List -->
-      <div class="mt-6 space-y-6">
-        <div v-for="(entry, idx) in roundEntries" :key="entry.round.id + '-' + idx" class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h2 class="text-lg font-semibold text-gray-900">Best in {{ entry.round.name }}</h2>
+      <div class="mt-6 space-y-8">
+        <div v-for="(entry, idx) in roundEntries" :key="entry.round.id + '-' + idx" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div class="px-6 py-5 border-b border-gray-100 bg-gray-50">
+            <h2 class="text-lg font-medium text-center text-gray-800 tracking-wide">
+              Best in {{ entry.round.name }}
+            </h2>
           </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              <div v-for="winner in entry.winners" :key="winner.id" class="flex items-center gap-4 rounded-lg p-4 border border-gray-200 hover:bg-gray-50 transition-colors">
-                <img :src="winner.image" :alt="winner.name" class="h-16 w-16 rounded-full object-cover border-2 border-gray-200" />
-                <div>
-                  <div class="text-sm text-gray-500">#{{ winner.number }}</div>
-                  <div class="text-base font-semibold text-gray-900 tracking-tight">{{ winner.name }}</div>
-                  <div class="text-sm text-gray-500">Score: {{ formatScore(winner.score) }}</div>
+          <div class="p-8">
+            <!-- Centered winners with elegant spacing -->
+            <div class="flex flex-wrap justify-center gap-8">
+              <div v-for="winner in entry.winners" :key="winner.id" 
+                class="flex flex-col items-center text-center group">
+                
+                <!-- Winner Image -->
+                <div class="relative mb-6">
+                  <div class="relative">
+                    <img :src="winner.image" :alt="winner.name" 
+                      class="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-gray-300 transition-all duration-200" />
+                    <div class="absolute -bottom-1 -right-1 bg-gray-800 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-medium">
+                      {{ winner.number }}
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Winner Details -->
+                <div class="space-y-3 min-w-[200px]">
+                  <h3 class="text-lg font-semibold text-gray-900 leading-tight">{{ winner.name }}</h3>
+                  <div class="border-t border-gray-200 pt-2">
+                    <div class="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1">Score</div>
+                    <div class="text-xl font-light text-gray-900">{{ formatScore(winner.score) }}</div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div v-if="entry.winners.length > 1" class="mt-4 text-sm text-gray-500">
-              Tie for highest score.
+            
+            <!-- Tie Notice -->
+            <div v-if="entry.winners.length > 1" class="mt-8 text-center">
+              <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-md text-sm">
+                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                Tied for highest score
+              </div>
             </div>
           </div>
         </div>

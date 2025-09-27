@@ -3,8 +3,6 @@
     <Head title="Tabulator Dashboard" />
     <SideNav>
       <div class="p-6">
-       
-
         <!-- Main content with transition -->
         <TransitionGroup
           tag="div"

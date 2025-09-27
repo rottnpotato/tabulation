@@ -17,44 +17,65 @@
     </div>
 
     <!-- Awards Grid -->
-    <div v-if="roundEntries.length > 0" class="space-y-6">
+    <div v-if="roundEntries.length > 0" class="space-y-12">
       <div
         v-for="(entry, idx) in roundEntries"
         :key="entry.round.id + '-' + idx"
-        class="border border-gray-200 rounded-xl overflow-hidden shadow-sm"
+        class="border border-gray-300 rounded-lg overflow-hidden"
       >
-        <div class="bg-gradient-to-r from-amber-50 to-amber-100 px-6 py-4 border-b border-amber-200">
-          <h2 class="text-xl font-semibold text-amber-900">Best in {{ entry.round.name }}</h2>
+        <div class="bg-gray-100 px-8 py-6 border-b border-gray-300">
+          <h2 class="text-xl font-medium text-center text-gray-800 tracking-wide uppercase">
+            Best in {{ entry.round.name }}
+          </h2>
         </div>
-        <div class="p-6">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="p-12 bg-white">
+          <!-- Centered winners with elegant print spacing -->
+          <div class="flex flex-wrap justify-center gap-12">
             <div
               v-for="winner in entry.winners"
               :key="winner.id"
-              class="flex items-center gap-4 bg-white rounded-lg border border-gray-100 p-4 shadow-sm"
+              class="flex flex-col items-center text-center"
             >
-              <img :src="winner.image" :alt="winner.name" class="h-16 w-16 rounded-full object-cover border-4 border-amber-200" />
-              <div>
-                <div class="text-sm text-gray-500">#{{ winner.number }}</div>
-                <div class="text-base font-semibold text-gray-900">{{ winner.name }}</div>
-                
+              <!-- Winner Image -->
+              <div class="relative mb-8">
+                <div class="relative">
+                  <img :src="winner.image" :alt="winner.name" 
+                    class="h-32 w-32 rounded-full object-cover ring-4 ring-gray-300" />
+                  <div class="absolute -bottom-2 -right-2 bg-gray-800 text-white text-sm rounded-full w-8 h-8 flex items-center justify-center font-semibold">
+                    {{ winner.number }}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Winner Details -->
+              <div class="space-y-4 min-w-[280px]">
+                <h3 class="text-2xl font-medium text-gray-900 leading-tight tracking-wide">{{ winner.name }}</h3>
+                <div class="border-t-2 border-gray-200 pt-4">
+                  <div class="text-sm text-gray-500 uppercase tracking-widest font-medium mb-2">Award Score</div>
+                  <div class="text-3xl font-light text-gray-900 tracking-wide">{{ formatScore(winner.score) }}</div>
+                </div>
               </div>
             </div>
           </div>
-          <div v-if="entry.winners.length > 1" class="mt-3 text-sm text-gray-600">
-            Note: Tie for highest score.
+          
+          <!-- Tie Notice -->
+          <div v-if="entry.winners.length > 1" class="mt-12 text-center">
+            <div class="inline-flex items-center gap-3 px-6 py-3 border border-gray-300 text-gray-600 rounded text-sm tracking-wide">
+              <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+              TIED FOR HIGHEST SCORE
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Empty State -->
-    <div v-else class="text-center py-12">
-      <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-blue-200 mb-6">
-        <span class="text-2xl">🏆</span>
+    <div v-else class="text-center py-16">
+      <div class="mx-auto w-16 h-16 flex items-center justify-center rounded-full bg-gray-100 border-2 border-gray-200 mb-8">
+        <Trophy class="h-8 w-8 text-gray-400" />
       </div>
-      <h3 class="text-lg font-medium text-gray-900 mb-2">No Minor Awards Available</h3>
-      <p class="text-gray-500">Minor awards will appear once semi-final round scoring is complete.</p>
+      <h3 class="text-xl font-medium text-gray-900 mb-3 tracking-wide">No Minor Awards Available</h3>
+      <p class="text-gray-500 max-w-md mx-auto leading-relaxed">Minor awards will appear once semi-final round scoring is complete.</p>
     </div>
 
     <!-- Judges Section -->
@@ -88,6 +109,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Trophy } from 'lucide-vue-next'
 
 interface PageantInfo {
   id: number
@@ -145,7 +167,30 @@ const formatScore = (score: number): string => {
 
 <style scoped>
 @media print {
-  .bg-white {
+  .bg-white, 
+  .bg-gray-100 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .border-gray-200,
+  .border-gray-300,
+  .ring-gray-300 {
+    border-color: #d1d5db !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .text-gray-800,
+  .text-gray-900,
+  .text-gray-600,
+  .text-gray-500 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .bg-gray-800 {
+    background-color: #1f2937 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
