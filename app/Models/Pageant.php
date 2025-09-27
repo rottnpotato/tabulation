@@ -33,6 +33,7 @@ class Pageant extends Model
         'edit_permission_expires_at',
         'edit_permission_granted_to',
         'scoring_system',
+        'contestant_type',
         'required_judges',
         'is_locked',
         'locked_at',
@@ -620,5 +621,45 @@ class Pageant extends Model
     public function clearCurrentRound(): void
     {
         $this->update(['current_round_id' => null]);
+    }
+
+    /**
+     * Check if the pageant allows solo contestants
+     */
+    public function allowsSoloContestants(): bool
+    {
+        return in_array($this->contestant_type, ['solo', 'both']);
+    }
+
+    /**
+     * Check if the pageant allows pair contestants
+     */
+    public function allowsPairContestants(): bool
+    {
+        return in_array($this->contestant_type, ['pairs', 'both']);
+    }
+
+    /**
+     * Check if the pageant is solo contestants only
+     */
+    public function isSoloOnly(): bool
+    {
+        return $this->contestant_type === 'solo';
+    }
+
+    /**
+     * Check if the pageant is pair contestants only
+     */
+    public function isPairsOnly(): bool
+    {
+        return $this->contestant_type === 'pairs';
+    }
+
+    /**
+     * Check if the pageant allows both solo and pair contestants
+     */
+    public function allowsBothTypes(): bool
+    {
+        return $this->contestant_type === 'both';
     }
 }

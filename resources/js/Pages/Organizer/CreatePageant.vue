@@ -60,6 +60,21 @@
             />
             <p v-if="errors.scoring_system" class="mt-1 text-sm text-red-600">{{ errors.scoring_system }}</p>
           </div>
+
+          <!-- Contestant Type -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Contestant Type *
+            </label>
+            <CustomSelect
+              v-model="form.contestant_type"
+              :options="contestantTypeOptions"
+              placeholder="Select contestant type"
+              variant="orange"
+            />
+            <p v-if="errors.contestant_type" class="mt-1 text-sm text-red-600">{{ errors.contestant_type }}</p>
+            <p class="mt-1 text-sm text-gray-500">Choose what type of contestants can participate in this pageant</p>
+          </div>
         </div>
 
         <!-- Description -->
@@ -234,7 +249,8 @@ const form = reactive({
   pageant_date: '',
   venue: '',
   location: '',
-  scoring_system: ''
+  scoring_system: '',
+  contestant_type: 'both'
 })
 
 const errors = ref({})
@@ -246,6 +262,13 @@ const scoringSystemOptions = [
   { value: '1-10', label: 'Scale 1-10' },
   { value: '1-5', label: 'Scale 1-5' },
   { value: 'points', label: 'Points (0-50)' }
+]
+
+// Options for contestant type
+const contestantTypeOptions = [
+  { value: 'solo', label: 'Solo Contestants Only' },
+  { value: 'pairs', label: 'Pairs Only (Mr & Ms)' },
+  { value: 'both', label: 'Both Solo and Pairs' }
 ]
 
 // Submit form
@@ -260,6 +283,10 @@ const submitForm = () => {
   
   if (!form.scoring_system) {
     errors.value.scoring_system = 'Scoring system is required'
+  }
+  
+  if (!form.contestant_type) {
+    errors.value.contestant_type = 'Contestant type is required'
   }
   
   if (!form.pageant_date) {

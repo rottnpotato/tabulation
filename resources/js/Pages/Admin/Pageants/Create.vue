@@ -119,6 +119,41 @@
                 Select the scoring system that will be used throughout the pageant. Organizers can modify this until 1 day before the pageant. After that, changes require an admin request.
               </p>
             </div>
+
+            <!-- Contestant Type -->
+            <div>
+              <label for="contestant_type" class="block text-sm font-medium text-gray-700 mb-1">Contestant Type <span class="text-red-500">*</span></label>
+              <div class="grid grid-cols-1 gap-3">
+                <label 
+                  v-for="(type, index) in contestantTypes" 
+                  :key="index"
+                  class="relative flex items-start p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition-colors"
+                  :class="form.contestant_type === type.value ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'"
+                >
+                  <div class="min-w-0 flex-1 text-sm">
+                    <input
+                      type="radio"
+                      :name="type.value"
+                      :id="type.value"
+                      :value="type.value"
+                      v-model="form.contestant_type"
+                      class="sr-only"
+                    />
+                    <p class="font-medium text-gray-700">{{ type.name }}</p>
+                    <p class="text-xs text-gray-500">{{ type.description }}</p>
+                  </div>
+                  <div class="ml-3 flex h-5 items-center">
+                    <svg v-if="form.contestant_type === type.value" class="h-5 w-5 text-teal-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                </label>
+              </div>
+              <p v-if="errors.contestant_type" class="mt-1 text-sm text-red-600">{{ errors.contestant_type }}</p>
+              <p v-else class="mt-1 text-xs text-gray-500">
+                Select what type of contestants are allowed in this pageant. For Mr & Ms pageants, choose "Pairs Only".
+              </p>
+            </div>
           </div>
 
           <!-- Right column -->
@@ -307,6 +342,25 @@ const scoringSystems = [
   }
 ];
 
+// Define contestant types
+const contestantTypes = [
+  {
+    value: 'solo',
+    name: 'Solo Contestants Only',
+    description: 'Only individual contestants are allowed to participate'
+  },
+  {
+    value: 'pairs',
+    name: 'Pairs Only',
+    description: 'Only paired contestants (Mr & Ms) are allowed to participate'
+  },
+  {
+    value: 'both',
+    name: 'Both Solo and Pairs',
+    description: 'Both individual contestants and pairs can participate'
+  }
+];
+
 // Define props received from the controller
 const props = defineProps({
   organizers: {
@@ -330,7 +384,8 @@ const form = reactive({
   location: '',
   status: 'Draft',
   organizer_ids: [],
-  scoring_system: null
+  scoring_system: null,
+  contestant_type: 'both'
 });
 
 // State for validation errors
@@ -343,6 +398,8 @@ const notify = useNotification();
 
 // Submit the form to create the pageant
 const submitForm = () => {
+  console.log('submitForm called - starting validation');
+  
   // Reset errors
   errors.value = {};
   
@@ -359,26 +416,41 @@ const submitForm = () => {
     errors.value.scoring_system = 'Scoring system is required';
   }
   
+  if (!form.contestant_type) {
+    errors.value.contestant_type = 'Contestant type is required';
+  }
+  
   if (form.start_date && form.end_date && new Date(form.end_date) < new Date(form.start_date)) {
     errors.value.end_date = 'End date must be after start date';
   }
   
   // If there are validation errors, stop submission
   if (Object.keys(errors.value).length > 0) {
+    console.log('Frontend validation failed:', errors.value);
     notify.error('Please fix the errors in the form before submitting');
     return;
   }
   
+  console.log('Frontend validation passed - proceeding with submission');
+  
   // Submit the form
   isSubmitting.value = true;
   
+  // Debug: Log the form data being submitted
+  console.log('Submitting form data:', form);
+  console.log('Organizer IDs:', form.organizer_ids);
+  
   router.post('/admin/pageants/create', form, {
-    onSuccess: () => {
+    onSuccess: (page) => {
+      console.log('Form submission successful:', page);
       // Show a success message even if the server doesn't provide one
       notify.success(`Pageant "${form.name}" has been created successfully!`);
       isSubmitting.value = false;
+      // Explicitly navigate to the pageants list
+      router.visit('/admin/pageants');
     },
     onError: (validationErrors) => {
+      console.log('Form submission failed with errors:', validationErrors);
       // Display validation errors from backend
       errors.value = validationErrors;
       isSubmitting.value = false;
@@ -392,6 +464,7 @@ const submitForm = () => {
 
 // Save as draft
 const saveAsDraft = () => {
+  console.log('saveAsDraft called');
   form.status = 'Draft';
   submitForm();
 };

@@ -70,6 +70,15 @@
                 {{ pageant.status }}
               </span>
             </Tooltip>
+            <Tooltip v-if="pageant.contestant_type" :text="getContestantTypeTooltipText(pageant.contestant_type)" position="top">
+              <span :class="[
+                getContestantTypeClass(pageant.contestant_type).badge,
+                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium hover:shadow-md transition-shadow cursor-help'
+              ]">
+                <component :is="getContestantTypeClass(pageant.contestant_type).icon" class="h-3 w-3 mr-1" />
+                {{ getContestantTypeLabel(pageant.contestant_type) }}
+              </span>
+            </Tooltip>
           </div>
           
           <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">{{ pageant.name }}</h1>
@@ -1794,6 +1803,7 @@ import {
   Trash, 
   AlertCircle,
   User2,
+  User,
   Scale,
   Plus,
   Save,
@@ -2286,6 +2296,58 @@ const getStatusTooltipText = (status) => {
       return 'This completed pageant is temporarily unlocked for editing and corrections.'
     default:
       return 'Current status of this pageant'
+  }
+}
+
+// Helper functions for contestant type
+const getContestantTypeLabel = (type) => {
+  switch (type) {
+    case 'solo':
+      return 'Solo Only'
+    case 'pairs':
+      return 'Pairs Only'
+    case 'both':
+      return 'Solo & Pairs'
+    default:
+      return 'Mixed'
+  }
+}
+
+const getContestantTypeClass = (type) => {
+  switch (type) {
+    case 'solo':
+      return { 
+        badge: 'bg-blue-100 text-blue-800',
+        icon: 'User'
+      }
+    case 'pairs':
+      return { 
+        badge: 'bg-emerald-100 text-emerald-800',
+        icon: 'Users'
+      }
+    case 'both':
+      return { 
+        badge: 'bg-purple-100 text-purple-800',
+        icon: 'Users'
+      }
+    default:
+      return { 
+        badge: 'bg-gray-100 text-gray-800',
+        icon: 'Users'
+      }
+  }
+}
+
+const getContestantTypeTooltipText = (type) => {
+  switch (type) {
+    case 'solo':
+      return 'This pageant only accepts individual solo contestants'
+    case 'pairs':
+      return 'This pageant only accepts paired contestants (Mr & Ms style)'
+    case 'both':
+      return 'This pageant accepts both individual contestants and pairs'
+    default:
+      return 'Contestant type configuration'
   }
 }
 

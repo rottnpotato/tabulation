@@ -30,6 +30,11 @@
                 <p class="mt-2 text-purple-100 max-w-2xl">
                   {{ contestant ? 'Update contestant details and photos' : 'Enter contestant information and upload photos' }}
                 </p>
+                <!-- Pageant Type Context -->
+                <div v-if="pageant && pageant.contestant_type && !contestant" class="mt-3 p-3 bg-purple-500/30 rounded-lg border border-purple-400/30">
+                  <p class="text-sm text-purple-100 font-medium mb-1">{{ getPageantTypeTitle() }}</p>
+                  <p class="text-xs text-purple-200">{{ getPageantTypeDescription() }}</p>
+                </div>
                 <button 
                   @click="closeModal" 
                   class="absolute top-4 right-4 text-white hover:text-purple-200 transition-colors"
@@ -281,6 +286,10 @@ const props = defineProps({
     type: Number,
     required: true
   },
+  pageant: {
+    type: Object,
+    default: null
+  },
   contestant: {
     type: Object,
     default: null
@@ -381,10 +390,6 @@ const clearAllImages = () => {
   imageFiles.value = []
 }
 
-const closeModal = () => {
-  emit('close')
-}
-
 const handleSubmit = async () => {
   // Clear previous errors
   Object.keys(errors).forEach(key => delete errors[key])
@@ -464,6 +469,42 @@ const handleSubmit = async () => {
     }
   } finally {
     isLoading.value = false
+  }
+}
+
+const closeModal = () => {
+  resetForm()
+  emit('close')
+}
+
+// Helper functions for pageant type context
+const getPageantTypeTitle = () => {
+  if (!props.pageant || !props.pageant.contestant_type) return ''
+  
+  switch (props.pageant.contestant_type) {
+    case 'solo':
+      return 'Solo Competition'
+    case 'pairs':
+      return 'Pairs Competition - Individual Entry'
+    case 'both':
+      return 'Mixed Competition'
+    default:
+      return ''
+  }
+}
+
+const getPageantTypeDescription = () => {
+  if (!props.pageant || !props.pageant.contestant_type) return ''
+  
+  switch (props.pageant.contestant_type) {
+    case 'solo':
+      return 'This contestant will compete individually in this solo-only pageant.'
+    case 'pairs':
+      return 'This individual will be available to create pairs. You\'ll need to create pairs from individuals to compete in this pairs-only pageant.'
+    case 'both':
+      return 'This contestant can compete individually or be part of a pair in this mixed pageant.'
+    default:
+      return ''
   }
 }
 </script>

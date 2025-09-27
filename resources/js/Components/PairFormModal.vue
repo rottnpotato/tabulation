@@ -12,6 +12,11 @@
               <div class="relative bg-gradient-to-r from-emerald-600 to-teal-500 p-6 text-white">
                 <DialogTitle as="h3" class="text-2xl font-bold leading-6">Create Pair</DialogTitle>
                 <p class="mt-2 text-emerald-100">Select exactly two contestants to form a pair entry for this pageant.</p>
+                <!-- Pageant Type Context -->
+                <div v-if="pageant && pageant.contestant_type" class="mt-3 p-3 bg-emerald-500/30 rounded-lg border border-emerald-400/30">
+                  <p class="text-sm text-emerald-100 font-medium mb-1">{{ getPageantTypeTitle() }}</p>
+                  <p class="text-xs text-emerald-200">{{ getPageantTypeDescription() }}</p>
+                </div>
                 <button @click="onClose" class="absolute top-4 right-4 text-white/90 hover:text-white">
                   <XCircle class="h-6 w-6" />
                 </button>
@@ -32,6 +37,19 @@
 
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Select Members <span class="text-red-500">*</span></label>
+                  
+                  <!-- Warning when not enough available contestants -->
+                  <div v-if="availableContestants.filter(c => !c.disabled).length < 2" class="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div class="flex items-start">
+                      <div class="text-amber-600 font-medium text-sm">Not enough individual contestants</div>
+                    </div>
+                    <p class="text-xs text-amber-700 mt-1">
+                      You need at least 2 individual contestants to create a pair. 
+                      {{ availableContestants.filter(c => !c.disabled).length }} available, {{ 2 - availableContestants.filter(c => !c.disabled).length }} more needed.
+                      <span class="block mt-1">Add more individual contestants first, then return to create pairs.</span>
+                    </p>
+                  </div>
+                  
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label v-for="c in availableContestants" :key="c.id" class="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" :class="{ 'opacity-50 cursor-not-allowed bg-gray-50': c.disabled }">
                       <input type="checkbox" :value="c.id" v-model="form.member_ids" class="rounded text-emerald-600 focus:ring-emerald-500" :disabled="c.disabled" />
@@ -73,6 +91,7 @@ import axios from 'axios'
 const props = defineProps({
   show: { type: Boolean, required: true },
   pageantId: { type: Number, required: true },
+  pageant: { type: Object, default: null },
   contestants: { type: Array, default: () => [] },
 })
 
@@ -124,6 +143,33 @@ const handleSubmit = async () => {
     }
   } finally {
     isSubmitting.value = false
+  }
+}
+
+// Helper functions for pageant type context
+const getPageantTypeTitle = () => {
+  if (!props.pageant || !props.pageant.contestant_type) return ''
+  
+  switch (props.pageant.contestant_type) {
+    case 'pairs':
+      return 'Pairs-Only Competition'
+    case 'both':
+      return 'Mixed Competition - Creating Pair'
+    default:
+      return 'Creating Pair Entry'
+  }
+}
+
+const getPageantTypeDescription = () => {
+  if (!props.pageant || !props.pageant.contestant_type) return ''
+  
+  switch (props.pageant.contestant_type) {
+    case 'pairs':
+      return 'This pair will compete as the main entry type in this pairs-only pageant.'
+    case 'both':
+      return 'This pair will compete alongside individual contestants in this mixed pageant.'
+    default:
+      return 'Creating a pair entry for this pageant.'
   }
 }
 </script>

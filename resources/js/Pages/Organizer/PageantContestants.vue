@@ -18,16 +18,16 @@
                 Back to Pageant
               </Link>
             </Tooltip>
-            <Tooltip text="Register a new contestant for this pageant" position="bottom">
+            <Tooltip v-if="allowsSoloContestants" :text="isPairsOnly ? 'Register individual contestants to create pairs' : 'Register a new individual contestant for this pageant'" position="bottom">
               <button
                 @click="showAddModal = true"
                 class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
               >
                 <Plus class="h-4 w-4 mr-2" />
-                Add Contestant
+                {{ isPairsOnly ? 'Add Individual' : 'Add Contestant' }}
               </button>
             </Tooltip>
-            <Tooltip text="Create a pair from two contestants" position="bottom">
+            <Tooltip v-if="allowsPairContestants" text="Create a pair from existing individual contestants" position="bottom">
               <button
                 @click="showPairModal = true"
                 class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
@@ -37,6 +37,23 @@
               </button>
             </Tooltip>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pageant Type Info Message -->
+    <div v-if="!allowsBothTypes" class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-sm">
+      <div class="flex items-start">
+        <Users v-if="isPairsOnly" class="h-5 w-5 mr-3 text-blue-500 mt-0.5 flex-shrink-0" />
+        <Plus v-else class="h-5 w-5 mr-3 text-blue-500 mt-0.5 flex-shrink-0" />
+        <div>
+          <p class="font-semibold">{{ isPairsOnly ? 'Pairs Only Pageant' : 'Solo Only Pageant' }}</p>
+          <p v-if="isPairsOnly" class="mt-1 text-sm text-blue-600">
+            This pageant only accepts paired contestants (Mr & Ms style). You need to add individual contestants first, then create pairs from them.
+          </p>
+          <p v-else class="mt-1 text-sm text-blue-600">
+            This pageant only accepts individual solo contestants. Each contestant competes independently.
+          </p>
         </div>
       </div>
     </div>
@@ -94,19 +111,31 @@
           <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-orange-200 mb-4">
             <Users class="h-12 w-12 text-orange-500" />
           </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-1">No contestants in this pageant yet</h3>
+          <h3 class="text-lg font-medium text-gray-900 mb-1">
+            {{ isPairsOnly ? 'No contestants or pairs yet' : 'No contestants in this pageant yet' }}
+          </h3>
           <p class="text-gray-600 mb-6 max-w-md mx-auto">
-            Start building your competition by adding contestants to <strong>{{ pageant.name }}</strong>. 
-            Each contestant will be registered specifically for this pageant.
+            <span v-if="isPairsOnly">
+              Start building your pairs competition by adding individual contestants to <strong>{{ pageant.name }}</strong>, 
+              then create pairs from them. Each pair will compete as a unit (Mr & Ms style).
+            </span>
+            <span v-else-if="isSoloOnly">
+              Start building your solo competition by adding individual contestants to <strong>{{ pageant.name }}</strong>. 
+              Each contestant will compete independently.
+            </span>
+            <span v-else>
+              Start building your competition by adding contestants to <strong>{{ pageant.name }}</strong>. 
+              You can add both individual contestants and pairs for this mixed pageant.
+            </span>
           </p>
           <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
-            <Tooltip text="Add contestants to this specific pageant" position="top">
+            <Tooltip v-if="allowsSoloContestants" :text="isPairsOnly ? 'Add individual contestants to create pairs later' : 'Add contestants to this specific pageant'" position="top">
               <button
                 @click="showAddModal = true"
                 class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
               >
                 <Plus class="h-4 w-4 inline mr-2" />
-                Add First Contestant
+                {{ isPairsOnly ? 'Add First Individual' : 'Add First Contestant' }}
               </button>
             </Tooltip>
             <Tooltip text="Return to pageant overview to manage other settings" position="top">
@@ -226,6 +255,7 @@
     <ContestantFormModal
       :show="showAddModal"
       :pageant-id="pageant.id"
+      :pageant="pageant"
       :contestant="contestantToEdit"
       @close="closeAddModal"
       @saved="handleContestantSaved"
@@ -242,6 +272,7 @@
     <PairFormModal
       :show="showPairModal"
       :pageant-id="pageant.id"
+      :pageant="pageant"
       :contestants="contestants"
       @close="showPairModal = false"
       @created="async () => { showPairModal = false; await fetchContestants(); }"
@@ -305,6 +336,27 @@ const filteredContestants = computed(() => {
     (contestant.origin && contestant.origin.toLowerCase().includes(query)) ||
     String(contestant.number).includes(query)
   )
+})
+
+// Computed properties for contestant type restrictions
+const allowsSoloContestants = computed(() => {
+  return ['solo', 'both'].includes(props.pageant.contestant_type)
+})
+
+const allowsPairContestants = computed(() => {
+  return ['pairs', 'both'].includes(props.pageant.contestant_type)
+})
+
+const allowsBothTypes = computed(() => {
+  return props.pageant.contestant_type === 'both'
+})
+
+const isPairsOnly = computed(() => {
+  return props.pageant.contestant_type === 'pairs'
+})
+
+const isSoloOnly = computed(() => {
+  return props.pageant.contestant_type === 'solo'
 })
 
 // Fetch contestants on mount
