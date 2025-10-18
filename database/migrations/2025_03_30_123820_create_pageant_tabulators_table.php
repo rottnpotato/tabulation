@@ -18,7 +18,7 @@ return new class extends Migration
             $table->boolean('active')->default(true);
             $table->text('notes')->nullable();
             $table->timestamps();
-            
+
             // Ensure a user can't be added as a tabulator to the same pageant multiple times
             $table->unique(['pageant_id', 'user_id']);
         });

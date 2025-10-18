@@ -8,8 +8,6 @@ use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use Inertia\Inertia;
 
 class CriteriaController extends Controller
 {
@@ -26,15 +24,15 @@ class CriteriaController extends Controller
     public function index($pageantId)
     {
         $pageant = Pageant::findOrFail($pageantId);
-        
+
         // Check if the current user has access to this pageant
         $organizer = Auth::user();
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             abort(403, 'You do not have access to this pageant.');
         }
 
@@ -43,7 +41,7 @@ class CriteriaController extends Controller
             ->get();
 
         return response()->json([
-            'criteria' => $criteria
+            'criteria' => $criteria,
         ]);
     }
 
@@ -53,15 +51,15 @@ class CriteriaController extends Controller
     public function store(Request $request, $pageantId)
     {
         $pageant = Pageant::findOrFail($pageantId);
-        
+
         // Check if the current user has access to this pageant
         $organizer = Auth::user();
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             abort(403, 'You do not have access to this pageant.');
         }
 
@@ -83,7 +81,7 @@ class CriteriaController extends Controller
             $maxOrder = $pageant->criteria()->max('display_order') ?? 0;
 
             // Create the criterion
-            $criterion = new Criteria();
+            $criterion = new Criteria;
             $criterion->pageant_id = $pageantId;
             $criterion->name = $validated['name'];
             $criterion->description = $validated['description'] ?? null;
@@ -110,13 +108,14 @@ class CriteriaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Criterion created successfully',
-                'criterion' => $criterion
+                'criterion' => $criterion,
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create criterion: ' . $e->getMessage()
+                'message' => 'Failed to create criterion: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -127,15 +126,15 @@ class CriteriaController extends Controller
     public function update(Request $request, $pageantId, $criterionId)
     {
         $pageant = Pageant::findOrFail($pageantId);
-        
+
         // Check if the current user has access to this pageant
         $organizer = Auth::user();
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             abort(403, 'You do not have access to this pageant.');
         }
 
@@ -166,11 +165,11 @@ class CriteriaController extends Controller
             $criterion->decimal_places = $validated['decimal_places'] ?? $criterion->decimal_places;
             $criterion->segment_id = $validated['segment_id'] ?? $criterion->segment_id;
             $criterion->category_id = $validated['category_id'] ?? $criterion->category_id;
-            
+
             if (isset($validated['display_order'])) {
                 $criterion->display_order = $validated['display_order'];
             }
-            
+
             $criterion->save();
 
             DB::commit();
@@ -186,13 +185,14 @@ class CriteriaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Criterion updated successfully',
-                'criterion' => $criterion
+                'criterion' => $criterion,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update criterion: ' . $e->getMessage()
+                'message' => 'Failed to update criterion: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -203,15 +203,15 @@ class CriteriaController extends Controller
     public function destroy($pageantId, $criterionId)
     {
         $pageant = Pageant::findOrFail($pageantId);
-        
+
         // Check if the current user has access to this pageant
         $organizer = Auth::user();
         $hasAccess = DB::table('pageant_organizers')
             ->where('user_id', $organizer->id)
             ->where('pageant_id', $pageantId)
             ->exists();
-            
-        if (!$hasAccess) {
+
+        if (! $hasAccess) {
             abort(403, 'You do not have access to this pageant.');
         }
 
@@ -236,14 +236,15 @@ class CriteriaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Criterion deleted successfully'
+                'message' => 'Criterion deleted successfully',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete criterion: ' . $e->getMessage()
+                'message' => 'Failed to delete criterion: '.$e->getMessage(),
             ], 500);
         }
     }
-} 
+}

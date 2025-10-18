@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Segment extends Model
 {
     use HasFactory;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -31,7 +31,7 @@ class Segment extends Model
         'scoring_criteria',
         'active',
     ];
-    
+
     /**
      * The attributes that should be cast.
      *
@@ -47,7 +47,7 @@ class Segment extends Model
         'max_score' => 'decimal:2',
         'display_order' => 'integer',
     ];
-    
+
     /**
      * Get the pageant that owns the segment.
      */
@@ -55,7 +55,7 @@ class Segment extends Model
     {
         return $this->belongsTo(Pageant::class);
     }
-    
+
     /**
      * Check if the segment is completed
      */
@@ -63,7 +63,7 @@ class Segment extends Model
     {
         return $this->status === 'Completed';
     }
-    
+
     /**
      * Check if the segment is pending
      */
@@ -71,7 +71,7 @@ class Segment extends Model
     {
         return $this->status === 'Pending';
     }
-    
+
     /**
      * Check if the segment is in progress
      */
@@ -79,7 +79,7 @@ class Segment extends Model
     {
         return $this->status === 'In Progress';
     }
-    
+
     /**
      * Check if the segment is cancelled
      */

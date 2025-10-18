@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Activity extends Model
 {
     use HasFactory;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -26,7 +26,7 @@ class Activity extends Model
         'metadata',
         'ip_address',
     ];
-    
+
     /**
      * The attributes that should be cast.
      *
@@ -35,7 +35,7 @@ class Activity extends Model
     protected $casts = [
         'metadata' => 'array',
     ];
-    
+
     /**
      * Get the pageant that owns the activity.
      */
@@ -43,7 +43,7 @@ class Activity extends Model
     {
         return $this->belongsTo(Pageant::class);
     }
-    
+
     /**
      * Get the user who performed the activity.
      */
@@ -51,7 +51,7 @@ class Activity extends Model
     {
         return $this->belongsTo(User::class);
     }
-    
+
     /**
      * Get a humanized version of the action type.
      */
@@ -66,16 +66,23 @@ class Activity extends Model
             'EVENT_COMPLETED' => 'Completed event',
             'SEGMENT_CREATED' => 'Created segment',
             'SEGMENT_UPDATED' => 'Updated segment',
+            'SCORE_SUBMITTED' => 'Submitted score',
             'SCORE_UPDATED' => 'Updated scores',
             'JUDGE_ASSIGNED' => 'Assigned judge',
             'JUDGE_REMOVED' => 'Removed judge',
+            'TABULATOR_ASSIGNED' => 'Assigned tabulator',
+            'TABULATOR_REMOVED' => 'Removed tabulator',
             'CATEGORY_CREATED' => 'Created category',
             'CATEGORY_UPDATED' => 'Updated category',
+            'ROUND_STARTED' => 'Started round',
+            'ROUND_COMPLETED' => 'Completed round',
+            'PAGEANT_UPDATED' => 'Updated pageant',
+            'STATUS_CHANGED' => 'Changed status',
         ];
-        
+
         return $actionMap[$this->action_type] ?? $this->action_type;
     }
-    
+
     /**
      * Get the formatted timestamp for display.
      */

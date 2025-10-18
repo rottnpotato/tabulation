@@ -27,12 +27,13 @@ class ShowUsers extends Command
     public function handle()
     {
         $users = User::all();
-        
+
         if ($users->isEmpty()) {
             $this->error('No users found in the database.');
+
             return 1;
         }
-        
+
         $this->info("{$users->count()} users found in the database:");
 
         $rows = $users->map(function ($user) {

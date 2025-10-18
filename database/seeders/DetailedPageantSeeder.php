@@ -11,7 +11,6 @@ use App\Models\Segment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class DetailedPageantSeeder extends Seeder
 {
@@ -22,13 +21,13 @@ class DetailedPageantSeeder extends Seeder
     {
         // Get admin user for creator reference
         $admin = User::where('role', 'admin')->first();
-        if (!$admin) {
+        if (! $admin) {
             $admin = User::create([
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
                 'password' => bcrypt('admin123'),
                 'role' => 'admin',
-                'email_verified_at' => now()
+                'email_verified_at' => now(),
             ]);
         }
 
@@ -41,7 +40,7 @@ class DetailedPageantSeeder extends Seeder
                     'name' => "Judge {$i}",
                     'password' => bcrypt('password'),
                     'role' => 'judge',
-                    'email_verified_at' => now()
+                    'email_verified_at' => now(),
                 ]
             );
         }
@@ -55,7 +54,7 @@ class DetailedPageantSeeder extends Seeder
                     'name' => "Organizer {$i}",
                     'password' => bcrypt('password'),
                     'role' => 'organizer',
-                    'email_verified_at' => now()
+                    'email_verified_at' => now(),
                 ]
             );
         }
@@ -70,7 +69,7 @@ class DetailedPageantSeeder extends Seeder
             'location' => 'New York, USA',
             'status' => 'Active',
             'created_by' => $admin->id,
-            'scoring_system' => 'percentage'
+            'scoring_system' => 'percentage',
         ]);
 
         // Attach organizers to active pageant
@@ -85,7 +84,7 @@ class DetailedPageantSeeder extends Seeder
                 'max_score' => 100,
                 'scoring_type' => 'percentage',
                 'display_order' => 1,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Intelligence',
@@ -94,7 +93,7 @@ class DetailedPageantSeeder extends Seeder
                 'max_score' => 100,
                 'scoring_type' => 'percentage',
                 'display_order' => 2,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Talent',
@@ -103,7 +102,7 @@ class DetailedPageantSeeder extends Seeder
                 'max_score' => 100,
                 'scoring_type' => 'percentage',
                 'display_order' => 3,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Poise & Posture',
@@ -112,8 +111,8 @@ class DetailedPageantSeeder extends Seeder
                 'max_score' => 100,
                 'scoring_type' => 'percentage',
                 'display_order' => 4,
-                'active' => true
-            ]
+                'active' => true,
+            ],
         ];
 
         foreach ($activeCategories as $categoryData) {
@@ -132,7 +131,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'Completed',
                 'is_milestone' => true,
-                'display_order' => 1
+                'display_order' => 1,
             ],
             [
                 'name' => 'Contestant Orientation',
@@ -144,7 +143,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'Completed',
                 'is_milestone' => true,
-                'display_order' => 2
+                'display_order' => 2,
             ],
             [
                 'name' => 'Preliminary Interviews',
@@ -156,7 +155,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'In Progress',
                 'is_milestone' => true,
-                'display_order' => 3
+                'display_order' => 3,
             ],
             [
                 'name' => 'Talent Showcase',
@@ -168,7 +167,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'Pending',
                 'is_milestone' => true,
-                'display_order' => 4
+                'display_order' => 4,
             ],
             [
                 'name' => 'Evening Gown Competition',
@@ -180,7 +179,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'Pending',
                 'is_milestone' => false,
-                'display_order' => 5
+                'display_order' => 5,
             ],
             [
                 'name' => 'Swimwear Competition',
@@ -192,7 +191,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'Pending',
                 'is_milestone' => false,
-                'display_order' => 6
+                'display_order' => 6,
             ],
             [
                 'name' => 'Final Q&A Round',
@@ -204,7 +203,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'Pending',
                 'is_milestone' => true,
-                'display_order' => 7
+                'display_order' => 7,
             ],
             [
                 'name' => 'Coronation Night',
@@ -216,8 +215,8 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'Pending',
                 'is_milestone' => true,
-                'display_order' => 8
-            ]
+                'display_order' => 8,
+            ],
         ];
 
         foreach ($activeEvents as $eventData) {
@@ -237,7 +236,7 @@ class DetailedPageantSeeder extends Seeder
                 'scoring_type' => 'percentage',
                 'status' => 'Pending',
                 'display_order' => 1,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Swimwear',
@@ -250,7 +249,7 @@ class DetailedPageantSeeder extends Seeder
                 'scoring_type' => 'percentage',
                 'status' => 'Pending',
                 'display_order' => 2,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Talent',
@@ -263,7 +262,7 @@ class DetailedPageantSeeder extends Seeder
                 'scoring_type' => 'percentage',
                 'status' => 'Pending',
                 'display_order' => 3,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Question & Answer',
@@ -276,8 +275,8 @@ class DetailedPageantSeeder extends Seeder
                 'scoring_type' => 'percentage',
                 'status' => 'Pending',
                 'display_order' => 4,
-                'active' => true
-            ]
+                'active' => true,
+            ],
         ];
 
         foreach ($activeSegments as $segmentData) {
@@ -289,7 +288,7 @@ class DetailedPageantSeeder extends Seeder
             $judges[0]->id => ['role' => 'head_judge', 'active' => true],
             $judges[1]->id => ['role' => 'judge', 'active' => true],
             $judges[2]->id => ['role' => 'judge', 'active' => true],
-            $judges[3]->id => ['role' => 'guest_judge', 'active' => true]
+            $judges[3]->id => ['role' => 'guest_judge', 'active' => true],
         ]);
 
         // Create contestants for active pageant
@@ -302,7 +301,7 @@ class DetailedPageantSeeder extends Seeder
                 'photo' => '/images/contestants/sophia.jpg',
                 'bio' => 'Graduated with honors in Environmental Science, passionate about sustainability.',
                 'scores' => json_encode(['average' => 92.5]),
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Isabella Martinez',
@@ -312,7 +311,7 @@ class DetailedPageantSeeder extends Seeder
                 'photo' => '/images/contestants/isabella.jpg',
                 'bio' => 'Professional dancer with a degree in International Relations.',
                 'scores' => json_encode(['average' => 88.7]),
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Olivia Johnson',
@@ -322,7 +321,7 @@ class DetailedPageantSeeder extends Seeder
                 'photo' => '/images/contestants/olivia.jpg',
                 'bio' => 'Medical student and volunteer for healthcare missions in developing countries.',
                 'scores' => json_encode(['average' => 90.1]),
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Amara Okafor',
@@ -332,7 +331,7 @@ class DetailedPageantSeeder extends Seeder
                 'photo' => '/images/contestants/amara.jpg',
                 'bio' => 'Entrepreneur who founded a tech startup focusing on education.',
                 'scores' => json_encode(['average' => 85.4]),
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Mei Li',
@@ -342,8 +341,8 @@ class DetailedPageantSeeder extends Seeder
                 'photo' => '/images/contestants/mei.jpg',
                 'bio' => 'Classical pianist and advocate for arts education.',
                 'scores' => json_encode(['average' => 87.2]),
-                'active' => true
-            ]
+                'active' => true,
+            ],
         ];
 
         foreach ($activeContestants as $contestantData) {
@@ -359,7 +358,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => $activePageant->id,
                 'description' => "Created pageant 'Miss Universe 2025'",
                 'created_at' => Carbon::now()->subDays(15),
-                'updated_at' => Carbon::now()->subDays(15)
+                'updated_at' => Carbon::now()->subDays(15),
             ],
             [
                 'user_id' => $organizers[0]->id,
@@ -368,7 +367,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => $activePageant->id,
                 'description' => "Changed pageant status from 'Draft' to 'Setup'",
                 'created_at' => Carbon::now()->subDays(14),
-                'updated_at' => Carbon::now()->subDays(14)
+                'updated_at' => Carbon::now()->subDays(14),
             ],
             [
                 'user_id' => $organizers[0]->id,
@@ -377,7 +376,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 1,
                 'description' => "Added event 'Contestant Registration'",
                 'created_at' => Carbon::now()->subDays(13),
-                'updated_at' => Carbon::now()->subDays(13)
+                'updated_at' => Carbon::now()->subDays(13),
             ],
             [
                 'user_id' => $organizers[1]->id,
@@ -386,7 +385,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 1,
                 'description' => "Added contestant 'Sophia Anderson'",
                 'created_at' => Carbon::now()->subDays(7),
-                'updated_at' => Carbon::now()->subDays(7)
+                'updated_at' => Carbon::now()->subDays(7),
             ],
             [
                 'user_id' => $organizers[1]->id,
@@ -395,7 +394,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 2,
                 'description' => "Added contestant 'Isabella Martinez'",
                 'created_at' => Carbon::now()->subDays(7),
-                'updated_at' => Carbon::now()->subDays(7)
+                'updated_at' => Carbon::now()->subDays(7),
             ],
             [
                 'user_id' => $organizers[0]->id,
@@ -404,7 +403,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => $judges[0]->id,
                 'description' => "Assigned Judge {$judges[0]->name} as head judge",
                 'created_at' => Carbon::now()->subDays(5),
-                'updated_at' => Carbon::now()->subDays(5)
+                'updated_at' => Carbon::now()->subDays(5),
             ],
             [
                 'user_id' => $organizers[0]->id,
@@ -413,7 +412,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 1,
                 'description' => "Completed event 'Contestant Registration'",
                 'created_at' => Carbon::now()->subDays(3),
-                'updated_at' => Carbon::now()->subDays(3)
+                'updated_at' => Carbon::now()->subDays(3),
             ],
             [
                 'user_id' => $judges[0]->id,
@@ -422,7 +421,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 1,
                 'description' => "Updated scores for 'Sophia Anderson'",
                 'created_at' => Carbon::now()->subDays(1),
-                'updated_at' => Carbon::now()->subDays(1)
+                'updated_at' => Carbon::now()->subDays(1),
             ],
             [
                 'user_id' => $organizers[0]->id,
@@ -431,7 +430,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => $activePageant->id,
                 'description' => "Changed pageant status from 'Setup' to 'Active'",
                 'created_at' => Carbon::now()->subDays(2),
-                'updated_at' => Carbon::now()->subDays(2)
+                'updated_at' => Carbon::now()->subDays(2),
             ],
             [
                 'user_id' => $admin->id,
@@ -440,8 +439,8 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 3,
                 'description' => "Updated event 'Preliminary Interviews' status to 'In Progress'",
                 'created_at' => Carbon::now()->subDay(),
-                'updated_at' => Carbon::now()->subDay()
-            ]
+                'updated_at' => Carbon::now()->subDay(),
+            ],
         ];
 
         foreach ($activeActivities as $activityData) {
@@ -458,7 +457,7 @@ class DetailedPageantSeeder extends Seeder
             'location' => 'London, UK',
             'status' => 'Setup',
             'created_by' => $admin->id,
-            'scoring_system' => '1-10'
+            'scoring_system' => '1-10',
         ]);
 
         // Attach organizers to setup pageant
@@ -476,7 +475,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'London, UK',
                 'status' => 'Completed',
                 'is_milestone' => true,
-                'display_order' => 1
+                'display_order' => 1,
             ],
             [
                 'name' => 'Contestant Registration Opens',
@@ -488,7 +487,7 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'Worldwide',
                 'status' => 'In Progress',
                 'is_milestone' => true,
-                'display_order' => 2
+                'display_order' => 2,
             ],
             [
                 'name' => 'Venue Setup',
@@ -500,8 +499,8 @@ class DetailedPageantSeeder extends Seeder
                 'location' => 'London, UK',
                 'status' => 'Pending',
                 'is_milestone' => false,
-                'display_order' => 3
-            ]
+                'display_order' => 3,
+            ],
         ];
 
         foreach ($setupEvents as $eventData) {
@@ -517,7 +516,7 @@ class DetailedPageantSeeder extends Seeder
                 'max_score' => 10,
                 'scoring_type' => 'scale',
                 'display_order' => 1,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Humanitarian Project',
@@ -526,7 +525,7 @@ class DetailedPageantSeeder extends Seeder
                 'max_score' => 10,
                 'scoring_type' => 'scale',
                 'display_order' => 2,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Talent',
@@ -535,7 +534,7 @@ class DetailedPageantSeeder extends Seeder
                 'max_score' => 10,
                 'scoring_type' => 'scale',
                 'display_order' => 3,
-                'active' => true
+                'active' => true,
             ],
             [
                 'name' => 'Interview',
@@ -544,8 +543,8 @@ class DetailedPageantSeeder extends Seeder
                 'max_score' => 10,
                 'scoring_type' => 'scale',
                 'display_order' => 4,
-                'active' => true
-            ]
+                'active' => true,
+            ],
         ];
 
         foreach ($setupCategories as $categoryData) {
@@ -554,7 +553,7 @@ class DetailedPageantSeeder extends Seeder
 
         // Add one judge to setup pageant
         $setupPageant->judges()->attach([
-            $judges[4]->id => ['role' => 'head_judge', 'active' => true]
+            $judges[4]->id => ['role' => 'head_judge', 'active' => true],
         ]);
 
         // Create activities for setup pageant
@@ -566,7 +565,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => $setupPageant->id,
                 'description' => "Created pageant 'Miss World 2025'",
                 'created_at' => Carbon::now()->subDays(5),
-                'updated_at' => Carbon::now()->subDays(5)
+                'updated_at' => Carbon::now()->subDays(5),
             ],
             [
                 'user_id' => $organizers[2]->id,
@@ -575,7 +574,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => $setupPageant->id,
                 'description' => "Changed pageant status from 'Draft' to 'Setup'",
                 'created_at' => Carbon::now()->subDays(4),
-                'updated_at' => Carbon::now()->subDays(4)
+                'updated_at' => Carbon::now()->subDays(4),
             ],
             [
                 'user_id' => $organizers[2]->id,
@@ -584,7 +583,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 1,
                 'description' => "Added event 'Planning Meeting'",
                 'created_at' => Carbon::now()->subDays(4),
-                'updated_at' => Carbon::now()->subDays(4)
+                'updated_at' => Carbon::now()->subDays(4),
             ],
             [
                 'user_id' => $organizers[2]->id,
@@ -593,7 +592,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 1,
                 'description' => "Completed event 'Planning Meeting'",
                 'created_at' => Carbon::now()->subDays(3),
-                'updated_at' => Carbon::now()->subDays(3)
+                'updated_at' => Carbon::now()->subDays(3),
             ],
             [
                 'user_id' => $organizers[2]->id,
@@ -602,7 +601,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => $judges[4]->id,
                 'description' => "Assigned Judge {$judges[4]->name} as head judge",
                 'created_at' => Carbon::now()->subDays(2),
-                'updated_at' => Carbon::now()->subDays(2)
+                'updated_at' => Carbon::now()->subDays(2),
             ],
             [
                 'user_id' => $organizers[2]->id,
@@ -611,7 +610,7 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 2,
                 'description' => "Added event 'Contestant Registration Opens'",
                 'created_at' => Carbon::now()->subDay(),
-                'updated_at' => Carbon::now()->subDay()
+                'updated_at' => Carbon::now()->subDay(),
             ],
             [
                 'user_id' => $organizers[2]->id,
@@ -620,8 +619,8 @@ class DetailedPageantSeeder extends Seeder
                 'entity_id' => 2,
                 'description' => "Updated event 'Contestant Registration Opens' status to 'In Progress'",
                 'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ]
+                'updated_at' => Carbon::now(),
+            ],
         ];
 
         foreach ($setupActivities as $activityData) {
@@ -638,14 +637,14 @@ class DetailedPageantSeeder extends Seeder
     private function updateUpdatesFile(): void
     {
         $updatesPath = base_path('Updates.md');
-        
-        if (!file_exists($updatesPath)) {
+
+        if (! file_exists($updatesPath)) {
             file_put_contents($updatesPath, "# Laravel 12 with Inertia.js and Vue Conversion\n\n## Updates\n\n");
         }
-        
+
         $timestamp = Carbon::now()->format('Y-m-d h:iA');
         $content = file_get_contents($updatesPath);
-        
+
         $newEntry = "- **{$timestamp}**: Created detailed pageant seed data:\n";
         $newEntry .= "  - Added two fully populated pageants with real data for all fields\n";
         $newEntry .= "  - Created 'Miss Universe 2025' active pageant with contestants, events, judges, and activities\n";
@@ -657,8 +656,8 @@ class DetailedPageantSeeder extends Seeder
         $newEntry .= "  - Ensured all required data is available for PageantDetails component\n";
         $newEntry .= "  - Populated contestants with realistic profile information and scores\n";
         $newEntry .= "  - Created proper event phases to demonstrate timeline functionality\n\n";
-        
-        $content = str_replace("<CURRENT_CURSOR_POSITION>", $newEntry . "<CURRENT_CURSOR_POSITION>", $content);
+
+        $content = str_replace('<CURRENT_CURSOR_POSITION>', $newEntry.'<CURRENT_CURSOR_POSITION>', $content);
         file_put_contents($updatesPath, $content);
     }
-} 
+}

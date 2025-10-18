@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, defineProps, defineEmits, watch } from 'vue'
+import { ref, onMounted, defineEmits, watch } from 'vue'
 import SkeletonContent from './SkeletonContent.vue'
 
 const props = defineProps({

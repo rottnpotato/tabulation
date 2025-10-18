@@ -35,13 +35,13 @@ class ContestantController extends Controller
                     $query->orderBy('is_primary', 'desc')
                         ->orderBy('display_order');
                 },
-                'members:id,name,number,photo',
             ])
-            ->withCount('pairs')
             ->orderBy('number')
+            ->orderBy('gender')
             ->get()
             ->map(function ($contestant) {
                 $primaryImage = $contestant->images->firstWhere('is_primary', true);
+                $partner = $contestant->pairPartner();
 
                 return [
                     'id' => $contestant->id,
@@ -54,17 +54,14 @@ class ContestantController extends Controller
                     'photo' => $primaryImage ? asset('storage/'.$primaryImage->image_path) : null,
                     'active' => $contestant->active,
                     'is_pair' => (bool) $contestant->is_pair,
-                    // For single contestants, indicate if they already belong to a pair
-                    'in_pair' => isset($contestant->pairs_count) ? $contestant->pairs_count > 0 : false,
-                    'members' => $contestant->is_pair ? $contestant->members->map(function ($m) {
-                        return [
-                            'id' => $m->id,
-                            'name' => $m->name,
-                            'number' => $m->number,
-                            'photo' => $m->photo ? asset($m->photo) : null,
-                        ];
-                    })->values() : [],
-                    'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
+                    'is_paired' => $contestant->isPaired(),
+                    'pair_id' => $contestant->pair_id,
+                    'partner' => $partner ? [
+                        'id' => $partner->id,
+                        'name' => $partner->name,
+                        'number' => $partner->number,
+                        'gender' => $partner->gender,
+                    ] : null,
                     'images' => $contestant->images->map(function ($image) {
                         return [
                             'id' => $image->id,
@@ -247,7 +244,7 @@ class ContestantController extends Controller
     }
 
     /**
-     * Create a pair contestant from two existing contestants within the same pageant
+     * Create a pair from two existing contestants within the same pageant
      */
     public function storePair(Request $request, int $pageantId)
     {
@@ -255,12 +252,11 @@ class ContestantController extends Controller
         Gate::authorize('update', $pageant);
 
         $validated = $request->validate([
-            'name' => 'nullable|string|max:255',
             'member_ids' => 'required|array|size:2',
             'member_ids.*' => 'integer|distinct|exists:contestants,id',
         ]);
 
-        // Load members and validate they belong to the same pageant and are not pairs
+        // Load members and validate they belong to the same pageant
         $members = Contestant::whereIn('id', $validated['member_ids'])->get();
 
         if ($members->count() !== 2) {
@@ -271,11 +267,8 @@ class ContestantController extends Controller
             if ($member->pageant_id !== (int) $pageantId) {
                 return response()->json(['success' => false, 'message' => 'Members must belong to this pageant.'], 422);
             }
-            if ($member->is_pair) {
-                return response()->json(['success' => false, 'message' => 'A pair cannot be a member of another pair.'], 422);
-            }
-            // Ensure member not already in another pair (DB constraint also enforces)
-            if ($member->pairs()->exists()) {
+            // Ensure member not already in another pair
+            if ($member->isPaired()) {
                 return response()->json(['success' => false, 'message' => "{$member->name} is already a member of another pair."], 422);
             }
         }
@@ -291,72 +284,49 @@ class ContestantController extends Controller
             return response()->json(['success' => false, 'message' => 'Selected members must share the same contestant number.'], 422);
         }
 
-        $pairNumber = $numbers->first();
-
-        // Ensure no existing pair with this number in this pageant
-        $existingPair = Contestant::where('pageant_id', $pageantId)
-            ->where('is_pair', true)
-            ->where('number', $pairNumber)
-            ->exists();
-        if ($existingPair) {
-            return response()->json(['success' => false, 'message' => 'A pair with this number already exists.'], 422);
-        }
-
-        // Derive default pair name if not provided
-        $pairName = $validated['name'] ?? ($members[0]->name.' & '.$members[1]->name);
-
         DB::beginTransaction();
         try {
-            $pair = Contestant::create([
-                'pageant_id' => $pageantId,
-                'name' => $pairName,
-                'number' => $pairNumber,
-                'active' => true,
-                'is_pair' => true,
-            ]);
+            // Generate a unique pair ID (UUID)
+            $pairId = (string) \Illuminate\Support\Str::uuid();
 
-            // Attach members
-            $pair->members()->attach($members->pluck('id')->all());
-
-            // Optionally use first member's primary image as pair photo
-            $firstPhoto = $members[0]->photo ?? null;
-            if ($firstPhoto) {
-                $pair->photo = $firstPhoto;
-                $pair->save();
+            // Link both contestants with the same pair_id
+            foreach ($members as $member) {
+                $member->pair_id = $pairId;
+                $member->save();
             }
 
             DB::commit();
 
-            // If this was an Inertia request, respond with a redirect (required by Inertia)
+            // Build response with both members
+            $responseMembers = $members->map(function ($m) use ($pairId) {
+                $primaryImage = $m->primaryImage();
+
+                return [
+                    'id' => $m->id,
+                    'name' => $m->name,
+                    'number' => $m->number,
+                    'gender' => $m->gender,
+                    'origin' => $m->origin,
+                    'age' => $m->age,
+                    'bio' => $m->bio,
+                    'photo' => $primaryImage ? asset('storage/'.$primaryImage->image_path) : null,
+                    'active' => $m->active,
+                    'is_paired' => true,
+                    'pair_id' => $pairId,
+                ];
+            })->values();
+
+            // If this was an Inertia request, respond with a redirect
             if ($request->header('X-Inertia')) {
                 return to_route('organizer.pageant.contestants-management', ['id' => $pageantId])
-                    ->with('success', "Pair '{$pair->name}' created.");
+                    ->with('success', 'Pair created successfully.');
             }
 
-            // Otherwise, return JSON for axios/AJAX consumers
+            // Otherwise, return JSON
             return response()->json([
                 'success' => true,
-                'contestant' => [
-                    'id' => $pair->id,
-                    'name' => $pair->name,
-                    'number' => $pair->number,
-                    'origin' => $pair->origin,
-                    'age' => $pair->age,
-                    'bio' => $pair->bio,
-                    'photo' => $pair->photo ? asset($pair->photo) : null,
-                    'active' => $pair->active,
-                    'is_pair' => true,
-                    'members_required_same_number' => true,
-                    'members' => $members->map(function ($m) {
-                        return [
-                            'id' => $m->id,
-                            'name' => $m->name,
-                            'number' => $m->number,
-                            'photo' => $m->photo ? asset($m->photo) : null,
-                        ];
-                    })->values(),
-                    'members_text' => $members->pluck('name')->implode(' & '),
-                ],
+                'message' => 'Pair created successfully',
+                'members' => $responseMembers,
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -381,6 +351,51 @@ class ContestantController extends Controller
         $pair->delete();
 
         return response()->json(['success' => true, 'message' => "Pair '{$name}' deleted."]);
+    }
+
+    /**
+     * Unpair/break a pair - removes the pair_id linkage from both contestants
+     */
+    public function unpair(Request $request, int $pageantId, int $contestantId)
+    {
+        $pageant = Pageant::findOrFail($pageantId);
+        Gate::authorize('update', $pageant);
+
+        $contestant = Contestant::where('pageant_id', $pageantId)->findOrFail($contestantId);
+
+        if (! $contestant->isPaired()) {
+            return response()->json(['success' => false, 'message' => 'This contestant is not part of a pair.'], 422);
+        }
+
+        $pairId = $contestant->pair_id;
+        $partner = $contestant->pairPartner();
+
+        DB::beginTransaction();
+        try {
+            // Remove pair_id from both contestants
+            $contestant->pair_id = null;
+            $contestant->save();
+
+            if ($partner) {
+                $partner->pair_id = null;
+                $partner->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pair successfully broken.',
+                'contestants' => [$contestant->id, $partner?->id],
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to unpair contestants: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

@@ -23,7 +23,7 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel class="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
-              <div class="relative bg-gradient-to-r from-purple-600 to-pink-500 p-6 text-white">
+              <div class="relative bg-gradient-to-r from-orange-600 to-orange-500 p-6 text-white">
                 <DialogTitle as="h3" class="text-2xl font-bold leading-6">
                   {{ contestant ? 'Edit Contestant' : (mode === 'pair' ? 'Add New Pair' : 'Add New Contestant') }}
                 </DialogTitle>
@@ -31,9 +31,9 @@
                   {{ contestant ? 'Update contestant details and photos' : (mode === 'pair' ? 'Enter pair information and upload photos for both members' : 'Enter contestant information and upload photos') }}
                 </p>
                 <!-- Pageant Type Context -->
-                <div v-if="pageant && pageant.contestant_type && !contestant" class="mt-3 p-3 bg-purple-500/30 rounded-lg border border-purple-400/30">
-                  <p class="text-sm text-purple-100 font-medium mb-1">{{ getPageantTypeTitle() }}</p>
-                  <p class="text-xs text-purple-200">{{ getPageantTypeDescription() }}</p>
+                <div v-if="pageant && pageant.contestant_type && !contestant" class="mt-3 p-3 bg-orange-500/30 rounded-lg border border-orange-400/30">
+                  <p class="text-sm text-orange-100 font-medium mb-1">{{ getPageantTypeTitle() }}</p>
+                  <p class="text-xs text-orange-200">{{ getPageantTypeDescription() }}</p>
                 </div>
                 <button 
                   @click="closeModal" 
@@ -44,9 +44,10 @@
               </div>
 
               <form @submit.prevent="handleSubmit" enctype="multipart/form-data" class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Individual/Edit Mode: Two-column layout -->
+                <div v-if="mode === 'individual' || contestant" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <!-- Left Column -->
-                  <div class="space-y-6" v-if="mode === 'individual' || contestant">
+                  <div class="space-y-6">
                     <div>
                       <div class="flex items-center mb-1">
                         <label for="contestantNumber" class="block text-sm font-medium text-gray-700">
@@ -135,7 +136,7 @@
                   </div>
 
                   <!-- Right Column -->
-                  <div class="space-y-6" v-if="mode === 'individual' || contestant">
+                  <div class="space-y-6">
                     <div>
                       <div class="flex items-center mb-1">
                         <label for="gender" class="block text-sm font-medium text-gray-700">
@@ -261,215 +262,199 @@
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <!-- Pair Creation Form -->
-                  <div v-if="mode === 'pair' && !contestant" class="space-y-6">
-                    <!-- Pair Number -->
-                    <div class="mb-6">
-                      <div class="flex items-center mb-1">
-                        <label for="pairNumber" class="block text-sm font-medium text-gray-700">
-                          Pair Number <span class="text-red-500">*</span>
+                <!-- Pair Creation Mode: Compact single-column layout -->
+                <div v-if="mode === 'pair' && !contestant" class="space-y-5">
+                  <!-- Pair Number -->
+                  <div>
+                    <div class="flex items-center mb-2">
+                      <label for="pairNumber" class="block text-sm font-semibold text-gray-800">
+                        Pair Number <span class="text-red-500">*</span>
+                      </label>
+                      <Tooltip text="This number will be shared by both members of the pair for identification during the pageant." position="top">
+                        <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
+                      </Tooltip>
+                    </div>
+                    <input
+                      id="pairNumber"
+                      v-model="form.number"
+                      type="number"
+                      class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                      :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors.number }"
+                      placeholder="Enter pair number"
+                      required
+                    />
+                    <p v-if="errors.number" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors.number }}</p>
+                    <p v-else class="mt-1.5 text-xs text-gray-500 font-medium">Both members will share this number</p>
+                  </div>                  <!-- Member 1 - Compact -->
+                  <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border-2 border-blue-100 shadow-sm">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center pb-3 border-b border-blue-200">
+                      <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3">
+                        <Users class="h-4 w-4 text-white" />
+                      </div>
+                      <span>Member 1</span>
+                      <span class="ml-auto text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">Primary</span>
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">
+                          Full Name <span class="text-red-500">*</span>
                         </label>
-                        <Tooltip text="This number will be shared by both members of the pair for identification during the pageant." position="top">
-                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
-                        </Tooltip>
+                        <input
+                          v-model="form.member1.name"
+                          type="text"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.name'] }"
+                          placeholder="Enter full name"
+                          required
+                        />
+                        <p v-if="errors['member1.name']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member1.name'] }}</p>
                       </div>
-                      <input
-                        id="pairNumber"
-                        v-model="form.number"
-                        type="number"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
-                        :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.number }"
-                        placeholder="e.g. 1"
-                        required
-                      />
-                      <p v-if="errors.number" class="mt-1 text-sm text-red-500">{{ errors.number }}</p>
-                      <p v-else class="mt-1 text-xs text-gray-500">Enter the pair's competition number (both members will share this number)</p>
-                    </div>
-
-                    <!-- Pair Name (Optional) -->
-                    <div class="mb-6">
-                      <div class="flex items-center mb-1">
-                        <label for="pairName" class="block text-sm font-medium text-gray-700">
-                          Pair Name (Optional)
+                      
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">
+                          Gender <span class="text-red-500">*</span>
                         </label>
-                        <Tooltip text="Optional custom name for the pair. If left blank, names will be auto-generated from member names." position="top">
-                          <HelpCircle class="h-4 w-4 text-gray-400 ml-1 hover:text-gray-600" />
-                        </Tooltip>
+                        <select
+                          v-model="form.member1.gender"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium cursor-pointer"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.gender'] }"
+                          required
+                        >
+                          <option value="" disabled>Select gender</option>
+                          <option value="male">♂ Male</option>
+                          <option value="female">♀ Female</option>
+                        </select>
+                        <p v-if="errors['member1.gender']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member1.gender'] }}</p>
                       </div>
-                      <input
-                        id="pairName"
-                        v-model="form.name"
-                        type="text"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
-                        placeholder="e.g. Golden Couple"
-                      />
-                      <p class="mt-1 text-xs text-gray-500">Optional. If not provided, will be auto-generated from member names</p>
-                    </div>
 
-                    <!-- Member 1 -->
-                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                      <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <Users class="h-5 w-5 mr-2 text-blue-600" />
-                        Member 1
-                      </h4>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Full Name <span class="text-red-500">*</span>
-                          </label>
-                          <input
-                            v-model="form.member1.name"
-                            type="text"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member1.name'] }"
-                            placeholder="e.g. John Smith"
-                            required
-                          />
-                          <p v-if="errors['member1.name']" class="mt-1 text-sm text-red-500">{{ errors['member1.name'] }}</p>
-                        </div>
-                        
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Gender <span class="text-red-500">*</span>
-                          </label>
-                          <select
-                            v-model="form.member1.gender"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member1.gender'] }"
-                            required
-                          >
-                            <option value="" disabled>Select gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                          </select>
-                          <p v-if="errors['member1.gender']" class="mt-1 text-sm text-red-500">{{ errors['member1.gender'] }}</p>
-                        </div>
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">
+                          Age <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          v-model="form.member1.age"
+                          type="number"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.age'] }"
+                          placeholder="Age"
+                          min="16"
+                          max="35"
+                          required
+                        />
+                        <p v-if="errors['member1.age']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member1.age'] }}</p>
+                      </div>
 
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Age <span class="text-red-500">*</span>
-                          </label>
-                          <input
-                            v-model="form.member1.age"
-                            type="number"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member1.age'] }"
-                            placeholder="e.g. 24"
-                            min="16"
-                            max="35"
-                            required
-                          />
-                          <p v-if="errors['member1.age']" class="mt-1 text-sm text-red-500">{{ errors['member1.age'] }}</p>
-                        </div>
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">
+                          Origin/Location <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          v-model="form.member1.origin"
+                          type="text"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.origin'] }"
+                          placeholder="City, Country"
+                          required
+                        />
+                        <p v-if="errors['member1.origin']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member1.origin'] }}</p>
+                      </div>
 
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Origin/Location <span class="text-red-500">*</span>
-                          </label>
-                          <input
-                            v-model="form.member1.origin"
-                            type="text"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member1.origin'] }"
-                            placeholder="e.g. New York, USA"
-                            required
-                          />
-                          <p v-if="errors['member1.origin']" class="mt-1 text-sm text-red-500">{{ errors['member1.origin'] }}</p>
-                        </div>
-
-                        <div class="md:col-span-2">
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Biography</label>
-                          <textarea
-                            v-model="form.member1.bio"
-                            rows="3"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            placeholder="Share this member's background, achievements, interests..."
-                          ></textarea>
-                        </div>
+                      <div class="col-span-2">
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">Biography <span class="text-gray-400 font-normal text-xs">(Optional)</span></label>
+                        <textarea
+                          v-model="form.member1.bio"
+                          rows="3"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal resize-none"
+                          placeholder="Share background, achievements, and interests..."
+                        ></textarea>
                       </div>
                     </div>
+                  </div>
 
-                    <!-- Member 2 -->
-                    <div class="bg-pink-50 rounded-lg p-4 border border-pink-200">
-                      <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                        <Users class="h-5 w-5 mr-2 text-pink-600" />
-                        Member 2
-                      </h4>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Full Name <span class="text-red-500">*</span>
-                          </label>
-                          <input
-                            v-model="form.member2.name"
-                            type="text"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member2.name'] }"
-                            placeholder="e.g. Jane Smith"
-                            required
-                          />
-                          <p v-if="errors['member2.name']" class="mt-1 text-sm text-red-500">{{ errors['member2.name'] }}</p>
-                        </div>
-                        
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Gender <span class="text-red-500">*</span>
-                          </label>
-                          <select
-                            v-model="form.member2.gender"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member2.gender'] }"
-                            required
-                          >
-                            <option value="" disabled>Select gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                          </select>
-                          <p v-if="errors['member2.gender']" class="mt-1 text-sm text-red-500">{{ errors['member2.gender'] }}</p>
-                        </div>
+                  <!-- Member 2 - Compact -->
+                  <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-5 border-2 border-pink-100 shadow-sm">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center pb-3 border-b border-pink-200">
+                      <div class="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center mr-3">
+                        <Users class="h-4 w-4 text-white" />
+                      </div>
+                      <span>Member 2</span>
+                      <span class="ml-auto text-xs font-medium text-pink-600 bg-pink-100 px-2 py-1 rounded-full">Secondary</span>
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">
+                          Full Name <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          v-model="form.member2.name"
+                          type="text"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.name'] }"
+                          placeholder="Enter full name"
+                          required
+                        />
+                        <p v-if="errors['member2.name']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member2.name'] }}</p>
+                      </div>
+                      
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">
+                          Gender <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                          v-model="form.member2.gender"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium cursor-pointer"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.gender'] }"
+                          required
+                        >
+                          <option value="" disabled>Select gender</option>
+                          <option value="male">♂ Male</option>
+                          <option value="female">♀ Female</option>
+                        </select>
+                        <p v-if="errors['member2.gender']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member2.gender'] }}</p>
+                      </div>
 
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Age <span class="text-red-500">*</span>
-                          </label>
-                          <input
-                            v-model="form.member2.age"
-                            type="number"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member2.age'] }"
-                            placeholder="e.g. 22"
-                            min="16"
-                            max="35"
-                            required
-                          />
-                          <p v-if="errors['member2.age']" class="mt-1 text-sm text-red-500">{{ errors['member2.age'] }}</p>
-                        </div>
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">
+                          Age <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          v-model="form.member2.age"
+                          type="number"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.age'] }"
+                          placeholder="Age"
+                          min="16"
+                          max="35"
+                          required
+                        />
+                        <p v-if="errors['member2.age']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member2.age'] }}</p>
+                      </div>
 
-                        <div>
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Origin/Location <span class="text-red-500">*</span>
-                          </label>
-                          <input
-                            v-model="form.member2.origin"
-                            type="text"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors['member2.origin'] }"
-                            placeholder="e.g. California, USA"
-                            required
-                          />
-                          <p v-if="errors['member2.origin']" class="mt-1 text-sm text-red-500">{{ errors['member2.origin'] }}</p>
-                        </div>
+                      <div>
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">
+                          Origin/Location <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                          v-model="form.member2.origin"
+                          type="text"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.origin'] }"
+                          placeholder="City, Country"
+                          required
+                        />
+                        <p v-if="errors['member2.origin']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member2.origin'] }}</p>
+                      </div>
 
-                        <div class="md:col-span-2">
-                          <label class="block text-sm font-medium text-gray-700 mb-1">Biography</label>
-                          <textarea
-                            v-model="form.member2.bio"
-                            rows="3"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50"
-                            placeholder="Share this member's background, achievements, interests..."
-                          ></textarea>
-                        </div>
+                      <div class="col-span-2">
+                        <label class="block text-sm font-semibold text-gray-800 mb-2">Biography <span class="text-gray-400 font-normal text-xs">(Optional)</span></label>
+                        <textarea
+                          v-model="form.member2.bio"
+                          rows="3"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal resize-none"
+                          placeholder="Share background, achievements, and interests..."
+                        ></textarea>
                       </div>
                     </div>
                   </div>
@@ -485,7 +470,7 @@
                   </button>
                   <button
                     type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                    class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
                     :disabled="isLoading"
                   >
                     <span v-if="isLoading" class="flex items-center">
@@ -703,9 +688,8 @@ const handleSubmit = async () => {
         member1FormData.append('name', form.member1.name)
         member1FormData.append('number', form.number)
         member1FormData.append('gender', form.member1.gender)
-        // Required fields based on backend validation
-        member1FormData.append('age', form.member1.age || '18') // Default age if not provided
-        member1FormData.append('origin', form.member1.origin || 'Not specified') // Default origin if not provided
+        member1FormData.append('age', form.member1.age || '18')
+        member1FormData.append('origin', form.member1.origin || 'Not specified')
         if (form.member1.bio) member1FormData.append('bio', form.member1.bio)
         
         const member1Response = await axios.post(
@@ -723,9 +707,8 @@ const handleSubmit = async () => {
         member2FormData.append('name', form.member2.name)
         member2FormData.append('number', form.number)
         member2FormData.append('gender', form.member2.gender)
-        // Required fields based on backend validation
-        member2FormData.append('age', form.member2.age || '18') // Default age if not provided
-        member2FormData.append('origin', form.member2.origin || 'Not specified') // Default origin if not provided
+        member2FormData.append('age', form.member2.age || '18')
+        member2FormData.append('origin', form.member2.origin || 'Not specified')
         if (form.member2.bio) member2FormData.append('bio', form.member2.bio)
         
         const member2Response = await axios.post(
@@ -738,9 +721,8 @@ const handleSubmit = async () => {
           throw new Error('Failed to create second member')
         }
         
-        // Step 3: Create pair from the two members
+        // Step 3: Link the pair using the new pair endpoint
         const pairData = {
-          name: form.name || null,
           member_ids: [member1Response.data.contestant.id, member2Response.data.contestant.id]
         }
         
@@ -750,10 +732,12 @@ const handleSubmit = async () => {
         )
         
         if (pairResponse.data.success) {
-          emit('saved', pairResponse.data.contestant)
+          // Emit both members as saved
+          emit('saved', pairResponse.data.members[0])
+          emit('saved', pairResponse.data.members[1])
           closeModal()
         } else {
-          errors.general = 'Failed to create pair. Please try again.'
+          errors.general = 'Failed to link pair. Please try again.'
         }
         
       } catch (error) {

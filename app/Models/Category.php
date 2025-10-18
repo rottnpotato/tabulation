@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Category extends Model
 {
     use HasFactory;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -26,7 +26,7 @@ class Category extends Model
         'criteria',
         'active',
     ];
-    
+
     /**
      * The attributes that should be cast.
      *
@@ -39,7 +39,7 @@ class Category extends Model
         'max_score' => 'decimal:2',
         'display_order' => 'integer',
     ];
-    
+
     /**
      * Get the pageant that owns the category.
      */
@@ -47,7 +47,7 @@ class Category extends Model
     {
         return $this->belongsTo(Pageant::class);
     }
-    
+
     /**
      * Get the formatted name with weight.
      */

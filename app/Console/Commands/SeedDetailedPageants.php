@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use Database\Seeders\DetailedPageantSeeder;
 use Illuminate\Console\Command;
 
 class SeedDetailedPageants extends Command
@@ -34,7 +33,7 @@ class SeedDetailedPageants extends Command
         $this->info('- Created "Miss Universe 2025" pageant with complete data');
         $this->info('- Created "Miss World 2025" pageant in setup state');
         $this->info('You can now view these at /admin/pageants');
-        
+
         return Command::SUCCESS;
     }
-} 
+}

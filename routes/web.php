@@ -83,6 +83,7 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     // Pair contestant routes
     Route::post('/pageant/{pageantId}/pairs', [ContestantController::class, 'storePair'])->name('organizer.pageant.pairs.store');
     Route::delete('/pageant/{pageantId}/pairs/{pairId}', [ContestantController::class, 'destroyPair'])->name('organizer.pageant.pairs.destroy');
+    Route::post('/pageant/{pageantId}/contestants/{contestantId}/unpair', [ContestantController::class, 'unpair'])->name('organizer.pageant.contestants.unpair');
 
     Route::get('/pageant/{id}/contestants-management', [OrganizerController::class, 'pageantContestants'])->name('organizer.pageant.contestants-management');
     Route::get('/pageant/{id}/criteria-management', [OrganizerController::class, 'pageantCriteria'])->name('organizer.pageant.criteria-management');

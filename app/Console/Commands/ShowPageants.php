@@ -27,12 +27,13 @@ class ShowPageants extends Command
     public function handle()
     {
         $pageants = Pageant::all();
-        
+
         if ($pageants->isEmpty()) {
             $this->error('No pageants found in the database.');
+
             return 1;
         }
-        
+
         $this->info("{$pageants->count()} pageants found in the database:");
 
         $rows = $pageants->map(function ($pageant) {

@@ -4,7 +4,6 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -19,7 +18,7 @@ class EventUpdated implements ShouldBroadcast
     /**
      * Create a new event instance.
      *
-     * @param array $data The event data to broadcast
+     * @param  array  $data  The event data to broadcast
      * @return void
      */
     public function __construct(array $data)
@@ -36,7 +35,8 @@ class EventUpdated implements ShouldBroadcast
     {
         // Broadcast to a channel specific to the pageant
         $pageantId = $this->data['pageant_id'] ?? 'all';
-        return new PrivateChannel('pageant.' . $pageantId);
+
+        return new PrivateChannel('pageant.'.$pageantId);
     }
 
     /**
@@ -58,4 +58,4 @@ class EventUpdated implements ShouldBroadcast
     {
         return 'pageant.event.updated';
     }
-} 
+}

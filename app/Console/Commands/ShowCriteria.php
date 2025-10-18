@@ -27,12 +27,13 @@ class ShowCriteria extends Command
     public function handle()
     {
         $criteria = Criteria::all();
-        
+
         if ($criteria->isEmpty()) {
             $this->error('No criteria found in the database.');
+
             return 1;
         }
-        
+
         $this->info("{$criteria->count()} criteria found in the database:");
 
         $rows = $criteria->map(function ($criterion) {

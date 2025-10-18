@@ -390,7 +390,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, computed } from 'vue'
+import { ref, defineEmits, computed } from 'vue'
 import { 
   Settings, X, Check, Image, Bell, Palette, Shield, ChevronUp, ChevronDown, Trash2, Plus, AlertTriangle
 } from 'lucide-vue-next'

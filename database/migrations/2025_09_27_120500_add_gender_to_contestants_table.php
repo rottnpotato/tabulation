@@ -31,5 +31,3 @@ return new class extends Migration
 
     // No-op helper removed
 };
-
-

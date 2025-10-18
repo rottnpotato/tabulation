@@ -27,12 +27,13 @@ class ShowContestants extends Command
     public function handle()
     {
         $contestants = Contestant::all();
-        
+
         if ($contestants->isEmpty()) {
             $this->error('No contestants found in the database.');
+
             return 1;
         }
-        
+
         $this->info("{$contestants->count()} contestants found in the database:");
 
         $rows = $contestants->map(function ($contestant) {

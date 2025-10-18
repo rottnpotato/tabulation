@@ -11,16 +11,16 @@ class AuditLogService
     /**
      * Log an action in the audit log
      *
-     * @param string $action The action type (e.g., "PAGEANT_CREATED", "PERMISSION_GRANTED")
-     * @param string $entityType The type of entity being affected (e.g., "Pageant", "User")
-     * @param int|string $entityId The ID of the entity being affected
-     * @param string $details Human-readable details about the action
+     * @param  string  $action  The action type (e.g., "PAGEANT_CREATED", "PERMISSION_GRANTED")
+     * @param  string  $entityType  The type of entity being affected (e.g., "Pageant", "User")
+     * @param  int|string  $entityId  The ID of the entity being affected
+     * @param  string  $details  Human-readable details about the action
      * @return AuditLog The created audit log entry
      */
     public function log(string $action, string $entityType, $entityId, string $details): AuditLog
     {
         $user = Auth::user();
-        
+
         return AuditLog::create([
             'user_id' => $user ? $user->id : null,
             'user_role' => $user ? $user->role : 'SYSTEM',
@@ -35,10 +35,10 @@ class AuditLogService
     /**
      * Log a system action to the audit log.
      *
-     * @param string $actionType The type of action being performed
-     * @param string|null $targetEntity The entity being affected (e.g., 'Pageant')
-     * @param int|null $targetId The ID of the entity being affected
-     * @param string $details Human-readable details about the action
+     * @param  string  $actionType  The type of action being performed
+     * @param  string|null  $targetEntity  The entity being affected (e.g., 'Pageant')
+     * @param  int|null  $targetId  The ID of the entity being affected
+     * @param  string  $details  Human-readable details about the action
      * @return AuditLog The created audit log entry
      */
     public function logSystemAction(
@@ -57,4 +57,4 @@ class AuditLogService
             'ip_address' => request()->ip(),
         ]);
     }
-} 
+}

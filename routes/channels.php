@@ -48,3 +48,21 @@ Broadcast::channel('pageant.{id}', function ($user, $id) {
 
     return false;
 });
+
+// Organizer-specific pageant activity channel
+Broadcast::channel('organizer.pageant.{id}', function ($user, $id) {
+    if ($user->role === 'admin') {
+        return true;
+    }
+
+    if ($user->role !== 'organizer') {
+        return false;
+    }
+
+    $pageant = Pageant::find($id);
+    if (! $pageant) {
+        return false;
+    }
+
+    return $pageant->organizers()->where('users.id', $user->id)->exists();
+});

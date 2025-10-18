@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\User;
-use App\Models\Pageant;
-use App\Models\Criteria;
 use App\Models\Contestant;
+use App\Models\Criteria;
+use App\Models\Pageant;
+use App\Models\User;
 use Illuminate\Console\Command;
 
 class ShowDatabaseSummary extends Command
@@ -29,25 +29,25 @@ class ShowDatabaseSummary extends Command
      */
     public function handle()
     {
-        $this->info("Database Summary");
+        $this->info('Database Summary');
         $this->newLine();
-        
+
         // Users
         $users = User::all();
         $admins = $users->where('role', 'admin')->count();
         $organizers = $users->where('role', 'organizer')->count();
         $tabulators = $users->where('role', 'tabulator')->count();
         $judges = $users->where('role', 'judge')->count();
-        
-        $this->info("USERS");
-        $this->line("-----");
+
+        $this->info('USERS');
+        $this->line('-----');
         $this->line("Total Users: {$users->count()}");
         $this->line("Admins: {$admins}");
         $this->line("Organizers: {$organizers}");
         $this->line("Tabulators: {$tabulators}");
         $this->line("Judges: {$judges}");
         $this->newLine();
-        
+
         // Pageants
         $pageants = Pageant::all();
         $draftPageants = $pageants->where('status', 'Draft')->count();
@@ -57,9 +57,9 @@ class ShowDatabaseSummary extends Command
         $archivedPageants = $pageants->where('status', 'Archived')->count();
         $unlockedPageants = $pageants->where('status', 'Unlocked_For_Edit')->count();
         $cancelledPageants = $pageants->where('status', 'Cancelled')->count();
-        
-        $this->info("PAGEANTS");
-        $this->line("--------");
+
+        $this->info('PAGEANTS');
+        $this->line('--------');
         $this->line("Total Pageants: {$pageants->count()}");
         $this->line("Draft: {$draftPageants}");
         $this->line("Setup: {$setupPageants}");
@@ -69,11 +69,11 @@ class ShowDatabaseSummary extends Command
         $this->line("Unlocked For Edit: {$unlockedPageants}");
         $this->line("Cancelled: {$cancelledPageants}");
         $this->newLine();
-        
+
         // Contestants
         $contestants = Contestant::all();
-        $this->info("CONTESTANTS");
-        $this->line("-----------");
+        $this->info('CONTESTANTS');
+        $this->line('-----------');
         $this->line("Total Contestants: {$contestants->count()}");
         if ($contestants->isNotEmpty()) {
             $contestantsByPageant = $contestants->groupBy('pageant_id')->map->count();
@@ -83,11 +83,11 @@ class ShowDatabaseSummary extends Command
             }
         }
         $this->newLine();
-        
+
         // Criteria
         $criteria = Criteria::all();
-        $this->info("CRITERIA");
-        $this->line("--------");
+        $this->info('CRITERIA');
+        $this->line('--------');
         $this->line("Total Criteria: {$criteria->count()}");
         if ($criteria->isNotEmpty()) {
             $criteriaByPageant = $criteria->groupBy('pageant_id')->map->count();
@@ -96,7 +96,7 @@ class ShowDatabaseSummary extends Command
                 $this->line("- {$pageantName}: {$count} criteria");
             }
         }
-        
+
         return 0;
     }
 }

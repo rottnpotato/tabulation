@@ -430,7 +430,7 @@ const navigation = computed(() => {
         { name: 'Create Pageant', href: route('organizer.pageants.create'), route: 'organizer.pageants.create', icon: Plus },
         { name: 'My Pageants', href: route('organizer.my-pageants'), route: 'organizer.my-pageants', icon: Award },
         { name: 'Contestants', href: route('organizer.contestants'), route: 'organizer.contestants', icon: Users },
-        { name: 'Timeline', href: route('organizer.timeline'), route: 'organizer.timeline', icon: Calendar }
+        // { name: 'Timeline', href: route('organizer.timeline'), route: 'organizer.timeline', icon: Calendar }
       ]
     case 'tabulator':
       const currentPageantId = getCurrentPageantId.value;
@@ -444,7 +444,7 @@ const navigation = computed(() => {
       
       // If pageant is selected, show full navigation with pageant context
       return [
-              { name: 'Assigned Pageants', href: route('tabulator.dashboard'), route: 'tabulator.assigned-pageants', icon: ClipboardList },
+        { name: 'Assigned Pageants', href: route('tabulator.dashboard'), route: 'tabulator.assigned-pageants', icon: ClipboardList },
         { name: 'Dashboard', href: route('tabulator.dashboard', currentPageantId), route: 'tabulator.dashboard', icon: LayoutDashboard },
         { name: 'Judges', href: route('tabulator.judges', currentPageantId), route: 'tabulator.judges', icon: Users },
         { name: 'Round Management', href: route('tabulator.rounds', currentPageantId), route: 'tabulator.rounds', icon: Settings },

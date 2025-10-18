@@ -44,4 +44,4 @@ class UserSeeder extends Seeder
         User::factory()->tabulator()->count(5)->create();
         User::factory()->judge()->count(10)->create();
     }
-} 
+}

@@ -19,13 +19,13 @@ return new class extends Migration
         Schema::table('pageants', function (Blueprint $table) {
             $table->enum('status', [
                 'Pending_Approval',
-                'Draft', 
-                'Setup', 
-                'Active', 
-                'Completed', 
-                'Unlocked_For_Edit', 
-                'Archived', 
-                'Cancelled'
+                'Draft',
+                'Setup',
+                'Active',
+                'Completed',
+                'Unlocked_For_Edit',
+                'Archived',
+                'Cancelled',
             ])->default('Pending_Approval')->after('location');
         });
     }
@@ -41,13 +41,13 @@ return new class extends Migration
 
         Schema::table('pageants', function (Blueprint $table) {
             $table->enum('status', [
-                'Draft', 
-                'Setup', 
-                'Active', 
-                'Completed', 
-                'Unlocked_For_Edit', 
-                'Archived', 
-                'Cancelled'
+                'Draft',
+                'Setup',
+                'Active',
+                'Completed',
+                'Unlocked_For_Edit',
+                'Archived',
+                'Cancelled',
             ])->default('Draft')->after('location');
         });
     }

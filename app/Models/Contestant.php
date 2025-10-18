@@ -32,6 +32,7 @@ class Contestant extends Model
         'active',
         'rank',
         'is_pair',
+        'pair_id',
     ];
 
     /**
@@ -73,6 +74,28 @@ class Contestant extends Model
             'member_contestant_id',
             'pair_contestant_id'
         )->withTimestamps();
+    }
+
+    /**
+     * Get the paired contestant (partner) if this contestant is part of a pair.
+     */
+    public function pairPartner()
+    {
+        if (! $this->pair_id) {
+            return null;
+        }
+
+        return static::where('pair_id', $this->pair_id)
+            ->where('id', '!=', $this->id)
+            ->first();
+    }
+
+    /**
+     * Check if this contestant is part of a pair.
+     */
+    public function isPaired(): bool
+    {
+        return ! empty($this->pair_id);
     }
 
     /**

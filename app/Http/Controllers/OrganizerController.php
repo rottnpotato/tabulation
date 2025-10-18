@@ -7,6 +7,7 @@ use App\Models\Criteria;
 use App\Models\Pageant;
 use App\Models\Round;
 use App\Models\User;
+use App\Services\ActivityService;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,9 +23,12 @@ class OrganizerController extends Controller
 {
     protected $auditLogService;
 
-    public function __construct(AuditLogService $auditLogService)
+    protected $activityService;
+
+    public function __construct(AuditLogService $auditLogService, ActivityService $activityService)
     {
         $this->auditLogService = $auditLogService;
+        $this->activityService = $activityService;
     }
 
     /**
@@ -259,11 +263,15 @@ class OrganizerController extends Controller
                 ];
             });
 
+        // Get recent activities for this organizer's pageants
+        $recentActivities = $this->activityService->getOrganizerActivities($organizer->id, 15);
+
         return Inertia::render('Organizer/Dashboard', [
             'pageantCounts' => $pageantsByStatus,
             'recentPageants' => $recentPageants,
             'totalPageants' => count($pageantIds),
-
+            'recentActivities' => $recentActivities,
+            'pageantIds' => $pageantIds->toArray(), // For real-time channel subscriptions
         ]);
     }
 

@@ -1,16 +1,16 @@
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
     <div 
       v-for="contestant in contestants" 
       :key="contestant.id" 
       :data-contestant-id="contestant.id"
-      class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group"
+      class="card-contestant group"
     >
-      <div class="relative aspect-[4/5]">
+      <div class="relative aspect-[4/5] overflow-hidden rounded-2xl">
         <img 
           :src="contestant.photo || '/images/placeholders/placeholder-contestant.jpg'" 
           :alt="contestant.name" 
-          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          class="w-full h-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-90"
           @error="handleImageError"
           @load="handleImageLoad"
           loading="lazy"
@@ -21,67 +21,87 @@
             <span class="text-sm">No Image</span>
           </div>
         </div>
-        <!-- Gradient overlay -->
-        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-70"></div>
+        
+        <!-- Elegant gradient overlay -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-80 group-hover:opacity-90 transition-opacity duration-500"></div>
+        
+        <!-- Decorative corner accent -->
+        <div class="corner-accent"></div>
 
         <!-- Contestant number badge -->
-        <div class="absolute top-3 right-3">
-          <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-500 text-white text-sm font-bold shadow-md">
+        <div class="absolute top-4 right-4 contestant-badge">
+          <span class="contestant-badge-inner">
             #{{ displayNumber(contestant) }}
           </span>
         </div>
-        <!-- Pair badge -->
-        <div v-if="contestant.is_pair" class="absolute top-3 left-3">
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[11px] font-semibold shadow-md">
-            Pair
+        
+        <!-- Pair badge for paired contestants -->
+        <div v-if="contestant.is_paired" class="absolute top-4 left-4">
+          <span class="pair-badge">
+            <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
+            </svg>
+            Paired
           </span>
         </div>
 
         <!-- Action buttons overlay - visible on hover -->
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-          <Tooltip text="View detailed information, photos, and bio" position="top">
-            <button 
-              @click="$emit('view', contestant)" 
-              class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors flex items-center gap-2 shadow-lg transform hover:scale-105"
-            >
-              <Eye class="h-4 w-4" />
-              View Details
-            </button>
-          </Tooltip>
-          <Tooltip text="Edit contestant information and photos" position="top">
-            <button 
-              @click="$emit('edit', contestant)" 
-              class="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/30 transition-colors flex items-center gap-2 border border-white/30 transform hover:scale-105"
-            >
-              <Edit class="h-4 w-4" />
-              Edit
-            </button>
-          </Tooltip>
-          <Tooltip text="Permanently remove contestant from pageant" position="top">
-            <button 
-              @click="$emit('delete', contestant)" 
-              class="bg-red-500/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-500/30 transition-colors flex items-center gap-2 border border-red-500/30 transform hover:scale-105"
-            >
-              <Trash2 class="h-4 w-4" />
-              Delete
-            </button>
-          </Tooltip>
+        <div class="action-buttons-overlay ">
+          <div class="action-buttons-container">
+            <Tooltip text="View detailed information, photos, and bio" position="top">
+              <button 
+                @click="$emit('view', contestant)" 
+                class="action-btn action-btn-primary"
+              >
+                <Eye class="h-4 w-4 z-10" />
+                <span class="hidden sm:inline">View</span>
+              </button>
+            </Tooltip>
+            <Tooltip text="Edit contestant information and photos" position="top">
+              <button 
+                @click="$emit('edit', contestant)" 
+                class="action-btn action-btn-secondary"
+              >
+                <Edit class="h-4 w-4 z-10" />
+                <span class="hidden sm:inline">Edit</span>
+              </button>
+            </Tooltip>
+            <Tooltip text="Permanently remove contestant from pageant" position="top">
+              <button 
+                @click="$emit('delete', contestant)" 
+                class="action-btn action-btn-danger"
+              >
+                <Trash2 class="h-4 w-4 z-10" />
+                <span class="hidden sm:inline">Delete</span>
+              </button>
+            </Tooltip>
+          </div>
         </div>
 
         <!-- Contestant info at bottom -->
-        <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
-          <h3 class="text-lg font-bold truncate">{{ contestant.name }}</h3>
-          <p v-if="contestant.is_pair && contestant.members_text" class="text-xs text-emerald-200 mt-0.5 truncate">{{ contestant.members_text }}</p>
-          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-            <div class="flex items-center text-sm text-orange-100">
-              <MapPin class="h-3.5 w-3.5 mr-1 text-orange-300" />
-              <span class="truncate">{{ (contestant.origin || contestant.city) || 'No location' }}</span>
-            </div>
-            <div class="flex items-center text-sm text-orange-100">
-              <Calendar class="h-3.5 w-3.5 mr-1 text-orange-300" />
-              <span>{{ contestant.age ? `${contestant.age} years` : 'Age not specified' }}</span>
+        <div class="contestant-info">
+          <div class="relative">
+            <!-- Display gender-specific label for paired contestants -->
+            <h3 class="contestant-name">
+              {{ getContestantDisplayName(contestant) }}
+            </h3>
+            <p class="contestant-subtitle">{{ contestant.name }}</p>
+            <p v-if="contestant.is_paired && contestant.partner" class="contestant-partner">
+              Partner: {{ contestant.partner.name }}
+            </p>
+            <div class="contestant-details">
+              <div class="contestant-detail-item" v-if="(contestant.origin || contestant.city)">
+                <MapPin class="detail-icon" />
+                <span class="truncate">{{ contestant.origin || contestant.city }}</span>
+              </div>
+              <div class="contestant-detail-item" v-if="contestant.age">
+                <Calendar class="detail-icon" />
+                <span>{{ contestant.age }} yrs</span>
+              </div>
             </div>
           </div>
+          <!-- Decorative shine effect -->
+          <div class="info-shine"></div>
         </div>
       </div>
     </div>
@@ -119,9 +139,269 @@ const handleImageLoad = (event) => {
 }
 
 const displayNumber = (contestant) => contestant.number ?? contestant.contestNumber
+
+const getContestantDisplayName = (contestant) => {
+  if (contestant.is_paired) {
+    // Display as "Male Contestant #1" or "Female Contestant #1"
+    const genderLabel = contestant.gender === 'male' ? 'Male' : 'Female'
+    const number = displayNumber(contestant)
+    return `${genderLabel} Contestant #${number}`
+  }
+  return contestant.name
+}
 </script>
 
 <style scoped>
+.card-contestant {
+  @apply relative cursor-pointer transition-all duration-500 ease-out;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.card-contestant:hover {
+  transform: translateY(-8px);
+}
+
+.card-contestant::before {
+  content: '';
+  @apply absolute inset-0 rounded-2xl transition-all duration-500;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
+  opacity: 0;
+  transform: scale(0.95);
+  z-index: -1;
+}
+
+.card-contestant:hover::before {
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 20px 40px -15px rgba(249, 115, 22, 0.3);
+}
+
+.corner-accent {
+  @apply absolute top-0 right-0 w-20 h-20 pointer-events-none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.card-contestant:hover .corner-accent {
+  opacity: 1;
+}
+
+.contestant-badge {
+  @apply relative;
+  animation: float 3s ease-in-out infinite;
+  z-index: 15;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.contestant-badge-inner {
+  @apply inline-flex items-center justify-center h-10 w-10 rounded-full text-white text-sm font-bold shadow-xl;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.card-contestant:hover .contestant-badge-inner {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.5);
+}
+
+.pair-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-white text-xs font-semibold shadow-lg;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.card-contestant:hover .pair-badge {
+  transform: scale(1.05);
+}
+
+.action-buttons-overlay {
+  @apply absolute inset-0 flex items-center justify-center;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.85) 100%);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.card-contestant:hover .action-buttons-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.action-buttons-container {
+  @apply flex flex-col gap-3 px-4;
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  position: relative;
+  z-index: 30;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.action-btn {
+  @apply px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg;
+  min-width: 140px;
+  border: 1.5px solid transparent;
+  transform: scale(0.95);
+  position: relative;
+  z-index: 40;
+}
+
+.card-contestant:hover .action-btn {
+  transform: scale(1);
+}
+
+.action-btn:hover {
+  transform: scale(1.05) !important;
+}
+
+.action-btn-primary {
+  @apply text-white;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
+}
+
+.action-btn-primary:hover {
+  box-shadow: 0 6px 25px rgba(249, 115, 22, 0.6);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.action-btn-secondary {
+  @apply text-white;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.action-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.action-btn-danger {
+  @apply text-white;
+  background: rgba(239, 68, 68, 0.2);
+  backdrop-filter: blur(10px);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.action-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.35);
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.contestant-info {
+  @apply absolute bottom-0 left-0 right-0 p-5 text-white;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 70%, transparent 100%);
+  transition: all 0.4s ease;
+  z-index: 10;
+}
+
+.card-contestant:hover .contestant-info {
+  padding-bottom: 1.75rem;
+}
+
+.info-shine {
+  @apply absolute inset-0 opacity-0 transition-opacity duration-500;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  transform: translateX(-100%);
+}
+
+.card-contestant:hover .info-shine {
+  opacity: 1;
+  animation: shine 1.5s ease-in-out;
+}
+
+@keyframes shine {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.contestant-name {
+  @apply text-xl font-bold mb-1 truncate;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+}
+
+.contestant-subtitle {
+  @apply text-sm mb-1 truncate;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+.contestant-partner {
+  @apply text-xs mb-2 truncate;
+  color: rgba(167, 243, 208, 0.95);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+.contestant-members {
+  @apply text-xs mb-2 truncate;
+  color: rgba(167, 243, 208, 0.95);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+.contestant-details {
+  @apply flex flex-wrap items-center gap-4 mt-2;
+}
+
+.contestant-detail-item {
+  @apply flex items-center text-xs gap-1.5;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+}
+
+.card-contestant:hover .contestant-detail-item {
+  color: rgba(255, 237, 213, 1);
+}
+
+.detail-icon {
+  @apply h-3.5 w-3.5 flex-shrink-0;
+  color: rgba(251, 146, 60, 0.9);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .action-btn {
+    min-width: auto;
+    padding: 0.625rem;
+  }
+  
+  .action-buttons-container {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .card-contestant::before {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(236, 72, 153, 0.15) 100%);
+  }
+}
 </style>
 
 

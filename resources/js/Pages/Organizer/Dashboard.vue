@@ -1,241 +1,391 @@
 <template>
   <div class="space-y-4 sm:space-y-6">
-    <!-- Page Header and Quick Links -->
-    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-md overflow-hidden">
-      <div class="p-4 sm:p-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
+    <!-- Page Header with Enhanced Design -->
+    <div class="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 rounded-2xl shadow-xl overflow-hidden">
+      <!-- Decorative Background Elements -->
+      <div class="absolute inset-0 overflow-hidden opacity-10">
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-60 h-60 bg-white rounded-full blur-3xl"></div>
+      </div>
+      
+      <div class="relative p-4 sm:p-6 lg:p-8">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0 gap-4">
           <div class="text-white">
-            <h1 class="text-2xl sm:text-3xl font-bold">Organizer Dashboard</h1>
-            <p class="mt-1 text-sm sm:text-base opacity-90">Manage your pageants and track progress</p>
-          </div>
-          <div class="flex flex-wrap gap-2 sm:space-x-3">
-            <div class="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white flex items-center shadow-sm">
-              <Calendar class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-white" />
-              <span>Total: {{ totalPageants }}</span>
+            <div class="flex items-center gap-3 mb-2">
+              <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Crown class="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+              </div>
+              <div>
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Organizer Dashboard</h1>
+                <p class="mt-1 text-sm sm:text-base opacity-90">Manage pageants, contestants, and track progress</p>
+              </div>
             </div>
-            <div class="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white flex items-center shadow-sm">
-              <Activity class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-white" />
-              <span>Active: {{ pageantCounts?.active || 0 }}</span>
+          </div>
+          
+          <!-- Enhanced Stats Cards -->
+          <div class="flex flex-wrap gap-3">
+            <div class="group bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-3 text-sm font-medium text-white transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
+              <div class="flex items-center gap-2">
+                <div class="p-1.5 bg-white/30 rounded-lg">
+                  <Calendar class="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div class="text-xs opacity-75">Total Pageants</div>
+                  <div class="text-xl font-bold">{{ totalPageants }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="group bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-3 text-sm font-medium text-white transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
+              <div class="flex items-center gap-2">
+                <div class="p-1.5 bg-white/30 rounded-lg">
+                  <Activity class="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div class="text-xs opacity-75">Active Now</div>
+                  <div class="text-xl font-bold">{{ pageantCounts?.active || 0 }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="group bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-3 text-sm font-medium text-white transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
+              <div class="flex items-center gap-2">
+                <div class="p-1.5 bg-white/30 rounded-lg">
+                  <CheckCircle class="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div class="text-xs opacity-75">Completed</div>
+                  <div class="text-xl font-bold">{{ pageantCounts?.completed || 0 }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Quick Links Bar -->
-      <div class="bg-orange-700/30 backdrop-blur-sm px-3 sm:px-6 py-3 sm:py-4">
+      <!-- Enhanced Quick Links Bar -->
+      <div class="relative bg-gradient-to-r from-orange-700/40 to-orange-800/40 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex flex-wrap gap-2 sm:gap-3">
-          <Link :href="route('organizer.pageants.create')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white text-orange-700 hover:bg-orange-50 transition-all shadow-sm text-xs sm:text-sm">
-            <Plus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-orange-600" />
-            <span class="font-medium">Create Pageant</span>
+          <Link :href="route('organizer.pageants.create')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white text-orange-700 hover:bg-orange-50 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <div class="p-1 bg-orange-100 rounded-lg mr-2 group-hover:bg-orange-200 transition-colors">
+              <Plus class="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+            </div>
+            <span>Create Pageant</span>
           </Link>
           
-          <Link :href="route('organizer.my-pageants')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
-            <Crown class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            <span class="font-medium">My Pageants</span>
+          <Link :href="route('organizer.my-pageants')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <Crown class="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:scale-110 transition-transform" />
+            <span>My Pageants</span>
           </Link>
           
-          <Link :href="route('organizer.contestants')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
-            <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            <span class="font-medium">Contestants</span>
+          <Link :href="route('organizer.contestants')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:scale-110 transition-transform" />
+            <span>Contestants</span>
           </Link>
           
-          <Link :href="route('organizer.criteria')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
-            <ListChecks class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            <span class="font-medium">Criteria</span>
+          <Link :href="route('organizer.criteria')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <ListChecks class="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:scale-110 transition-transform" />
+            <span>Criteria</span>
           </Link>
           
-          <Link :href="route('organizer.scoring')" class="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition-all shadow-sm text-xs sm:text-sm">
-            <BarChart2 class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            <span class="font-medium">Scoring</span>
+          <Link :href="route('organizer.scoring')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <BarChart2 class="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:scale-110 transition-transform" />
+            <span>Scoring</span>
           </Link>
         </div>
       </div>
     </div>
 
-    <!-- Status Overview -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <!-- Enhanced Status Overview -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
       <div
         v-for="(status, index) in statusCards"
         :key="index"
-        :class="[status.color, 'rounded-lg shadow-sm p-4 flex flex-col items-center justify-center text-center border border-gray-100']"
+        :class="[
+          status.bgColor,
+          'group relative rounded-xl shadow-md p-4 sm:p-5 flex flex-col items-center justify-center text-center border-2 transition-all duration-300 cursor-pointer overflow-hidden',
+          'hover:shadow-xl hover:-translate-y-1 hover:scale-105'
+        ]"
+        :style="`border-color: ${status.borderColor}`"
       >
+        <!-- Decorative background -->
+        <div :class="['absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300', status.bgGradient]"></div>
+        
         <template v-if="isLoading">
-          <div class="flex flex-col items-center space-y-2">
-            <div class="h-10 w-10 bg-white bg-opacity-20 rounded-full shimmer"></div>
-            <div class="h-5 w-20 bg-white bg-opacity-20 rounded shimmer"></div>
-            <div class="h-8 w-12 bg-white bg-opacity-20 rounded shimmer"></div>
+          <div class="flex flex-col items-center space-y-2 relative z-10">
+            <div class="h-10 w-10 bg-gray-200 rounded-full shimmer"></div>
+            <div class="h-5 w-20 bg-gray-200 rounded shimmer"></div>
+            <div class="h-8 w-12 bg-gray-200 rounded shimmer"></div>
           </div>
         </template>
         <template v-else>
-          <component :is="status.icon" class="h-6 w-6 text-gray-600 mb-3" />
-          <h3 :class="['text-sm font-medium', status.textColor]">{{ status.title }}</h3>
-          <p class="text-xl font-bold mt-1 text-gray-900">{{ getStatusCount(status.key) }}</p>
+          <div class="relative z-10 flex flex-col items-center">
+            <div :class="['p-3 rounded-xl mb-3 transition-all duration-300 group-hover:scale-110', status.iconBg]">
+              <component :is="status.icon" :class="['h-6 w-6 sm:h-7 sm:w-7', status.iconColor]" />
+            </div>
+            <h3 :class="['text-xs sm:text-sm font-semibold uppercase tracking-wide', status.textColor]">
+              {{ status.title }}
+            </h3>
+            <div class="mt-2 flex items-baseline gap-1">
+              <p :class="['text-2xl sm:text-3xl font-bold', status.countColor]">
+                {{ getStatusCount(status.key) }}
+              </p>
+              <span class="text-xs text-gray-500">
+                {{ getStatusCount(status.key) === 1 ? 'pageant' : 'pageants' }}
+              </span>
+            </div>
+          </div>
         </template>
       </div>
     </div>
 
-    <!-- Quick Actions and Recent Pageants Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Recent Pageants -->
-      <div class="md:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100">
-        <div class="p-4 border-b border-gray-100">
-          <h2 class="text-lg font-semibold text-gray-900 flex items-center">
-            <Calendar class="h-5 w-5 mr-2 text-orange-500" />
-            Recent Pageants
-          </h2>
+    <!-- Enhanced Quick Actions and Recent Pageants Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <!-- Recent Pageants with Enhanced Design -->
+      <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-5 border-b border-orange-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
+              <div class="p-2 bg-orange-200 rounded-lg mr-3">
+                <Calendar class="h-5 w-5 text-orange-700" />
+              </div>
+              Recent Pageants
+            </h2>
+            <div class="text-sm text-orange-700 font-medium">
+              {{ recentPageants.length }} {{ recentPageants.length === 1 ? 'pageant' : 'pageants' }}
+            </div>
+          </div>
         </div>
         
         <div v-if="isLoading" class="p-6 space-y-4">
           <div v-for="i in 5" :key="i" class="border-b pb-4 last:border-b-0 last:pb-0">
-            <div class="h-5 w-2/3 bg-gray-200 rounded shimmer shimmer-orange mb-2"></div>
+            <div class="h-6 w-2/3 bg-gray-200 rounded-lg shimmer shimmer-orange mb-3"></div>
             <div class="h-4 w-1/2 bg-gray-200 rounded shimmer shimmer-orange"></div>
           </div>
         </div>
         
-        <div v-else-if="recentPageants.length === 0" class="p-6 text-center py-12">
-          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
-            <Calendar class="h-6 w-6 text-gray-500" />
+        <div v-else-if="recentPageants.length === 0" class="p-8 text-center py-16">
+          <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 mb-6 shadow-md">
+            <Calendar class="h-10 w-10 text-orange-600" />
           </div>
-          <h3 class="mt-2 text-sm font-medium text-gray-900">No pageants found</h3>
-          <p class="mt-1 text-sm text-gray-500">
-            You haven't been assigned to any pageants yet.
+          <h3 class="mt-2 text-lg font-bold text-gray-900">No pageants found</h3>
+          <p class="mt-2 text-sm text-gray-600 max-w-sm mx-auto">
+            You haven't been assigned to any pageants yet. Create your first pageant to get started!
           </p>
+          <div class="mt-6">
+            <Link :href="route('organizer.pageants.create')" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium">
+              <Plus class="h-5 w-5 mr-2" />
+              Create Your First Pageant
+            </Link>
+          </div>
         </div>
         
         <div v-else class="divide-y divide-gray-100">
           <div v-for="(pageant, index) in recentPageants" :key="index" 
-               class="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+               class="group p-5 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-50/50 transition-all duration-300 cursor-pointer border-l-4 border-transparent hover:border-orange-500"
                @click="viewPageant(pageant)">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-base font-medium text-gray-900">
-                  {{ pageant.name }}
-                </h3>
-                <div class="flex items-center mt-1 text-sm text-gray-500">
-                  <Calendar class="h-4 w-4 mr-1 text-gray-400" />
-                  <span>{{ formatDateRange(pageant) || 'Date not set' }}</span>
-                  <span class="mx-2">•</span>
-                  <MapPin class="h-4 w-4 mr-1 text-gray-400" />
-                  <span>{{ pageant.venue || pageant.location || 'Location not specified' }}</span>
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start gap-3">
+                  <div class="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
+                    <Crown class="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors truncate">
+                      {{ pageant.name }}
+                    </h3>
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs sm:text-sm text-gray-600">
+                      <div class="flex items-center">
+                        <Calendar class="h-4 w-4 mr-1.5 text-gray-400" />
+                        <span>{{ formatDateRange(pageant) || 'Date not set' }}</span>
+                      </div>
+                      <div class="flex items-center">
+                        <MapPin class="h-4 w-4 mr-1.5 text-gray-400" />
+                        <span class="truncate">{{ pageant.venue || pageant.location || 'Location TBA' }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div class="flex items-center space-x-2">
+              <div class="flex items-center gap-3 flex-shrink-0">
                 <Tooltip :text="getPageantStatusTooltip(pageant.status)" position="left">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium hover:shadow-md transition-shadow cursor-help"
+                  <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm hover:shadow-md transition-all cursor-help"
                         :class="getStatusClass(pageant.status)">
-                    {{ pageant.status }}
+                    {{ formatStatusText(pageant.status) }}
                   </span>
                 </Tooltip>
-                <ChevronRight class="h-5 w-5 text-gray-400" />
+                <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           </div>
         </div>
         
-        <div class="border-t border-gray-100 bg-gray-50 px-4 py-3 rounded-b-lg">
-          <Tooltip text="Go to pageants management page" position="top">
-            <Link :href="route('organizer.my-pageants')" class="text-sm font-medium text-orange-600 hover:text-orange-800 flex items-center transition-all transform hover:translate-x-1">
-              View all pageants <ChevronRight class="h-4 w-4 ml-1" />
+        <div class="border-t-2 border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100 px-5 py-4 rounded-b-2xl">
+          <Tooltip text="View and manage all your pageants" position="top">
+            <Link :href="route('organizer.my-pageants')" class="group text-sm font-semibold text-orange-600 hover:text-orange-800 flex items-center transition-all">
+              <span>View all pageants</span>
+              <ChevronRight class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
             </Link>
           </Tooltip>
         </div>
       </div>
 
-      <!-- Quick Actions -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-100">
-        <div class="p-4 border-b border-gray-100">
-          <h2 class="text-lg font-semibold text-gray-900 flex items-center">
-            <Zap class="h-5 w-5 mr-2 text-orange-500" />
+      <!-- Enhanced Quick Actions -->
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-5 border-b border-orange-200">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
+            <div class="p-2 bg-orange-200 rounded-lg mr-3">
+              <Zap class="h-5 w-5 text-orange-700" />
+            </div>
             Quick Actions
           </h2>
         </div>
         
-        <div class="p-4 space-y-2">
+        <div class="p-5 space-y-3">
           <Tooltip text="View and manage all your assigned pageants" position="right">
-            <Link :href="route('organizer.my-pageants')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-all border border-gray-100 transform hover:-translate-y-0.5 hover:shadow-md">
-              <Crown class="h-5 w-5 text-orange-500 mr-3" />
-              <div>
-                <div class="text-sm font-medium text-gray-900">My Pageants</div>
-                <div class="text-xs text-gray-500">View all pageants assigned to you</div>
+            <Link :href="route('organizer.my-pageants')" class="group flex items-start gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-all duration-300 border-2 border-gray-100 hover:border-orange-300 transform hover:-translate-y-0.5 hover:shadow-lg">
+              <div class="p-2.5 bg-orange-100 group-hover:bg-orange-200 rounded-xl transition-colors">
+                <Crown class="h-5 w-5 text-orange-600" />
               </div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">My Pageants</div>
+                <div class="text-xs text-gray-600 mt-0.5">View and manage all your events</div>
+              </div>
+              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
             </Link>
           </Tooltip>
           
           <Tooltip text="Add and manage contestants for your pageants" position="right">
-            <Link :href="route('organizer.contestants')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-all border border-gray-100 transform hover:-translate-y-0.5 hover:shadow-md">
-              <UserPlus class="h-5 w-5 text-orange-500 mr-3" />
-              <div>
-                <div class="text-sm font-medium text-gray-900">Manage Contestants</div>
-                <div class="text-xs text-gray-500">Register new pageant participants</div>
+            <Link :href="route('organizer.contestants')" class="group flex items-start gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-all duration-300 border-2 border-gray-100 hover:border-orange-300 transform hover:-translate-y-0.5 hover:shadow-lg">
+              <div class="p-2.5 bg-orange-100 group-hover:bg-orange-200 rounded-xl transition-colors">
+                <UserPlus class="h-5 w-5 text-orange-600" />
               </div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">Manage Contestants</div>
+                <div class="text-xs text-gray-600 mt-0.5">Register new participants</div>
+              </div>
+              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
             </Link>
           </Tooltip>
           
           <Tooltip text="Set up scoring criteria and weight distributions" position="right">
-            <Link :href="route('organizer.criteria')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-all border border-gray-100 transform hover:-translate-y-0.5 hover:shadow-md">
-              <ListChecks class="h-5 w-5 text-orange-500 mr-3" />
-              <div>
-                <div class="text-sm font-medium text-gray-900">Configure Criteria</div>
-                <div class="text-xs text-gray-500">Set up judging criteria and weights</div>
+            <Link :href="route('organizer.criteria')" class="group flex items-start gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-all duration-300 border-2 border-gray-100 hover:border-orange-300 transform hover:-translate-y-0.5 hover:shadow-lg">
+              <div class="p-2.5 bg-orange-100 group-hover:bg-orange-200 rounded-xl transition-colors">
+                <ListChecks class="h-5 w-5 text-orange-600" />
               </div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">Configure Criteria</div>
+                <div class="text-xs text-gray-600 mt-0.5">Setup judging criteria</div>
+              </div>
+              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
             </Link>
           </Tooltip>
           
           <Tooltip text="Choose and configure your pageant's scoring methodology" position="right">
-            <Link :href="route('organizer.scoring')" class="flex items-center p-3 rounded-md hover:bg-gray-50 transition-all border border-gray-100 transform hover:-translate-y-0.5 hover:shadow-md">
-              <BarChart2 class="h-5 w-5 text-orange-500 mr-3" />
-              <div>
-                <div class="text-sm font-medium text-gray-900">Scoring System</div>
-                <div class="text-xs text-gray-500">Configure scoring methodology</div>
+            <Link :href="route('organizer.scoring')" class="group flex items-start gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-all duration-300 border-2 border-gray-100 hover:border-orange-300 transform hover:-translate-y-0.5 hover:shadow-lg">
+              <div class="p-2.5 bg-orange-100 group-hover:bg-orange-200 rounded-xl transition-colors">
+                <BarChart2 class="h-5 w-5 text-orange-600" />
               </div>
+              <div class="flex-1">
+                <div class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">Scoring System</div>
+                <div class="text-xs text-gray-600 mt-0.5">Configure methodology</div>
+              </div>
+              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
             </Link>
           </Tooltip>
         </div>
       </div>
     </div>
 
-    <!-- Timeline -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-100">
-      <div class="p-4 border-b border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-900 flex items-center">
-          <Calendar class="h-5 w-5 mr-2 text-orange-500" />
-          Recent Activity
-        </h2>
+    <!-- Enhanced Recent Activity Section -->
+    <div class="bg-white shadow-lg rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+      <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-5 border-b border-orange-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
+            <div class="p-2 bg-orange-200 rounded-lg mr-3">
+              <Activity class="h-5 w-5 text-orange-700" />
+            </div>
+            Recent Activity
+          </h2>
+          <div v-if="activities.length > 0" class="text-sm text-orange-700 font-medium">
+            {{ activities.length }} {{ activities.length === 1 ? 'activity' : 'activities' }}
+          </div>
+        </div>
       </div>
       
-      <div class="p-6">
+      <div class="p-6 sm:p-8">
         <div v-if="isLoading" class="space-y-6">
-          <div v-for="i in 3" :key="i" class="flex">
-            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 shimmer shimmer-orange"></div>
-            <div class="ml-4 flex-1">
-              <div class="h-5 w-3/4 bg-gray-200 rounded shimmer shimmer-orange mb-2"></div>
+          <div v-for="i in 5" :key="i" class="flex items-start gap-4">
+            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-gray-200 shimmer shimmer-orange"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-5 w-3/4 bg-gray-200 rounded shimmer shimmer-orange"></div>
               <div class="h-4 w-1/2 bg-gray-200 rounded shimmer shimmer-orange"></div>
             </div>
           </div>
         </div>
         
-        <div v-else class="relative">
+        <div v-else-if="activities.length === 0" class="relative">
           <div class="flex items-center justify-center py-12 text-center">
-            <div class="text-center">
-              <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-50 mb-4">
-                <Crown class="h-8 w-8 text-orange-400" />
+            <div class="max-w-md">
+              <div class="relative inline-flex items-center justify-center">
+                <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                <div class="relative flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 shadow-lg">
+                  <Activity class="h-10 w-10 text-orange-600" />
+                </div>
               </div>
-              <h3 class="mt-2 text-sm font-medium text-gray-900">Welcome to Your Dashboard</h3>
-              <p class="mt-1 text-sm text-gray-500 max-w-md mx-auto">
-                Manage your pageants, contestants, and judging criteria from here. Create your first pageant to get started.
+              <h3 class="mt-6 text-xl font-bold text-gray-900">No Recent Activity</h3>
+              <p class="mt-3 text-sm text-gray-600 leading-relaxed">
+                Activities from your tabulators and judges will appear here. This includes scoring updates, contestant changes, and other pageant actions.
               </p>
-              <div class="mt-4">
-                <Link :href="route('organizer.pageants.create')" class="inline-flex items-center px-4 py-2 bg-orange-100 text-orange-800 border border-orange-200 rounded-md text-sm font-medium hover:bg-orange-200 transition-colors">
-                  <Plus class="h-4 w-4 mr-2" />
+              <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                <Link :href="route('organizer.pageants.create')" class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                  <Plus class="h-5 w-5 mr-2" />
                   Create Pageant
+                </Link>
+                <Link :href="route('organizer.my-pageants')" class="inline-flex items-center justify-center px-6 py-3 bg-white text-orange-600 border-2 border-orange-300 rounded-xl hover:bg-orange-50 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold">
+                  <Crown class="h-5 w-5 mr-2" />
+                  View Pageants
                 </Link>
               </div>
             </div>
           </div>
         </div>
+        
+        <!-- Activity List -->
+        <div v-else class="space-y-3">
+          <div v-for="activity in activities" :key="activity.id"
+               class="group flex items-start gap-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-50/30 transition-all duration-300 border border-gray-100 hover:border-orange-200">
+            <!-- Activity Icon -->
+            <div class="flex-shrink-0">
+              <div class="p-3 rounded-xl bg-gradient-to-br group-hover:scale-110 transition-transform duration-300"
+                   :class="getActivityIconClass(activity.action_type)">
+                <component :is="getActivityIcon(activity.action_type)" class="h-5 w-5 text-white" />
+              </div>
+            </div>
+            
+            <!-- Activity Details -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 mb-1">
+                    {{ activity.description }}
+                  </p>
+                  <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md font-medium"
+                          :class="getRoleBadgeClass(activity.user_role)">
+                      {{ activity.user_name }}
+                    </span>
+                    <span class="text-gray-400">•</span>
+                    <span class="font-medium text-orange-600">{{ activity.pageant_name }}</span>
+                    <span class="text-gray-400">•</span>
+                    <span>{{ activity.formatted_time }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      
-
     </div>
 
     <!-- Settings Modal -->
@@ -248,7 +398,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { router } from '@inertiajs/vue3'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
@@ -271,49 +421,76 @@ const props = defineProps({
   pageantCounts: Object,
   recentPageants: Array,
   totalPageants: Number,
-
+  recentActivities: Array,
+  pageantIds: Array,
 })
 
 // State
 const isLoading = ref(true)
 const isSettingsModalVisible = ref(false)
+const activities = ref(props.recentActivities || [])
 
-// Status cards data
+// Status cards data with enhanced styling
 const statusCards = [
   { 
     title: 'Pending', 
     key: 'pending_approval',
     icon: Clock, 
-    color: 'bg-white', 
-    textColor: 'text-gray-600' 
+    bgColor: 'bg-white',
+    borderColor: '#fb923c',
+    bgGradient: 'bg-gradient-to-br from-orange-400 to-orange-500',
+    textColor: 'text-orange-700',
+    countColor: 'text-orange-600',
+    iconBg: 'bg-orange-100',
+    iconColor: 'text-orange-600'
   },
   { 
     title: 'Draft', 
     key: 'draft',
     icon: Edit, 
-    color: 'bg-white', 
-    textColor: 'text-gray-600' 
+    bgColor: 'bg-white',
+    borderColor: '#9ca3af',
+    bgGradient: 'bg-gradient-to-br from-gray-400 to-gray-500',
+    textColor: 'text-gray-700',
+    countColor: 'text-gray-600',
+    iconBg: 'bg-gray-100',
+    iconColor: 'text-gray-600'
   },
   { 
     title: 'Setup', 
     key: 'setup',
     icon: Settings, 
-    color: 'bg-white', 
-    textColor: 'text-gray-600' 
+    bgColor: 'bg-white',
+    borderColor: '#60a5fa',
+    bgGradient: 'bg-gradient-to-br from-blue-400 to-blue-500',
+    textColor: 'text-blue-700',
+    countColor: 'text-blue-600',
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600'
   },
   { 
     title: 'Active', 
     key: 'active',
     icon: Activity, 
-    color: 'bg-white', 
-    textColor: 'text-gray-600' 
+    bgColor: 'bg-white',
+    borderColor: '#34d399',
+    bgGradient: 'bg-gradient-to-br from-green-400 to-green-500',
+    textColor: 'text-green-700',
+    countColor: 'text-green-600',
+    iconBg: 'bg-green-100',
+    iconColor: 'text-green-600'
   },
   { 
     title: 'Completed', 
     key: 'completed',
     icon: CheckCircle, 
-    color: 'bg-white', 
-    textColor: 'text-gray-600' 
+    bgColor: 'bg-white',
+    borderColor: '#a78bfa',
+    bgGradient: 'bg-gradient-to-br from-purple-400 to-purple-500',
+    textColor: 'text-purple-700',
+    countColor: 'text-purple-600',
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600'
   }
 ]
 
@@ -352,17 +529,22 @@ const formatDateTime = (datetime) => {
   }
 }
 
-// Status styling
+// Status styling with better colors
 const getStatusClass = (status) => {
   const statusMap = {
-    'Pending_Approval': 'bg-orange-100 text-orange-800',
-    'Draft': 'bg-gray-100 text-gray-800',
-    'Setup': 'bg-blue-100 text-blue-800',
-    'Active': 'bg-green-100 text-green-800',
-    'Completed': 'bg-purple-100 text-purple-800',
-    'Unlocked_For_Edit': 'bg-yellow-100 text-yellow-800',
+    'Pending_Approval': 'bg-orange-100 text-orange-800 border border-orange-200',
+    'Draft': 'bg-gray-100 text-gray-800 border border-gray-200',
+    'Setup': 'bg-blue-100 text-blue-800 border border-blue-200',
+    'Active': 'bg-green-100 text-green-800 border border-green-200',
+    'Completed': 'bg-purple-100 text-purple-800 border border-purple-200',
+    'Unlocked_For_Edit': 'bg-yellow-100 text-yellow-800 border border-yellow-200',
   }
-  return statusMap[status] || 'bg-gray-100 text-gray-800'
+  return statusMap[status] || 'bg-gray-100 text-gray-800 border border-gray-200'
+}
+
+// Format status text for better readability
+const formatStatusText = (status) => {
+  return status.replace(/_/g, ' ')
 }
 
 // Navigate to pageant details
@@ -407,14 +589,146 @@ const UpdateSettings = (settings) => {
   alert('Settings updated successfully!')
 }
 
+// Helper functions for activity display
+const getActivityIcon = (actionType) => {
+  const iconMap = {
+    'SCORE_SUBMITTED': Star,
+    'SCORE_UPDATED': Edit,
+    'CONTESTANT_ADDED': UserPlus,
+    'CONTESTANT_UPDATED': Users,
+    'CONTESTANT_REMOVED': Users,
+    'JUDGE_ASSIGNED': Scale,
+    'JUDGE_REMOVED': Users,
+    'TABULATOR_ASSIGNED': BarChart2,
+    'TABULATOR_REMOVED': BarChart2,
+    'ROUND_STARTED': Timer,
+    'ROUND_COMPLETED': CheckCircle,
+    'CRITERIA_CREATED': ListChecks,
+    'CRITERIA_UPDATED': ListChecks,
+    'PAGEANT_UPDATED': Crown,
+    'STATUS_CHANGED': Sparkles,
+  }
+  return iconMap[actionType] || Activity
+}
+
+const getActivityIconClass = (actionType) => {
+  const classMap = {
+    'SCORE_SUBMITTED': 'from-yellow-400 to-yellow-600',
+    'SCORE_UPDATED': 'from-blue-400 to-blue-600',
+    'CONTESTANT_ADDED': 'from-green-400 to-green-600',
+    'CONTESTANT_UPDATED': 'from-blue-400 to-blue-600',
+    'CONTESTANT_REMOVED': 'from-red-400 to-red-600',
+    'JUDGE_ASSIGNED': 'from-purple-400 to-purple-600',
+    'JUDGE_REMOVED': 'from-red-400 to-red-600',
+    'TABULATOR_ASSIGNED': 'from-indigo-400 to-indigo-600',
+    'TABULATOR_REMOVED': 'from-red-400 to-red-600',
+    'ROUND_STARTED': 'from-green-400 to-green-600',
+    'ROUND_COMPLETED': 'from-purple-400 to-purple-600',
+    'CRITERIA_CREATED': 'from-teal-400 to-teal-600',
+    'CRITERIA_UPDATED': 'from-blue-400 to-blue-600',
+    'PAGEANT_UPDATED': 'from-orange-400 to-orange-600',
+    'STATUS_CHANGED': 'from-pink-400 to-pink-600',
+  }
+  return classMap[actionType] || 'from-gray-400 to-gray-600'
+}
+
+const getRoleBadgeClass = (role) => {
+  const classMap = {
+    'judge': 'bg-purple-100 text-purple-800',
+    'tabulator': 'bg-indigo-100 text-indigo-800',
+    'organizer': 'bg-orange-100 text-orange-800',
+    'admin': 'bg-red-100 text-red-800',
+    'system': 'bg-gray-100 text-gray-800',
+  }
+  return classMap[role] || 'bg-gray-100 text-gray-800'
+}
+
+// Real-time updates using Laravel Echo
 onMounted(() => {
-  // Simulate loading time
+  // Simulate loading time with staggered animation
   setTimeout(() => {
     isLoading.value = false
-  }, 1000)
+  }, 800)
+  
+  // Subscribe to real-time activity updates for each pageant
+  if (window.Echo && props.pageantIds && props.pageantIds.length > 0) {
+    props.pageantIds.forEach(pageantId => {
+      window.Echo.private(`organizer.pageant.${pageantId}`)
+        .listen('.activity.created', (event) => {
+          console.log('New activity received:', event)
+          
+          // Add the new activity to the top of the list
+          activities.value.unshift({
+            id: event.id,
+            pageant_id: event.pageant_id,
+            pageant_name: event.pageant_name || 'Unknown Pageant',
+            user_name: event.user_name,
+            user_role: event.user_role,
+            action_type: event.action_type,
+            description: event.description,
+            icon: event.icon,
+            entity_type: event.entity_type,
+            entity_id: event.entity_id,
+            metadata: event.metadata,
+            created_at: event.created_at,
+            formatted_time: event.formatted_time,
+          })
+          
+          // Keep only the latest 15 activities
+          if (activities.value.length > 15) {
+            activities.value = activities.value.slice(0, 15)
+          }
+        })
+    })
+  }
+})
+
+// Clean up Echo listeners when component unmounts
+onUnmounted(() => {
+  if (window.Echo && props.pageantIds && props.pageantIds.length > 0) {
+    props.pageantIds.forEach(pageantId => {
+      window.Echo.leave(`organizer.pageant.${pageantId}`)
+    })
+  }
 })
 </script>
 
-<style>
-/* This is already defined in the parent component's CSS */
+<style scoped>
+/* Pulse animation for loading states */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, transform, box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced hover effects */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
+}
+
+.group:hover .group-hover\:translate-x-1 {
+  transform: translateX(0.25rem);
+}
+
+/* Card hover effects */
+.hover\:-translate-y-1:hover {
+  transform: translateY(-0.25rem);
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
 </style>

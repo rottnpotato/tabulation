@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ContestantImage extends Model
 {
     use HasFactory;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -22,7 +22,7 @@ class ContestantImage extends Model
         'display_order',
         'caption',
     ];
-    
+
     /**
      * The attributes that should be cast.
      *
@@ -32,7 +32,7 @@ class ContestantImage extends Model
         'is_primary' => 'boolean',
         'display_order' => 'integer',
     ];
-    
+
     /**
      * Get the contestant that owns the image.
      */
@@ -40,4 +40,4 @@ class ContestantImage extends Model
     {
         return $this->belongsTo(Contestant::class);
     }
-} 
+}

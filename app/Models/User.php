@@ -29,7 +29,7 @@ class User extends Authenticatable
         'is_active',
         'email_verified_at',
         'verification_token',
-        'notes'
+        'notes',
     ];
 
     /**
@@ -63,9 +63,6 @@ class User extends Authenticatable
 
     /**
      * Check if the user has a specific role
-     *
-     * @param string $role
-     * @return bool
      */
     public function hasRole(string $role): bool
     {
@@ -74,8 +71,6 @@ class User extends Authenticatable
 
     /**
      * Check if the user is an admin
-     *
-     * @return bool
      */
     public function isAdmin(): bool
     {
@@ -84,8 +79,6 @@ class User extends Authenticatable
 
     /**
      * Check if the user is an organizer
-     *
-     * @return bool
      */
     public function isOrganizer(): bool
     {
@@ -94,8 +87,6 @@ class User extends Authenticatable
 
     /**
      * Check if the user is a tabulator
-     *
-     * @return bool
      */
     public function isTabulator(): bool
     {
@@ -104,8 +95,6 @@ class User extends Authenticatable
 
     /**
      * Check if the user is a judge
-     *
-     * @return bool
      */
     public function isJudge(): bool
     {
@@ -114,59 +103,51 @@ class User extends Authenticatable
 
     /**
      * Check if the user is a contestant
-     *
-     * @return bool
      */
     public function isContestant(): bool
     {
         return $this->hasRole('contestant');
     }
-    
+
     /**
      * Check if the user's email is verified
-     *
-     * @return bool
      */
     public function isVerified(): bool
     {
         return $this->is_verified;
     }
-    
+
     /**
      * Check if the user's verification token is expired
-     *
-     * @return bool
      */
     public function isVerificationExpired(): bool
     {
-        if (!$this->verification_expires_at) {
+        if (! $this->verification_expires_at) {
             return false;
         }
-        
+
         return now()->gt($this->verification_expires_at);
     }
-    
+
     /**
      * Generate a verification token and send verification email
-     *
-     * @return void
      */
     public function sendVerificationEmail(): void
     {
         // Generate a new verification token
         $token = Str::random(64);
         $expiresAt = now()->addHours(24);
-        
+
         // Save the token and expiration
         $this->update([
             'verification_token' => $token,
             'verification_expires_at' => $expiresAt,
         ]);
-        
+
         // Send the verification email
         Mail::to($this->email)->send(new OrganizerVerification($this, $token));
     }
-    
+
     /**
      * Get pageants that this user is an organizer for
      */
@@ -207,6 +188,7 @@ class User extends Authenticatable
         if ($this->isContestant() && $this->contestantProfile) {
             return collect([$this->contestantProfile->pageant]);
         }
+
         return collect([]);
     }
 }

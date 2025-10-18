@@ -12,15 +12,15 @@ class AddVerificationFieldsToUsers extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'is_verified')) {
+            if (! Schema::hasColumn('users', 'is_verified')) {
                 $table->boolean('is_verified')->default(false)->after('remember_token');
             }
-            
-            if (!Schema::hasColumn('users', 'verification_token')) {
+
+            if (! Schema::hasColumn('users', 'verification_token')) {
                 $table->string('verification_token')->nullable()->after('is_verified');
             }
-            
-            if (!Schema::hasColumn('users', 'verification_expires_at')) {
+
+            if (! Schema::hasColumn('users', 'verification_expires_at')) {
                 $table->timestamp('verification_expires_at')->nullable()->after('verification_token');
             }
         });

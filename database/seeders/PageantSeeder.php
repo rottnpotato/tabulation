@@ -5,9 +5,7 @@ namespace Database\Seeders;
 use App\Models\AuditLog;
 use App\Models\Pageant;
 use App\Models\User;
-use App\Services\AuditLogService;
 use Carbon\Carbon;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PageantSeeder extends Seeder
@@ -24,10 +22,10 @@ class PageantSeeder extends Seeder
                 'name' => 'Admin User',
                 'password' => bcrypt('admin123'),
                 'role' => 'admin',
-                'email_verified_at' => now()
+                'email_verified_at' => now(),
             ]
         );
-        
+
         // Create organizers
         $organizers = [];
         for ($i = 1; $i <= 5; $i++) {
@@ -37,11 +35,11 @@ class PageantSeeder extends Seeder
                     'name' => "Organizer {$i}",
                     'password' => bcrypt('password'),
                     'role' => 'organizer',
-                    'email_verified_at' => now()
+                    'email_verified_at' => now(),
                 ]
             );
         }
-        
+
         // Create tabulators
         for ($i = 1; $i <= 3; $i++) {
             User::firstOrCreate(
@@ -50,11 +48,11 @@ class PageantSeeder extends Seeder
                     'name' => "Tabulator {$i}",
                     'password' => bcrypt('password'),
                     'role' => 'tabulator',
-                    'email_verified_at' => now()
+                    'email_verified_at' => now(),
                 ]
             );
         }
-        
+
         // Create judges
         for ($i = 1; $i <= 8; $i++) {
             User::firstOrCreate(
@@ -63,11 +61,11 @@ class PageantSeeder extends Seeder
                     'name' => "Judge {$i}",
                     'password' => bcrypt('password'),
                     'role' => 'judge',
-                    'email_verified_at' => now()
+                    'email_verified_at' => now(),
                 ]
             );
         }
-        
+
         // Sample pageant data
         $pageants = [
             [
@@ -79,7 +77,7 @@ class PageantSeeder extends Seeder
                 'location' => 'New York, USA',
                 'status' => 'Active',
                 'created_by' => $admin->id,
-                'organizers' => [$organizers[0]->id, $organizers[1]->id]
+                'organizers' => [$organizers[0]->id, $organizers[1]->id],
             ],
             [
                 'name' => 'Miss World 2025',
@@ -90,7 +88,7 @@ class PageantSeeder extends Seeder
                 'location' => 'London, UK',
                 'status' => 'Setup',
                 'created_by' => $admin->id,
-                'organizers' => [$organizers[1]->id]
+                'organizers' => [$organizers[1]->id],
             ],
             [
                 'name' => 'Miss International 2025',
@@ -101,7 +99,7 @@ class PageantSeeder extends Seeder
                 'location' => 'Tokyo, Japan',
                 'status' => 'Draft',
                 'created_by' => $admin->id,
-                'organizers' => [$organizers[2]->id]
+                'organizers' => [$organizers[2]->id],
             ],
             [
                 'name' => 'Miss Earth 2024',
@@ -112,7 +110,7 @@ class PageantSeeder extends Seeder
                 'location' => 'Manila, Philippines',
                 'status' => 'Completed',
                 'created_by' => $admin->id,
-                'organizers' => [$organizers[3]->id, $organizers[4]->id]
+                'organizers' => [$organizers[3]->id, $organizers[4]->id],
             ],
             [
                 'name' => 'Miss Grand International 2024',
@@ -123,7 +121,7 @@ class PageantSeeder extends Seeder
                 'location' => 'Bangkok, Thailand',
                 'status' => 'Completed',
                 'created_by' => $admin->id,
-                'organizers' => [$organizers[0]->id]
+                'organizers' => [$organizers[0]->id],
             ],
             [
                 'name' => 'Miss Supranational 2024',
@@ -134,7 +132,7 @@ class PageantSeeder extends Seeder
                 'location' => 'Krynica-Zdrój, Poland',
                 'status' => 'Archived',
                 'created_by' => $admin->id,
-                'organizers' => [$organizers[2]->id]
+                'organizers' => [$organizers[2]->id],
             ],
             [
                 'name' => 'Miss Tourism 2023',
@@ -145,7 +143,7 @@ class PageantSeeder extends Seeder
                 'location' => 'Singapore',
                 'status' => 'Archived',
                 'created_by' => $admin->id,
-                'organizers' => [$organizers[1]->id, $organizers[4]->id]
+                'organizers' => [$organizers[1]->id, $organizers[4]->id],
             ],
             [
                 'name' => 'Ms. Universe 2023',
@@ -156,18 +154,18 @@ class PageantSeeder extends Seeder
                 'location' => 'Las Vegas, USA',
                 'status' => 'Cancelled',
                 'created_by' => $admin->id,
-                'organizers' => [$organizers[3]->id]
+                'organizers' => [$organizers[3]->id],
             ],
         ];
-        
+
         // Create pageants and attach organizers
         foreach ($pageants as $pageantData) {
             $organizerIds = $pageantData['organizers'];
             unset($pageantData['organizers']);
-            
+
             $pageant = Pageant::create($pageantData);
             $pageant->organizers()->attach($organizerIds);
-            
+
             // Create audit log for pageant creation
             AuditLog::create([
                 'user_id' => $admin->id,
@@ -178,9 +176,9 @@ class PageantSeeder extends Seeder
                 'details' => "Created pageant '{$pageant->name}'",
                 'ip_address' => '127.0.0.1',
                 'created_at' => $pageant->created_at,
-                'updated_at' => $pageant->created_at
+                'updated_at' => $pageant->created_at,
             ]);
-            
+
             // Add additional audit logs for status changes if not in draft status
             if ($pageant->status !== 'Draft') {
                 AuditLog::create([
@@ -192,10 +190,10 @@ class PageantSeeder extends Seeder
                     'details' => "Changed pageant '{$pageant->name}' status from 'Draft' to 'Setup'",
                     'ip_address' => '127.0.0.1',
                     'created_at' => $pageant->created_at->addDays(1),
-                    'updated_at' => $pageant->created_at->addDays(1)
+                    'updated_at' => $pageant->created_at->addDays(1),
                 ]);
             }
-            
+
             if (in_array($pageant->status, ['Active', 'Completed', 'Archived', 'Cancelled'])) {
                 AuditLog::create([
                     'user_id' => $admin->id,
@@ -206,10 +204,10 @@ class PageantSeeder extends Seeder
                     'details' => "Changed pageant '{$pageant->name}' status from 'Setup' to '{$pageant->status}'",
                     'ip_address' => '127.0.0.1',
                     'created_at' => $pageant->created_at->addDays(2),
-                    'updated_at' => $pageant->created_at->addDays(2)
+                    'updated_at' => $pageant->created_at->addDays(2),
                 ]);
             }
-            
+
             // Add organizing logs
             foreach ($organizerIds as $organizerId) {
                 $organizer = User::find($organizerId);
@@ -222,11 +220,11 @@ class PageantSeeder extends Seeder
                     'details' => "Assigned organizer '{$organizer->name}' to pageant '{$pageant->name}'",
                     'ip_address' => '127.0.0.1',
                     'created_at' => $pageant->created_at->addHours(2),
-                    'updated_at' => $pageant->created_at->addHours(2)
+                    'updated_at' => $pageant->created_at->addHours(2),
                 ]);
             }
         }
-        
+
         // Create a pageant with edit permission granted
         $pageantWithPermission = Pageant::create([
             'name' => 'Miss Charity 2024',
@@ -241,9 +239,9 @@ class PageantSeeder extends Seeder
             'edit_permission_expires_at' => Carbon::now()->addDays(7),
             'edit_permission_granted_to' => $organizers[0]->id,
         ]);
-        
+
         $pageantWithPermission->organizers()->attach([$organizers[0]->id]);
-        
+
         AuditLog::create([
             'user_id' => $admin->id,
             'user_role' => 'admin',
@@ -253,9 +251,9 @@ class PageantSeeder extends Seeder
             'details' => "Created pageant '{$pageantWithPermission->name}'",
             'ip_address' => '127.0.0.1',
             'created_at' => $pageantWithPermission->created_at,
-            'updated_at' => $pageantWithPermission->created_at
+            'updated_at' => $pageantWithPermission->created_at,
         ]);
-        
+
         AuditLog::create([
             'user_id' => $admin->id,
             'user_role' => 'admin',
@@ -265,9 +263,9 @@ class PageantSeeder extends Seeder
             'details' => "Changed pageant '{$pageantWithPermission->name}' status from 'Draft' to 'Completed'",
             'ip_address' => '127.0.0.1',
             'created_at' => $pageantWithPermission->created_at->addDays(5),
-            'updated_at' => $pageantWithPermission->created_at->addDays(5)
+            'updated_at' => $pageantWithPermission->created_at->addDays(5),
         ]);
-        
+
         AuditLog::create([
             'user_id' => $admin->id,
             'user_role' => 'admin',
@@ -277,9 +275,9 @@ class PageantSeeder extends Seeder
             'details' => "Granted edit permission for pageant '{$pageantWithPermission->name}' to user '{$organizers[0]->name}' until {$pageantWithPermission->edit_permission_expires_at}",
             'ip_address' => '127.0.0.1',
             'created_at' => Carbon::now()->subDays(1),
-            'updated_at' => Carbon::now()->subDays(1)
+            'updated_at' => Carbon::now()->subDays(1),
         ]);
-        
+
         // Add some system action logs
         AuditLog::create([
             'user_id' => null,
@@ -287,12 +285,12 @@ class PageantSeeder extends Seeder
             'action_type' => 'SYSTEM_BACKUP',
             'target_entity' => null,
             'target_id' => null,
-            'details' => "Automated system backup completed successfully",
+            'details' => 'Automated system backup completed successfully',
             'ip_address' => '127.0.0.1',
             'created_at' => Carbon::now()->subDays(3),
-            'updated_at' => Carbon::now()->subDays(3)
+            'updated_at' => Carbon::now()->subDays(3),
         ]);
-        
+
         AuditLog::create([
             'user_id' => null,
             'user_role' => 'SYSTEM',
@@ -302,7 +300,7 @@ class PageantSeeder extends Seeder
             'details' => "Edit permission for pageant '{$pageantWithPermission->name}' will expire in 7 days",
             'ip_address' => '127.0.0.1',
             'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now()
+            'updated_at' => Carbon::now(),
         ]);
     }
 }

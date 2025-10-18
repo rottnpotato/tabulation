@@ -25,7 +25,7 @@ return new class extends Migration
 
             // Ensure one score per judge per contestant per criteria per round
             $table->unique(['pageant_id', 'round_id', 'criteria_id', 'contestant_id', 'judge_id'], 'unique_score_per_judge');
-            
+
             // Add indexes for common queries
             $table->index(['pageant_id', 'round_id']);
             $table->index(['judge_id', 'pageant_id']);

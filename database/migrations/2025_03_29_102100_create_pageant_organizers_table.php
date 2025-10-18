@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->boolean('is_primary')->default(false);
             $table->timestamps();
-            
+
             // Make sure the combination of pageant_id and user_id is unique
             $table->unique(['pageant_id', 'user_id']);
         });

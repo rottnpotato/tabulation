@@ -20,13 +20,13 @@ return new class extends Migration
             $table->string('venue')->nullable();
             $table->string('location')->nullable();
             $table->enum('status', [
-                'Draft', 
-                'Setup', 
-                'Active', 
-                'Completed', 
-                'Unlocked_For_Edit', 
-                'Archived', 
-                'Cancelled'
+                'Draft',
+                'Setup',
+                'Active',
+                'Completed',
+                'Unlocked_For_Edit',
+                'Archived',
+                'Cancelled',
             ])->default('Draft');
             $table->foreignId('created_by')->constrained('users');
             $table->boolean('is_edit_permission_granted')->default(false);

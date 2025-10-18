@@ -36,10 +36,10 @@ class SetupApp extends Command
         } else {
             $this->info('Running migrations...');
             Artisan::call('migrate');
-            
+
             $this->info('Running seeders...');
             Artisan::call('db:seed');
-            
+
             $this->info('Database migrated and seeded successfully!');
         }
 
@@ -49,7 +49,7 @@ class SetupApp extends Command
         Artisan::call('config:clear');
         Artisan::call('route:clear');
         Artisan::call('view:clear');
-        
+
         // Link storage
         $this->info('Linking storage...');
         Artisan::call('storage:link');
@@ -60,7 +60,7 @@ class SetupApp extends Command
         $this->info('- Organizer: organizer@example.com / password');
         $this->info('- Tabulator: tabulator@example.com / password');
         $this->info('- Judge: judge@example.com / password');
-        
+
         return Command::SUCCESS;
     }
-} 
+}

@@ -2,18 +2,18 @@
 
 namespace App\Providers;
 
-use App\Services\AuditLogService;
+use App\Services\ActivityService;
 use Illuminate\Support\ServiceProvider;
 
-class AuditServiceProvider extends ServiceProvider
+class ActivityServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
      */
     public function register(): void
     {
-        $this->app->singleton(AuditLogService::class, function ($app) {
-            return new AuditLogService;
+        $this->app->singleton(ActivityService::class, function ($app) {
+            return new ActivityService;
         });
     }
 
