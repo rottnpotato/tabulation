@@ -1654,6 +1654,9 @@ class OrganizerController extends Controller
                 "Created pageant '{$pageant->name}' for approval"
             );
 
+            // Broadcast event to notify admins
+            broadcast(new \App\Events\PageantCreated($pageant, Auth::user()))->toOthers();
+
             return redirect()->route('organizer.dashboard')
                 ->with('success', "Pageant '{$pageant->name}' has been submitted for approval!");
 

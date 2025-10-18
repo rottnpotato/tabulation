@@ -18,6 +18,11 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
+// Admin notifications channel - only admins can listen
+Broadcast::channel('admin-notifications', function ($user) {
+    return $user->role === 'admin';
+});
+
 // Global pageant channel - only admins can listen
 Broadcast::channel('pageant.all', function ($user) {
     return $user->role === 'admin';
