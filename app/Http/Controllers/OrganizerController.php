@@ -6,6 +6,7 @@ use App\Models\Contestant;
 use App\Models\Criteria;
 use App\Models\Pageant;
 use App\Models\Round;
+use App\Models\Score;
 use App\Models\User;
 use App\Services\ActivityService;
 use App\Services\AuditLogService;
@@ -1301,6 +1302,7 @@ class OrganizerController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|string|in:semi-final,final',
+            'identifier' => 'nullable|string|max:50|unique:rounds,identifier,NULL,id,pageant_id,'.$pageantId,
             'weight' => 'required|integer|min:1|max:100',
             'display_order' => 'required|integer|min:0',
         ]);
@@ -1310,10 +1312,16 @@ class OrganizerController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'type' => $request->type,
+            'identifier' => $request->identifier,
             'weight' => $request->weight,
             'display_order' => $request->display_order,
             'is_active' => true,
         ]);
+
+        // Generate identifier if not provided
+        if (! $round->identifier) {
+            $round->update(['identifier' => $round->generateIdentifier()]);
+        }
 
         // Log activity
         $this->auditLogService->log(
@@ -1348,6 +1356,7 @@ class OrganizerController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'type' => 'required|string|in:semi-final,final',
+            'identifier' => 'nullable|string|max:50|unique:rounds,identifier,'.$roundId.',id,pageant_id,'.$pageantId,
             'weight' => 'required|integer|min:1|max:100',
             'display_order' => 'required|integer|min:0',
             'is_active' => 'boolean',
@@ -1359,6 +1368,7 @@ class OrganizerController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'type' => $request->type,
+            'identifier' => $request->identifier ?? $round->identifier,
             'weight' => $request->weight,
             'display_order' => $request->display_order,
             'is_active' => $request->is_active ?? $round->is_active,
@@ -1866,6 +1876,13 @@ class OrganizerController extends Controller
                 ->with('error', $errorMessage);
         }
 
+        // Check requirements for status transitions
+        $requirementCheck = $this->checkStatusRequirements($pageant, $newStatus);
+        if (! $requirementCheck['passed']) {
+            return redirect()->back()
+                ->with('error', 'Cannot change status: '.$requirementCheck['message']);
+        }
+
         // Special handling for certain status changes
         if ($newStatus === 'Setup') {
             // Moving to Setup should lock the pageant
@@ -1888,6 +1905,62 @@ class OrganizerController extends Controller
 
         return redirect()->back()
             ->with('success', "Pageant status changed from '{$oldStatus}' to '{$newStatus}'");
+    }
+
+    /**
+     * Check if pageant meets requirements for status transition
+     */
+    private function checkStatusRequirements($pageant, $targetStatus)
+    {
+        $result = ['passed' => true, 'message' => ''];
+
+        switch ($targetStatus) {
+            case 'Setup':
+                // Requires at least basic information
+                if (! $pageant->name || ! $pageant->venue) {
+                    $result['passed'] = false;
+                    $result['message'] = 'Pageant must have name and venue before moving to Setup';
+                }
+                break;
+
+            case 'Active':
+                // Requires contestants, rounds with criteria, and judges
+                $hasContestants = $pageant->contestants()->count() > 0;
+                $hasRounds = $pageant->rounds()->count() > 0;
+                $hasCriteria = $pageant->criteria()->count() > 0;
+                $hasJudges = $pageant->judges()->count() > 0;
+                $meetsJudgeRequirement = ! $pageant->required_judges ||
+                    $pageant->judges()->count() >= $pageant->required_judges;
+
+                if (! $hasContestants) {
+                    $result['passed'] = false;
+                    $result['message'] = 'Pageant must have at least one contestant';
+                } elseif (! $hasRounds) {
+                    $result['passed'] = false;
+                    $result['message'] = 'Pageant must have at least one round';
+                } elseif (! $hasCriteria) {
+                    $result['passed'] = false;
+                    $result['message'] = 'Rounds must have scoring criteria';
+                } elseif (! $hasJudges) {
+                    $result['passed'] = false;
+                    $result['message'] = 'Pageant must have at least one judge assigned';
+                } elseif (! $meetsJudgeRequirement) {
+                    $result['passed'] = false;
+                    $result['message'] = "Pageant requires {$pageant->required_judges} judges, currently has {$pageant->judges()->count()}";
+                }
+                break;
+
+            case 'Completed':
+                // Should have scores submitted
+                $hasScores = Score::where('pageant_id', $pageant->id)->exists();
+                if (! $hasScores) {
+                    $result['passed'] = false;
+                    $result['message'] = 'No scores have been submitted for this pageant';
+                }
+                break;
+        }
+
+        return $result;
     }
 
     /**

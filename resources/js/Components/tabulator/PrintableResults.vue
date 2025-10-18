@@ -25,7 +25,7 @@
             />
             <div class="text-2xl font-bold text-gray-600 mb-1">2nd</div>
             <h3 class="font-semibold text-gray-900">#{{ topThree[1].number }}</h3>
-            <h3 class="font-semibold text-gray-900">{{ topThree[1].name }}</h3>
+            <h3 class="font-semibold text-gray-900">{{ getTitle(topThree[1]) }} {{ topThree[1].name }}</h3>
             
           </div>
         </div>
@@ -40,7 +40,7 @@
             />
             <div class="text-3xl font-bold text-yellow-600 mb-1">👑 1st</div>
             <h3 class="font-semibold text-gray-900">#{{ topThree[0].number }}</h3>
-            <h3 class="font-semibold text-gray-900">{{ topThree[0].name }}</h3>
+            <h3 class="font-semibold text-gray-900">{{ getTitle(topThree[0]) }} {{ topThree[0].name }}</h3>
             
           </div>
         </div>
@@ -55,7 +55,7 @@
             />
             <div class="text-2xl font-bold text-orange-600 mb-1">3rd</div>
             <h3 class="font-semibold text-gray-900">#{{ topThree[2].number }}</h3>
-            <h3 class="font-semibold text-gray-900">{{ topThree[2].name }}</h3>
+            <h3 class="font-semibold text-gray-900">{{ getTitle(topThree[2]) }} {{ topThree[2].name }}</h3>
             
           </div>
         </div>
@@ -91,7 +91,12 @@
                 #{{ result.number }}
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 border-b">
-                <div class="font-medium">{{ result.name }}</div>
+                <div class="font-medium">
+                  {{ getTitle(result) }} {{ result.name }}
+                  <span v-if="result.is_pair && result.member_names && result.member_names.length > 0" class="text-xs text-gray-500 block mt-1">
+                    ({{ result.member_names.join(' & ') }})
+                  </span>
+                </div>
               </td>
               <td 
                 v-for="(score, roundName) in getScoreHeaders()" 
@@ -149,6 +154,10 @@ interface Result {
   id: number
   number: number
   name: string
+  gender?: string
+  is_pair?: boolean
+  member_names?: string[]
+  member_genders?: string[]
   image: string
   scores: Record<string, number>
   final_score: number
@@ -180,6 +189,16 @@ const props = defineProps<Props>()
 const topThree = computed(() => {
   return props.results.slice(0, 3)
 })
+
+// Helper function to get title based on gender
+const getTitle = (result: Result): string => {
+  if (result.is_pair && result.member_genders && result.member_genders.length > 0) {
+    return result.member_genders.map(g => g === 'male' ? 'Mr' : 'Miss').join(' & ')
+  }
+  if (result.gender === 'male') return 'Mr'
+  if (result.gender === 'female') return 'Miss'
+  return ''
+}
 
 const getScoreHeaders = () => {
   if (props.results.length === 0) return {}

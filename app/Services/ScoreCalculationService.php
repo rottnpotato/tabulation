@@ -113,10 +113,24 @@ class ScoreCalculationService
                 foreach ($pageant->contestants as $contestant) {
                     $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
                     if ($roundScore !== null) {
+                        $memberNames = [];
+                        $memberGenders = [];
+
+                        if ($contestant->is_pair && $contestant->members->isNotEmpty()) {
+                            foreach ($contestant->members as $member) {
+                                $memberNames[] = $member->name;
+                                $memberGenders[] = $member->gender;
+                            }
+                        }
+
                         $contestantScores[] = [
                             'id' => $contestant->id,
                             'number' => $contestant->number,
                             'name' => $contestant->name,
+                            'gender' => $contestant->gender,
+                            'is_pair' => $contestant->is_pair ?? false,
+                            'member_names' => $memberNames,
+                            'member_genders' => $memberGenders,
                             'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                             'score' => round($roundScore, 2),
                         ];

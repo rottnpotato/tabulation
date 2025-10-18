@@ -339,11 +339,26 @@ class TabulatorController extends Controller
         $finalResults = $this->scoreCalculationService->calculatePageantStageScores($pageant, 'final');
 
         // Convert to collection for consistency with frontend expectations
-        $contestants = collect($contestants)->map(function ($contestant) {
+        $contestants = collect($contestants)->map(function ($contestant) use ($pageant) {
+            $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
+            $memberNames = [];
+            $memberGenders = [];
+
+            if ($contestantModel && $contestantModel->is_pair && $contestantModel->members->isNotEmpty()) {
+                foreach ($contestantModel->members as $member) {
+                    $memberNames[] = $member->name;
+                    $memberGenders[] = $member->gender;
+                }
+            }
+
             return [
                 'id' => $contestant['id'],
                 'number' => $contestant['number'],
                 'name' => $contestant['name'],
+                'gender' => $contestantModel->gender ?? null,
+                'is_pair' => $contestantModel->is_pair ?? false,
+                'member_names' => $memberNames,
+                'member_genders' => $memberGenders,
                 'region' => $contestant['region'],
                 'image' => $contestant['image'],
                 'scores' => $contestant['scores'],
@@ -370,11 +385,26 @@ class TabulatorController extends Controller
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
         // Compute results for each stage
-        $overallResults = collect($this->scoreCalculationService->calculatePageantFinalScores($pageant))->map(function ($contestant) {
+        $overallResults = collect($this->scoreCalculationService->calculatePageantFinalScores($pageant))->map(function ($contestant) use ($pageant) {
+            $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
+            $memberNames = [];
+            $memberGenders = [];
+
+            if ($contestantModel && $contestantModel->is_pair && $contestantModel->members->isNotEmpty()) {
+                foreach ($contestantModel->members as $member) {
+                    $memberNames[] = $member->name;
+                    $memberGenders[] = $member->gender;
+                }
+            }
+
             return [
                 'id' => $contestant['id'],
                 'number' => $contestant['number'],
                 'name' => $contestant['name'],
+                'gender' => $contestantModel->gender ?? null,
+                'is_pair' => $contestantModel->is_pair ?? false,
+                'member_names' => $memberNames,
+                'member_genders' => $memberGenders,
                 'image' => $contestant['image'],
                 'scores' => $contestant['scores'],
                 'final_score' => $contestant['finalScore'],
@@ -382,11 +412,26 @@ class TabulatorController extends Controller
             ];
         });
 
-        $semiResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'semi-final'))->map(function ($contestant) {
+        $semiResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'semi-final'))->map(function ($contestant) use ($pageant) {
+            $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
+            $memberNames = [];
+            $memberGenders = [];
+
+            if ($contestantModel && $contestantModel->is_pair && $contestantModel->members->isNotEmpty()) {
+                foreach ($contestantModel->members as $member) {
+                    $memberNames[] = $member->name;
+                    $memberGenders[] = $member->gender;
+                }
+            }
+
             return [
                 'id' => $contestant['id'],
                 'number' => $contestant['number'],
                 'name' => $contestant['name'],
+                'gender' => $contestantModel->gender ?? null,
+                'is_pair' => $contestantModel->is_pair ?? false,
+                'member_names' => $memberNames,
+                'member_genders' => $memberGenders,
                 'image' => $contestant['image'],
                 'scores' => $contestant['scores'],
                 'final_score' => $contestant['finalScore'],
@@ -394,11 +439,26 @@ class TabulatorController extends Controller
             ];
         });
 
-        $finalResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'final'))->map(function ($contestant) {
+        $finalResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'final'))->map(function ($contestant) use ($pageant) {
+            $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
+            $memberNames = [];
+            $memberGenders = [];
+
+            if ($contestantModel && $contestantModel->is_pair && $contestantModel->members->isNotEmpty()) {
+                foreach ($contestantModel->members as $member) {
+                    $memberNames[] = $member->name;
+                    $memberGenders[] = $member->gender;
+                }
+            }
+
             return [
                 'id' => $contestant['id'],
                 'number' => $contestant['number'],
                 'name' => $contestant['name'],
+                'gender' => $contestantModel->gender ?? null,
+                'is_pair' => $contestantModel->is_pair ?? false,
+                'member_names' => $memberNames,
+                'member_genders' => $memberGenders,
                 'image' => $contestant['image'],
                 'scores' => $contestant['scores'],
                 'final_score' => $contestant['finalScore'],

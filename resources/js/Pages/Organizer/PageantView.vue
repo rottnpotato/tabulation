@@ -578,7 +578,10 @@
                       <Target class="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <h4 class="font-semibold text-gray-900">{{ round.name }}</h4>
+                      <h4 class="font-semibold text-gray-900">
+                        {{ round.name }}
+                        <span v-if="round.identifier" class="ml-2 text-sm font-mono text-gray-500">[{{ round.identifier }}]</span>
+                      </h4>
                       <p class="text-sm text-gray-500">{{ round.description || 'No description provided' }}</p>
                     </div>
                   </div>
@@ -1531,6 +1534,21 @@
                       </div>
 
                       <div>
+                        <label for="roundIdentifier" class="block text-sm font-medium text-gray-700 mb-1">
+                          Identifier
+                        </label>
+                        <input
+                          id="roundIdentifier"
+                          v-model="roundForm.identifier"
+                          type="text"
+                          maxlength="50"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. SF1, F, Q1"
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Unique identifier for this round (optional)</p>
+                      </div>
+
+                      <div>
                         <label for="roundWeight" class="block text-sm font-medium text-gray-700 mb-1">
                           Weight (%) <span class="text-red-500">*</span>
                         </label>
@@ -1941,6 +1959,7 @@ const roundForm = ref({
   name: '',
   description: '',
   type: 'semi-final',
+  identifier: '',
   weight: 100,
   display_order: 0,
   processing: false
@@ -2528,6 +2547,7 @@ const openEditRoundModal = (round) => {
     name: round.name,
     description: round.description || '',
     type: round.type,
+    identifier: round.identifier || '',
     weight: round.weight,
     display_order: round.display_order,
     processing: false
@@ -2547,6 +2567,7 @@ const resetRoundForm = () => {
     name: '',
     description: '',
     type: 'semi-final',
+    identifier: '',
     weight: 100,
     display_order: 0,
     processing: false
@@ -2569,6 +2590,7 @@ const submitRoundForm = () => {
     name: roundForm.value.name,
     description: roundForm.value.description,
     type: roundForm.value.type,
+    identifier: roundForm.value.identifier,
     weight: roundForm.value.weight,
     display_order: roundForm.value.display_order
   }, {

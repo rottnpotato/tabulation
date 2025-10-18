@@ -16,7 +16,10 @@
             <h1 class="text-2xl md:text-3xl font-bold text-white">Judge Scoring Panel</h1>
             <p class="text-amber-100 mt-1" v-if="pageant">{{ pageant.name }}</p>
             <div v-if="currentRound" class="flex items-center gap-2 mt-1">
-              <p class="text-amber-200 text-sm">{{ currentRound.name }}</p>
+              <p class="text-amber-200 text-sm">
+                {{ currentRound.name }}
+                <span v-if="currentRound.identifier" class="font-mono ml-1">[{{ currentRound.identifier }}]</span>
+              </p>
               <div v-if="pageant.current_round_id === currentRound.id && !currentRound.is_locked" class="inline-flex items-center px-2 py-0.5 bg-amber-400 text-amber-900 text-xs font-medium rounded-full">
                 Current Round
               </div>

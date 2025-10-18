@@ -21,6 +21,7 @@ class Round extends Model
         'name',
         'description',
         'type',
+        'identifier',
         'weight',
         'display_order',
         'is_active',
@@ -122,5 +123,34 @@ class Round extends Model
             'locked_at' => null,
             'locked_by' => null,
         ]);
+    }
+
+    /**
+     * Generate a default identifier based on type if not provided
+     */
+    public function generateIdentifier(): string
+    {
+        $typePrefix = $this->type === 'final' ? 'F' : 'SF';
+        $count = self::where('pageant_id', $this->pageant_id)
+            ->where('type', $this->type)
+            ->count();
+
+        return $typePrefix.($count > 0 ? $count : '');
+    }
+
+    /**
+     * Check if this round is a semi-final round
+     */
+    public function isSemiFinal(): bool
+    {
+        return $this->type === 'semi-final';
+    }
+
+    /**
+     * Check if this round is a final round
+     */
+    public function isFinal(): bool
+    {
+        return $this->type === 'final';
     }
 }

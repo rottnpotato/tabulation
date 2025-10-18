@@ -81,6 +81,7 @@
                   <div>
                     <div class="text-sm font-medium text-gray-900 flex items-center gap-2">
                       {{ round.name }}
+                      <span v-if="round.identifier" class="font-mono text-xs text-gray-500">[{{ round.identifier }}]</span>
                       <span v-if="pageant.current_round_id === round.id" class="inline-flex items-center px-2 py-0.5 bg-amber-500 text-white text-xs font-medium rounded-full">
                         Current
                       </span>

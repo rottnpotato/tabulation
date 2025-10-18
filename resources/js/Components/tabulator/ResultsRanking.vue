@@ -38,7 +38,12 @@
                 class="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
               />
               <div>
-                <p class="font-semibold text-gray-900">{{ contestant.name }}</p>
+                <p class="font-semibold text-gray-900">
+                  {{ contestant.name }}
+                  <span v-if="contestant.is_pair && contestant.member_genders && contestant.member_genders.length > 0" class="text-sm text-gray-500">
+                    ({{ contestant.member_genders.map(g => g === 'male' ? 'Mr' : 'Ms').join(' & ') }})
+                  </span>
+                </p>
                 <p class="text-sm text-gray-500">#{{ contestant.number }} • {{ contestant.region }}</p>
               </div>
             </div>
@@ -115,6 +120,10 @@ interface Contestant {
   id: number
   name: string
   number: number
+  gender?: string
+  is_pair?: boolean
+  member_names?: string[]
+  member_genders?: string[]
   region?: string
   image: string
   scores: Record<string, number>

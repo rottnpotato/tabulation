@@ -54,7 +54,12 @@
                 
                 <!-- Winner Details -->
                 <div class="space-y-3 min-w-[200px]">
-                  <h3 class="text-lg font-semibold text-gray-900 leading-tight">{{ winner.name }}</h3>
+                  <h3 class="text-lg font-semibold text-gray-900 leading-tight">
+                    {{ getTitle(winner) }} {{ winner.name }}
+                  </h3>
+                  <p v-if="winner.is_pair && winner.member_names && winner.member_names.length > 0" class="text-sm text-gray-600">
+                    ({{ winner.member_names.join(' & ') }})
+                  </p>
                   <div class="border-t border-gray-200 pt-2">
                     <div class="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1">Score</div>
                     <div class="text-xl font-light text-gray-900">{{ formatScore(winner.score) }}</div>
@@ -112,6 +117,10 @@ interface WinnerInfo {
   id: number
   number: number
   name: string
+  gender?: string
+  is_pair?: boolean
+  member_names?: string[]
+  member_genders?: string[]
   image: string
   score: number
 }
@@ -135,6 +144,15 @@ const roundEntries = computed(() => {
 
 const formatScore = (score: number): string => {
   return score.toFixed(2)
+}
+
+const getTitle = (winner: WinnerInfo): string => {
+  if (winner.is_pair && winner.member_genders && winner.member_genders.length > 0) {
+    return winner.member_genders.map(g => g === 'male' ? 'Mr' : 'Miss').join(' & ')
+  }
+  if (winner.gender === 'male') return 'Mr'
+  if (winner.gender === 'female') return 'Miss'
+  return ''
 }
 </script>
 
