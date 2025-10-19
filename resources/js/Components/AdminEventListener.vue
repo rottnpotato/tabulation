@@ -27,7 +27,7 @@ onMounted(() => {
   // Initialize notification sound (using a data URI for a subtle notification beep)
   // This is a short, pleasant notification tone
   initializeNotificationSound();
-  
+
   // Listen for admin notifications (pageant creation)
   const adminNotificationChannel = window.Echo.private('admin-notifications')
     .listen('.pageant.created', (data) => {

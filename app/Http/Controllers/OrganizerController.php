@@ -77,7 +77,7 @@ class OrganizerController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'username' => $request->username,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
             'role' => 'organizer',
             'is_verified' => false,
             'verification_token' => $verificationToken,
@@ -153,14 +153,19 @@ class OrganizerController extends Controller
             "Verified organizer account for '{$organizer->name}' ({$organizer->email})"
         );
 
+        // Ensure user is logged out before showing verification success
+        Auth::logout();
+
         // Show verification success page with link to set new password
+        $resetToken = $this->generatePasswordResetToken($organizer);
+
         return Inertia::render('VerificationSuccess', [
             'user' => [
                 'id' => $organizer->id,
                 'name' => $organizer->name,
                 'email' => $organizer->email,
             ],
-            'resetPasswordUrl' => route('password.reset', ['token' => $this->generatePasswordResetToken($organizer)]),
+            'resetPasswordUrl' => route('password.reset', ['token' => $resetToken, 'email' => $organizer->email]),
         ]);
     }
 
@@ -172,7 +177,7 @@ class OrganizerController extends Controller
         $token = Str::random(64);
 
         // Store the token in the password reset table
-        DB::table('password_resets')->updateOrInsert(
+        DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $user->email],
             [
                 'token' => Hash::make($token),

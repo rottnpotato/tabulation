@@ -246,14 +246,32 @@ class AdminController extends Controller
     // Pageant methods
     public function createPageant()
     {
-        // Get all organizers for assigning to the pageant
-        $organizers = User::where('role', 'organizer')->get()->map(function ($organizer) {
-            return [
-                'id' => $organizer->id,
-                'name' => $organizer->name,
-                'email' => $organizer->email,
-            ];
-        });
+        // Get all organizers for assigning to the pageant with their pageants
+        $organizers = User::where('role', 'organizer')
+            ->with(['pageants' => function ($query) {
+                $query->whereNotNull('start_date')
+                    ->whereNotNull('end_date')
+                    ->whereNotIn('status', ['Cancelled', 'Archived'])
+                    ->select('pageants.id', 'pageants.name', 'pageants.start_date', 'pageants.end_date');
+            }])
+            ->get()
+            ->map(function ($organizer) {
+                return [
+                    'id' => $organizer->id,
+                    'name' => $organizer->name,
+                    'email' => $organizer->email,
+                    'pageants' => $organizer->pageants->map(function ($pageant) {
+                        return [
+                            'id' => $pageant->id,
+                            'name' => $pageant->name,
+                            'start_date' => $pageant->start_date->format('Y-m-d'),
+                            'end_date' => $pageant->end_date->format('Y-m-d'),
+                            'start_date_formatted' => $pageant->start_date->format('M d, Y'),
+                            'end_date_formatted' => $pageant->end_date->format('M d, Y'),
+                        ];
+                    }),
+                ];
+            });
 
         return Inertia::render('Admin/Pageants/Create', [
             'organizers' => $organizers,
@@ -276,6 +294,28 @@ class AdminController extends Controller
                 'scoring_system' => 'required|string|in:percentage,1-10,1-5,points',
                 'contestant_type' => 'required|string|in:solo,pairs,both',
             ]);
+
+            // Check for organizer conflicts if dates are provided
+            if (isset($validated['organizer_ids']) && $validated['start_date'] && $validated['end_date']) {
+                $conflicts = [];
+                foreach ($validated['organizer_ids'] as $organizerId) {
+                    $conflict = Pageant::getOrganizerConflict(
+                        $organizerId,
+                        $validated['start_date'],
+                        $validated['end_date']
+                    );
+                    if ($conflict) {
+                        $organizer = User::find($organizerId);
+                        $conflicts[] = "{$organizer->name} is already assigned to '{$conflict['pageant_name']}' ({$conflict['start_date']} - {$conflict['end_date']})";
+                    }
+                }
+
+                if (! empty($conflicts)) {
+                    return back()
+                        ->withInput()
+                        ->withErrors(['organizer_ids' => 'The following organizers have scheduling conflicts: '.implode(', ', $conflicts)]);
+                }
+            }
 
             // Create pageant
             $pageant = Pageant::create([

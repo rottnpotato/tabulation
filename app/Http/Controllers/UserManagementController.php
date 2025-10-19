@@ -85,7 +85,7 @@ class UserManagementController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'username' => $validated['username'],
-            'password' => bcrypt(Str::random(16)), // Random password, will be reset via email
+            'password' => Str::random(16),
             'role' => 'organizer',
             'is_active' => true,
         ]);
@@ -343,7 +343,7 @@ class UserManagementController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'username' => $validated['username'],
-            'password' => bcrypt($validated['password']),
+            'password' => $validated['password'],
             'role' => 'admin',
             'is_active' => true,
             'email_verified_at' => now(), // Admins are pre-verified
@@ -433,9 +433,7 @@ class UserManagementController extends Controller
         ]);
 
         // Only update password if provided
-        if (isset($validated['password'])) {
-            $validated['password'] = bcrypt($validated['password']);
-        } else {
+        if (!isset($validated['password'])) {
             unset($validated['password']);
         }
 

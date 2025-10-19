@@ -17,34 +17,27 @@
             Thank you, <span class="font-semibold">{{ user.name }}</span>! Your organizer account has been verified.
           </p>
           
-          <div class="bg-teal-50 border-l-4 border-teal-500 p-4 mb-6">
+          <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6">
             <div class="flex">
               <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-teal-600" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                <svg class="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                 </svg>
               </div>
               <div class="ml-3">
-                <p class="text-sm text-teal-700 text-left">
-                  For security reasons, we recommend setting a new password for your account.
+                <p class="text-sm text-amber-700 text-left font-semibold">
+                  You must set a password before you can login to your account.
                 </p>
               </div>
             </div>
           </div>
           
           <div class="space-y-4">
-            <a 
-              :href="resetPasswordUrl" 
-              class="block w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-            >
-              Set Your Password
-            </a>
-            
             <Link 
-              href="/login" 
-              class="block w-full py-3 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+              :href="resetPasswordUrl" 
+              class="block w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 shadow-md"
             >
-              Continue to Login
+              Set Your Password Now
             </Link>
           </div>
           

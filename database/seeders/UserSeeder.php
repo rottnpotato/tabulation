@@ -17,25 +17,25 @@ class UserSeeder extends Seeder
         User::factory()->admin()->create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
-            'password' => Hash::make('password'),
+            'password' => 'password',
         ]);
 
         User::factory()->organizer()->create([
             'name' => 'Organizer User',
             'email' => 'organizer@example.com',
-            'password' => Hash::make('password'),
+            'password' => 'password',
         ]);
 
         User::factory()->tabulator()->create([
             'name' => 'Tabulator User',
             'email' => 'tabulator@example.com',
-            'password' => Hash::make('password'),
+            'password' => 'password',
         ]);
 
         User::factory()->judge()->create([
             'name' => 'Judge User',
             'email' => 'judge@example.com',
-            'password' => Hash::make('password'),
+            'password' => 'password',
         ]);
 
         // Create additional users (optional)

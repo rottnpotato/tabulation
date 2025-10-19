@@ -662,4 +662,63 @@ class Pageant extends Model
     {
         return $this->contestant_type === 'both';
     }
+
+    /**
+     * Check if an organizer has conflicting pageants for a given date range
+     *
+     * @param  int  $organizerId  The organizer's user ID
+     * @param  string|null  $startDate  The start date to check
+     * @param  string|null  $endDate  The end date to check
+     * @param  int|null  $excludePageantId  Optional pageant ID to exclude from the check (for updates)
+     * @return array|null Returns array with conflict info if conflict exists, null otherwise
+     */
+    public static function getOrganizerConflict(int $organizerId, ?string $startDate, ?string $endDate, ?int $excludePageantId = null): ?array
+    {
+        // If no dates provided, there's no conflict
+        if (! $startDate || ! $endDate) {
+            return null;
+        }
+
+        $query = self::whereHas('organizers', function ($query) use ($organizerId) {
+            $query->where('users.id', $organizerId);
+        })
+            ->where(function ($query) use ($startDate, $endDate) {
+                // Check for overlapping date ranges
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    // New pageant starts during existing pageant
+                    $q->whereBetween('start_date', [$startDate, $endDate])
+                        ->orWhereBetween('end_date', [$startDate, $endDate])
+                      // Existing pageant is completely within new pageant
+                        ->orWhere(function ($q2) use ($startDate, $endDate) {
+                            $q2->where('start_date', '>=', $startDate)
+                                ->where('end_date', '<=', $endDate);
+                        })
+                      // New pageant is completely within existing pageant
+                        ->orWhere(function ($q2) use ($startDate, $endDate) {
+                            $q2->where('start_date', '<=', $startDate)
+                                ->where('end_date', '>=', $endDate);
+                        });
+                });
+            })
+            ->whereNotNull('start_date')
+            ->whereNotNull('end_date');
+
+        // Exclude specific pageant if provided (for update scenarios)
+        if ($excludePageantId) {
+            $query->where('id', '!=', $excludePageantId);
+        }
+
+        $conflictingPageant = $query->first();
+
+        if ($conflictingPageant) {
+            return [
+                'pageant_id' => $conflictingPageant->id,
+                'pageant_name' => $conflictingPageant->name,
+                'start_date' => $conflictingPageant->start_date->format('M d, Y'),
+                'end_date' => $conflictingPageant->end_date->format('M d, Y'),
+            ];
+        }
+
+        return null;
+    }
 }

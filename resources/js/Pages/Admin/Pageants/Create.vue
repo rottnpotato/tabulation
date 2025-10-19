@@ -209,7 +209,17 @@
 
             <!-- Organizers -->
             <div>
-              <label for="organizers" class="block text-sm font-medium text-gray-700 mb-1">Assign Organizers</label>
+              <div class="flex items-center justify-between mb-1">
+                <label for="organizers" class="block text-sm font-medium text-gray-700">Assign Organizers</label>
+                <span v-if="form.start_date && form.end_date && organizerConflicts.size > 0" class="text-xs text-amber-600 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                  {{ organizerConflicts.size }} organizer{{ organizerConflicts.size > 1 ? 's' : '' }} unavailable
+                </span>
+              </div>
               <div 
                 class="bg-white w-full rounded-md border border-gray-300 shadow-sm p-2 focus-within:border-teal-500 focus-within:ring focus-within:ring-teal-200 focus-within:ring-opacity-50 transition-colors"
               >
@@ -220,24 +230,54 @@
                   <label 
                     v-for="organizer in props.organizers" 
                     :key="organizer.id" 
-                    class="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer transition-colors"
+                    class="flex items-center p-2 rounded-md transition-colors"
+                    :class="{
+                      'hover:bg-gray-50 cursor-pointer': !hasConflict(organizer.id),
+                      'bg-red-50 cursor-not-allowed opacity-75': hasConflict(organizer.id)
+                    }"
                   >
                     <input 
                       type="checkbox" 
                       :value="organizer.id" 
                       v-model="form.organizer_ids"
+                      :disabled="hasConflict(organizer.id)"
                       class="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                      :class="{ 'cursor-not-allowed': hasConflict(organizer.id) }"
                     />
-                    <div class="ml-3">
-                      <div class="text-sm font-medium text-gray-700">{{ organizer.name }}</div>
-                      <div class="text-xs text-gray-500">{{ organizer.email }}</div>
+                    <div class="ml-3 flex-1">
+                      <div class="flex items-center gap-2">
+                        <div class="text-sm font-medium" :class="hasConflict(organizer.id) ? 'text-gray-500' : 'text-gray-700'">
+                          {{ organizer.name }}
+                        </div>
+                        <span v-if="hasConflict(organizer.id)" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                          </svg>
+                          Conflict
+                        </span>
+                      </div>
+                      <div class="text-xs" :class="hasConflict(organizer.id) ? 'text-gray-400' : 'text-gray-500'">
+                        {{ organizer.email }}
+                      </div>
+                      <div v-if="hasConflict(organizer.id)" class="text-xs text-red-600 mt-1">
+                        Already assigned to: {{ getConflictDetails(organizer.id)?.pageant_name }}<br>
+                        ({{ getConflictDetails(organizer.id)?.start_date }} - {{ getConflictDetails(organizer.id)?.end_date }})
+                      </div>
                     </div>
                   </label>
                 </div>
               </div>
+              <p v-if="errors.organizer_ids" class="mt-2 text-sm text-red-600">{{ errors.organizer_ids }}</p>
               <div class="mt-2 flex items-center justify-between">
                 <p class="text-xs text-gray-500">
-                  Optional. Selected organizers will be able to manage this pageant
+                  <span v-if="!form.start_date || !form.end_date" class="text-amber-600 font-medium">
+                    💡 Set start and end dates above to check organizer availability
+                  </span>
+                  <span v-else>
+                    Optional. Selected organizers will be able to manage this pageant
+                  </span>
                 </p>
                 <button 
                   type="button"
@@ -366,6 +406,10 @@ const props = defineProps({
   organizers: {
     type: Array,
     default: () => []
+  },
+  conflicts: {
+    type: Object,
+    default: () => ({})
   }
 });
 
@@ -396,6 +440,43 @@ const showNewOrganizerModal = ref(false);
 // Get the notification service
 const notify = useNotification();
 
+// Compute organizers with date conflicts dynamically
+const organizerConflicts = computed(() => {
+  if (!form.start_date || !form.end_date || !props.organizers) {
+    return new Map();
+  }
+
+  const conflicts = new Map();
+  const formStart = new Date(form.start_date);
+  const formEnd = new Date(form.end_date);
+
+  props.organizers.forEach(organizer => {
+    if (organizer.pageants && organizer.pageants.length > 0) {
+      for (const pageant of organizer.pageants) {
+        if (pageant.start_date && pageant.end_date) {
+          const pageantStart = new Date(pageant.start_date);
+          const pageantEnd = new Date(pageant.end_date);
+
+          // Check for date overlap
+          const hasOverlap = (formStart <= pageantEnd && formEnd >= pageantStart);
+
+          if (hasOverlap) {
+            conflicts.set(organizer.id, {
+              pageant_id: pageant.id,
+              pageant_name: pageant.name,
+              start_date: pageant.start_date_formatted || pageant.start_date,
+              end_date: pageant.end_date_formatted || pageant.end_date,
+            });
+            break; // Only need to show one conflict
+          }
+        }
+      }
+    }
+  });
+
+  return conflicts;
+});
+
 // Submit the form to create the pageant
 const submitForm = () => {
   console.log('submitForm called - starting validation');
@@ -422,6 +503,18 @@ const submitForm = () => {
   
   if (form.start_date && form.end_date && new Date(form.end_date) < new Date(form.start_date)) {
     errors.value.end_date = 'End date must be after start date';
+  }
+  
+  // Check if any selected organizers have conflicts
+  if (form.organizer_ids && form.organizer_ids.length > 0) {
+    const conflictedOrganizerIds = form.organizer_ids.filter(id => hasConflict(id));
+    if (conflictedOrganizerIds.length > 0) {
+      const conflictedNames = conflictedOrganizerIds.map(id => {
+        const organizer = props.organizers.find(o => o.id === id);
+        return organizer?.name;
+      }).filter(Boolean);
+      errors.value.organizer_ids = `Cannot assign organizers with scheduling conflicts: ${conflictedNames.join(', ')}`;
+    }
   }
   
   // If there are validation errors, stop submission
@@ -467,6 +560,16 @@ const saveAsDraft = () => {
   console.log('saveAsDraft called');
   form.status = 'Draft';
   submitForm();
+};
+
+// Check if an organizer has a conflict
+const hasConflict = (organizerId) => {
+  return organizerConflicts.value.has(organizerId);
+};
+
+// Get conflict details for an organizer
+const getConflictDetails = (organizerId) => {
+  return organizerConflicts.value.get(organizerId);
 };
 
 // Handle newly created organizer

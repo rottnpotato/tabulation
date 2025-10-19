@@ -25,7 +25,7 @@ class DetailedPageantSeeder extends Seeder
             $admin = User::create([
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
-                'password' => bcrypt('admin123'),
+                'password' => 'admin123',
                 'role' => 'admin',
                 'email_verified_at' => now(),
             ]);
@@ -38,7 +38,7 @@ class DetailedPageantSeeder extends Seeder
                 ['email' => "judge{$i}@example.com"],
                 [
                     'name' => "Judge {$i}",
-                    'password' => bcrypt('password'),
+                    'password' => 'password',
                     'role' => 'judge',
                     'email_verified_at' => now(),
                 ]
@@ -52,7 +52,7 @@ class DetailedPageantSeeder extends Seeder
                 ['email' => "organizer{$i}@example.com"],
                 [
                     'name' => "Organizer {$i}",
-                    'password' => bcrypt('password'),
+                    'password' => 'password',
                     'role' => 'organizer',
                     'email_verified_at' => now(),
                 ]

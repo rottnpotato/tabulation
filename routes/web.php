@@ -11,6 +11,7 @@ use App\Http\Controllers\TabulatorController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,23 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset Routes
+Route::get('/forgot-password', function () {
+    return Inertia::render('Auth/ForgotPassword');
+})->middleware('guest')->name('password.request');
+
+Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])
+    ->middleware('guest')
+    ->name('password.email');
+
+Route::get('/reset-password/{token}', function ($token) {
+    return Inertia::render('Auth/ResetPassword', ['token' => $token, 'email' => request('email')]);
+})->middleware('guest')->name('password.reset');
+
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+    ->middleware('guest')
+    ->name('password.update');
 
 // Public verification routes (no auth required)
 Route::get('/verify-organizer/{token}', [OrganizerController::class, 'verify'])->name('verify.organizer');

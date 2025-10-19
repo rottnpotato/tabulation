@@ -20,7 +20,7 @@ class PageantSeeder extends Seeder
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Admin User',
-                'password' => bcrypt('admin123'),
+                'password' => 'admin123',
                 'role' => 'admin',
                 'email_verified_at' => now(),
             ]
@@ -33,7 +33,7 @@ class PageantSeeder extends Seeder
                 ['email' => "organizer{$i}@example.com"],
                 [
                     'name' => "Organizer {$i}",
-                    'password' => bcrypt('password'),
+                    'password' => 'password',
                     'role' => 'organizer',
                     'email_verified_at' => now(),
                 ]
@@ -46,7 +46,7 @@ class PageantSeeder extends Seeder
                 ['email' => "tabulator{$i}@example.com"],
                 [
                     'name' => "Tabulator {$i}",
-                    'password' => bcrypt('password'),
+                    'password' => 'password',
                     'role' => 'tabulator',
                     'email_verified_at' => now(),
                 ]
@@ -59,7 +59,7 @@ class PageantSeeder extends Seeder
                 ['email' => "judge{$i}@example.com"],
                 [
                     'name' => "Judge {$i}",
-                    'password' => bcrypt('password'),
+                    'password' => 'password',
                     'role' => 'judge',
                     'email_verified_at' => now(),
                 ]

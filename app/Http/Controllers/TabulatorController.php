@@ -201,7 +201,7 @@ class TabulatorController extends Controller
         if ($judge && $pageant->judges()->where('user_id', $judgeId)->exists()) {
             // Generate a new password
             $newPassword = Str::random(8);
-            $judge->update(['password' => bcrypt($newPassword)]);
+            $judge->update(['password' => $newPassword]);
 
             // TODO: Send email with new password
             // Mail::to($judge->email)->send(new PasswordReset($judge, $newPassword));

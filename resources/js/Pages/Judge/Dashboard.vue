@@ -25,9 +25,9 @@
     </div>
 
     <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <!-- <div class="grid grid-cols-1 md:grid-cols-4 gap-6"> -->
       <!-- Assigned Pageants -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <!-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center">
           <div class="p-3 rounded-xl bg-amber-100">
             <Calendar class="h-6 w-6 text-amber-600" />
@@ -37,10 +37,10 @@
             <p class="text-2xl font-bold text-gray-900">{{ pageants.length }}</p>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Total Scores Needed -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <!-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center">
           <div class="p-3 rounded-xl bg-blue-100">
             <FileText class="h-6 w-6 text-blue-600" />
@@ -50,10 +50,10 @@
             <p class="text-2xl font-bold text-gray-900">{{ totalScoresNeeded }}</p>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Scores Submitted -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <!-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center">
           <div class="p-3 rounded-xl bg-green-100">
             <CheckCircle class="h-6 w-6 text-green-600" />
@@ -63,10 +63,10 @@
             <p class="text-2xl font-bold text-gray-900">{{ totalScoresSubmitted }}</p>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Overall Completion -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <!-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-gray-500">Overall Completion</p>
@@ -83,7 +83,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Tools: Search / Filter / Sort -->
     <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 md:p-5">

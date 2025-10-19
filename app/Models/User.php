@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Mail\OrganizerVerification;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -27,8 +28,10 @@ class User extends Authenticatable
         'username',
         'role',
         'is_active',
+        'is_verified',
         'email_verified_at',
         'verification_token',
+        'verification_expires_at',
         'notes',
     ];
 
@@ -127,6 +130,17 @@ class User extends Authenticatable
         }
 
         return now()->gt($this->verification_expires_at);
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 
     /**
