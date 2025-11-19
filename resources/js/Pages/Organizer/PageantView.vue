@@ -542,13 +542,13 @@
                 <Users class="h-4 w-4 mr-1.5" />
                 Add Pair
               </button>
-              <Link 
+              <!-- <Link 
                 :href="route('organizer.pageant.contestants-management', pageant.id)"
                 class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 btn-transition"
               >
                 <Users class="h-4 w-4 mr-1.5" />
                 Manage All
-              </Link>
+              </Link> -->
             </div>
           </div>
           
