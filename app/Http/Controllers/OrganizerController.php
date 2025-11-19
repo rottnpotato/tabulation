@@ -1882,8 +1882,10 @@ class OrganizerController extends Controller
         }
 
         // Check if the status transition is allowed
-        // Allow Draft -> Completed if date has elapsed
-        $allowDirectCompletion = $isDateElapsed && $oldStatus === 'Draft' && $newStatus === 'Completed';
+        // Allow Draft -> Completed OR Ongoing/Active -> Completed if date has elapsed
+        $allowDirectCompletion = $isDateElapsed && 
+            ($oldStatus === 'Draft' || $oldStatus === 'Ongoing' || $oldStatus === 'Active') && 
+            $newStatus === 'Completed';
 
         if (! $allowDirectCompletion && ! $this->isValidStatusTransition($oldStatus, $newStatus)) {
             $user = Auth::user();
@@ -1989,6 +1991,17 @@ class OrganizerController extends Controller
             $pageant->id,
             "Organizer {$organizer->name} requested edit access for pageant '{$pageant->name}'"
         );
+
+        // Send email notification to admins
+        try {
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                Mail::to($admin->email)->send(new \App\Mail\EditAccessRequested($organizer, $pageant, $validated['reason']));
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending edit access request email: ' . $e->getMessage());
+            // Continue execution, don't fail the request just because email failed
+        }
 
         return back()
             ->with('success', 'Your edit access request has been submitted. An administrator will review it soon.');

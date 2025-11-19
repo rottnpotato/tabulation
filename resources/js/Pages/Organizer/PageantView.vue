@@ -329,12 +329,12 @@
                   </span>
                 </div>
                 
-                <div v-if="getAvailableStatusTransitions().length > 0" class="flex items-end gap-3">
+                <div v-if="availableStatusTransitions.length > 0" class="flex items-end gap-3">
                   <div class="flex-1 max-w-xs">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Change Status To:</label>
                     <CustomSelect
                       v-model="selectedNewStatus"
-                      :options="getAvailableStatusTransitions()"
+                      :options="availableStatusTransitions"
                       placeholder="Select new status"
                       variant="indigo"
                     />
@@ -3016,7 +3016,7 @@ const getProgressTooltip = (progress) => {
 }
 
 // Status management functions
-const getAvailableStatusTransitions = () => {
+const availableStatusTransitions = computed(() => {
   const currentStatus = props.pageant.status
   
   // If pageant date has elapsed and it's not completed, auto-complete
@@ -3039,7 +3039,7 @@ const getAvailableStatusTransitions = () => {
     value: status,
     label: status
   }))
-}
+})
 
 const getStatusTransitionHelp = (fromStatus, toStatus) => {
   const transitions = {
@@ -3067,7 +3067,6 @@ const updateStatus = () => {
     onSuccess: () => {
       statusUpdateForm.value.processing = false
       selectedNewStatus.value = ''
-      router.reload({ only: ['pageant'] })
     },
     onError: (errors) => {
       statusUpdateForm.value.processing = false

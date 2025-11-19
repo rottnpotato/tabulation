@@ -25,19 +25,37 @@
       @close="CloseSettingsModal"
       @update="UpdateSettings" 
     />
-
-    <!-- Notification System -->
-    <NotificationSystem />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
+import { Head, usePage } from '@inertiajs/vue3';
 import SideNav from '@/Components/SideNav.vue';
 import { Calendar, Settings, Crown } from 'lucide-vue-next';
 import OrganizerSettingsModal from '@/Components/modals/OrganizerSettingsModal.vue';
-import NotificationSystem from '@/Components/NotificationSystem.vue';
+import { useNotification } from '@/Composables/useNotification';
+
+const page = usePage();
+const notify = useNotification();
+
+// Watch for flash messages
+watch(() => page.props.flash, (flash) => {
+  if (!flash) return;
+  
+  if (flash.success) {
+    notify.success(flash.success);
+  }
+  if (flash.error) {
+    notify.error(flash.error);
+  }
+  if (flash.warning) {
+    notify.warning(flash.warning);
+  }
+  if (flash.info) {
+    notify.info(flash.info);
+  }
+}, { deep: true, immediate: true });
 
 // Settings modal - these will be handled by Dashboard.vue now
 const isSettingsModalVisible = ref(false);
