@@ -2,12 +2,12 @@
   <div class="min-h-screen bg-slate-50/50 pb-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header Section -->
-      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
         <!-- Abstract Background Pattern -->
         <div class="absolute inset-0">
-          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
-          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-teal-50 via-teal-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
         </div>
 
         <div class="relative z-10 p-8">
@@ -17,7 +17,7 @@
                 {{ pageant ? pageant.name : 'Judges Management' }}
               </h1>
               <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
-                <Users class="w-5 h-5 text-indigo-500" />
+                <Users class="w-5 h-5 text-teal-500" />
                 Manage Panel & Access
               </p>
             </div>
@@ -33,16 +33,16 @@
                 <button 
                   v-if="canAddJudges"
                   @click="showAddJudgeModal = true"
-                  class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
+                  class="bg-white text-teal-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-50 flex items-center shadow-sm transition-all"
                 >
-                  <Plus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
+                  <Plus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-teal-600" />
                   <span>Add Existing Judge</span>
                 </button>
                 <button 
                   @click="refreshData"
-                  class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
+                  class="bg-white text-teal-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-50 flex items-center shadow-sm transition-all"
                 >
-                  <RefreshCw class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
+                  <RefreshCw class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-teal-600" />
                   <span>Refresh</span>
                 </button>
               </div>
@@ -75,56 +75,56 @@
         <!-- Summary Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="relative flex items-start justify-between">
               <div>
                 <p class="text-sm font-medium text-slate-500 mb-1">Total Judges</p>
                 <h4 class="text-3xl font-bold text-slate-900">{{ judges.length }}</h4>
-                <p class="text-xs text-indigo-600 font-medium mt-2">Assigned Panel</p>
+                <p class="text-xs text-teal-600 font-medium mt-2">Assigned Panel</p>
               </div>
-              <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+              <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
                 <Users class="w-6 h-6" />
               </div>
             </div>
           </div>
 
           <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="relative flex items-start justify-between">
               <div>
                 <p class="text-sm font-medium text-slate-500 mb-1">Required</p>
                 <h4 class="text-3xl font-bold text-slate-900">{{ pageant.required_judges || '∞' }}</h4>
-                <p class="text-xs text-blue-600 font-medium mt-2">Target Count</p>
+                <p class="text-xs text-teal-600 font-medium mt-2">Target Count</p>
               </div>
-              <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+              <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
                 <Target class="w-6 h-6" />
               </div>
             </div>
           </div>
 
           <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="relative flex items-start justify-between">
               <div>
                 <p class="text-sm font-medium text-slate-500 mb-1">Active</p>
                 <h4 class="text-3xl font-bold text-slate-900">{{ activeJudgesCount }}</h4>
-                <p class="text-xs text-indigo-600 font-medium mt-2">Currently Online</p>
+                <p class="text-xs text-teal-600 font-medium mt-2">Currently Online</p>
               </div>
-              <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+              <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
                 <CheckCircle class="w-6 h-6" />
               </div>
             </div>
           </div>
 
           <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
             <div class="relative flex items-start justify-between">
               <div>
                 <p class="text-sm font-medium text-slate-500 mb-1">Avg. Scores</p>
                 <h4 class="text-3xl font-bold text-slate-900">{{ averageSubmissions }}</h4>
-                <p class="text-xs text-blue-600 font-medium mt-2">Per Judge</p>
+                <p class="text-xs text-teal-600 font-medium mt-2">Per Judge</p>
               </div>
-              <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+              <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
                 <FileText class="w-6 h-6" />
               </div>
             </div>
@@ -153,7 +153,7 @@
                     </div>
                   </div>
                   <div>
-                    <h4 class="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{{ judge.name }}</h4>
+                    <h4 class="font-bold text-slate-900 group-hover:text-teal-600 transition-colors">{{ judge.name }}</h4>
                     <p class="text-sm text-slate-500">{{ judge.email }}</p>
                     <div class="flex items-center gap-2 mt-1">
                       <span class="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
@@ -176,12 +176,12 @@
                     <span 
                       class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border"
                       :class="judge.isActive 
-                        ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                        ? 'bg-teal-50 text-teal-700 border-teal-200' 
                         : 'bg-slate-100 text-slate-600 border-slate-200'"
                     >
                       <span 
                         class="w-1.5 h-1.5 rounded-full mr-1.5" 
-                        :class="judge.isActive ? 'bg-blue-500' : 'bg-slate-400'"
+                        :class="judge.isActive ? 'bg-teal-500' : 'bg-slate-400'"
                       ></span>
                       {{ judge.isActive ? 'Active' : 'Inactive' }}
                     </span>
@@ -191,7 +191,7 @@
                   <div class="flex items-center gap-1">
                     <button
                       @click="resetPassword(judge.id)"
-                      class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      class="p-2 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
                       title="Reset Password"
                     >
                       <Key class="w-4 h-4" />
@@ -245,7 +245,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Select Judge</label>
             <select 
               v-model="addJudgeForm.judge_id" 
-              class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
               required
             >
               <option value="">Choose a judge...</option>
@@ -265,7 +265,7 @@
               type="text"
               v-model="addJudgeForm.role"
               placeholder="e.g. Head Judge, Guest Judge"
-              class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
             />
           </div>
 
@@ -280,7 +280,7 @@
             <button
               type="submit"
               :disabled="addJudgeForm.processing"
-              class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg hover:from-blue-600 hover:to-blue-800 shadow-sm transition-all disabled:opacity-50"
+              class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-700 rounded-lg hover:from-teal-600 hover:to-teal-800 shadow-sm transition-all disabled:opacity-50"
             >
               {{ addJudgeForm.processing ? 'Adding...' : 'Add Judge' }}
             </button>
@@ -361,8 +361,8 @@
             />
           </div>
 
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p class="text-xs text-blue-800">
+          <div class="bg-teal-50 border border-teal-200 rounded-lg p-3">
+            <p class="text-xs text-teal-800">
               <strong>Note:</strong> This account will be linked to this pageant only and will be disabled when the pageant is completed.
             </p>
           </div>

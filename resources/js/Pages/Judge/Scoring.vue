@@ -1,11 +1,11 @@
 <template>
-  <div class="h-screen bg-[#F8FAFC] flex flex-col overflow-hidden selection:bg-indigo-500 selection:text-white font-sans">
+  <div class="h-screen bg-[#F8FAFC] flex flex-col overflow-hidden selection:bg-teal-500 selection:text-white font-sans">
     <!-- Real-time Loading Overlay -->
     <div v-if="realtimeLoading" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center space-y-4 animate-in fade-in zoom-in duration-200">
         <div class="relative">
-          <div class="w-12 h-12 border-4 border-indigo-100 rounded-full"></div>
-          <div class="absolute top-0 left-0 w-12 h-12 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+          <div class="w-12 h-12 border-4 border-teal-100 rounded-full"></div>
+          <div class="absolute top-0 left-0 w-12 h-12 border-4 border-teal-600 rounded-full border-t-transparent animate-spin"></div>
         </div>
         <span class="text-slate-700 font-medium">Updating round information...</span>
       </div>
@@ -17,15 +17,15 @@
         <!-- Left: Navigation & Context -->
         <div class="flex items-center gap-5 min-w-0">
           <Link :href="route('judge.dashboard')" 
-            class="group flex items-center justify-center w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all shadow-sm shrink-0"
+            class="group flex items-center justify-center w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-teal-600 hover:border-teal-200 hover:bg-teal-50 transition-all shadow-sm shrink-0"
           >
             <ChevronLeft class="w-6 h-6 transition-transform group-hover:-translate-x-0.5" />
           </Link>
           
           <div class="flex flex-col min-w-0 justify-center">
-            <div class="flex items-center gap-2 text-xs font-bold tracking-wider text-indigo-500 uppercase leading-none mb-1.5">
+            <div class="flex items-center gap-2 text-xs font-bold tracking-wider text-teal-500 uppercase leading-none mb-1.5">
               <span>Judge Panel</span>
-              <span class="w-1 h-1 rounded-full bg-indigo-300"></span>
+              <span class="w-1 h-1 rounded-full bg-teal-300"></span>
               <span class="truncate max-w-[200px]">{{ pageant?.name }}</span>
             </div>
             <div class="flex items-center gap-3 min-w-0 leading-none">
@@ -64,7 +64,7 @@
               v-model="currentRoundId"
               :options="roundOptions"
               :disabled="isLoading || !isChannelReady"
-              variant="indigo"
+              variant="teal"
               placeholder="Switch Round"
               @change="handleRoundChange"
               class="shadow-sm"
@@ -114,7 +114,7 @@
           <div class="relative z-10 w-full h-full flex flex-col items-center justify-center p-4">
             
             <!-- Contestant Card -->
-            <div class="relative w-full max-w-sm aspect-[3/4] rounded-[1.5rem] overflow-hidden shadow-2xl ring-1 ring-white/10 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-indigo-500/20 group-hover:ring-white/20">
+            <div class="relative w-full max-w-sm aspect-[3/4] rounded-[1.5rem] overflow-hidden shadow-2xl ring-1 ring-white/10 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-teal-500/20 group-hover:ring-white/20">
               <img :src="activeContestant.image" class="w-full h-full object-cover" />
               
               <!-- Glassmorphism Overlay -->
@@ -122,7 +122,7 @@
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
                     <h2 class="text-xl font-bold text-white tracking-tight leading-tight mb-0.5 truncate">{{ activeContestant.name }}</h2>
-                    <p class="text-indigo-100 font-medium flex items-center gap-1.5 text-xs truncate shadow-sm">
+                    <p class="text-teal-100 font-medium flex items-center gap-1.5 text-xs truncate shadow-sm">
                       <MapPin class="w-3 h-3 shrink-0" />
                       {{ activeContestant.origin || 'Unknown Origin' }}
                     </p>
@@ -163,7 +163,7 @@
                 :key="c.id"
                 @click="currentIndex = idx"
                 class="h-1.5 rounded-full transition-all duration-300"
-                :class="idx === currentIndex ? 'bg-indigo-500 w-8' : 'bg-white/20 w-2 hover:bg-white/40'"
+                :class="idx === currentIndex ? 'bg-teal-500 w-8' : 'bg-white/20 w-2 hover:bg-white/40'"
               ></button>
             </div>
           </div>
@@ -179,7 +179,7 @@
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start">
                 <h2 class="text-lg font-bold text-slate-900 truncate">{{ activeContestant.name }}</h2>
-                <span class="text-lg font-black text-indigo-600">#{{ activeContestant.number }}</span>
+                <span class="text-lg font-black text-teal-600">#{{ activeContestant.number }}</span>
               </div>
               <p class="text-sm text-slate-500 truncate">{{ activeContestant.origin }}</p>
             </div>
@@ -219,12 +219,12 @@
                 <div 
                   v-for="criterion in criteria" 
                   :key="criterion.id" 
-                  class="group bg-white rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-100 transition-all hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-indigo-100 relative overflow-hidden"
+                  class="group bg-white rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-100 transition-all hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-teal-100 relative overflow-hidden"
                 >
                   <!-- Progress Bar Background -->
-                  <div class="absolute bottom-0 left-0 h-1 bg-indigo-500/10 w-full">
+                  <div class="absolute bottom-0 left-0 h-1 bg-teal-500/10 w-full">
                     <div 
-                      class="h-full bg-indigo-500 transition-all duration-500 ease-out"
+                      class="h-full bg-teal-500 transition-all duration-500 ease-out"
                       :style="{ width: `${((scores[`${activeContestant.id}-${criterion.id}`] || 0) / criterion.max_score) * 100}%` }"
                     ></div>
                   </div>
@@ -233,14 +233,14 @@
                     <!-- Header -->
                     <div class="flex items-start justify-between">
                       <div>
-                        <label class="font-bold text-slate-800 text-lg block group-hover:text-indigo-700 transition-colors">{{ criterion.name }}</label>
+                        <label class="font-bold text-slate-800 text-lg block group-hover:text-teal-700 transition-colors">{{ criterion.name }}</label>
                         <div class="flex items-center gap-3 mt-1">
                           <span class="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500">Weight: {{ criterion.weight }}%</span>
                           <span class="text-xs font-medium text-slate-400">Range: {{ criterion.min_score }} - {{ criterion.max_score }}</span>
                         </div>
                       </div>
                       <div class="flex items-baseline gap-1">
-                        <span class="text-3xl font-black text-indigo-600 tabular-nums tracking-tight">
+                        <span class="text-3xl font-black text-teal-600 tabular-nums tracking-tight">
                           {{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }}
                         </span>
                         <span class="text-slate-400 font-medium text-sm">/ {{ criterion.max_score }}</span>
@@ -268,7 +268,7 @@
               <!-- Notes Section -->
               <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                 <label class="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                  <span class="p-1 bg-indigo-50 rounded text-indigo-600"><Target class="w-4 h-4" /></span>
+                  <span class="p-1 bg-teal-50 rounded text-teal-600"><Target class="w-4 h-4" /></span>
                   Judge's Notes
                   <span class="font-normal text-slate-400 ml-auto text-xs">Optional</span>
                 </label>
@@ -276,7 +276,7 @@
                   v-model="notes[activeContestant.id]" 
                   rows="3" 
                   :disabled="!canEditScores"
-                  class="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 text-sm resize-none transition-all shadow-sm placeholder:text-slate-400 p-4"
+                  class="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-teal-500 focus:ring-teal-500 text-sm resize-none transition-all shadow-sm placeholder:text-slate-400 p-4"
                   placeholder="Add private comments about this performance..."
                 ></textarea>
               </div>
@@ -316,7 +316,7 @@
               <div class="flex items-center gap-3">
                 <button
                   @click="submitScores(activeContestant.id, true)"
-                  class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base rounded-xl shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center gap-2 active:scale-95"
+                  class="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-teal-600/20 hover:shadow-teal-600/30 transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center gap-2 active:scale-95"
                   :disabled="!canEditScores || !isContestantScoreComplete(activeContestant.id) || submitLoading[activeContestant.id]"
                 >
                   <span v-if="submitLoading[activeContestant.id]" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
@@ -472,8 +472,8 @@ const getAverageScoreColor = (score) => {
   if (score === '-') return 'text-slate-300'
   const numScore = parseFloat(score)
   if (numScore >= 90) return 'text-emerald-600'
-  if (numScore >= 80) return 'text-indigo-600'
-  if (numScore >= 70) return 'text-blue-600'
+  if (numScore >= 80) return 'text-teal-600'
+  if (numScore >= 70) return 'text-teal-600'
   if (numScore >= 60) return 'text-amber-600'
   return 'text-red-600'
 }

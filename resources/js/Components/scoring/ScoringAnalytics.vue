@@ -2,7 +2,7 @@
   <div id="analyticsContainer" class="bg-white shadow-sm rounded-lg p-6 printAnalytics" ref="analyticsContainer">
     <div class="mb-6">
       <h3 class="text-xl font-semibold text-gray-900 flex items-center">
-        <BarChart3 class="h-5 w-5 text-purple-600 mr-2" />
+        <BarChart3 class="h-5 w-5 text-teal-600 mr-2" />
         Scoring Analytics
       </h3>
       <p class="text-gray-600">Advanced visualization of contestant scores and judge patterns</p>
@@ -15,9 +15,9 @@
         <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
           <!-- Placeholder for chart -->
           <div class="text-center p-6">
-            <PieChart class="h-10 w-10 text-purple-400 mx-auto mb-2" />
+            <PieChart class="h-10 w-10 text-teal-400 mx-auto mb-2" />
             <p class="text-sm text-gray-500">Score distribution visualization will appear here</p>
-            <button class="mt-2 text-xs text-purple-600 hover:text-purple-800 font-medium">
+            <button class="mt-2 text-xs text-teal-600 hover:text-teal-800 font-medium">
               Generate Chart
             </button>
           </div>
@@ -30,9 +30,9 @@
         <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
           <!-- Placeholder for chart -->
           <div class="text-center p-6">
-            <GitCompare class="h-10 w-10 text-purple-400 mx-auto mb-2" />
+            <GitCompare class="h-10 w-10 text-teal-400 mx-auto mb-2" />
             <p class="text-sm text-gray-500">Judge comparison chart will appear here</p>
-            <button class="mt-2 text-xs text-purple-600 hover:text-purple-800 font-medium">
+            <button class="mt-2 text-xs text-teal-600 hover:text-teal-800 font-medium">
               Generate Chart
             </button>
           </div>
@@ -45,9 +45,9 @@
         <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
           <!-- Placeholder for chart -->
           <div class="text-center p-6">
-            <LineChart class="h-10 w-10 text-purple-400 mx-auto mb-2" />
+            <LineChart class="h-10 w-10 text-teal-400 mx-auto mb-2" />
             <p class="text-sm text-gray-500">Round performance chart will appear here</p>
-            <button class="mt-2 text-xs text-purple-600 hover:text-purple-800 font-medium">
+            <button class="mt-2 text-xs text-teal-600 hover:text-teal-800 font-medium">
               Generate Chart
             </button>
           </div>
@@ -60,9 +60,9 @@
         <div class="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
           <!-- Placeholder for chart -->
           <div class="text-center p-6">
-            <PieChart class="h-10 w-10 text-purple-400 mx-auto mb-2" />
+            <PieChart class="h-10 w-10 text-teal-400 mx-auto mb-2" />
             <p class="text-sm text-gray-500">Criteria breakdown chart will appear here</p>
-            <button class="mt-2 text-xs text-purple-600 hover:text-purple-800 font-medium">
+            <button class="mt-2 text-xs text-teal-600 hover:text-teal-800 font-medium">
               Generate Chart
             </button>
           </div>
@@ -97,7 +97,7 @@
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="(contestant, index) in topContestants" :key="contestant.id" class="hover:bg-purple-50 transition-colors">
+            <tr v-for="(contestant, index) in topContestants" :key="contestant.id" class="hover:bg-teal-50 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div class="text-sm font-medium text-gray-900 flex items-center justify-center h-6 w-6 rounded-full" 
@@ -157,7 +157,7 @@
         </button>
         <button 
           @click="PrintReport"
-          class="px-3 py-2 text-sm text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors flex items-center">
+          class="px-3 py-2 text-sm text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors flex items-center">
           <Printer class="h-4 w-4 mr-2" />
           Print Report
         </button>
@@ -251,8 +251,8 @@ const getRankClass = (index: number) => {
 
 const getCategoryClass = (category: string) => {
   switch (category) {
-    case 'Evening Gown': return 'bg-purple-100 text-purple-800'
-    case 'Swimsuit': return 'bg-blue-100 text-blue-800'
+    case 'Evening Gown': return 'bg-teal-100 text-teal-800'
+    case 'Swimsuit': return 'bg-teal-50 text-teal-800'
     case 'Talent': return 'bg-green-100 text-green-800'
     case 'Q&A': return 'bg-amber-100 text-amber-800'
     default: return 'bg-gray-100 text-gray-800'
@@ -334,4 +334,4 @@ const getTrendLabel = (trend: string) => {
     display: none !important;
   }
 }
-</style> 
+</style>

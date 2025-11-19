@@ -2,12 +2,12 @@
   <div class="min-h-screen bg-slate-50/50 pb-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header Section -->
-      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
         <!-- Abstract Background Pattern -->
         <div class="absolute inset-0">
-          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
-          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-teal-50 via-teal-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
         </div>
 
         <div class="relative z-10 p-8">
@@ -17,19 +17,19 @@
                 Round Management
               </h1>
               <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
-                <Circle class="w-5 h-5 text-indigo-500" />
+                <Circle class="w-5 h-5 text-teal-500" />
                 {{ pageant.name }}
               </p>
             </div>
             
-            <div v-if="pageant.current_round" class="flex items-center bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-indigo-100 shadow-sm">
-              <div class="text-indigo-600 mr-3">
-                <div class="p-2 bg-indigo-50 rounded-lg">
+            <div v-if="pageant.current_round" class="flex items-center bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-teal-100 shadow-sm">
+              <div class="text-teal-600 mr-3">
+                <div class="p-2 bg-teal-50 rounded-lg">
                   <Activity class="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <div class="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Current Active Round</div>
+                <div class="text-xs font-bold text-teal-500 uppercase tracking-wider mb-0.5">Current Active Round</div>
                 <div class="text-lg font-bold text-slate-900 leading-none">{{ pageant.current_round.name }}</div>
               </div>
             </div>
@@ -40,7 +40,7 @@
       <!-- Quick Actions -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group hover:shadow-md transition-all">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           <div class="relative z-10">
             <h3 class="text-lg font-bold text-slate-900 mb-1">Set Current Round</h3>
             <p class="text-sm text-slate-500 mb-4">Direct judges to score a specific round</p>
@@ -57,13 +57,13 @@
         </div>
         
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group hover:shadow-md transition-all">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
           <div class="relative z-10 flex justify-between items-center h-full">
             <div>
               <h3 class="text-lg font-bold text-slate-900 mb-1">Round Status</h3>
               <p class="text-sm text-slate-500">Monitor round completion status</p>
             </div>
-            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-blue-200">
+            <button class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-teal-200">
               View Progress
             </button>
           </div>
@@ -96,14 +96,14 @@
                 v-for="round in rounds" 
                 :key="round.id"
                 class="hover:bg-slate-50/80 transition-colors"
-                :class="{ 'bg-indigo-50/30': pageant.current_round_id === round.id }"
+                :class="{ 'bg-teal-50/30': pageant.current_round_id === round.id }"
               >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex flex-col">
                     <div class="text-sm font-bold text-slate-900 flex items-center gap-2">
                       {{ round.name }}
                       <span v-if="round.identifier" class="font-mono text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200">{{ round.identifier }}</span>
-                      <span v-if="pageant.current_round_id === round.id" class="inline-flex items-center px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wide rounded-full border border-indigo-200">
+                      <span v-if="pageant.current_round_id === round.id" class="inline-flex items-center px-2 py-0.5 bg-teal-100 text-teal-700 text-[10px] font-bold uppercase tracking-wide rounded-full border border-teal-200">
                         Current
                       </span>
                     </div>
@@ -111,7 +111,7 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg border border-blue-100">
+                  <span class="inline-flex items-center px-2.5 py-1 bg-teal-50 text-teal-700 text-xs font-medium rounded-lg border border-teal-100">
                     {{ round.type || 'Standard' }}
                   </span>
                 </td>
@@ -121,9 +121,9 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span 
                     class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border"
-                    :class="round.is_active ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
+                    :class="round.is_active ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
                   >
-                    <span class="w-1.5 h-1.5 rounded-full mr-1.5" :class="round.is_active ? 'bg-blue-500' : 'bg-slate-400'"></span>
+                    <span class="w-1.5 h-1.5 rounded-full mr-1.5" :class="round.is_active ? 'bg-teal-500' : 'bg-slate-400'"></span>
                     {{ round.is_active ? 'Active' : 'Inactive' }}
                   </span>
                 </td>
@@ -131,7 +131,7 @@
                   <div class="flex flex-col gap-1">
                     <span 
                       class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border w-fit"
-                      :class="round.is_locked ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-sky-50 text-sky-700 border-sky-200'"
+                      :class="round.is_locked ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-teal-50 text-teal-700 border-teal-200'"
                     >
                       <component :is="round.is_locked ? Lock : CheckCircle" class="w-3 h-3 mr-1.5" />
                       {{ round.is_locked ? 'Locked' : 'Open' }}
@@ -147,7 +147,7 @@
                       v-if="pageant.current_round_id !== round.id"
                       @click="setCurrentRoundDirect(round.id)"
                       :disabled="actionLoading || !isChannelReady"
-                      class="px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="px-3 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {{ actionLoading ? 'Setting...' : 'Set Current' }}
                     </button>
@@ -164,7 +164,7 @@
                       v-else
                       @click="unlockRound(round.id)"
                       :disabled="actionLoading || !isChannelReady"
-                      class="px-3 py-1.5 text-xs font-medium text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="px-3 py-1.5 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {{ actionLoading ? 'Unlocking...' : 'Unlock' }}
                     </button>
@@ -179,7 +179,7 @@
       <!-- Round Statistics -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
-          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+          <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
             <Circle class="h-6 w-6" />
           </div>
           <div>
@@ -189,7 +189,7 @@
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
-          <div class="p-3 bg-sky-50 text-sky-600 rounded-xl">
+          <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
             <CheckCircle class="h-6 w-6" />
           </div>
           <div>

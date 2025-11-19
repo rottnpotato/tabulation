@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+    <div class="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <History class="h-6 w-6 text-white" />
@@ -20,8 +20,8 @@
 
     <!-- Loading State -->
     <div v-if="loading && !logs.length" class="px-6 py-12 text-center">
-      <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-4">
-        <RefreshCw class="h-6 w-6 text-blue-600 animate-spin" />
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-teal-100 mb-4">
+        <RefreshCw class="h-6 w-6 text-teal-600 animate-spin" />
       </div>
       <p class="text-gray-600">Loading audit logs...</p>
     </div>
@@ -98,7 +98,7 @@
     <div v-if="logs.length >= 50" class="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center">
       <p class="text-sm text-gray-600">
         Showing most recent 50 entries. 
-        <span class="text-blue-600 font-medium">Older entries are archived.</span>
+        <span class="text-teal-600 font-medium">Older entries are archived.</span>
       </p>
     </div>
   </div>

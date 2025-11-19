@@ -4,18 +4,18 @@
     <div class="screen-only min-h-screen pb-12">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header Section -->
-        <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+        <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
           <!-- Abstract Background Pattern -->
           <div class="absolute inset-0">
-            <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
-            <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-            <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-teal-50 via-teal-50/50 to-white opacity-90"></div>
+            <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+            <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
           </div>
 
           <div class="relative z-10 p-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div class="space-y-2">
-                <div class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 uppercase tracking-wide border border-indigo-100 mb-2">
+                <div class="inline-flex items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 uppercase tracking-wide border border-teal-100 mb-2">
                   <Printer class="mr-1.5 h-3.5 w-3.5" />
                   <span>Print Center</span>
                 </div>
@@ -25,20 +25,20 @@
                 <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
                   {{ pageant ? pageant.name : 'Select a pageant' }}
                   <span v-if="reportTitle" class="text-slate-400 mx-2">|</span>
-                  <span v-if="reportTitle" class="text-indigo-600 font-medium">{{ reportTitle }}</span>
+                  <span v-if="reportTitle" class="text-teal-600 font-medium">{{ reportTitle }}</span>
                 </p>
                 
                 <div v-if="pageant" class="flex flex-wrap gap-2 mt-4">
                   <span v-if="pageant.date" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400 mr-1.5"></span>
                     {{ pageant.date }}
                   </span>
                   <span v-if="pageant.venue" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mr-1.5"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400 mr-1.5"></span>
                     {{ pageant.venue }}
                   </span>
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400 mr-1.5"></span>
                     {{ judges.length }} Judges
                   </span>
                 </div>
@@ -47,7 +47,7 @@
               <div v-if="pageant" class="flex items-center">
                 <button
                   @click="printResults"
-                  class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
+                  class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-teal-600 text-white font-medium hover:bg-teal-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
                 >
                   <Printer class="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                   <span>Print Report</span>
@@ -80,7 +80,7 @@
         <div v-else class="space-y-8 animate-fade-in">
           <!-- Print Settings Card -->
           <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
             <div class="relative z-10">
               <h3 class="text-lg font-bold text-slate-900 mb-4">Print Settings</h3>
               
@@ -91,10 +91,10 @@
                   <div class="relative">
                     <button
                       @click="showStageDropdown = !showStageDropdown"
-                      class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-indigo-300 hover:ring-2 hover:ring-indigo-50 transition-all focus:outline-none"
+                      class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-teal-300 hover:ring-2 hover:ring-teal-50 transition-all focus:outline-none"
                     >
                       <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <span class="w-2 h-2 rounded-full bg-teal-500"></span>
                         <span>{{ stageLabels[selectedStage] }}</span>
                       </div>
                       <ChevronDown class="h-4 w-4 text-slate-400" />
@@ -110,9 +110,9 @@
                           :key="key"
                           @click="selectedStage = key as StageKey; showStageDropdown = false"
                           class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm rounded-lg transition-colors"
-                          :class="selectedStage === key ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'"
+                          :class="selectedStage === key ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'"
                         >
-                          <span class="w-1.5 h-1.5 rounded-full" :class="selectedStage === key ? 'bg-indigo-500' : 'bg-slate-300'"></span>
+                          <span class="w-1.5 h-1.5 rounded-full" :class="selectedStage === key ? 'bg-teal-500' : 'bg-slate-300'"></span>
                           {{ label }}
                         </button>
                       </div>
@@ -126,10 +126,10 @@
                   <div class="relative">
                     <button
                       @click="showPaperSizeDropdown = !showPaperSizeDropdown"
-                      class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-indigo-300 hover:ring-2 hover:ring-indigo-50 transition-all focus:outline-none"
+                      class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-teal-300 hover:ring-2 hover:ring-teal-50 transition-all focus:outline-none"
                     >
                       <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span class="w-2 h-2 rounded-full bg-teal-500"></span>
                         <span>{{ paperSizes[selectedPaperSize].name }}</span>
                       </div>
                       <ChevronDown class="h-4 w-4 text-slate-400" />
@@ -145,10 +145,10 @@
                           :key="key"
                           @click="selectedPaperSize = key; showPaperSizeDropdown = false"
                           class="flex w-full items-center justify-between px-3 py-2 text-left text-sm rounded-lg transition-colors"
-                          :class="selectedPaperSize === key ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'"
+                          :class="selectedPaperSize === key ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'"
                         >
                           <span>{{ paper.name }}</span>
-                          <span class="w-1.5 h-1.5 rounded-full" :class="selectedPaperSize === key ? 'bg-blue-500' : 'bg-slate-300'"></span>
+                          <span class="w-1.5 h-1.5 rounded-full" :class="selectedPaperSize === key ? 'bg-teal-500' : 'bg-slate-300'"></span>
                         </button>
                       </div>
                     </div>

@@ -3,12 +3,12 @@
   <div class="min-h-screen bg-slate-50/50 pb-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header Section -->
-      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
         <!-- Abstract Background Pattern -->
         <div class="absolute inset-0">
-          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
-          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-teal-50 via-teal-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
         </div>
 
         <div class="relative z-10 p-8">
@@ -18,19 +18,19 @@
                 Scores & Tabulation
               </h1>
               <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
-                <Activity class="w-5 h-5 text-indigo-500" />
+                <Activity class="w-5 h-5 text-teal-500" />
                 Real-time Score Monitoring
               </p>
             </div>
             
-            <div v-if="pageant" class="flex items-center bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-indigo-100 shadow-sm">
-              <div class="text-indigo-600 mr-3">
-                <div class="p-2 bg-indigo-50 rounded-lg">
+            <div v-if="pageant" class="flex items-center bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-teal-100 shadow-sm">
+              <div class="text-teal-600 mr-3">
+                <div class="p-2 bg-teal-50 rounded-lg">
                   <Crown class="w-5 h-5" />
                 </div>
               </div>
               <div>
-                <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-0.5">Active Pageant</div>
+                <div class="text-xs font-bold text-teal-400 uppercase tracking-wider mb-0.5">Active Pageant</div>
                 <div class="text-lg font-bold text-slate-900 leading-none">{{ pageant.name }}</div>
               </div>
             </div>
@@ -72,7 +72,7 @@
         <!-- Toolbar -->
         <!-- Toolbar -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
           <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div class="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
               <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200 w-fit">

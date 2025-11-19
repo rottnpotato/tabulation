@@ -1,10 +1,10 @@
 <template>
   <div class="space-y-8">
     <!-- Header Section -->
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 shadow-xl">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-600 via-teal-600 to-teal-700 shadow-xl">
       <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_1px_1px,#fff_1px,transparent_1px)] [background-size:20px_20px]"></div>
       <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
-      <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-blue-400 opacity-10 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-teal-400 opacity-10 rounded-full blur-3xl"></div>
       
       <div class="relative p-8 md:p-12">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
@@ -15,15 +15,15 @@
                 Judge Panel
               </span>
             </div>
-            <p class="text-blue-100 text-lg font-light">Welcome back, <span class="font-semibold text-white">{{ judge.name }}</span>.</p>
-            <p class="text-sm text-blue-200 max-w-xl">Review and score contestants across your assigned pageants with precision and clarity.</p>
+            <p class="text-teal-100 text-lg font-light">Welcome back, <span class="font-semibold text-white">{{ judge.name }}</span>.</p>
+            <p class="text-sm text-teal-200 max-w-xl">Review and score contestants across your assigned pageants with precision and clarity.</p>
           </div>
           
           <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md rounded-2xl px-5 py-4 border border-white/20 shadow-inner">
             <div class="p-2 bg-white/20 rounded-xl">
               <User class="h-6 w-6 text-white" />
             </div>
-            <div class="text-blue-50 leading-tight">
+            <div class="text-teal-50 leading-tight">
               <div class="text-sm font-bold text-white">{{ judge.email }}</div>
               <div class="text-xs opacity-80 flex items-center gap-1">
                 <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
@@ -39,13 +39,13 @@
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-1">
       <div class="flex flex-col lg:flex-row gap-2 p-2">
         <div class="flex-1 relative group">
-          <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+          <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
           <input
             id="search"
             v-model="searchQuery"
             type="text"
             placeholder="Search pageants, venue, location…"
-            class="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
+            class="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
           />
         </div>
         
@@ -89,10 +89,10 @@
 
     <!-- No Pageants State -->
     <div v-if="pageants.length === 0" class="relative text-center py-24">
-      <div class="absolute inset-0 bg-gradient-to-b from-blue-50/50 to-transparent rounded-3xl"></div>
-      <div class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-blue-100 p-12 max-w-2xl mx-auto">
-        <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-blue-50 mb-6 shadow-inner">
-          <Calendar class="h-10 w-10 text-blue-600" />
+      <div class="absolute inset-0 bg-gradient-to-b from-teal-50/50 to-transparent rounded-3xl"></div>
+      <div class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-teal-100 p-12 max-w-2xl mx-auto">
+        <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-teal-50 mb-6 shadow-inner">
+          <Calendar class="h-10 w-10 text-teal-600" />
         </div>
         <h3 class="text-2xl font-bold text-slate-900 mb-3">No Pageants Assigned</h3>
         <p class="text-slate-600 mb-8 max-w-md mx-auto leading-relaxed">
@@ -100,7 +100,7 @@
         </p>
         <button
           @click="refreshData"
-          class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-200 transform hover:-translate-y-0.5"
+          class="inline-flex items-center px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl shadow-lg shadow-teal-600/20 hover:shadow-teal-600/30 transition-all duration-200 transform hover:-translate-y-0.5"
         >
           <RefreshCw class="w-5 h-5 mr-2" />
           Refresh Dashboard
@@ -113,7 +113,7 @@
       <div
         v-for="pageant in displayedPageants"
         :key="pageant.id"
-        class="group bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col"
+        class="group bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl hover:border-teal-200 transition-all duration-300 flex flex-col"
       >
         <!-- Pageant Header -->
         <div class="p-7 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
@@ -132,7 +132,7 @@
                 </span>
               </div>
               
-              <h3 class="text-xl font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+              <h3 class="text-xl font-bold text-slate-900 leading-tight group-hover:text-teal-600 transition-colors">
                 {{ pageant.name }}
               </h3>
               <p v-if="pageant.description" class="text-sm text-slate-500 line-clamp-2 leading-relaxed">
@@ -194,13 +194,13 @@
           <!-- Venue Info -->
           <div v-if="pageant.venue || pageant.location" class="space-y-2 mb-6">
             <div v-if="pageant.venue" class="flex items-center text-sm text-slate-600">
-              <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mr-3 text-blue-500">
+              <div class="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center mr-3 text-teal-500">
                 <MapPin class="h-4 w-4" />
               </div>
               <span class="font-medium">{{ pageant.venue }}</span>
             </div>
             <div v-if="pageant.location" class="flex items-center text-sm text-slate-600">
-              <div class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-3 text-indigo-500">
+              <div class="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center mr-3 text-teal-500">
                 <Globe class="h-4 w-4" />
               </div>
               <span class="font-medium">{{ pageant.location }}</span>
@@ -209,9 +209,9 @@
 
           <div class="mt-auto space-y-4">
             <!-- Current Round Status -->
-            <div v-if="pageant.current_round" class="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
+            <div v-if="pageant.current_round" class="p-4 bg-teal-50/50 border border-teal-100 rounded-2xl">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-blue-600 uppercase tracking-wide">Current Round</span>
+                <span class="text-xs font-bold text-teal-600 uppercase tracking-wide">Current Round</span>
                 <span v-if="pageant.current_round.is_locked" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600">
                   LOCKED
                 </span>
@@ -230,7 +230,7 @@
                 v-if="pageant.id && pageant.rounds_count > 0"
                 :href="getScoringUrl(pageant.id)"
                 prefetch
-                class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all duration-200 shadow-lg shadow-slate-900/10 hover:shadow-blue-600/20 group-hover:translate-y-0"
+                class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 hover:bg-teal-600 text-white text-sm font-bold rounded-xl transition-all duration-200 shadow-lg shadow-slate-900/10 hover:shadow-teal-600/20 group-hover:translate-y-0"
               >
                 <Star class="h-4 w-4 mr-2" />
                 {{ pageant.current_round ? 'Continue Scoring' : 'Start Scoring' }}
@@ -324,9 +324,9 @@ const getStatusClass = (status) => {
   const normalized = (status || '').toString().trim().toUpperCase().replace(/\s+/g, '_')
   const map = {
     DRAFT: 'bg-slate-100 text-slate-600',
-    SETUP: 'bg-indigo-100 text-indigo-700',
+    SETUP: 'bg-teal-100 text-teal-700',
     ACTIVE: 'bg-emerald-100 text-emerald-700',
-    COMPLETED: 'bg-blue-100 text-blue-700',
+    COMPLETED: 'bg-teal-100 text-teal-700',
     PENDING_APPROVAL: 'bg-amber-100 text-amber-700'
   }
   return map[normalized] || 'bg-slate-100 text-slate-600'
@@ -334,9 +334,9 @@ const getStatusClass = (status) => {
 
 const getProgressColor = (progress) => {
   if (progress >= 100) return 'text-emerald-500'
-  if (progress >= 80) return 'text-blue-500'
-  if (progress >= 60) return 'text-indigo-500'
-  if (progress >= 40) return 'text-violet-500'
+  if (progress >= 80) return 'text-teal-500'
+  if (progress >= 60) return 'text-teal-500'
+  if (progress >= 40) return 'text-teal-500'
   return 'text-slate-300'
 }
 

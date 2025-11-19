@@ -170,26 +170,26 @@ const getRankDisplay = (rank: number): string => {
 const getRankBadgeClass = (rank: number): string => {
   switch (rank) {
     case 1:
-      return 'bg-indigo-100 text-indigo-800 border-2 border-indigo-300'
+      return 'bg-teal-100 text-teal-800 border-2 border-teal-300'
     case 2:
-      return 'bg-blue-100 text-blue-800 border-2 border-blue-300'
+      return 'bg-teal-50 text-teal-700 border-2 border-teal-200'
     case 3:
-      return 'bg-sky-100 text-sky-800 border-2 border-sky-300'
+      return 'bg-slate-100 text-slate-700 border-2 border-slate-300'
     default:
-      return 'bg-slate-100 text-slate-800 border-2 border-slate-200'
+      return 'bg-slate-50 text-slate-600 border-2 border-slate-100'
   }
 }
 
 const getScoreClass = (score: number | null | undefined): string => {
   const n = typeof score === 'number' && Number.isFinite(score) ? score : 0
   if (n >= 95) {
-    return 'text-indigo-700'
+    return 'text-teal-700'
   }
   if (n >= 90) {
-    return 'text-indigo-600'
+    return 'text-teal-600'
   }
   if (n >= 85) {
-    return 'text-blue-600'
+    return 'text-teal-500'
   }
   return 'text-slate-700'
 }

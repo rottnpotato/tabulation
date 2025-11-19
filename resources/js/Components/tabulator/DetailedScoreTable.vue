@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
     <!-- Header -->
-    <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+    <div class="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <Table2 class="h-6 w-6 text-white" />
@@ -45,7 +45,7 @@
             >
               {{ judge.name }}
             </th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50">
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-teal-50">
               Average
             </th>
           </tr>
@@ -71,16 +71,16 @@
             >
               <span
                 v-if="getScore(contestant.id, judge.id) !== null"
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800"
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
               >
                 {{ getScore(contestant.id, judge.id) }}
               </span>
               <span v-else class="text-gray-400 text-sm">—</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap bg-blue-50">
+            <td class="px-6 py-4 whitespace-nowrap bg-teal-50">
               <span
                 v-if="getContestantAverage(contestant.id) !== null"
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-600 text-white"
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-teal-600 text-white"
               >
                 {{ getContestantAverage(contestant.id) }}
               </span>
@@ -109,7 +109,7 @@
           </div>
           <div class="text-right">
             <div class="text-xs text-gray-500 uppercase tracking-wider">Overall Average</div>
-            <div class="text-2xl font-bold text-blue-600">
+            <div class="text-2xl font-bold text-teal-600">
               {{ getContestantAverage(contestant.id) || '—' }}
             </div>
           </div>
@@ -165,7 +165,7 @@
                 </td>
               </tr>
               <!-- Judge Average Row -->
-              <tr class="bg-blue-50 font-semibold">
+              <tr class="bg-teal-50 font-semibold">
                 <td class="px-6 py-3 text-sm text-gray-900" colspan="2">
                   Judge Averages (Weighted)
                 </td>
@@ -176,7 +176,7 @@
                 >
                   <span
                     v-if="getScore(contestant.id, judge.id) !== null"
-                    class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-blue-600 text-white"
+                    class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-teal-600 text-white"
                   >
                     {{ getScore(contestant.id, judge.id) }}
                   </span>
@@ -284,7 +284,7 @@ const getScoreColor = (score: number | null, maxScore: number): string => {
   if (percentage >= 90) {
     return 'bg-green-100 text-green-800'
   } else if (percentage >= 75) {
-    return 'bg-blue-100 text-blue-800'
+    return 'bg-teal-100 text-teal-800'
   } else if (percentage >= 60) {
     return 'bg-yellow-100 text-yellow-800'
   } else {

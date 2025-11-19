@@ -13,7 +13,7 @@
             <div class="relative">
               <button
                 @click="showPaperSizeDropdown = !showPaperSizeDropdown"
-                class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               >
                 {{ paperSizes[selectedPaperSize].name }}
                 <ChevronDown class="w-4 h-4 ml-2" />
@@ -23,7 +23,7 @@
                   <button v-for="(paper, key) in paperSizes" :key="key"
                     @click="selectedPaperSize = key; showPaperSizeDropdown = false"
                     class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors duration-150"
-                    :class="{ 'bg-blue-50 text-blue-700': selectedPaperSize === key, 'text-gray-700': selectedPaperSize !== key }"
+                    :class="{ 'bg-teal-50 text-teal-700': selectedPaperSize === key, 'text-gray-700': selectedPaperSize !== key }"
                   >{{ paper.name }}</button>
                 </div>
               </div>
@@ -31,7 +31,7 @@
             <!-- Print Button -->
             <button
               @click="printResults"
-              class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+              class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
             >
               <Printer class="w-4 h-4 mr-2" />
               Print Report

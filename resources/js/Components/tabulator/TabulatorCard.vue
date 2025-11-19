@@ -47,10 +47,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const iconBgClass = computed(() => {
   const colorMap = {
-    blue: 'bg-blue-100',
-    green: 'bg-sky-100',
-    purple: 'bg-indigo-100',
-    orange: 'bg-blue-100',
+    blue: 'bg-teal-100',
+    green: 'bg-teal-100',
+    purple: 'bg-teal-100',
+    orange: 'bg-teal-100',
     red: 'bg-slate-100',
     gray: 'bg-slate-100',
   }
@@ -59,10 +59,10 @@ const iconBgClass = computed(() => {
 
 const iconClass = computed(() => {
   const colorMap = {
-    blue: 'text-blue-600',
-    green: 'text-sky-600',
-    purple: 'text-indigo-600',
-    orange: 'text-blue-600',
+    blue: 'text-teal-600',
+    green: 'text-teal-600',
+    purple: 'text-teal-600',
+    orange: 'text-teal-600',
     red: 'text-slate-600',
     gray: 'text-slate-600',
   }

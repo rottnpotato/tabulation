@@ -2,18 +2,18 @@
   <div class="min-h-screen bg-slate-50/50 pb-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header Section -->
-      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
         <!-- Abstract Background Pattern -->
         <div class="absolute inset-0">
-          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
-          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-teal-50 via-teal-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
         </div>
 
         <div class="relative z-10 p-8">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div class="space-y-2">
-              <div class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 uppercase tracking-wide border border-indigo-100 mb-2">
+              <div class="inline-flex items-center rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 uppercase tracking-wide border border-teal-100 mb-2">
                 <Trophy class="mr-1.5 h-3.5 w-3.5" />
                 <span>Tabulator Results</span>
               </div>
@@ -37,12 +37,12 @@
                 :href="route('tabulator.minor-awards', pageant.id)"
                 class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
               >
-                <Award class="mr-2 h-4 w-4 text-amber-500" />
+                <Award class="mr-2 h-4 w-4 text-teal-500" />
                 <span>Minor Awards</span>
               </Link>
               <Link
                 :href="route('tabulator.print', pageant.id)"
-                class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
+                class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-all shadow-md hover:shadow-lg"
               >
                 <Printer class="mr-2 h-4 w-4" />
                 <span>Print Results</span>
@@ -77,7 +77,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Controls Card -->
           <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
             <div class="relative z-10">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
@@ -100,7 +100,7 @@
                   @click="stage = s"
                   class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border"
                   :class="stage === s 
-                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm' 
+                    ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm' 
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'"
                 >
                   {{ s === 'final-top3' ? 'Top 3' : s.charAt(0).toUpperCase() + s.slice(1).replace('-', ' ') }}
@@ -113,7 +113,7 @@
           <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-center gap-4">
             <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
               <div class="flex items-center gap-3">
-                <div class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                <div class="p-2 bg-teal-100 text-teal-600 rounded-lg">
                   <BarChart3 class="w-4 h-4" />
                 </div>
                 <span class="text-sm font-medium text-slate-600">Highest Score</span>
@@ -123,7 +123,7 @@
 
             <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
               <div class="flex items-center gap-3">
-                <div class="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                <div class="p-2 bg-teal-100 text-teal-600 rounded-lg">
                   <Target class="w-4 h-4" />
                 </div>
                 <span class="text-sm font-medium text-slate-600">Average Score</span>
@@ -133,7 +133,7 @@
 
             <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
               <div class="flex items-center gap-3">
-                <div class="p-2 bg-violet-100 text-violet-600 rounded-lg">
+                <div class="p-2 bg-teal-100 text-teal-600 rounded-lg">
                   <Users class="w-4 h-4" />
                 </div>
                 <span class="text-sm font-medium text-slate-600">Contestants</span>

@@ -40,7 +40,7 @@
         <div
           v-for="criterion in criteria"
           :key="criterion.id"
-          class="p-3 rounded-lg border border-gray-200 hover:bg-amber-50/40 transition-colors"
+          class="p-3 rounded-lg border border-gray-200 hover:bg-teal-50/40 transition-colors"
         >
           <div class="flex items-center justify-between mb-2">
             <div>
@@ -69,7 +69,7 @@
           @input="$emit('update-note', ($event.target as HTMLTextAreaElement).value)"
           rows="2"
           :disabled="!canEdit"
-          class="w-full rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-amber-500 text-sm resize-none disabled:opacity-50 disabled:bg-gray-100"
+          class="w-full rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-teal-500 text-sm resize-none disabled:opacity-50 disabled:bg-gray-100"
           placeholder="Comments or observations for this contestant..."
         ></textarea>
       </div>
@@ -78,7 +78,7 @@
       <div class="mt-4">
         <button
           type="button"
-          class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="!canEdit || !isComplete"
           @click="$emit('submit')"
         >
