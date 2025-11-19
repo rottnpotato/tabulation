@@ -44,7 +44,7 @@
           
           <div class="space-y-4">
             <Link 
-              href="/login" 
+              :href="route('login')"
               class="block w-full py-3 px-4 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
               Return to Login

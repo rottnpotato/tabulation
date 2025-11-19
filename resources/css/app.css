@@ -180,3 +180,96 @@
     rgba(255, 255, 255, 0)
   );
 }
+
+/* Enhanced Form Input Styles */
+@layer components {
+  /* Base input styles for text fields */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"],
+  input[type="url"],
+  input[type="tel"],
+  select,
+  textarea {
+    @apply px-4 py-3 text-base;
+    @apply rounded-lg border border-gray-300;
+    @apply shadow-sm transition-all duration-200;
+    @apply focus:ring-2 focus:ring-opacity-50;
+    @apply hover:border-gray-400;
+    @apply disabled:bg-gray-100 disabled:cursor-not-allowed;
+    min-height: 44px; /* Better touch target */
+  }
+
+  /* Textarea specific enhancements */
+  textarea {
+    @apply py-3 px-4;
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  /* Small variant for compact layouts */
+  .input-sm {
+    @apply px-3 py-2 text-sm;
+    min-height: 38px;
+  }
+
+  textarea.input-sm {
+    min-height: 80px;
+  }
+
+  /* Large variant for emphasis */
+  .input-lg {
+    @apply px-5 py-4 text-lg;
+    min-height: 52px;
+  }
+
+  textarea.input-lg {
+    min-height: 120px;
+  }
+
+  /* Theme color variants */
+  .input-purple {
+    @apply focus:border-purple-500 focus:ring-purple-200;
+  }
+
+  .input-teal {
+    @apply focus:border-teal-500 focus:ring-teal-200;
+  }
+
+  .input-blue {
+    @apply focus:border-blue-500 focus:ring-blue-200;
+  }
+
+  .input-orange {
+    @apply focus:border-orange-500 focus:ring-orange-200;
+  }
+
+  .input-emerald {
+    @apply focus:border-emerald-500 focus:ring-emerald-200;
+  }
+
+  /* Error state */
+  .input-error {
+    @apply border-red-300 focus:border-red-500 focus:ring-red-200;
+    @apply bg-red-50;
+  }
+
+  /* Success state */
+  .input-success {
+    @apply border-green-300 focus:border-green-500 focus:ring-green-200;
+    @apply bg-green-50;
+  }
+
+  /* Input with icon spacing */
+  .input-with-icon-left {
+    @apply pl-11;
+  }
+
+  .input-with-icon-right {
+    @apply pr-11;
+  }
+}

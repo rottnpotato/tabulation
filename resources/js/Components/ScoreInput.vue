@@ -5,7 +5,7 @@
       type="button"
       :disabled="disabled || currentValue <= min"
       @click="step(-stepSize)"
-      class="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+      class="h-10 w-10 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
       :aria-label="`Decrease to ${Math.max(min, (Number(currentValue) - stepSize).toFixed(displayStep))}`"
     >
       −
@@ -14,7 +14,7 @@
     <!-- Slider -->
     <input
       type="range"
-      class="w-40 accent-amber-500 disabled:opacity-50"
+      class="w-40 accent-indigo-600 disabled:opacity-50 cursor-pointer"
       :min="min"
       :max="max"
       :step="step"
@@ -27,7 +27,7 @@
     <div class="relative">
       <input
         type="number"
-        class="w-24 text-center rounded-lg border border-gray-300 focus:border-amber-500 focus:ring-amber-500 disabled:bg-gray-100 disabled:opacity-50"
+        class="w-24 text-center rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-slate-100 disabled:opacity-50 font-bold text-slate-700"
         :min="min"
         :max="max"
         :step="step"
@@ -35,7 +35,7 @@
         :value="currentValue"
         @change="onNumberChange"
       />
-      <div class="absolute inset-y-0 right-2 flex items-center text-gray-400 text-xs">pts</div>
+      <div class="absolute inset-y-0 right-2 flex items-center text-slate-400 text-xs font-medium">pts</div>
     </div>
 
     <!-- Increment Button -->
@@ -43,7 +43,7 @@
       type="button"
       :disabled="disabled || currentValue >= max"
       @click="step(stepSize)"
-      class="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+      class="h-10 w-10 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
       :aria-label="`Increase to ${Math.min(max, (Number(currentValue) + stepSize).toFixed(displayStep))}`"
     >
       +

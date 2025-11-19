@@ -69,19 +69,10 @@
                   />
                   <span class="ml-2 text-sm text-gray-700">Draft</span>
                 </label>
-                <label class="inline-flex items-center">
-                  <input 
-                    type="radio" 
-                    v-model="form.status" 
-                    value="Setup" 
-                    class="border-gray-300 text-teal-600 focus:ring-teal-500"
-                  />
-                  <span class="ml-2 text-sm text-gray-700">Setup</span>
-                </label>
               </div>
               <p v-if="errors.status" class="mt-1 text-sm text-red-600">{{ errors.status }}</p>
               <p v-else class="mt-1 text-xs text-gray-500">
-                Draft: Only visible to admins, Setup: Available for configuration
+                Pageant will be created as a draft and only visible to admins
               </p>
             </div>
             
@@ -166,8 +157,10 @@
                   id="start_date"
                   type="date"
                   v-model="form.start_date"
+                  :min="todayDate"
                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                 />
+                <p class="mt-1 text-xs text-gray-500">Cannot select a date before today</p>
               </div>
               <div>
                 <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
@@ -175,11 +168,13 @@
                   id="end_date"
                   type="date"
                   v-model="form.end_date"
-                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                   :min="form.start_date"
+                  :disabled="!form.start_date"
+                  class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                   :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.end_date }"
                 />
                 <p v-if="errors.end_date" class="mt-1 text-sm text-red-600">{{ errors.end_date }}</p>
+                <p v-else-if="!form.start_date" class="mt-1 text-xs text-gray-500">Please select a start date first</p>
               </div>
             </div>
 
@@ -195,15 +190,39 @@
                   placeholder="e.g. Grand Convention Center"
                 />
               </div>
-              <div>
-                <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <div class="relative">
+                <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Location (Bohol Only)</label>
                 <input
                   id="location"
                   type="text"
-                  v-model="form.location"
+                  v-model="locationInput"
+                  @input="handleLocationInput"
+                  @blur="handleLocationBlur"
                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
-                  placeholder="e.g. New York, USA"
+                  :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.location }"
+                  placeholder="Start typing a municipality/city in Bohol..."
+                  autocomplete="off"
                 />
+                
+                <!-- Suggestions Dropdown -->
+                <div
+                  v-if="showLocationSuggestions && filteredLocations.length > 0"
+                  class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto"
+                >
+                  <button
+                    v-for="(location, index) in filteredLocations"
+                    :key="index"
+                    type="button"
+                    @click="selectLocation(location)"
+                    class="w-full px-3 py-2 text-left hover:bg-teal-50 transition-colors border-b border-gray-100 last:border-b-0"
+                  >
+                    <div class="font-medium text-gray-900">{{ location }}</div>
+                    <div class="text-xs text-gray-500">Bohol, Philippines</div>
+                  </button>
+                </div>
+                
+                <p v-if="errors.location" class="mt-1 text-sm text-red-600">{{ errors.location }}</p>
+                <p v-else class="mt-1 text-xs text-gray-500">Only locations within Bohol province are accepted</p>
               </div>
             </div>
 
@@ -401,6 +420,58 @@ const contestantTypes = [
   }
 ];
 
+// Bohol municipalities and cities
+const boholLocations = [
+  'Tagbilaran City',
+  'Alburquerque',
+  'Alicia',
+  'Anda',
+  'Antequera',
+  'Baclayon',
+  'Balilihan',
+  'Batuan',
+  'Bien Unido',
+  'Bilar',
+  'Buenavista',
+  'Calape',
+  'Candijay',
+  'Carmen',
+  'Catigbian',
+  'Clarin',
+  'Corella',
+  'Cortes',
+  'Dagohoy',
+  'Danao',
+  'Dauis',
+  'Dimiao',
+  'Duero',
+  'Garcia Hernandez',
+  'Getafe',
+  'Guindulman',
+  'Inabanga',
+  'Jagna',
+  'Lila',
+  'Loay',
+  'Loboc',
+  'Loon',
+  'Mabini',
+  'Maribojoc',
+  'Panglao',
+  'Pilar',
+  'President Carlos P. Garcia',
+  'Sagbayan',
+  'San Isidro',
+  'San Miguel',
+  'Sevilla',
+  'Sierra Bullones',
+  'Sikatuna',
+  'Talibon',
+  'Trinidad',
+  'Tubigon',
+  'Ubay',
+  'Valencia'
+];
+
 // Define props received from the controller
 const props = defineProps({
   organizers: {
@@ -437,8 +508,59 @@ const errors = ref({});
 const isSubmitting = ref(false);
 const showNewOrganizerModal = ref(false);
 
+// Location input handling
+const locationInput = ref('');
+const showLocationSuggestions = ref(false);
+
+const filteredLocations = computed(() => {
+  if (!locationInput.value) return [];
+  
+  const searchTerm = locationInput.value.toLowerCase();
+  return boholLocations.filter(location => 
+    location.toLowerCase().includes(searchTerm)
+  );
+});
+
+const handleLocationInput = () => {
+  showLocationSuggestions.value = true;
+  // Clear the form location if user is typing
+  if (form.location !== locationInput.value) {
+    form.location = '';
+  }
+};
+
+const handleLocationBlur = () => {
+  // Delay to allow click on suggestion
+  setTimeout(() => {
+    showLocationSuggestions.value = false;
+    
+    // Validate if the entered location is in Bohol
+    if (locationInput.value && !boholLocations.includes(locationInput.value)) {
+      errors.value.location = 'Please select a valid location from Bohol';
+      form.location = '';
+    }
+  }, 200);
+};
+
+const selectLocation = (location) => {
+  locationInput.value = location;
+  form.location = location;
+  showLocationSuggestions.value = false;
+  
+  // Clear location error if exists
+  if (errors.value.location) {
+    delete errors.value.location;
+  }
+};
+
 // Get the notification service
 const notify = useNotification();
+
+// Get today's date in YYYY-MM-DD format
+const todayDate = computed(() => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+});
 
 // Compute organizers with date conflicts dynamically
 const organizerConflicts = computed(() => {
@@ -501,8 +623,18 @@ const submitForm = () => {
     errors.value.contestant_type = 'Contestant type is required';
   }
   
+  // Validate start date is not in the past
+  if (form.start_date && new Date(form.start_date) < new Date(todayDate.value)) {
+    errors.value.start_date = 'Start date cannot be in the past';
+  }
+  
   if (form.start_date && form.end_date && new Date(form.end_date) < new Date(form.start_date)) {
     errors.value.end_date = 'End date must be after start date';
+  }
+  
+  // Validate location is from Bohol
+  if (locationInput.value && !boholLocations.includes(locationInput.value)) {
+    errors.value.location = 'Please select a valid location from Bohol';
   }
   
   // Check if any selected organizers have conflicts
@@ -533,14 +665,12 @@ const submitForm = () => {
   console.log('Submitting form data:', form);
   console.log('Organizer IDs:', form.organizer_ids);
   
-  router.post('/admin/pageants/create', form, {
+  router.post(route('admin.pageants.store'), form, {
     onSuccess: (page) => {
       console.log('Form submission successful:', page);
       // Show a success message even if the server doesn't provide one
       notify.success(`Pageant "${form.name}" has been created successfully!`);
       isSubmitting.value = false;
-      // Explicitly navigate to the pageants list
-      router.visit('/admin/pageants');
     },
     onError: (validationErrors) => {
       console.log('Form submission failed with errors:', validationErrors);

@@ -130,9 +130,9 @@
       <!-- Tab Content -->
       <div class="p-4 sm:p-6">
         <!-- Overview Tab -->
-        <div v-if="activeTab === 'overview'" class="space-y-6">
+        <div v-if="activeTab === 'overview'" class="space-y-6 overflow-visible">
           <!-- Pageant Progress -->
-          <div class="bg-orange-50 rounded-lg p-4 sm:p-6">
+          <div class="bg-orange-50 rounded-lg p-4 sm:p-6 shadow-sm">
             <h3 class="text-lg font-semibold text-gray-900 mb-3">Pageant Progress</h3>
             
             <div class="mb-4">
@@ -155,19 +155,19 @@
               This pageant has been completed.
             </div>
             
-            <div v-else-if="isActive" class="flex items-center text-sm text-blue-700 bg-blue-50 p-3 rounded-md">
+            <div v-else-if="isOngoing" class="flex items-center text-sm text-blue-700 bg-blue-50 p-3 rounded-md">
               <Activity class="h-5 w-5 mr-2 text-blue-500" />
-              This pageant is currently active and ongoing.
+              This pageant is currently ongoing.
             </div>
             
-            <div v-else-if="isDraft || isSetup" class="flex items-center text-sm text-amber-700 bg-amber-50 p-3 rounded-md">
+            <div v-else-if="isDraft" class="flex items-center text-sm text-amber-700 bg-amber-50 p-3 rounded-md">
               <AlertCircle class="h-5 w-5 mr-2 text-amber-500" />
-              This pageant is still in {{ isDraft ? 'draft' : 'setup' }} mode and requires configuration.
+              This pageant is still in draft mode and requires configuration.
             </div>
           </div>
           
           <!-- Status Change Section -->
-          <div v-if="canEdit || isActive || (isCompleted && isAdmin) || isUnlockedForEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-visible">
+          <div v-if="canEdit || isOngoing || (isCompleted && isAdmin)" class="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div class="p-4 sm:p-6">
               <h4 class="text-base font-medium text-gray-900 mb-4">Pageant Status</h4>
               <p class="text-sm text-gray-500 mb-4">
@@ -175,7 +175,7 @@
               </p>
               
               <!-- Auto-completion warning -->
-              <div v-if="isPageantDateElapsed && !isCompleted && !isUnlockedForEdit" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <div v-if="isPageantDateElapsed && !isCompleted" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
                 <div class="flex items-start">
                   <AlertCircle class="h-5 w-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
                   <div>
@@ -188,7 +188,7 @@
               </div>
               
               <!-- Admin-only notice -->
-              <div v-if="!isAdmin && (isCompleted || isUnlockedForEdit)" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div v-if="!isAdmin && isCompleted" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <div class="flex items-start">
                   <Info class="h-5 w-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
                   <div>
@@ -200,9 +200,9 @@
                 </div>
               </div>
               
-              <div class="flex items-center justify-between">
+              <div class="space-y-4">
                 <div class="flex items-center">
-                  <span class="text-sm text-gray-600 mr-3">Current Status:</span>
+                  <span class="text-sm font-medium text-gray-700 mr-3">Current Status:</span>
                   <span :class="[
                     getStatusClass(pageant.status).badge,
                     'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
@@ -211,21 +211,19 @@
                   </span>
                 </div>
                 
-                <div class="flex items-center space-x-3">
-                  <div v-if="getAvailableStatusTransitions().length > 0">
-                    <label class="block text-sm font-medium text-gray-700">Change to:</label>
-                    <div class="mt-1 w-full">
-                      <CustomSelect
-                        v-model="selectedNewStatus"
-                        :options="getAvailableStatusTransitions()"
-                        placeholder="Select new status"
-                        variant="orange"
-                      />
-                    </div>
+                <div v-if="getAvailableStatusTransitions().length > 0" class="flex items-end gap-3">
+                  <div class="flex-1 max-w-xs">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Change Status To:</label>
+                    <CustomSelect
+                      v-model="selectedNewStatus"
+                      :options="getAvailableStatusTransitions()"
+                      placeholder="Select new status"
+                      variant="orange"
+                    />
                   </div>
                   
                   <button 
-                    v-if="selectedNewStatus && getAvailableStatusTransitions().length > 0"
+                    v-if="selectedNewStatus"
                     @click="updateStatus"
                     :disabled="statusUpdateForm.processing"
                     class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -233,10 +231,10 @@
                     <AlertCircle class="h-4 w-4 mr-1.5" />
                     {{ statusUpdateForm.processing ? 'Updating...' : 'Update Status' }}
                   </button>
-                  
-                  <div v-else-if="getAvailableStatusTransitions().length === 0" class="text-sm text-gray-500">
-                    {{ isCompleted && !isAdmin ? 'Completed pageants can only be modified by administrators.' : 'No status changes available from current status.' }}
-                  </div>
+                </div>
+                
+                <div v-else class="text-sm text-gray-500 italic">
+                  {{ isCompleted && !isAdmin ? 'Completed pageants can only be modified by administrators.' : 'No status changes available from current status.' }}
                 </div>
               </div>
               
@@ -769,12 +767,24 @@
           </div>
           
           <!-- Tabulator Assignment Section -->
-          <div v-if="canEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-visible">
+          <div v-if="canEdit && !hasAssignedTabulator" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-visible">
             <div class="p-4 sm:p-6">
-              <h4 class="text-base font-medium text-gray-900 mb-4">Assign Tabulator</h4>
-              <p class="text-sm text-gray-500 mb-4">
-                Assign a tabulator to this pageant. Tabulators are responsible for creating judge accounts and managing the scoring process.
-              </p>
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h4 class="text-base font-medium text-gray-900">Assign Tabulator</h4>
+                  <p class="text-sm text-gray-500 mt-1">
+                    Only one tabulator can be assigned. Choose an existing account or create a new one.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  @click="openCreateTabulatorModal"
+                  class="inline-flex items-center px-3 py-2 border border-orange-300 rounded-md text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 transition-colors"
+                >
+                  <Plus class="h-4 w-4 mr-1.5" />
+                  Create New
+                </button>
+              </div>
               
               <form @submit.prevent="assignTabulator" class="space-y-4">
                 <div>
@@ -1832,6 +1842,171 @@
       @confirm="deleteCriteria"
       @cancel="closeDeleteCriteriaModal"
     />
+    
+    <!-- Create Tabulator Modal -->
+    <TransitionRoot appear :show="showCreateTabulatorModal" as="template">
+      <Dialog as="div" @close="closeCreateTabulatorModal" class="relative z-30">
+        <TransitionChild
+          enter="ease-out duration-300"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="ease-in duration-200"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4">
+            <TransitionChild
+              enter="ease-out duration-300"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
+                <!-- Modal Header -->
+                <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5">
+                  <DialogTitle as="h3" class="text-xl font-semibold text-white flex items-center">
+                    <div class="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
+                      <User class="h-6 w-6 text-white" />
+                    </div>
+                    Create New Tabulator Account
+                  </DialogTitle>
+                  <p class="text-orange-50 text-sm mt-2">
+                    Create a new tabulator account for this pageant
+                  </p>
+                </div>
+                
+                <!-- Modal Body -->
+                <form @submit.prevent="submitCreateTabulatorForm" class="p-6 space-y-5">
+                  <!-- Name -->
+                  <div>
+                    <label for="tabulator-name" class="block text-sm font-semibold text-gray-700 mb-2">Full Name *</label>
+                    <input
+                      id="tabulator-name"
+                      v-model="createTabulatorForm.name"
+                      type="text"
+                      required
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      placeholder="Enter full name"
+                    />
+                    <p v-if="createTabulatorForm.errors.name" class="mt-2 text-sm text-red-600 flex items-center">
+                      <XCircle class="h-4 w-4 mr-1" />
+                      {{ createTabulatorForm.errors.name }}
+                    </p>
+                  </div>
+                  
+                  <!-- Username -->
+                  <div>
+                    <label for="tabulator-username" class="block text-sm font-semibold text-gray-700 mb-2">Username *</label>
+                    <input
+                      id="tabulator-username"
+                      v-model="createTabulatorForm.username"
+                      type="text"
+                      required
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      placeholder="Enter username"
+                    />
+                    <p v-if="createTabulatorForm.errors.username" class="mt-2 text-sm text-red-600 flex items-center">
+                      <XCircle class="h-4 w-4 mr-1" />
+                      {{ createTabulatorForm.errors.username }}
+                    </p>
+                  </div>
+                  
+                  <!-- Email -->
+                  <div>
+                    <label for="tabulator-email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address *</label>
+                    <input
+                      id="tabulator-email"
+                      v-model="createTabulatorForm.email"
+                      type="email"
+                      required
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      placeholder="email@example.com"
+                    />
+                    <p class="mt-1.5 text-xs text-gray-500">Used for login and notifications</p>
+                    <p v-if="createTabulatorForm.errors.email" class="mt-2 text-sm text-red-600 flex items-center">
+                      <XCircle class="h-4 w-4 mr-1" />
+                      {{ createTabulatorForm.errors.email }}
+                    </p>
+                  </div>
+                  
+                  <!-- Password -->
+                  <div>
+                    <label for="tabulator-password" class="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
+                    <input
+                      id="tabulator-password"
+                      v-model="createTabulatorForm.password"
+                      type="password"
+                      required
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      placeholder="Enter password (min. 6 characters)"
+                    />
+                    <p v-if="createTabulatorForm.errors.password" class="mt-2 text-sm text-red-600 flex items-center">
+                      <XCircle class="h-4 w-4 mr-1" />
+                      {{ createTabulatorForm.errors.password }}
+                    </p>
+                  </div>
+                  
+                  <!-- Confirm Password -->
+                  <div>
+                    <label for="tabulator-password-confirmation" class="block text-sm font-semibold text-gray-700 mb-2">Confirm Password *</label>
+                    <input
+                      id="tabulator-password-confirmation"
+                      v-model="createTabulatorForm.password_confirmation"
+                      type="password"
+                      required
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      placeholder="Re-enter password"
+                    />
+                    <p v-if="createTabulatorForm.errors.password_confirmation" class="mt-2 text-sm text-red-600 flex items-center">
+                      <XCircle class="h-4 w-4 mr-1" />
+                      {{ createTabulatorForm.errors.password_confirmation }}
+                    </p>
+                  </div>
+                  
+                  <!-- Notes -->
+                  <div>
+                    <label for="tabulator-notes" class="block text-sm font-semibold text-gray-700 mb-2">Notes (Optional)</label>
+                    <textarea
+                      id="tabulator-notes"
+                      v-model="createTabulatorForm.notes"
+                      rows="3"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      placeholder="Add any notes about this tabulator"
+                    ></textarea>
+                  </div>
+                  
+                  <!-- Form Actions -->
+                  <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                    <button
+                      type="button"
+                      @click="closeCreateTabulatorModal"
+                      :disabled="createTabulatorForm.processing"
+                      class="px-5 py-2.5 border border-gray-300 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      :disabled="createTabulatorForm.processing"
+                      class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Save v-if="!createTabulatorForm.processing" class="h-5 w-5 mr-2" />
+                      {{ createTabulatorForm.processing ? 'Creating...' : 'Create Tabulator' }}
+                    </button>
+                  </div>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
 
@@ -1902,6 +2077,7 @@ const deleteProcessing = ref(false)
 const selectedTabulator = ref(null)
 const showDeleteTabulatorConfirm = ref(false)
 const deleteTabulatorProcessing = ref(false)
+const showCreateTabulatorModal = ref(false)
 
 // Contestant modal states
 const showContestantModal = ref(false)
@@ -1937,6 +2113,18 @@ const tabulatorForm = ref({
   tabulator_id: '',
   notes: '',
   processing: false
+})
+
+// Create tabulator form state
+const createTabulatorForm = ref({
+  name: '',
+  username: '',
+  email: '',
+  password: '',
+  password_confirmation: '',
+  notes: '',
+  processing: false,
+  errors: {}
 })
 
 // Contestant form state
@@ -1992,6 +2180,11 @@ const tabulatorOptions = computed(() => {
     value: tabulator.id,
     label: `${tabulator.name} (@${tabulator.username})`
   }))
+})
+
+// Check if pageant already has a tabulator assigned
+const hasAssignedTabulator = computed(() => {
+  return props.pageant.tabulators && props.pageant.tabulators.length > 0
 })
 
 // Status update form
@@ -2267,6 +2460,64 @@ const assignTabulator = () => {
   })
 }
 
+const openCreateTabulatorModal = () => {
+  resetCreateTabulatorForm()
+  showCreateTabulatorModal.value = true
+}
+
+const closeCreateTabulatorModal = () => {
+  showCreateTabulatorModal.value = false
+  resetCreateTabulatorForm()
+}
+
+const resetCreateTabulatorForm = () => {
+  createTabulatorForm.value = {
+    name: '',
+    username: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+    notes: '',
+    processing: false,
+    errors: {}
+  }
+}
+
+const submitCreateTabulatorForm = () => {
+  createTabulatorForm.value.processing = true
+  createTabulatorForm.value.errors = {}
+  
+  // Validate password match on frontend
+  if (createTabulatorForm.value.password !== createTabulatorForm.value.password_confirmation) {
+    createTabulatorForm.value.errors = {
+      password_confirmation: 'Passwords do not match'
+    }
+    createTabulatorForm.value.processing = false
+    return
+  }
+  
+  router.post(route('organizer.pageant.tabulators.create', props.pageant.id), {
+    name: createTabulatorForm.value.name,
+    username: createTabulatorForm.value.username,
+    email: createTabulatorForm.value.email,
+    password: createTabulatorForm.value.password,
+    password_confirmation: createTabulatorForm.value.password_confirmation,
+    notes: createTabulatorForm.value.notes
+  }, {
+    onSuccess: () => {
+      closeCreateTabulatorModal()
+      router.reload()
+    },
+    onError: (errors) => {
+      createTabulatorForm.value.errors = errors
+      createTabulatorForm.value.processing = false
+    },
+    onFinish: () => {
+      createTabulatorForm.value.processing = false
+    }
+  })
+}
+
 const confirmRemoveTabulator = (tabulator) => {
   selectedTabulator.value = tabulator
   showDeleteTabulatorConfirm.value = true
@@ -2295,10 +2546,8 @@ const removeTabulator = () => {
 
 // Computed properties for pageant status
 const isDraft = computed(() => props.pageant.status === 'Draft')
-const isSetup = computed(() => props.pageant.status === 'Setup')
-const isActive = computed(() => props.pageant.status === 'Active')
+const isOngoing = computed(() => props.pageant.status === 'Ongoing')
 const isCompleted = computed(() => props.pageant.status === 'Completed')
-const isUnlockedForEdit = computed(() => props.pageant.status === 'Unlocked_For_Edit')
 
 // Check if user is admin
 const isAdmin = computed(() => props.auth?.user?.role === 'admin')
@@ -2314,9 +2563,7 @@ const isPageantDateElapsed = computed(() => {
 
 // Check if pageant can be edited
 const canEdit = computed(() => 
-  isDraft.value || 
-  isSetup.value || 
-  isUnlockedForEdit.value
+  isDraft.value
 )
 
 // Get status styling
@@ -2324,14 +2571,10 @@ const getStatusClass = (status) => {
   switch (status) {
     case 'Draft':
       return { badge: 'bg-gray-100 text-gray-800' }
-    case 'Setup':
-      return { badge: 'bg-blue-100 text-blue-800' }
-    case 'Active':
+    case 'Ongoing':
       return { badge: 'bg-green-100 text-green-800' }
     case 'Completed':
       return { badge: 'bg-purple-100 text-purple-800' }
-    case 'Unlocked_For_Edit':
-      return { badge: 'bg-yellow-100 text-yellow-800' }
     default:
       return { badge: 'bg-gray-100 text-gray-800' }
   }
@@ -2352,15 +2595,11 @@ const getScoringSystemDescription = (system) => {
 const getStatusTooltipText = (status) => {
   switch (status) {
     case 'Draft':
-      return 'This pageant is in draft mode. Continue adding contestants, criteria, and scheduling events.'
-    case 'Setup':
-      return 'Pageant setup is complete. Ready for contestant registration and judge assignments.'
-    case 'Active':
-      return 'This pageant is currently active. Scoring is in progress and results are being calculated.'
+      return 'This pageant is in draft mode. Continue adding contestants, rounds, and criteria.'
+    case 'Ongoing':
+      return 'This pageant is currently ongoing. Scoring is in progress and results are being calculated.'
     case 'Completed':
       return 'This pageant has finished. All scoring is complete and final results are available.'
-    case 'Unlocked_For_Edit':
-      return 'This completed pageant is temporarily unlocked for editing and corrections.'
     default:
       return 'Current status of this pageant'
   }
@@ -2385,22 +2624,22 @@ const getContestantTypeClass = (type) => {
     case 'solo':
       return { 
         badge: 'bg-blue-100 text-blue-800',
-        icon: 'User'
+        icon: User
       }
     case 'pairs':
       return { 
         badge: 'bg-emerald-100 text-emerald-800',
-        icon: 'Users'
+        icon: Users
       }
     case 'both':
       return { 
         badge: 'bg-purple-100 text-purple-800',
-        icon: 'Users'
+        icon: Users
       }
     default:
       return { 
         badge: 'bg-gray-100 text-gray-800',
-        icon: 'Users'
+        icon: Users
       }
   }
 }
@@ -2440,7 +2679,7 @@ const getAvailableStatusTransitions = () => {
   const currentStatus = props.pageant.status
   
   // If pageant date has elapsed and it's not completed, auto-complete
-  if (isPageantDateElapsed.value && !isCompleted.value && !isUnlockedForEdit.value) {
+  if (isPageantDateElapsed.value && !isCompleted.value) {
     return [{
       value: 'Completed',
       label: 'Completed (Auto-completion due to elapsed date)'
@@ -2448,24 +2687,12 @@ const getAvailableStatusTransitions = () => {
   }
   
   const baseTransitions = {
-    'Draft': ['Setup', 'Active'],
-    'Setup': ['Draft', 'Active'],
-    'Active': ['Completed'],
+    'Draft': ['Ongoing'],
+    'Ongoing': ['Completed'],
     'Completed': [], // Completed pageants cannot be reverted
-    'Unlocked_For_Edit': ['Completed'], // Can only go back to completed
   }
   
   let transitions = baseTransitions[currentStatus] || []
-  
-  // Only admins can set Unlocked_For_Edit status
-  if (currentStatus === 'Completed' && isAdmin.value) {
-    transitions = ['Unlocked_For_Edit']
-  }
-  
-  // Only admins can transition from any status to Unlocked_For_Edit
-  if (isAdmin.value && currentStatus !== 'Completed' && currentStatus !== 'Unlocked_For_Edit') {
-    transitions = [...transitions, 'Unlocked_For_Edit']
-  }
   
   return transitions.map(status => ({
     value: status,
@@ -2475,16 +2702,8 @@ const getAvailableStatusTransitions = () => {
 
 const getStatusTransitionHelp = (fromStatus, toStatus) => {
   const transitions = {
-    'Draft->Setup': 'Lock the pageant configuration and prepare for contestant registration.',
-    'Draft->Active': 'Start the pageant competition immediately (skips setup phase).',
-    'Draft->Unlocked_For_Edit': 'Temporarily unlock the pageant for administrative corrections. (Admin only)',
-    'Setup->Draft': 'Unlock the pageant to continue making changes.',
-    'Setup->Active': 'Start the pageant competition and begin scoring.',
-    'Setup->Unlocked_For_Edit': 'Temporarily unlock the pageant for administrative corrections. (Admin only)',
-    'Active->Completed': 'End the pageant and finalize results.',
-    'Active->Unlocked_For_Edit': 'Temporarily unlock the pageant for administrative corrections. (Admin only)',
-    'Completed->Unlocked_For_Edit': 'Temporarily unlock the completed pageant to make corrections. (Admin only)',
-    'Unlocked_For_Edit->Completed': 'Relock the pageant as completed.',
+    'Draft->Ongoing': 'Start the pageant competition and begin scoring.',
+    'Ongoing->Completed': 'End the pageant and finalize results.',
   }
   
   // Special case for auto-completion
@@ -2504,20 +2723,24 @@ const updateStatus = () => {
   router.put(route('organizer.pageant.status.update', props.pageant.id), {
     status: selectedNewStatus.value
   }, {
-    onFinish: () => {
+    onSuccess: () => {
       statusUpdateForm.value.processing = false
       selectedNewStatus.value = ''
+      router.reload({ only: ['pageant'] })
     },
     onError: (errors) => {
       statusUpdateForm.value.processing = false
       console.error('Status update failed:', errors)
+    },
+    onFinish: () => {
+      statusUpdateForm.value.processing = false
     }
   })
 }
 
 // Auto-completion logic
 const checkForAutoCompletion = () => {
-  if (isPageantDateElapsed.value && !isCompleted.value && !isUnlockedForEdit.value && !statusUpdateForm.value.processing) {
+  if (isPageantDateElapsed.value && !isCompleted.value && !statusUpdateForm.value.processing) {
     console.log('Pageant date has elapsed, suggesting auto-completion')
     // You could automatically trigger the completion here, but it's better to let the user decide
     // by showing the auto-completion option in the UI
@@ -3058,7 +3281,7 @@ onMounted(() => {
 })
 
 // Watch for changes in pageant status or date that might trigger auto-completion
-watch([isPageantDateElapsed, isCompleted, isUnlockedForEdit], () => {
+watch([isPageantDateElapsed, isCompleted], () => {
   checkForAutoCompletion()
 })
 </script> 

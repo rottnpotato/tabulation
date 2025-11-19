@@ -23,7 +23,7 @@
 
     <!-- Sidebar -->
     <div
-      class="fixed inset-y-0 left-0 z-40 bg-white border-r transform transition-all duration-300 ease-in-out"
+      class="fixed inset-y-0 left-0 z-40 bg-white border-r border-slate-100 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] transform transition-all duration-300 ease-in-out"
       :class="[
         isOpen ? 'w-64' : 'w-20', 
         isMobile ? (isOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0',
@@ -31,7 +31,7 @@
       ]"
     >
       <!-- Logo -->
-      <div class="flex items-start p-4 border-b overflow-hidden">
+      <div class="flex items-start p-6 overflow-hidden">
         <Crown class="h-9 w-9 flex-shrink-0 mt-1" :class="roleColor" />
         <div 
           class="ml-3 font-bold text-gray-900 transition-all duration-300 overflow-hidden"
@@ -43,7 +43,7 @@
       </div>
 
       <!-- User info -->
-      <div class="p-4 border-b overflow-hidden">
+      <div class="px-4 pb-6 overflow-hidden">
         <div class="flex items-center">
           <div class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
             <User2 class="h-7 w-7" :class="roleColor" />
@@ -60,7 +60,7 @@
 
       <!-- Navigation -->
       <nav 
-        class="p-3 space-y-1 scrollbar-style" 
+        class="px-3 space-y-2 scrollbar-style" 
         :class="[isMobile ? 'overflow-y-auto' : 'overflow-visible']" 
         :style="isMobile ? 'max-height: calc(100vh - 200px)' : ''"
       >
@@ -70,9 +70,9 @@
             v-if="!item.children"
             :href="item.href"
             @click="handleNavigation(item)"
-            class="flex items-center px-3 py-3 rounded-md text-sm font-medium transition-all duration-300 group relative overflow-visible"
+            class="flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-visible"
             :class="[
-              isActiveLink(item) ? activeClass + ' text-white' : 'text-gray-600 hover:bg-gray-100'
+              isActiveLink(item) ? (item.activeBg || activeClass) + ' text-white' : 'text-gray-600 hover:bg-gray-100'
             ]"
           >
             <div class="flex items-center justify-center flex-shrink-0">
@@ -91,10 +91,10 @@
             <div 
               v-if="!isOpen && !isMobile" 
               class="absolute left-full top-0 ml-2 px-4 py-3 bg-white shadow-xl rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 ease-out z-50 whitespace-nowrap border border-gray-200 min-w-[150px] transform -translate-x-2 group-hover:translate-x-0 flex items-center hover:shadow-2xl"
-              :class="[isActiveLink(item) ? 'border-l-4 ' + hoverBorderColor + ' bg-gradient-to-r from-orange-50 to-white' : '']"
+              :class="[isActiveLink(item) ? 'border-l-4 ' + (item.activeBorder || hoverBorderColor) + ' bg-gradient-to-r from-orange-50 to-white' : '']"
             >
-              <component :is="item.icon" class="h-5 w-5 mr-3 transition-colors" :class="[isActiveLink(item) ? roleColor : 'text-gray-500']" />
-              <span :class="[isActiveLink(item) ? 'font-semibold ' + roleColor : 'text-gray-700']">{{ item.name }}</span>
+              <component :is="item.icon" class="h-5 w-5 mr-3 transition-colors" :class="[isActiveLink(item) ? (item.activeColor || roleColor) : 'text-gray-500']" />
+              <span :class="[isActiveLink(item) ? 'font-semibold ' + (item.activeColor || roleColor) : 'text-gray-700']">{{ item.name }}</span>
             </div>
           </Link>
           
@@ -103,9 +103,9 @@
             <!-- Parent item -->
             <button
               @click="toggleSubmenu(item.name)"
-              class="w-full flex items-center px-3 py-3 rounded-md text-sm font-medium transition-all duration-300 group relative overflow-visible"
+              class="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-visible"
               :class="[
-                isParentActive(item) ? activeClass + ' text-white' : 'text-gray-600 hover:bg-gray-100'
+                isParentActive(item) ? (item.activeBg || activeClass) + ' text-white' : 'text-gray-600 hover:bg-gray-100'
               ]"
             >
               <div class="flex items-center justify-center flex-shrink-0">
@@ -128,12 +128,12 @@
               <div 
                 v-if="!isOpen && !isMobile" 
                 class="absolute left-full top-0 ml-2 px-4 py-3 bg-white shadow-xl rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 ease-out z-50 whitespace-nowrap border border-gray-200 min-w-[180px] transform -translate-x-2 group-hover:translate-x-0 hover:shadow-2xl"
-                :class="[isParentActive(item) ? 'border-l-4 ' + hoverBorderColor + ' bg-gradient-to-r from-orange-50 to-white' : '']"
+                :class="[isParentActive(item) ? 'border-l-4 ' + (item.activeBorder || hoverBorderColor) + ' bg-gradient-to-r from-orange-50 to-white' : '']"
               >
                 <div class="flex items-center justify-between w-full">
                   <div class="flex items-center">
-                    <component :is="item.icon" class="h-5 w-5 mr-3 transition-colors" :class="[isParentActive(item) ? roleColor : 'text-gray-500']" />
-                    <span :class="[isParentActive(item) ? 'font-semibold ' + roleColor : 'text-gray-700']">{{ item.name }}</span>
+                    <component :is="item.icon" class="h-5 w-5 mr-3 transition-colors" :class="[isParentActive(item) ? (item.activeColor || roleColor) : 'text-gray-500']" />
+                    <span :class="[isParentActive(item) ? 'font-semibold ' + (item.activeColor || roleColor) : 'text-gray-700']">{{ item.name }}</span>
                   </div>
                   <ChevronRight class="h-4 w-4 text-gray-400" />
                 </div>
@@ -145,8 +145,8 @@
                     :key="child.name"
                     :href="child.href"
                     @click.prevent="navigateToSubMenuItem(child.href, item.name)"
-                    class="block py-2 px-3 text-sm rounded-md hover:bg-gray-100 transition-all transform hover:translate-x-1 hover:shadow-sm"
-                    :class="[isActiveLink(child) ? 'font-semibold ' + roleColor + ' bg-orange-50' : 'text-gray-700']"
+                    class="block py-2.5 px-4 text-sm rounded-xl hover:bg-gray-100 transition-all transform hover:translate-x-1 hover:shadow-sm"
+                    :class="[isActiveLink(child) ? 'font-semibold ' + (child.activeColor || roleColor) + ' bg-orange-50' : 'text-gray-700']"
                   >
                     {{ child.name }}
                   </a>
@@ -164,9 +164,9 @@
                 :key="child.name"
                 :href="child.href"
                 @click.prevent="navigateToSubMenuItem(child.href, item.name)"
-                class="flex items-center px-3 py-2 text-sm rounded-md transition-colors"
+                class="flex items-center px-4 py-2.5 text-sm rounded-xl transition-colors"
                 :class="[
-                  isActiveLink(child) ? activeClass + ' text-white' : 'text-gray-600 hover:bg-gray-100'
+                  isActiveLink(child) ? (child.activeBg || activeClass) + ' text-white' : 'text-gray-600 hover:bg-gray-100'
                 ]"
               >
                 <component :is="child.icon" class="h-4 w-4 mr-2" />
@@ -195,11 +195,11 @@
       </div>
 
       <!-- Logout button -->
-      <div class="absolute bottom-0 w-full p-4 border-t">
+      <div class="absolute bottom-0 w-full p-4">
         <button
           @click="logout"
           :disabled="isLoggingOut"
-          class="flex items-center w-full px-3 py-3 text-sm font-medium rounded-md transition-all group relative transform"
+          class="flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl transition-all group relative transform"
           :class="[
             isLoggingOut
               ? 'text-gray-400 bg-gray-50 cursor-wait'
@@ -330,8 +330,8 @@ const roleColor = computed(() => {
   switch (user.value?.role) {
     case 'admin': return 'text-teal-600'
     case 'organizer': return 'text-orange-600'
-    case 'tabulator': return 'text-blue-600'
-    case 'judge': return 'text-amber-600'
+    case 'tabulator': return 'text-indigo-600'
+    case 'judge': return 'text-blue-600'
     default: return 'text-gray-600'
   }
 })
@@ -340,8 +340,8 @@ const activeClass = computed(() => {
   switch (user.value?.role) {
     case 'admin': return 'bg-teal-600'
     case 'organizer': return 'bg-orange-600'
-    case 'tabulator': return 'bg-blue-600'
-    case 'judge': return 'bg-amber-600'
+    case 'tabulator': return 'bg-indigo-600'
+    case 'judge': return 'bg-blue-600'
     default: return 'bg-gray-600'
   }
 })
@@ -350,8 +350,8 @@ const hoverBorderColor = computed(() => {
   switch (user.value?.role) {
     case 'admin': return 'border-teal-600'
     case 'organizer': return 'border-orange-600'
-    case 'tabulator': return 'border-blue-600'
-    case 'judge': return 'border-amber-600'
+    case 'tabulator': return 'border-indigo-600'
+    case 'judge': return 'border-blue-600'
     default: return 'border-gray-600'
   }
 })
@@ -444,13 +444,69 @@ const navigation = computed(() => {
       
       // If pageant is selected, show full navigation with pageant context
       return [
-        { name: 'Assigned Pageants', href: route('tabulator.dashboard'), route: 'tabulator.assigned-pageants', icon: ClipboardList },
-        { name: 'Dashboard', href: route('tabulator.dashboard', currentPageantId), route: 'tabulator.dashboard', icon: LayoutDashboard },
-        { name: 'Judges', href: route('tabulator.judges', currentPageantId), route: 'tabulator.judges', icon: Users },
-        { name: 'Round Management', href: route('tabulator.rounds', currentPageantId), route: 'tabulator.rounds', icon: Settings },
-        { name: 'Scores', href: route('tabulator.scores', currentPageantId), route: 'tabulator.scores', icon: ClipboardList },
-        { name: 'Results', href: route('tabulator.results', currentPageantId), route: 'tabulator.results', icon: Award },
-        { name: 'Print', href: route('tabulator.print', currentPageantId), route: 'tabulator.print', icon: Printer }
+        { 
+          name: 'Assigned Pageants', 
+          href: route('tabulator.dashboard'), 
+          route: 'tabulator.assigned-pageants', 
+          icon: ClipboardList,
+          activeBg: 'bg-slate-600',
+          activeColor: 'text-slate-600',
+          activeBorder: 'border-slate-600'
+        },
+        { 
+          name: 'Dashboard', 
+          href: route('tabulator.dashboard', currentPageantId), 
+          route: 'tabulator.dashboard', 
+          icon: LayoutDashboard,
+          activeBg: 'bg-indigo-600',
+          activeColor: 'text-indigo-600',
+          activeBorder: 'border-indigo-600'
+        },
+        { 
+          name: 'Judges', 
+          href: route('tabulator.judges', currentPageantId), 
+          route: 'tabulator.judges', 
+          icon: Users,
+          activeBg: 'bg-blue-600',
+          activeColor: 'text-blue-600',
+          activeBorder: 'border-blue-600'
+        },
+        { 
+          name: 'Round Management', 
+          href: route('tabulator.rounds', currentPageantId), 
+          route: 'tabulator.rounds', 
+          icon: Settings,
+          activeBg: 'bg-sky-600',
+          activeColor: 'text-sky-600',
+          activeBorder: 'border-sky-600'
+        },
+        { 
+          name: 'Scores', 
+          href: route('tabulator.scores', currentPageantId), 
+          route: 'tabulator.scores', 
+          icon: ClipboardList,
+          activeBg: 'bg-indigo-500',
+          activeColor: 'text-indigo-500',
+          activeBorder: 'border-indigo-500'
+        },
+        { 
+          name: 'Results', 
+          href: route('tabulator.results', currentPageantId), 
+          route: 'tabulator.results', 
+          icon: Award,
+          activeBg: 'bg-blue-500',
+          activeColor: 'text-blue-500',
+          activeBorder: 'border-blue-500'
+        },
+        { 
+          name: 'Print', 
+          href: route('tabulator.print', currentPageantId), 
+          route: 'tabulator.print', 
+          icon: Printer,
+          activeBg: 'bg-slate-700',
+          activeColor: 'text-slate-700',
+          activeBorder: 'border-slate-700'
+        }
       ]
     case 'judge':
       const judgePageantId = getCurrentJudgePageantId.value;

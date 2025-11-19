@@ -18,7 +18,7 @@
           ></div>
 
           <!-- Modal panel -->
-          <div class="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all my-8 max-w-lg w-full">
+          <div class="inline-block align-middle transform transition-all my-8 max-w-lg w-full relative z-50">
             <slot></slot>
           </div>
         </div>

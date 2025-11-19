@@ -1,127 +1,84 @@
 <template>
   <div class="space-y-8">
     <!-- Header Section -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 shadow-lg">
-      <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_1px_1px,#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-      <div class="relative p-6 md:p-10">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div class="text-white">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 shadow-xl">
+      <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_1px_1px,#fff_1px,transparent_1px)] [background-size:20px_20px]"></div>
+      <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-blue-400 opacity-10 rounded-full blur-3xl"></div>
+      
+      <div class="relative p-8 md:p-12">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+          <div class="text-white space-y-2">
             <div class="flex items-center gap-3">
-              <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Judge Dashboard</h1>
-              <span class="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-white/20 border border-white/30">Judge</span>
+              <h1 class="text-3xl md:text-4xl font-black tracking-tight">Judge Dashboard</h1>
+              <span class="inline-flex items-center text-xs font-bold px-3 py-1 rounded-full bg-white/20 border border-white/30 backdrop-blur-sm shadow-sm">
+                Judge Panel
+              </span>
             </div>
-            <p class="mt-1 text-orange-50">Welcome back, <span class="font-semibold">{{ judge.name }}</span>.</p>
-            <p class="text-sm text-orange-100">Review and score contestants across your assigned pageants with clarity.</p>
+            <p class="text-blue-100 text-lg font-light">Welcome back, <span class="font-semibold text-white">{{ judge.name }}</span>.</p>
+            <p class="text-sm text-blue-200 max-w-xl">Review and score contestants across your assigned pageants with precision and clarity.</p>
           </div>
-          <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-xl px-4 py-3 border border-white/20">
-            <User class="h-5 w-5 text-orange-100" />
-            <div class="text-orange-50 leading-tight">
-              <div class="text-sm font-medium">{{ judge.email }}</div>
-              <div class="text-[11px] opacity-80">Signed in</div>
+          
+          <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md rounded-2xl px-5 py-4 border border-white/20 shadow-inner">
+            <div class="p-2 bg-white/20 rounded-xl">
+              <User class="h-6 w-6 text-white" />
+            </div>
+            <div class="text-blue-50 leading-tight">
+              <div class="text-sm font-bold text-white">{{ judge.email }}</div>
+              <div class="text-xs opacity-80 flex items-center gap-1">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                Active Session
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Quick Stats -->
-    <!-- <div class="grid grid-cols-1 md:grid-cols-4 gap-6"> -->
-      <!-- Assigned Pageants -->
-      <!-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center">
-          <div class="p-3 rounded-xl bg-amber-100">
-            <Calendar class="h-6 w-6 text-amber-600" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Assigned Pageants</p>
-            <p class="text-2xl font-bold text-gray-900">{{ pageants.length }}</p>
-          </div>
-        </div>
-      </div> -->
-
-      <!-- Total Scores Needed -->
-      <!-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center">
-          <div class="p-3 rounded-xl bg-blue-100">
-            <FileText class="h-6 w-6 text-blue-600" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Total Scores Needed</p>
-            <p class="text-2xl font-bold text-gray-900">{{ totalScoresNeeded }}</p>
-          </div>
-        </div>
-      </div> -->
-
-      <!-- Scores Submitted -->
-      <!-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center">
-          <div class="p-3 rounded-xl bg-green-100">
-            <CheckCircle class="h-6 w-6 text-green-600" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Scores Submitted</p>
-            <p class="text-2xl font-bold text-gray-900">{{ totalScoresSubmitted }}</p>
-          </div>
-        </div>
-      </div> -->
-
-      <!-- Overall Completion -->
-      <!-- <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-500">Overall Completion</p>
-            <p class="text-2xl font-bold text-gray-900">{{ overallCompletion }}%</p>
-          </div>
-          <div
-            class="relative h-12 w-12 rounded-full grid place-items-center"
-            :style="{
-              background: `conic-gradient(#16a34a ${overallCompletion}%, #e5e7eb 0)`
-            }"
-            aria-hidden="true"
-          >
-            <div class="h-9 w-9 rounded-full bg-white grid place-items-center text-xs font-semibold text-gray-700">{{ overallCompletion }}</div>
-          </div>
-        </div>
-      </div>
-    </div> -->
-
     <!-- Tools: Search / Filter / Sort -->
-    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 md:p-5">
-      <div class="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-        <div class="flex-1">
-          <label class="sr-only" for="search">Search</label>
-          <div class="relative">
-            <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              id="search"
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search pageants, venue, location…"
-              class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm"
-            />
-          </div>
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-1">
+      <div class="flex flex-col lg:flex-row gap-2 p-2">
+        <div class="flex-1 relative group">
+          <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+          <input
+            id="search"
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search pageants, venue, location…"
+            class="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
+          />
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="flex items-center gap-2">
-            <Filter class="h-4 w-4 text-gray-400" />
-            <select v-model="statusFilter" class="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
-              <option value="all">All statuses</option>
+        
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
+          <div class="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
+            <div class="px-3 py-2 text-slate-500">
+              <Filter class="h-4 w-4" />
+            </div>
+            <select v-model="statusFilter" class="bg-transparent border-none text-sm font-medium text-slate-700 focus:ring-0 cursor-pointer py-2 pr-8 pl-0">
+              <option value="all">All Statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="SETUP">Setup</option>
               <option value="DRAFT">Draft</option>
-              <option value="PENDING_APPROVAL">Pending approval</option>
+              <option value="PENDING_APPROVAL">Pending</option>
               <option value="COMPLETED">Completed</option>
             </select>
           </div>
-          <div class="flex items-center gap-2">
-            <ArrowUpDown class="h-4 w-4 text-gray-400" />
-            <select v-model="sortKey" class="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
-              <option value="date">By date</option>
-              <option value="progress">By progress</option>
-              <option value="name">By name</option>
+
+          <div class="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
+            <div class="px-3 py-2 text-slate-500">
+              <ArrowUpDown class="h-4 w-4" />
+            </div>
+            <select v-model="sortKey" class="bg-transparent border-none text-sm font-medium text-slate-700 focus:ring-0 cursor-pointer py-2 pr-8 pl-0">
+              <option value="date">Date</option>
+              <option value="progress">Progress</option>
+              <option value="name">Name</option>
             </select>
-            <button @click="toggleSortDir" type="button" class="ml-1 inline-flex items-center rounded-lg border border-gray-200 px-2.5 py-2 text-sm hover:bg-gray-50">
-              <span class="sr-only">Toggle sort direction</span>
+            <button 
+              @click="toggleSortDir" 
+              type="button" 
+              class="ml-1 p-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-500 transition-all"
+              :title="sortDir === 'asc' ? 'Ascending' : 'Descending'"
+            >
               <span v-if="sortDir === 'desc'">↓</span>
               <span v-else>↑</span>
             </button>
@@ -131,142 +88,160 @@
     </div>
 
     <!-- No Pageants State -->
-    <div v-if="pageants.length === 0" class="relative text-center py-16">
-      <div class="absolute inset-0 bg-gradient-to-b from-amber-50/60 to-transparent rounded-2xl"></div>
-      <div class="relative bg-white rounded-2xl shadow-md border border-gray-100 p-12 max-w-3xl mx-auto">
-        <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-amber-200 mb-6">
-          <Calendar class="h-12 w-12 text-amber-600" />
+    <div v-if="pageants.length === 0" class="relative text-center py-24">
+      <div class="absolute inset-0 bg-gradient-to-b from-blue-50/50 to-transparent rounded-3xl"></div>
+      <div class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-blue-100 p-12 max-w-2xl mx-auto">
+        <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-blue-50 mb-6 shadow-inner">
+          <Calendar class="h-10 w-10 text-blue-600" />
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">No Pageants Assigned</h3>
-        <p class="text-gray-600 mb-6 max-w-md mx-auto">
-          You haven't been assigned to any pageants yet. Please wait for a tabulator to assign you to a pageant.
+        <h3 class="text-2xl font-bold text-slate-900 mb-3">No Pageants Assigned</h3>
+        <p class="text-slate-600 mb-8 max-w-md mx-auto leading-relaxed">
+          You haven't been assigned to any pageants yet. Once a tabulator assigns you, they will appear here automatically.
         </p>
         <button
           @click="refreshData"
-          class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+          class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all duration-200 transform hover:-translate-y-0.5"
         >
-          <RefreshCw class="w-4 h-4 mr-2" />
-          Refresh
+          <RefreshCw class="w-5 h-5 mr-2" />
+          Refresh Dashboard
         </button>
       </div>
     </div>
 
     <!-- Pageants Grid -->
-    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div
         v-for="pageant in displayedPageants"
         :key="pageant.id"
-        class="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all"
+        class="group bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col"
       >
         <!-- Pageant Header -->
-        <div class="p-6 border-b border-gray-100">
+        <div class="p-7 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
           <div class="flex items-start justify-between gap-4">
-            <div class="flex-1 min-w-0">
-              <h3 class="text-lg font-semibold text-gray-900 truncate">{{ pageant.name }}</h3>
-              <p v-if="pageant.description" class="text-sm text-gray-600 mt-1 line-clamp-2">{{ pageant.description }}</p>
-
-              <div class="flex flex-wrap gap-2 text-xs mt-2">
+            <div class="flex-1 min-w-0 space-y-3">
+              <div class="flex flex-wrap gap-2">
                 <span
-                  class="inline-flex items-center px-2 py-1 rounded-full font-medium"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase"
                   :class="getStatusClass(pageant.status)"
                 >
                   {{ formatStatus(pageant.status) }}
                 </span>
-                <span v-if="pageant.pageant_date" class="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
-                  <Calendar class="h-3 w-3 mr-1" />
+                <span v-if="pageant.pageant_date" class="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
+                  <Calendar class="h-3 w-3 mr-1.5" />
                   {{ formatDate(pageant.pageant_date) }}
                 </span>
               </div>
+              
+              <h3 class="text-xl font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
+                {{ pageant.name }}
+              </h3>
+              <p v-if="pageant.description" class="text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                {{ pageant.description }}
+              </p>
             </div>
 
-            <div class="text-right">
-              <div class="text-xs text-gray-500 mb-1">Scoring Progress</div>
-              <div class="text-lg font-bold" :class="getProgressColor(pageant.scoring_progress)">
-                {{ pageant.scoring_progress }}%
+            <div class="text-right pl-4">
+              <div class="relative inline-flex items-center justify-center">
+                <svg class="w-16 h-16 transform -rotate-90">
+                  <circle
+                    class="text-slate-100"
+                    stroke-width="6"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="28"
+                    cx="32"
+                    cy="32"
+                  />
+                  <circle
+                    class="transition-all duration-1000 ease-out"
+                    :class="getProgressColor(pageant.scoring_progress)"
+                    stroke-width="6"
+                    :stroke-dasharray="175.9"
+                    :stroke-dashoffset="175.9 - (175.9 * pageant.scoring_progress) / 100"
+                    stroke-linecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="28"
+                    cx="32"
+                    cy="32"
+                  />
+                </svg>
+                <span class="absolute text-xs font-bold text-slate-700">
+                  {{ pageant.scoring_progress }}%
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Pageant Body -->
-        <div class="p-6">
-          <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="text-center">
-              <div class="text-sm text-gray-500">Contestants</div>
-              <div class="text-lg font-semibold text-gray-900">{{ pageant.contestants_count }}</div>
+        <div class="p-7 flex-grow flex flex-col">
+          <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
+              <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Contestants</div>
+              <div class="text-lg font-bold text-slate-900">{{ pageant.contestants_count }}</div>
             </div>
-            <div class="text-center">
-              <div class="text-sm text-gray-500">Rounds</div>
-              <div class="text-lg font-semibold text-gray-900">{{ pageant.rounds_count }}</div>
+            <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
+              <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Rounds</div>
+              <div class="text-lg font-bold text-slate-900">{{ pageant.rounds_count }}</div>
             </div>
-            <div class="text-center">
-              <div class="text-sm text-gray-500">Scores Left</div>
-              <div class="text-lg font-semibold text-gray-900">{{ Math.max(0, pageant.total_scores_needed - pageant.scores_submitted) }}</div>
-            </div>
-          </div>
-
-          <!-- Progress Bar -->
-          <div class="mb-4">
-            <div class="flex justify-between text-xs text-gray-600 mb-1">
-              <span>Progress</span>
-              <span>{{ pageant.scores_submitted }}/{{ pageant.total_scores_needed }}</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-              <div
-                class="h-2 rounded-full transition-all duration-300"
-                :class="getProgressBarColor(pageant.scoring_progress)"
-                :style="{ width: pageant.scoring_progress + '%' }"
-              ></div>
+            <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
+              <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Scores Left</div>
+              <div class="text-lg font-bold text-slate-900">{{ Math.max(0, pageant.total_scores_needed - pageant.scores_submitted) }}</div>
             </div>
           </div>
 
           <!-- Venue Info -->
-          <div v-if="pageant.venue || pageant.location" class="text-xs text-gray-500 mb-4">
-            <div v-if="pageant.venue" class="flex items-center">
-              <MapPin class="h-3 w-3 mr-1" />
-              {{ pageant.venue }}
+          <div v-if="pageant.venue || pageant.location" class="space-y-2 mb-6">
+            <div v-if="pageant.venue" class="flex items-center text-sm text-slate-600">
+              <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mr-3 text-blue-500">
+                <MapPin class="h-4 w-4" />
+              </div>
+              <span class="font-medium">{{ pageant.venue }}</span>
             </div>
-            <div v-if="pageant.location" class="flex items-center mt-1">
-              <Globe class="h-3 w-3 mr-1" />
-              {{ pageant.location }}
+            <div v-if="pageant.location" class="flex items-center text-sm text-slate-600">
+              <div class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center mr-3 text-indigo-500">
+                <Globe class="h-4 w-4" />
+              </div>
+              <span class="font-medium">{{ pageant.location }}</span>
             </div>
           </div>
 
-          <!-- Current Round Status -->
-          <div v-if="pageant.current_round" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+          <div class="mt-auto space-y-4">
+            <!-- Current Round Status -->
+            <div v-if="pageant.current_round" class="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wide">Current Round</span>
+                <span v-if="pageant.current_round.is_locked" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600">
+                  LOCKED
+                </span>
+                <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                  ACTIVE
+                </span>
               </div>
-              <div class="ml-3">
-                <p class="text-sm text-amber-800">
-                  <span class="font-medium">Current Round:</span> {{ pageant.current_round.name }}
-                </p>
-                <p v-if="pageant.current_round.is_locked" class="text-xs text-amber-600 mt-1">
-                  🔒 Round is locked for editing
-                </p>
+              <div class="font-semibold text-slate-900">
+                {{ pageant.current_round.name }}
               </div>
             </div>
-          </div>
 
-          <!-- Actions -->
-          <div class="flex justify-end">
-            <Link
-              v-if="pageant.id && pageant.rounds_count > 0"
-              :href="getScoringUrl(pageant.id)"
-              prefetch
-              class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
-            >
-              <Star class="h-4 w-4 mr-2" />
-              {{ pageant.current_round ? 'Continue Scoring' : 'Start Scoring' }}
-            </Link>
-            <div
-              v-else
-              class="inline-flex items-center px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg cursor-not-allowed"
-              title="No rounds available for scoring"
-            >
-              <Star class="h-4 w-4 mr-2" />
-              No Rounds Available
+            <!-- Actions -->
+            <div class="flex">
+              <Link
+                v-if="pageant.id && pageant.rounds_count > 0"
+                :href="getScoringUrl(pageant.id)"
+                prefetch
+                class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all duration-200 shadow-lg shadow-slate-900/10 hover:shadow-blue-600/20 group-hover:translate-y-0"
+              >
+                <Star class="h-4 w-4 mr-2" />
+                {{ pageant.current_round ? 'Continue Scoring' : 'Start Scoring' }}
+              </Link>
+              <div
+                v-else
+                class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-slate-100 text-slate-400 text-sm font-bold rounded-xl cursor-not-allowed"
+              >
+                <Star class="h-4 w-4 mr-2" />
+                No Rounds Available
+              </div>
             </div>
           </div>
         </div>
@@ -281,8 +256,6 @@ import { Link, router } from '@inertiajs/vue3'
 import { 
   Calendar, 
   User, 
-  FileText, 
-  CheckCircle, 
   RefreshCw, 
   Star, 
   MapPin, 
@@ -314,30 +287,12 @@ const statusFilter = ref('all')
 const sortKey = ref('date') // 'date' | 'progress' | 'name'
 const sortDir = ref('desc') // 'asc' | 'desc'
 
-const totalScoresNeeded = computed(() => {
-  return props.pageants.reduce((total, pageant) => total + pageant.total_scores_needed, 0)
-})
-
-const totalScoresSubmitted = computed(() => {
-  return props.pageants.reduce((total, pageant) => total + pageant.scores_submitted, 0)
-})
-
-const overallCompletion = computed(() => {
-  const needed = totalScoresNeeded.value
-  if (!needed || needed <= 0) {
-    return 0
-  }
-  const pct = Math.round((totalScoresSubmitted.value / needed) * 100)
-  return Math.max(0, Math.min(100, pct))
-})
-
 const refreshData = () => {
   router.reload()
 }
 
 const getScoringUrl = (pageantId) => {
   try {
-    // Find the pageant and use its current round ID, or default to no round ID
     const pageant = props.pageants.find(p => p.id === pageantId)
     const roundId = pageant?.current_round?.id
 
@@ -361,38 +316,28 @@ const formatDate = (dateString) => {
 }
 
 const formatStatus = (status) => {
-  if (!status) {
-    return 'Unknown'
-  }
-  return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  if (!status) return 'Unknown'
+  return status.replace(/_/g, ' ')
 }
 
 const getStatusClass = (status) => {
   const normalized = (status || '').toString().trim().toUpperCase().replace(/\s+/g, '_')
   const map = {
-    DRAFT: 'bg-yellow-100 text-yellow-800',
-    SETUP: 'bg-blue-100 text-blue-800',
-    ACTIVE: 'bg-green-100 text-green-800',
-    COMPLETED: 'bg-gray-100 text-gray-800',
-    PENDING_APPROVAL: 'bg-orange-100 text-orange-800'
+    DRAFT: 'bg-slate-100 text-slate-600',
+    SETUP: 'bg-indigo-100 text-indigo-700',
+    ACTIVE: 'bg-emerald-100 text-emerald-700',
+    COMPLETED: 'bg-blue-100 text-blue-700',
+    PENDING_APPROVAL: 'bg-amber-100 text-amber-700'
   }
-  return map[normalized] || 'bg-gray-100 text-gray-800'
+  return map[normalized] || 'bg-slate-100 text-slate-600'
 }
 
 const getProgressColor = (progress) => {
-  if (progress >= 100) return 'text-green-600'
-  if (progress >= 80) return 'text-orange-600'
-  if (progress >= 60) return 'text-blue-600'
-  if (progress >= 40) return 'text-yellow-600'
-  return 'text-red-600'
-}
-
-const getProgressBarColor = (progress) => {
-  if (progress >= 100) return 'bg-green-500'
-  if (progress >= 80) return 'bg-orange-500'
-  if (progress >= 60) return 'bg-blue-500'
-  if (progress >= 40) return 'bg-yellow-500'
-  return 'bg-red-500'
+  if (progress >= 100) return 'text-emerald-500'
+  if (progress >= 80) return 'text-blue-500'
+  if (progress >= 60) return 'text-indigo-500'
+  if (progress >= 40) return 'text-violet-500'
+  return 'text-slate-300'
 }
 
 // Derived list with search / filter / sort
@@ -450,12 +395,5 @@ const toggleSortDir = () => {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-</style>
-<style>
-/* Subtle dot grid helper (scoped to this SFC) */
-.bg-dots {
-  background-image: radial-gradient(#ffffff 1px, transparent 1px);
-  background-size: 16px 16px;
 }
 </style>

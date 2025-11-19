@@ -331,9 +331,13 @@ class AdminController extends Controller
                 'contestant_type' => $validated['contestant_type'],
             ]);
 
-            // Attach organizers
+            // Attach organizers - only one organizer per pageant
             if (isset($validated['organizer_ids'])) {
-                $pageant->organizers()->attach($validated['organizer_ids']);
+                // Take only the first organizer if multiple are provided
+                $organizerId = is_array($validated['organizer_ids']) 
+                    ? reset($validated['organizer_ids']) 
+                    : $validated['organizer_ids'];
+                $pageant->organizers()->attach($organizerId);
             }
 
             // Log the action

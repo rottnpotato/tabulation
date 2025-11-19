@@ -1,82 +1,100 @@
 <template>
-  <div class="print-container">
+  <div class="print-container min-h-screen bg-slate-50/50">
     <!-- Screen View -->
-    <div class="screen-only bg-gray-50 min-h-screen py-8">
+    <div class="screen-only py-8">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- No Pageant Assigned -->
-        <div v-if="!pageant" class="text-center py-16">
-          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-blue-200 mb-6">
-            <Printer class="h-12 w-12 text-blue-600" />
+        <!-- Header Section -->
+        <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-slate-200">
+          <!-- Abstract Background Pattern -->
+          <div class="absolute inset-0">
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/30 to-white opacity-90"></div>
+            <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+            <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
           </div>
-          <h3 class="text-xl font-medium text-gray-900 mb-2">No Pageant Assignment</h3>
-          <p class="text-gray-600 mb-6 max-w-md mx-auto">
-            You haven't been assigned to any pageants yet. Once an organizer assigns you to a pageant with completed scoring, you'll be able to generate and print the final results report.
-          </p>
-          <Link 
-            href="/tabulator/dashboard"
-            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
-          >
-            <LayoutDashboard class="w-4 h-4 mr-2" />
-            Go to Dashboard
-          </Link>
+
+          <div class="relative z-10 p-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div class="space-y-2">
+                <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">
+                  Print Results
+                </h1>
+                <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
+                  <FileText class="w-5 h-5 text-indigo-500" />
+                  {{ pageant ? pageant.name : 'Report Generation' }}
+                </p>
+              </div>
+              
+              <div v-if="pageant" class="flex flex-wrap gap-3">
+                <Link 
+                  :href="route('tabulator.dashboard')"
+                  class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
+                >
+                  <LayoutDashboard class="w-4 h-4" />
+                  <span>Dashboard</span>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div v-else>
-          <div class="mb-8 flex items-center justify-between">
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900">Print Results</h1>
-              <p class="text-gray-600 mt-2">{{ pageant.name }} - Final Results Report</p>
+        <!-- No Pageant Assigned -->
+        <div v-if="!pageant" class="text-center py-20 animate-fade-in">
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-12 max-w-xl mx-auto">
+            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Printer class="h-8 w-8 text-slate-400" />
             </div>
-            <div class="flex items-center gap-4">
-              <!-- Stage Selector -->
-              <div class="relative">
-                <button
-                  @click="showStageDropdown = !showStageDropdown"
-                  class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {{ stageLabels[selectedStage] }}
-                  <ChevronDown class="w-4 h-4 ml-2" />
-                </button>
-                <div v-if="showStageDropdown" class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                  <div class="py-1">
-                    <button v-for="(label, key) in stageLabels" :key="key"
-                      @click="selectedStage = key as StageKey; showStageDropdown = false"
-                      class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors duration-150"
-                      :class="{
-                        'bg-blue-50 text-blue-700': selectedStage === (key as StageKey),
-                        'text-gray-700': selectedStage !== (key as StageKey)
-                      }"
-                    >{{ label }}</button>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">No Pageant Selected</h3>
+            <p class="text-slate-500 mb-8">
+              Please select a pageant to generate reports.
+            </p>
+            <Link 
+              :href="route('tabulator.dashboard')"
+              class="inline-flex items-center px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <LayoutDashboard class="w-5 h-5 mr-2" />
+              Return to Dashboard
+            </Link>
+          </div>
+        </div>
+
+        <div v-else class="animate-fade-in">
+          <!-- Controls Toolbar -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-8 sticky top-4 z-20">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div class="flex items-center gap-4 flex-1">
+                <!-- Stage Selector -->
+                <div class="relative group">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Layers class="h-4 w-4 text-slate-400" />
+                  </div>
+                  <select
+                    v-model="selectedStage"
+                    class="pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full transition-shadow cursor-pointer hover:bg-slate-100 appearance-none font-medium"
+                  >
+                    <option v-for="(label, key) in stageLabels" :key="key" :value="key">
+                      {{ label }}
+                    </option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <ChevronDown class="h-4 w-4 text-slate-400" />
                   </div>
                 </div>
-              </div>
-              <!-- Paper Size Selector -->
-              <div class="relative">
-                <button
-                  @click="showPaperSizeDropdown = !showPaperSizeDropdown"
-                  class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {{ paperSizes[selectedPaperSize].name }}
-                  <ChevronDown class="w-4 h-4 ml-2" />
-                </button>
-                
-                <div 
-                  v-if="showPaperSizeDropdown"
-                  class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10"
-                >
-                  <div class="py-1">
-                    <button
-                      v-for="(paper, key) in paperSizes"
-                      :key="key"
-                      @click="selectedPaperSize = key; showPaperSizeDropdown = false"
-                      class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors duration-150"
-                      :class="{
-                        'bg-blue-50 text-blue-700': selectedPaperSize === key,
-                        'text-gray-700': selectedPaperSize !== key
-                      }"
-                    >
+
+                <!-- Paper Size Selector -->
+                <div class="relative group">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Maximize class="h-4 w-4 text-slate-400" />
+                  </div>
+                  <select
+                    v-model="selectedPaperSize"
+                    class="pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full transition-shadow cursor-pointer hover:bg-slate-100 appearance-none font-medium"
+                  >
+                    <option v-for="(paper, key) in paperSizes" :key="key" :value="key">
                       {{ paper.name }}
-                    </button>
+                    </option>
+                  </select>
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <ChevronDown class="h-4 w-4 text-slate-400" />
                   </div>
                 </div>
               </div>
@@ -84,7 +102,7 @@
               <!-- Print Button -->
               <button
                 @click="printResults"
-                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+                class="inline-flex items-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg shadow-blue-200 transform active:scale-95"
               >
                 <Printer class="w-4 h-4 mr-2" />
                 Print Report
@@ -92,14 +110,19 @@
             </div>
           </div>
 
-          <!-- Print Preview -->
-          <div class="bg-white rounded-lg shadow-lg print-content" ref="printArea">
-            <PrintableResults 
-              :pageant="pageant"
-              :results="resultsToShow"
-              :judges="judges"
-              :report-title="reportTitle"
-            />
+          <!-- Print Preview Container -->
+          <div class="bg-slate-200/50 rounded-3xl p-8 border border-slate-200 overflow-hidden flex justify-center">
+            <div class="bg-white shadow-2xl transition-transform duration-300 origin-top" 
+                 :style="{ width: getPreviewWidth(), minHeight: '11in' }">
+              <div class="print-content p-8" ref="printArea">
+                <PrintableResults 
+                  :pageant="pageant"
+                  :results="resultsToShow"
+                  :judges="judges"
+                  :report-title="reportTitle"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -119,8 +142,9 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Printer, LayoutDashboard, ChevronDown } from 'lucide-vue-next'
+import { Printer, LayoutDashboard, ChevronDown, FileText, Layers, Maximize } from 'lucide-vue-next'
 import { Link } from '@inertiajs/vue3'
+import { route } from 'ziggy-js'
 import PrintableResults from '../../Components/tabulator/PrintableResults.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 
@@ -163,16 +187,14 @@ const props = defineProps<Props>()
 
 const printArea = ref<HTMLElement | null>(null)
 const selectedPaperSize = ref<keyof typeof paperSizes>('letter')
-const showPaperSizeDropdown = ref(false)
 type StageKey = 'overall' | 'semi-final' | 'final' | 'final-top3'
 const selectedStage = ref<StageKey>('overall')
-const showStageDropdown = ref(false)
 
 const paperSizes = {
-  letter: { name: 'Letter (8.5" × 11")', size: 'letter', margin: '0.5in' },
-  a4: { name: 'A4 (210mm × 297mm)', size: 'A4', margin: '12mm' },
-  legal: { name: 'Legal (8.5" × 14")', size: 'legal', margin: '0.5in' },
-  oficio: { name: 'Oficio (8.5" × 13")', size: '8.5in 13in', margin: '0.5in' }
+  letter: { name: 'Letter (8.5" × 11")', size: 'letter', margin: '0.5in', width: '8.5in' },
+  a4: { name: 'A4 (210mm × 297mm)', size: 'A4', margin: '12mm', width: '210mm' },
+  legal: { name: 'Legal (8.5" × 14")', size: 'legal', margin: '0.5in', width: '8.5in' },
+  oficio: { name: 'Oficio (8.5" × 13")', size: '8.5in 13in', margin: '0.5in', width: '8.5in' }
 } as const
 
 const stageLabels: Record<StageKey, string> = {
@@ -196,6 +218,10 @@ const resultsToShow = computed<Result[]>(() => {
 })
 
 const reportTitle = computed(() => stageLabels[selectedStage.value])
+
+const getPreviewWidth = () => {
+  return paperSizes[selectedPaperSize.value].width
+}
 
 const printResults = () => {
   // Get the printable content
@@ -350,6 +376,7 @@ const printResults = () => {
           
           .p-6 {
             padding: 12px !important;
+            padding-bottom: 0px !important;
           }
           
           /* Image sizing */
@@ -364,7 +391,7 @@ const printResults = () => {
             box-shadow: none !important;
           }
           
-          .rounded, .rounded-lg, .rounded-xl {
+          .rounded, .rounded-lg, .rounded-xl, .rounded-3xl {
             border-radius: 0 !important;
           }
         }
@@ -388,6 +415,27 @@ const printResults = () => {
 </script>
 
 <style scoped>
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
 @media print {
   .screen-only {
     display: none !important;
@@ -400,6 +448,7 @@ const printResults = () => {
   .print-container {
     margin: 0;
     padding: 0;
+    background: white !important;
   }
 }
 

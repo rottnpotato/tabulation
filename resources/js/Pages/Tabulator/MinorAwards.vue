@@ -1,25 +1,36 @@
 <template>
-  <div class="space-y-4 sm:space-y-6">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="bg-white rounded-xl shadow border border-gray-200">
-        <div class="p-5 sm:p-6">
-          <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-            <div>
-              <h1 class="text-2xl sm:text-3xl font-semibold text-gray-900">
-                {{ pageant ? `${pageant.name} — Minor Awards` : 'Minor Awards' }}
+  <div class="min-h-screen bg-slate-50/50 pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header Section -->
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-10 border border-indigo-100">
+        <!-- Abstract Background Pattern -->
+        <div class="absolute inset-0">
+          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        </div>
+
+        <div class="relative z-10 p-8 sm:p-10">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="space-y-2">
+              <h1 class="text-3xl sm:text-4xl font-bold tracking-tight font-display text-slate-900">
+                {{ pageant ? pageant.name : 'Minor Awards' }}
               </h1>
-              <p class="mt-1 text-sm sm:text-base text-gray-500">Best in each semi-final round</p>
+              <p class="text-slate-600 text-lg max-w-2xl font-light flex items-center gap-2">
+                <Award class="w-5 h-5 text-indigo-500" />
+                Special Recognitions & Awards
+              </p>
             </div>
-            <div v-if="pageant" class="flex flex-wrap gap-2">
+            
+            <div v-if="pageant" class="flex flex-wrap gap-3">
               <Link :href="route('tabulator.minor-awards.print', pageant.id)"
-                class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium border border-gray-300 text-gray-700 bg-white hover:bg-gray-50">
-                <Printer class="h-4 w-4 mr-2 text-gray-600" />
-                <span>Print</span>
+                class="px-4 py-2 rounded-xl bg-white border border-indigo-200 text-indigo-700 text-sm font-semibold hover:bg-indigo-50 transition-all flex items-center gap-2 shadow-sm hover:shadow-md">
+                <Printer class="w-4 h-4" />
+                <span>Print Awards</span>
               </Link>
               <Link :href="route('tabulator.results', pageant.id)"
-                class="inline-flex items-center rounded-lg px-3 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-black">
-                <Trophy class="h-4 w-4 mr-2 text-white/90" />
+                class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                <Trophy class="w-4 h-4 text-blue-400" />
                 <span>Back to Results</span>
               </Link>
             </div>
@@ -28,61 +39,83 @@
       </div>
 
       <!-- Awards List -->
-      <div class="mt-6 space-y-8">
-        <div v-for="(entry, idx) in roundEntries" :key="entry.round.id + '-' + idx" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div class="px-6 py-5 border-b border-gray-100 bg-gray-50">
-            <h2 class="text-lg font-medium text-center text-gray-800 tracking-wide">
-              Best in {{ entry.round.name }}
-            </h2>
+      <div class="space-y-8 animate-fade-in">
+        <div v-for="(entry, idx) in roundEntries" :key="entry.round.id + '-' + idx" 
+          class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative group hover:shadow-lg transition-all duration-500">
+          
+          <!-- Decorative background element -->
+          <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-50 to-transparent rounded-bl-full opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
+
+          <div class="relative px-8 py-6 border-b border-slate-50 bg-white/50 backdrop-blur-sm">
+            <div class="flex items-center justify-center gap-3">
+              <div class="h-px w-12 bg-gradient-to-r from-transparent to-indigo-200"></div>
+              <h2 class="text-xl font-bold text-center text-slate-800 tracking-wide font-display">
+                Best in {{ entry.round.name }}
+              </h2>
+              <div class="h-px w-12 bg-gradient-to-l from-transparent to-indigo-200"></div>
+            </div>
           </div>
-          <div class="p-8">
+
+          <div class="p-8 sm:p-10 relative">
             <!-- Centered winners with elegant spacing -->
-            <div class="flex flex-wrap justify-center gap-8">
+            <div class="flex flex-wrap justify-center gap-12">
               <div v-for="winner in entry.winners" :key="winner.id" 
-                class="flex flex-col items-center text-center group">
+                class="flex flex-col items-center text-center group/winner relative">
                 
                 <!-- Winner Image -->
                 <div class="relative mb-6">
+                  <div class="absolute inset-0 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full blur-lg opacity-0 group-hover/winner:opacity-40 transition-opacity duration-500"></div>
                   <div class="relative">
-                    <img :src="winner.image" :alt="winner.name" 
-                      class="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-gray-300 transition-all duration-200" />
-                    <div class="absolute -bottom-1 -right-1 bg-gray-800 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-medium">
+                    <div class="p-1 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 shadow-inner">
+                      <img :src="winner.image" :alt="winner.name" 
+                        class="h-28 w-28 rounded-full object-cover ring-4 ring-white shadow-md group-hover/winner:scale-105 transition-transform duration-500" />
+                    </div>
+                    <div class="absolute -bottom-2 -right-2 bg-slate-900 text-white text-sm rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg border-2 border-white">
                       {{ winner.number }}
                     </div>
                   </div>
                 </div>
                 
                 <!-- Winner Details -->
-                <div class="space-y-3 min-w-[200px]">
-                  <h3 class="text-lg font-semibold text-gray-900 leading-tight">
-                    {{ getTitle(winner) }} {{ winner.name }}
+                <div class="space-y-2 min-w-[200px] relative z-10">
+                  <h3 class="text-xl font-bold text-slate-900 leading-tight font-display">
+                    <span class="text-indigo-500 text-sm font-medium block mb-1 uppercase tracking-wider">{{ getTitle(winner) }}</span>
+                    {{ winner.name }}
                   </h3>
-                  <p v-if="winner.is_pair && winner.member_names && winner.member_names.length > 0" class="text-sm text-gray-600">
-                    ({{ winner.member_names.join(' & ') }})
+                  <p v-if="winner.is_pair && winner.member_names && winner.member_names.length > 0" class="text-sm text-slate-500 italic">
+                    {{ winner.member_names.join(' & ') }}
                   </p>
-                  <div class="border-t border-gray-200 pt-2">
-                    <div class="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1">Score</div>
-                    <div class="text-xl font-light text-gray-900">{{ formatScore(winner.score) }}</div>
+                  
+                  <div class="pt-3 mt-2 border-t border-slate-100 w-24 mx-auto">
+                    <div class="text-xs text-slate-400 uppercase tracking-widest font-medium mb-1">Score</div>
+                    <div class="text-2xl font-light text-slate-900 font-display">{{ formatScore(winner.score) }}</div>
                   </div>
                 </div>
               </div>
             </div>
             
             <!-- Tie Notice -->
-            <div v-if="entry.winners.length > 1" class="mt-8 text-center">
-              <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-600 rounded-md text-sm">
-                <span class="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                Tied for highest score
+            <div v-if="entry.winners.length > 1" class="mt-10 text-center">
+              <div class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium border border-indigo-100">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                Tie for highest score
               </div>
             </div>
           </div>
         </div>
 
-        <div v-if="roundEntries.length === 0" class="text-center py-12">
-          <div class="bg-white rounded-xl shadow border border-gray-200 p-12">
-            <Trophy class="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No Minor Awards Available</h3>
-            <p class="text-gray-500">Minor awards will appear once semi-final round scoring is complete.</p>
+        <div v-if="roundEntries.length === 0" class="text-center py-20">
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-12 max-w-xl mx-auto">
+            <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Award class="h-8 w-8 text-indigo-300" />
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">No Minor Awards Yet</h3>
+            <p class="text-slate-500">
+              Awards will appear here automatically once semi-final round scoring is complete.
+            </p>
           </div>
         </div>
       </div>
@@ -94,7 +127,7 @@
 import { computed } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
-import { Printer, Trophy } from 'lucide-vue-next'
+import { Printer, Trophy, Award } from 'lucide-vue-next'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 
 defineOptions({
@@ -156,4 +189,25 @@ const getTitle = (winner: WinnerInfo): string => {
 }
 </script>
 
-
+<style scoped>
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+</style>

@@ -164,10 +164,10 @@ const getScoreClass = (score: string): string => {
   if (score === '-') return 'text-gray-400'
   
   const numScore = parseFloat(score)
-  if (numScore >= 95) return 'text-green-600 font-semibold'
-  if (numScore >= 90) return 'text-green-500 font-medium'
-  if (numScore >= 85) return 'text-blue-600'
-  if (numScore >= 80) return 'text-yellow-600'
-  return 'text-red-600'
+  if (numScore >= 95) return 'text-indigo-700 font-bold'
+  if (numScore >= 90) return 'text-indigo-600 font-semibold'
+  if (numScore >= 85) return 'text-blue-600 font-medium'
+  if (numScore >= 80) return 'text-blue-500'
+  return 'text-slate-500'
 }
 </script>

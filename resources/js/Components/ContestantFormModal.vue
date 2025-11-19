@@ -695,7 +695,7 @@ const handleSubmit = async () => {
         const member1Response = await axios.post(
           `/organizer/pageant/${props.pageantId}/contestants`, 
           member1FormData,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
+          { headers: { 'Content-Type': 'multipart/form-data', 'Accept': 'application/json' } }
         )
         
         if (!member1Response.data.success) {
@@ -714,7 +714,7 @@ const handleSubmit = async () => {
         const member2Response = await axios.post(
           `/organizer/pageant/${props.pageantId}/contestants`, 
           member2FormData,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
+          { headers: { 'Content-Type': 'multipart/form-data', 'Accept': 'application/json' } }
         )
         
         if (!member2Response.data.success) {
@@ -728,7 +728,8 @@ const handleSubmit = async () => {
         
         const pairResponse = await axios.post(
           `/organizer/pageant/${props.pageantId}/pairs`, 
-          pairData
+          pairData,
+          { headers: { 'Accept': 'application/json' } }
         )
         
         if (pairResponse.data.success) {
@@ -797,7 +798,8 @@ const handleSubmit = async () => {
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            'X-HTTP-Method-Override': 'PUT'
+            'X-HTTP-Method-Override': 'PUT',
+            'Accept': 'application/json'
           }
         }
       )
@@ -808,7 +810,8 @@ const handleSubmit = async () => {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json'
           }
         }
       )

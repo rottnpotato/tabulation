@@ -1,191 +1,210 @@
 <template>
-  <div class="space-y-6">
-    <!-- Page Header -->
-    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md overflow-hidden">
-      <div class="p-6 md:p-8">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div class="text-white">
-            <h1 class="text-2xl md:text-3xl font-bold">Round Management</h1>
-            <p class="mt-1 text-blue-100">{{ pageant.name }}</p>
-            <p class="text-sm text-blue-200">Manage round status and set current scoring round</p>
-          </div>
-          <div v-if="pageant.current_round" class="flex items-center bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-            <div class="text-blue-50">
-              <div class="text-xs font-medium">Current Round</div>
-              <div class="text-sm font-bold">{{ pageant.current_round.name }}</div>
+  <div class="min-h-screen bg-slate-50/50 pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header Section -->
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+        <!-- Abstract Background Pattern -->
+        <div class="absolute inset-0">
+          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        </div>
+
+        <div class="relative z-10 p-8">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="space-y-2">
+              <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">
+                Round Management
+              </h1>
+              <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
+                <Circle class="w-5 h-5 text-indigo-500" />
+                {{ pageant.name }}
+              </p>
+            </div>
+            
+            <div v-if="pageant.current_round" class="flex items-center bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-indigo-100 shadow-sm">
+              <div class="text-indigo-600 mr-3">
+                <div class="p-2 bg-indigo-50 rounded-lg">
+                  <Activity class="w-5 h-5" />
+                </div>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-0.5">Current Active Round</div>
+                <div class="text-lg font-bold text-slate-900 leading-none">{{ pageant.current_round.name }}</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <div>
-            <h3 class="font-medium text-amber-900">Set Current Round</h3>
-            <p class="text-sm text-amber-700">Direct judges to score a specific round</p>
-          </div>
-          <div class="min-w-[160px]">
-            <CustomSelect
-              v-model="selectedRoundId"
-              :options="roundOptions"
-              placeholder="Select Round"
-              :disabled="!isChannelReady || actionLoading"
-              @change="setCurrentRound"
-            />
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group hover:shadow-md transition-all">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div class="relative z-10">
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Set Current Round</h3>
+            <p class="text-sm text-slate-500 mb-4">Direct judges to score a specific round</p>
+            <div class="max-w-xs">
+              <CustomSelect
+                v-model="selectedRoundId"
+                :options="roundOptions"
+                placeholder="Select Round"
+                :disabled="!isChannelReady || actionLoading"
+                @change="setCurrentRound"
+              />
+            </div>
           </div>
         </div>
         
-        <div class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div>
-            <h3 class="font-medium text-blue-900">Round Status</h3>
-            <p class="text-sm text-blue-700">Monitor round completion status</p>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group hover:shadow-md transition-all">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          <div class="relative z-10 flex justify-between items-center h-full">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-1">Round Status</h3>
+              <p class="text-sm text-slate-500">Monitor round completion status</p>
+            </div>
+            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-blue-200">
+              View Progress
+            </button>
           </div>
-          <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-            View Progress
-          </button>
         </div>
       </div>
-    </div>
 
-    <!-- Rounds Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-900">All Rounds</h2>
-        <p class="text-sm text-gray-600">Manage individual round settings and lock status</p>
-      </div>
-      
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lock Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr 
-              v-for="round in rounds" 
-              :key="round.id"
-              :class="{ 'bg-amber-50': pageant.current_round_id === round.id }"
-            >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div>
-                    <div class="text-sm font-medium text-gray-900 flex items-center gap-2">
+      <!-- Rounds Table -->
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8 animate-fade-in">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">All Rounds</h2>
+            <p class="text-sm text-slate-500">Manage individual round settings and lock status</p>
+          </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-slate-50/50">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Round Details</th>
+                <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Weight</th>
+                <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lock Status</th>
+                <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr 
+                v-for="round in rounds" 
+                :key="round.id"
+                class="hover:bg-slate-50/80 transition-colors"
+                :class="{ 'bg-indigo-50/30': pageant.current_round_id === round.id }"
+              >
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex flex-col">
+                    <div class="text-sm font-bold text-slate-900 flex items-center gap-2">
                       {{ round.name }}
-                      <span v-if="round.identifier" class="font-mono text-xs text-gray-500">[{{ round.identifier }}]</span>
-                      <span v-if="pageant.current_round_id === round.id" class="inline-flex items-center px-2 py-0.5 bg-amber-500 text-white text-xs font-medium rounded-full">
+                      <span v-if="round.identifier" class="font-mono text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded border border-slate-200">{{ round.identifier }}</span>
+                      <span v-if="pageant.current_round_id === round.id" class="inline-flex items-center px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wide rounded-full border border-indigo-200">
                         Current
                       </span>
                     </div>
-                    <div v-if="round.description" class="text-sm text-gray-500">{{ round.description }}</div>
+                    <div v-if="round.description" class="text-xs text-slate-500 mt-0.5">{{ round.description }}</div>
                   </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                  {{ round.type || 'Standard' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ round.weight }}%
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span 
-                  class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full"
-                  :class="round.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
-                >
-                  {{ round.is_active ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center gap-2">
-                  <span 
-                    class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full"
-                    :class="round.is_locked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'"
-                  >
-                    {{ round.is_locked ? '🔒 Locked' : '🔓 Unlocked' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg border border-blue-100">
+                    {{ round.type || 'Standard' }}
                   </span>
-                  <div v-if="round.locked_by" class="text-xs text-gray-500">
-                    by {{ round.locked_by.name }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="text-sm font-medium text-slate-700">{{ round.weight }}%</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span 
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border"
+                    :class="round.is_active ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-100 text-slate-600 border-slate-200'"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full mr-1.5" :class="round.is_active ? 'bg-blue-500' : 'bg-slate-400'"></span>
+                    {{ round.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex flex-col gap-1">
+                    <span 
+                      class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border w-fit"
+                      :class="round.is_locked ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-sky-50 text-sky-700 border-sky-200'"
+                    >
+                      <component :is="round.is_locked ? Lock : CheckCircle" class="w-3 h-3 mr-1.5" />
+                      {{ round.is_locked ? 'Locked' : 'Open' }}
+                    </span>
+                    <div v-if="round.locked_by" class="text-[10px] text-slate-400 pl-1">
+                      by {{ round.locked_by.name }}
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                <button
-                  v-if="pageant.current_round_id !== round.id"
-                  @click="setCurrentRoundDirect(round.id)"
-                  :disabled="actionLoading || !isChannelReady"
-                  class="text-amber-600 hover:text-amber-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {{ actionLoading ? 'Setting...' : 'Set Current' }}
-                </button>
-                
-                <button
-                  v-if="!round.is_locked"
-                  @click="lockRound(round.id)"
-                  :disabled="actionLoading || !isChannelReady"
-                  class="text-red-600 hover:text-red-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {{ actionLoading ? 'Locking...' : 'Lock' }}
-                </button>
-                <button
-                  v-else
-                  @click="unlockRound(round.id)"
-                  :disabled="actionLoading || !isChannelReady"
-                  class="text-green-600 hover:text-green-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {{ actionLoading ? 'Unlocking...' : 'Unlock' }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Round Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center">
-          <div class="p-3 bg-blue-100 rounded-lg">
-            <Circle class="h-6 w-6 text-blue-600" />
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Total Rounds</p>
-            <p class="text-2xl font-bold text-gray-900">{{ rounds.length }}</p>
-          </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div class="flex items-center gap-2">
+                    <button
+                      v-if="pageant.current_round_id !== round.id"
+                      @click="setCurrentRoundDirect(round.id)"
+                      :disabled="actionLoading || !isChannelReady"
+                      class="px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {{ actionLoading ? 'Setting...' : 'Set Current' }}
+                    </button>
+                    
+                    <button
+                      v-if="!round.is_locked"
+                      @click="lockRound(round.id)"
+                      :disabled="actionLoading || !isChannelReady"
+                      class="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {{ actionLoading ? 'Locking...' : 'Lock' }}
+                    </button>
+                    <button
+                      v-else
+                      @click="unlockRound(round.id)"
+                      :disabled="actionLoading || !isChannelReady"
+                      class="px-3 py-1.5 text-xs font-medium text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {{ actionLoading ? 'Unlocking...' : 'Unlock' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center">
-          <div class="p-3 bg-green-100 rounded-lg">
-            <CheckCircle class="h-6 w-6 text-green-600" />
+      <!-- Round Statistics -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+            <Circle class="h-6 w-6" />
           </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Active Rounds</p>
-            <p class="text-2xl font-bold text-gray-900">{{ activeRoundsCount }}</p>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Total Rounds</p>
+            <p class="text-2xl font-bold text-slate-900">{{ rounds.length }}</p>
           </div>
         </div>
-      </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div class="flex items-center">
-          <div class="p-3 bg-red-100 rounded-lg">
-            <Lock class="h-6 w-6 text-red-600" />
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+          <div class="p-3 bg-sky-50 text-sky-600 rounded-xl">
+            <CheckCircle class="h-6 w-6" />
           </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Locked Rounds</p>
-            <p class="text-2xl font-bold text-gray-900">{{ lockedRoundsCount }}</p>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Active Rounds</p>
+            <p class="text-2xl font-bold text-slate-900">{{ activeRoundsCount }}</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+          <div class="p-3 bg-slate-100 text-slate-600 rounded-xl">
+            <Lock class="h-6 w-6" />
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Locked Rounds</p>
+            <p class="text-2xl font-bold text-slate-900">{{ lockedRoundsCount }}</p>
           </div>
         </div>
       </div>
@@ -364,3 +383,26 @@ const handleRoundUpdate = (event) => {
   }
 }
 </script>
+
+<style scoped>
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+</style>

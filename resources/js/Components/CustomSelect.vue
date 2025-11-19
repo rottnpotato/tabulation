@@ -5,12 +5,12 @@
       @click="toggleDropdown"
       :class="[
         'relative w-full cursor-pointer rounded-xl border-0 py-3 pl-4 pr-12 text-left transition-all duration-200',
-        'bg-gradient-to-r from-white to-gray-50/80 backdrop-blur-sm',
-        'shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-gray-300/50',
-        'ring-1 ring-gray-200/60 hover:ring-gray-300/80',
+        'bg-white/80 backdrop-blur-sm',
+        'shadow-sm hover:shadow-md',
+        'ring-1 ring-slate-200 hover:ring-indigo-300',
         'focus:outline-none focus:ring-2 focus:ring-offset-2',
         focusRingColor,
-        disabled ? 'opacity-50 cursor-not-allowed' : 'hover:from-white hover:to-gray-50'
+        disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'
       ]"
       :disabled="disabled"
       :aria-expanded="isOpen"
@@ -20,7 +20,7 @@
         <span 
           :class="[
             'block truncate font-medium',
-            selectedOption ? 'text-gray-900' : 'text-gray-500'
+            selectedOption ? 'text-slate-900' : 'text-slate-500'
           ]"
         >
           {{ selectedOption ? selectedOption.label : placeholder }}
@@ -30,7 +30,7 @@
         <ChevronUpDownIcon 
           :class="[
             'h-5 w-5 transition-transform duration-200',
-            isOpen ? 'rotate-180 text-orange-500' : 'text-gray-400'
+            isOpen ? 'rotate-180 text-indigo-500' : 'text-slate-400'
           ]"
           aria-hidden="true" 
         />
@@ -49,9 +49,9 @@
         v-show="isOpen"
         :class="[
           'absolute left-0 top-full mt-2 origin-top rounded-xl',
-          'bg-white/95 backdrop-blur-md border border-gray-200/60',
-          'shadow-2xl shadow-gray-900/20 ring-1 ring-black ring-opacity-5 z-50',
-          'min-w-[100%]',
+          'bg-white/95 backdrop-blur-md border border-slate-200',
+          'shadow-xl shadow-slate-900/10 ring-1 ring-black ring-opacity-5',
+          'min-w-[100%] z-[100]',
           dropdownPosition
         ]"
         role="listbox"
@@ -65,8 +65,8 @@
             :class="[
               'relative cursor-pointer select-none py-3 px-4 mx-2 rounded-lg transition-all duration-150',
               option.value === modelValue 
-                ? 'bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-md' 
-                : 'text-gray-900 hover:bg-gradient-to-r hover:from-orange-50 hover:to-rose-50 hover:text-orange-900'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' 
+                : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'
             ]"
             role="option"
             :aria-selected="option.value === modelValue"
@@ -126,8 +126,8 @@ const props = defineProps({
   },
   variant: {
     type: String,
-    default: 'orange',
-    validator: (value) => ['orange', 'blue', 'amber', 'teal', 'purple'].includes(value)
+    default: 'indigo',
+    validator: (value) => ['indigo', 'blue', 'slate', 'emerald', 'orange'].includes(value)
   },
   dropdownPosition: {
     type: String,
@@ -148,14 +148,14 @@ const focusRingColor = computed(() => {
   switch (props.variant) {
     case 'blue':
       return 'focus:ring-blue-500'
-    case 'amber':
-      return 'focus:ring-amber-500'
-    case 'teal':
-      return 'focus:ring-teal-500'
-    case 'purple':
-      return 'focus:ring-purple-500'
-    default:
+    case 'emerald':
+      return 'focus:ring-emerald-500'
+    case 'orange':
       return 'focus:ring-orange-500'
+    case 'slate':
+      return 'focus:ring-slate-500'
+    default:
+      return 'focus:ring-indigo-500'
   }
 })
 

@@ -5,8 +5,8 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="mb-8 flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-semibold text-gray-900">Print Minor Awards</h1>
-            <p class="text-gray-600 mt-2">{{ pageant.name }} — Semi-Final Minor Awards</p>
+            <h1 class="text-3xl font-semibold text-slate-900">Print Minor Awards</h1>
+            <p class="text-slate-600 mt-2">{{ pageant.name }} — Semi-Final Minor Awards</p>
           </div>
           <div class="flex items-center gap-4">
             <!-- Paper Size Selector -->
@@ -31,7 +31,7 @@
             <!-- Print Button -->
             <button
               @click="printResults"
-              class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+              class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
             >
               <Printer class="w-4 h-4 mr-2" />
               Print Report

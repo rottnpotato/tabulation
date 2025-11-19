@@ -1,148 +1,140 @@
 <template>
-  <div class="p-8 bg-white">
-    <!-- Header -->
-    <div class="text-center mb-8 border-b-2 border-gray-200 pb-6">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ pageant.name }}</h1>
-  <p class="text-lg text-gray-600">{{ reportTitle || 'Final Results Report' }}</p>
-      <div class="mt-4 text-sm text-gray-500 space-y-1">
-        <p v-if="pageant.date">Date: {{ pageant.date }}</p>
-        <p v-if="pageant.venue">Venue: {{ pageant.venue }}</p>
-        <p v-if="pageant.location">Location: {{ pageant.location }}</p>
+  <div class="print-document bg-white text-black font-serif">
+    <!-- Report Header -->
+    <div class="text-center mb-8 pb-4 border-b-2 border-black">
+      <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+      <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Official Tabulation Report</div>
+      
+      <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+        <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+        <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+      </div>
+      
+      <div class="mt-6">
+        <h2 class="text-xl font-bold text-black">{{ reportTitle || 'Final Results' }}</h2>
       </div>
     </div>
 
-    <!-- Winners Podium -->
+    <!-- Top Winners Summary (Compact) -->
     <div v-if="topThree.length > 0" class="mb-8">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4 text-center">Top 3 Winners</h2>
-      <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="grid grid-cols-3 gap-4 items-end">
         <!-- Second Place -->
-        <div v-if="topThree[1]" class="text-center">
-          <div class="bg-gray-100 rounded-lg p-4">
-            <img 
-              :src="topThree[1].image" 
-              :alt="topThree[1].name"
-              class="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-4 border-gray-300"
-            />
-            <div class="text-2xl font-bold text-gray-600 mb-1">2nd</div>
-            <h3 class="font-semibold text-gray-900">#{{ topThree[1].number }}</h3>
-            <h3 class="font-semibold text-gray-900">{{ getTitle(topThree[1]) }} {{ topThree[1].name }}</h3>
-            
+        <div v-if="topThree[1]" class="text-center pb-2">
+          <div class="text-xs font-bold uppercase text-gray-500 mb-1">2nd Place</div>
+          <div class="border border-gray-300 p-3 rounded bg-gray-50">
+            <div class="text-lg font-bold">#{{ topThree[1].number }}</div>
+            <div class="text-sm font-semibold truncate">{{ topThree[1].name }}</div>
+            <div class="text-xs text-gray-500">{{ formatScore(topThree[1].final_score) }} pts</div>
           </div>
         </div>
 
         <!-- First Place -->
         <div v-if="topThree[0]" class="text-center">
-          <div class="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-300">
-            <img 
-              :src="topThree[0].image" 
-              :alt="topThree[0].name"
-              class="w-24 h-24 rounded-full mx-auto mb-3 object-cover border-4 border-yellow-400"
-            />
-            <div class="text-3xl font-bold text-yellow-600 mb-1">👑 1st</div>
-            <h3 class="font-semibold text-gray-900">#{{ topThree[0].number }}</h3>
-            <h3 class="font-semibold text-gray-900">{{ getTitle(topThree[0]) }} {{ topThree[0].name }}</h3>
-            
+          <div class="text-sm font-bold uppercase text-black mb-1">Winner</div>
+          <div class="border-2 border-black p-4 rounded bg-gray-100 relative">
+            <div class="text-2xl font-bold">#{{ topThree[0].number }}</div>
+            <div class="text-base font-bold truncate">{{ topThree[0].name }}</div>
+            <div class="text-sm font-bold mt-1">{{ formatScore(topThree[0].final_score) }} pts</div>
           </div>
         </div>
 
         <!-- Third Place -->
-        <div v-if="topThree[2]" class="text-center">
-          <div class="bg-orange-50 rounded-lg p-4 border-2 border-orange-300">
-            <img 
-              :src="topThree[2].image" 
-              :alt="topThree[2].name"
-              class="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-4 border-orange-400"
-            />
-            <div class="text-2xl font-bold text-orange-600 mb-1">3rd</div>
-            <h3 class="font-semibold text-gray-900">#{{ topThree[2].number }}</h3>
-            <h3 class="font-semibold text-gray-900">{{ getTitle(topThree[2]) }} {{ topThree[2].name }}</h3>
-            
+        <div v-if="topThree[2]" class="text-center pb-2">
+          <div class="text-xs font-bold uppercase text-gray-500 mb-1">3rd Place</div>
+          <div class="border border-gray-300 p-3 rounded bg-gray-50">
+            <div class="text-lg font-bold">#{{ topThree[2].number }}</div>
+            <div class="text-sm font-semibold truncate">{{ topThree[2].name }}</div>
+            <div class="text-xs text-gray-500">{{ formatScore(topThree[2].final_score) }} pts</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Complete Rankings Table -->
+    <!-- Detailed Results Table -->
     <div class="mb-8">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">Complete Rankings</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full border border-gray-300">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b">Rank</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b">Number</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-900 border-b">Contestant</th>
-              <th 
-                v-for="(score, roundName) in getScoreHeaders()" 
-                :key="roundName"
-                class="px-4 py-3 text-center text-sm font-medium text-gray-900 border-b"
-              >
-                {{ roundName }}
-              </th>
-              <th class="px-4 py-3 text-center text-sm font-medium text-gray-900 border-b">Final Score</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="(result, index) in results" :key="result.id" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-semibold text-gray-900 border-b">
-                {{ index + 1 }}{{ getOrdinalSuffix(index + 1) }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">
-                #{{ result.number }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">
-                <div class="font-medium">
-                  {{ getTitle(result) }} {{ result.name }}
-                  <span v-if="result.is_pair && result.member_names && result.member_names.length > 0" class="text-xs text-gray-500 block mt-1">
-                    ({{ result.member_names.join(' & ') }})
-                  </span>
-                </div>
-              </td>
-              <td 
-                v-for="(score, roundName) in getScoreHeaders()" 
-                :key="roundName"
-                class="px-4 py-3 text-sm text-center text-gray-900 border-b"
-              >
-                {{ formatScore(result.scores[roundName] || 0) }}
-              </td>
-              <td class="px-4 py-3 text-sm text-center font-semibold text-gray-900 border-b">
-                {{ formatScore(result.final_score) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <table class="w-full border-collapse text-xs">
+        <thead>
+          <tr class="bg-gray-100 border-y-2 border-black">
+            <th class="py-2 px-2 text-left font-bold w-12">Rank</th>
+            <th class="py-2 px-2 text-left font-bold w-12">#</th>
+            <th class="py-2 px-2 text-left font-bold">Contestant</th>
+            <th 
+              v-for="(score, roundName) in getScoreHeaders()" 
+              :key="roundName"
+              class="py-2 px-2 text-center font-bold border-l border-gray-300"
+            >
+              {{ roundName }}
+            </th>
+            <th class="py-2 px-2 text-center font-bold border-l-2 border-black w-20">Final</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr 
+            v-for="(result, index) in results" 
+            :key="result.id" 
+            class="border-b border-gray-200"
+            :class="{'bg-gray-50': index % 2 === 0}"
+          >
+            <td class="py-2 px-2 font-bold">
+              {{ index + 1 }}
+            </td>
+            <td class="py-2 px-2">
+              {{ result.number }}
+            </td>
+            <td class="py-2 px-2">
+              <div class="font-semibold">{{ getTitle(result) }} {{ result.name }}</div>
+              <div v-if="result.is_pair && result.member_names" class="text-[10px] text-gray-500">
+                {{ result.member_names.join(' & ') }}
+              </div>
+            </td>
+            <td 
+              v-for="(score, roundName) in getScoreHeaders()" 
+              :key="roundName"
+              class="py-2 px-2 text-center border-l border-gray-300 tabular-nums"
+            >
+              {{ formatScore(result.scores[roundName] || 0) }}
+            </td>
+            <td class="py-2 px-2 text-center font-bold border-l-2 border-black tabular-nums">
+              {{ formatScore(result.final_score) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Judges Section -->
-    <div class="mt-12 pt-6 border-t-2 border-gray-200">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">Panel of Judges</h3>
-      <div class="flex flex-wrap justify-center gap-x-8 gap-y-2 mb-8">
-        <div 
-          v-for="judge in judges" 
-          :key="judge.id"
-          class="text-center"
-        >
-          <div class="border-b border-gray-400 w-40 mb-1"></div>
-          <p class="text-sm font-medium text-gray-900">{{ judge.name }}</p>
-          <p class="text-xs text-gray-600">{{ judge.role }}</p>
+    <!-- Signatures Section -->
+    <div class="mt-12 page-break-inside-avoid">
+      <div class="grid grid-cols-3 gap-8">
+        <!-- Judges Signatures -->
+        <div class="col-span-3 mb-8">
+          <h3 class="text-xs font-bold uppercase border-b border-black mb-4 pb-1">Panel of Judges</h3>
+          <div class="grid grid-cols-3 gap-x-8 gap-y-12">
+            <div v-for="judge in judges" :key="judge.id" class="text-center">
+              <div class="border-b border-gray-400 h-8"></div>
+              <div class="text-xs font-bold mt-1">{{ judge.name }}</div>
+              <div class="text-[10px] uppercase text-gray-500">{{ judge.role }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Certification -->
+        <div class="col-span-3">
+          <div class="flex justify-end">
+            <div class="w-64 text-center">
+              <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
+              <div class="border-b border-black h-8"></div>
+              <div class="text-xs font-bold mt-1">Head Tabulator</div>
+              <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Tabulator Certification -->
-    <div class="mt-8 pt-6 border-t border-gray-300">
-      <div class="text-center">
-        <div class="border-b border-gray-400 w-64 mx-auto mb-2"></div>
-        <p class="text-sm font-semibold text-gray-900">Certified by: Head Tabulator</p>
-        <p class="text-xs text-gray-500 mt-2">Date: {{ new Date().toLocaleDateString() }}</p>
-      </div>
-    </div>
-
     <!-- Footer -->
-    <div class="mt-6 text-center text-xs text-gray-500">
-      <p>This report was generated on {{ new Date().toLocaleString() }}</p>
-      <p>{{ pageant.name }} - Official Results</p>
+    <div class="mt-8 pt-2 border-t border-gray-200 text-[10px] text-gray-400 flex justify-between">
+      <div>Generated via Tabulator System</div>
+      <div>Page 1 of 1</div>
     </div>
   </div>
 </template>
@@ -190,7 +182,6 @@ const topThree = computed(() => {
   return props.results.slice(0, 3)
 })
 
-// Helper function to get title based on gender
 const getTitle = (result: Result): string => {
   if (result.is_pair && result.member_genders && result.member_genders.length > 0) {
     return result.member_genders.map(g => g === 'male' ? 'Mr' : 'Miss').join(' & ')
@@ -202,29 +193,27 @@ const getTitle = (result: Result): string => {
 
 const getScoreHeaders = () => {
   if (props.results.length === 0) return {}
-  
-  // Get all unique round names from the first result's scores
   return props.results[0].scores || {}
 }
 
 const formatScore = (score: number): string => {
   return score.toFixed(2)
 }
-
-const getOrdinalSuffix = (rank: number): string => {
-  const j = rank % 10
-  const k = rank % 100
-  
-  if (j === 1 && k !== 11) return 'st'
-  if (j === 2 && k !== 12) return 'nd'
-  if (j === 3 && k !== 13) return 'rd'
-  return 'th'
-}
 </script>
 
 <style scoped>
+.print-document {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
 @media print {
-  .bg-white {
+  .print-document {
+    width: 100%;
+  }
+  
+  /* Ensure background colors print */
+  * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }

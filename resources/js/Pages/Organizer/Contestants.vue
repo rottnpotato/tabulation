@@ -9,7 +9,8 @@
             <p class="mt-1 text-sm text-gray-600">Manage contestants across all your pageants</p>
           </div>
           <button
-            @click="ShowAddModal = true"
+            v-if="PageantSummaries && PageantSummaries.length > 0"
+            @click="openAddContestantModal"
             class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5 flex items-center"
           >
             <Plus class="h-4 w-4 mr-2" />
@@ -71,25 +72,6 @@
       </div>
 
       <div class="p-6">
-        <!-- Pageant Summaries -->
-        <div v-if="PageantSummaries && PageantSummaries.length > 0" class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div v-for="pageant in PageantSummaries" :key="pageant.id" class="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="font-semibold text-gray-800">{{ pageant.name }}</h3>
-                <p class="text-sm text-gray-600">{{ pageant.contestant_count }} contestants</p>
-              </div>
-              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getStatusClasses(pageant.status)">
-                {{ formatStatus(pageant.status) }}
-              </span>
-            </div>
-            <div v-if="pageant.pageant_date" class="mt-2 flex items-center text-xs text-gray-500">
-              <Calendar class="h-3 w-3 mr-1" />
-              {{ formatDate(pageant.pageant_date) }}
-            </div>
-          </div>
-        </div>
-
         <!-- No contestants message -->
         <div v-if="filteredContestants.length === 0" class="text-center py-12">
           <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-orange-200 mb-4">
@@ -177,6 +159,21 @@
                 </div>
 
                 <form @submit.prevent="HandleSubmit" class="p-6">
+                  <!-- Pageant Selection (only show when creating new) -->
+                  <div v-if="!EditingContestant" class="mb-6 pb-6 border-b border-gray-200">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Select Pageant <span class="text-red-500">*</span>
+                    </label>
+                    <CustomSelect
+                      v-model="selectedPageant"
+                      :options="pageantOptions"
+                      placeholder="Choose a pageant"
+                      variant="orange"
+                      required
+                    />
+                    <p class="mt-1 text-xs text-gray-500">Select which pageant this contestant belongs to</p>
+                  </div>
+                  
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Left Column -->
                     <div class="space-y-6">
@@ -536,7 +533,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import { 
   Plus, 
@@ -647,7 +644,8 @@ const HandleSubmit = async () => {
         method: 'POST',
         headers: {
           'X-HTTP-Method-Override': 'PUT',
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'Accept': 'application/json'
         },
         body: formData
       })
@@ -658,43 +656,37 @@ const HandleSubmit = async () => {
       
       const result = await response.json()
       if (result.success) {
-        await fetchContestants() // Refresh the list
-        successMessage.value = 'Contestant updated successfully!'
+        // Reload page to get updated data
+        router.reload({ only: ['Contestants', 'PageantSummaries'] })
       }
     } else {
       // Create new contestant - need pageant selection
       if (!selectedPageant.value) {
-        formErrors.value.pageant = 'Please select a pageant first'
+        formErrors.value.general = 'Please select a pageant first'
+        isSubmitting.value = false
         return
       }
       
       const response = await fetch(`/organizer/pageant/${selectedPageant.value}/contestants`, {
         method: 'POST',
         headers: {
-          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'Accept': 'application/json'
         },
         body: formData
       })
       
       if (!response.ok) {
-        throw new Error('Failed to create contestant')
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create contestant')
       }
       
       const result = await response.json()
       if (result.success) {
-        await fetchContestants() // Refresh the list
-        successMessage.value = 'Contestant created successfully!'
+        // Reload page to get updated data
+        router.reload({ only: ['Contestants', 'PageantSummaries'] })
       }
     }
-    
-    ShowAddModal.value = false
-    EditingContestant.value = null
-    resetForm()
-    
-    // Clear success message after 5 seconds
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 5000)
     
   } catch (error) {
     console.error('Error submitting contestant:', error)
@@ -702,7 +694,7 @@ const HandleSubmit = async () => {
     if (error.response && error.response.data && error.response.data.errors) {
       Object.assign(formErrors.value, error.response.data.errors)
     } else {
-      formErrors.value.general = 'An error occurred while saving the contestant. Please try again.'
+      formErrors.value.general = error.message || 'An error occurred while saving the contestant. Please try again.'
     }
   } finally {
     isSubmitting.value = false
@@ -751,7 +743,8 @@ const DeleteContestant = async (id) => {
     const response = await fetch(`/organizer/pageant/${pageantId}/contestants/${id}`, {
       method: 'DELETE',
       headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        'Accept': 'application/json'
       }
     })
     
@@ -814,6 +807,21 @@ const setActivePhoto = (photo, index) => {
   currentPhotoIndex.value = index
 }
 
+const openAddContestantModal = () => {
+  // If no pageant is selected and there are pageants available, pre-select the first one
+  if (!selectedPageant.value && props.PageantSummaries && props.PageantSummaries.length > 0) {
+    selectedPageant.value = props.PageantSummaries[0].id
+  }
+  
+  // Validate that a pageant is selected
+  if (!selectedPageant.value) {
+    formErrors.value.general = 'Please create a pageant first before adding contestants'
+    return
+  }
+  
+  ShowAddModal.value = true
+}
+
 const resetForm = () => {
   Form.value = { 
     name: '', 
@@ -826,21 +834,6 @@ const resetForm = () => {
   }
   imageFiles.value = []
   Object.keys(formErrors.value).forEach(key => delete formErrors.value[key])
-}
-
-const fetchContestants = async () => {
-  if (!selectedPageant.value) return
-  
-  try {
-    const response = await fetch(`/organizer/pageant/${selectedPageant.value}/contestants`)
-    if (response.ok) {
-      const data = await response.json()
-      // Update the contestants data - this would ideally be handled by parent component
-      // For now, we'll work with the existing props structure
-    }
-  } catch (error) {
-    console.error('Error fetching contestants:', error)
-  }
 }
 
 const filterContestants = () => {

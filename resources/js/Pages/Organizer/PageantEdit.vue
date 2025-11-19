@@ -124,9 +124,12 @@
                 <input 
                   id="end_date" 
                   v-model="form.end_date" 
-                  type="date" 
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                  type="date"
+                  :min="form.start_date"
+                  :disabled="!form.start_date"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
+                <p v-if="!form.start_date" class="mt-1 text-sm text-gray-500">Please select a start date first</p>
               </div>
             </div>
             

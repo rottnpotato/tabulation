@@ -9,7 +9,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black/80 backdrop-blur-md" />
+        <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-md" />
       </TransitionChild>
 
       <div class="fixed inset-0 overflow-y-auto">
@@ -79,10 +79,10 @@
                     <!-- If no images, show a placeholder -->
                     <div v-if="!contestant?.images?.length" class="h-full flex items-center justify-center">
                       <div class="text-center p-6">
-                        <div class="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <User class="h-12 w-12 text-purple-300" />
+                        <div class="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <User class="h-12 w-12 text-indigo-300" />
                         </div>
-                        <p class="text-gray-500">No photos available</p>
+                        <p class="text-slate-400">No photos available</p>
                       </div>
                     </div>
                       
@@ -168,22 +168,22 @@
                         :key="statName" 
                         class="stat-card"
                       >
-                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">{{ formatKey(statName) }}</h3>
-                        <div class="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">{{ stat }}</div>
+                        <h3 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1">{{ formatKey(statName) }}</h3>
+                        <div class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{{ stat }}</div>
                       </div>
                     </div>
                       
                       <!-- Bio -->
                       <div class="mb-6">
                       <h3 class="section-title">
-                        <User class="h-5 w-5 mr-2 text-orange-500" />
+                        <User class="h-5 w-5 mr-2 text-indigo-500" />
                         Biography
                       </h3>
                       <div class="content-card">
-                        <p v-if="contestant?.bio" class="text-gray-700 leading-relaxed whitespace-pre-line">
+                        <p v-if="contestant?.bio" class="text-slate-700 leading-relaxed whitespace-pre-line">
                           {{ contestant?.bio }}
                         </p>
-                        <p v-else class="text-gray-500 italic">
+                        <p v-else class="text-slate-400 italic">
                           No biography provided.
                         </p>
                       </div>
@@ -192,14 +192,14 @@
                       <!-- Additional Details if we have metadata -->
                     <div v-if="contestant?.metadata && Object.keys(contestant.metadata || {}).length > 0" class="mb-6">
                       <h3 class="section-title">
-                        <ClipboardList class="h-5 w-5 mr-2 text-orange-500" />
+                        <ClipboardList class="h-5 w-5 mr-2 text-indigo-500" />
                         Additional Details
                       </h3>
                       <div class="content-card">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div v-for="(value, key) in contestant?.metadata || {}" :key="key" class="text-sm">
-                            <span class="font-medium text-gray-800">{{ formatKey(key) }}:</span> 
-                            <span class="text-gray-700">{{ value }}</span>
+                            <span class="font-medium text-slate-800">{{ formatKey(key) }}:</span> 
+                            <span class="text-slate-600">{{ value }}</span>
                           </div>
                           </div>
                         </div>
@@ -208,7 +208,7 @@
                       <!-- Scores Section -->
                       <div v-if="hasScores" class="mb-6">
                         <h3 class="section-title">
-                          <Award class="h-5 w-5 mr-2 text-orange-500" />
+                          <Award class="h-5 w-5 mr-2 text-indigo-500" />
                           Performance Scores
                         </h3>
                         <div class="content-card">
@@ -216,10 +216,10 @@
                             <!-- Score Cards -->
                             <div v-for="(score, category) in contestantScores" :key="category" 
                               class="score-card">
-                              <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+                              <h4 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-1">
                                 {{ formatKey(category) }}
                               </h4>
-                              <div class="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                              <div class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                                 {{ typeof score === 'number' ? score.toFixed(2) : score }}
                               </div>
                             </div>
@@ -337,6 +337,7 @@ const formatKey = (key) => {
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, str => str.toUpperCase())
     .trim()
+  
 }
 
 // Navigation methods for the image carousel
@@ -409,19 +410,19 @@ const handleTouchEnd = (e) => {
 
 .image-carousel-container {
   @apply relative md:col-span-2 lg:col-span-2 overflow-hidden;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 }
 
 .carousel-gradient-overlay {
   @apply absolute inset-0;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(236, 72, 153, 0.12) 100%);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(59, 130, 246, 0.12) 100%);
   mix-blend-mode: overlay;
   pointer-events: none;
 }
 
 .contestant-badge-modal {
   @apply text-white rounded-2xl h-16 w-16 flex items-center justify-center shadow-2xl;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
   border: 2.5px solid rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(8px);
   animation: badgePulse 3s ease-in-out infinite;
@@ -430,11 +431,11 @@ const handleTouchEnd = (e) => {
 @keyframes badgePulse {
   0%, 100% { 
     transform: scale(1);
-    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4);
+    box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);
   }
   50% { 
     transform: scale(1.05);
-    box-shadow: 0 15px 35px rgba(249, 115, 22, 0.6);
+    box-shadow: 0 15px 35px rgba(79, 70, 229, 0.6);
   }
 }
 
@@ -446,10 +447,10 @@ const handleTouchEnd = (e) => {
 }
 
 .carousel-nav-button:hover {
-  background: rgba(249, 115, 22, 0.7);
+  background: rgba(79, 70, 229, 0.7);
   border-color: rgba(255, 255, 255, 0.4);
   transform: scale(1.15);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
 }
 
 .carousel-dot {
@@ -465,19 +466,19 @@ const handleTouchEnd = (e) => {
 
 .carousel-dot.active {
   @apply w-8;
-  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(90deg, #4f46e5 0%, #3b82f6 100%);
   border-color: rgba(255, 255, 255, 0.5);
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.6);
+  box-shadow: 0 0 12px rgba(79, 70, 229, 0.6);
 }
 
 .details-container {
   @apply md:col-span-3 p-8 flex flex-col overflow-hidden;
-  background: linear-gradient(to bottom, #ffffff 0%, #fafafa 100%);
+  background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
 }
 
 .contestant-name-modal {
   @apply text-4xl font-bold mb-6;
-  background: linear-gradient(135deg, #1f2937 0%, #4b5563 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -491,15 +492,15 @@ const handleTouchEnd = (e) => {
 
 .info-item {
   @apply flex items-center gap-4 p-4 rounded-xl;
-  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-  border: 1.5px solid rgba(249, 115, 22, 0.15);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1.5px solid rgba(79, 70, 229, 0.15);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .info-item:hover {
-  border-color: rgba(249, 115, 22, 0.3);
+  border-color: rgba(79, 70, 229, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(249, 115, 22, 0.1);
+  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.1);
 }
 
 .info-icon-wrapper {
@@ -515,9 +516,9 @@ const handleTouchEnd = (e) => {
 }
 
 .info-icon-location {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(251, 146, 60, 0.2) 100%);
-  color: #ea580c;
-  border: 1.5px solid rgba(249, 115, 22, 0.25);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(99, 102, 241, 0.2) 100%);
+  color: #4f46e5;
+  border: 1.5px solid rgba(79, 70, 229, 0.25);
 }
 
 .info-icon-age {
@@ -527,9 +528,9 @@ const handleTouchEnd = (e) => {
 }
 
 .info-icon-rank {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(244, 114, 182, 0.2) 100%);
-  color: #db2777;
-  border: 1.5px solid rgba(236, 72, 153, 0.25);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(56, 189, 248, 0.2) 100%);
+  color: #0284c7;
+  border: 1.5px solid rgba(14, 165, 233, 0.25);
 }
 
 .info-content {
@@ -537,62 +538,62 @@ const handleTouchEnd = (e) => {
 }
 
 .info-label {
-  @apply text-xs font-semibold uppercase tracking-wider text-gray-500;
+  @apply text-xs font-semibold uppercase tracking-wider text-slate-500;
   letter-spacing: 0.05em;
 }
 
 .info-value {
-  @apply text-base font-bold text-gray-900 truncate;
+  @apply text-base font-bold text-slate-900 truncate;
   letter-spacing: -0.01em;
 }
 
 .stat-card {
   @apply p-5 rounded-xl border shadow-sm;
-  background: linear-gradient(135deg, #ffffff 0%, #fef3f2 100%);
-  border-color: rgba(249, 115, 22, 0.2);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgba(79, 70, 229, 0.2);
   transition: all 0.3s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.15);
-  border-color: rgba(249, 115, 22, 0.4);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.15);
+  border-color: rgba(79, 70, 229, 0.4);
 }
 
 .section-title {
-  @apply text-lg font-semibold text-gray-800 mb-3 flex items-center;
+  @apply text-lg font-semibold text-slate-800 mb-3 flex items-center;
   letter-spacing: -0.01em;
 }
 
 .content-card {
   @apply rounded-xl p-6 border;
-  background: linear-gradient(to bottom right, #ffffff 0%, #f9fafb 100%);
-  border-color: rgba(249, 115, 22, 0.15);
+  background: linear-gradient(to bottom right, #ffffff 0%, #f8fafc 100%);
+  border-color: rgba(79, 70, 229, 0.15);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
 }
 
 .content-card:hover {
-  border-color: rgba(249, 115, 22, 0.25);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08);
+  border-color: rgba(79, 70, 229, 0.25);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
 }
 
 .score-card {
   @apply p-4 rounded-xl border shadow-sm;
-  background: linear-gradient(135deg, #ffffff 0%, #fef3f2 100%);
-  border-color: rgba(249, 115, 22, 0.2);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgba(79, 70, 229, 0.2);
   transition: all 0.3s ease;
 }
 
 .score-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(249, 115, 22, 0.12);
-  border-color: rgba(249, 115, 22, 0.35);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.12);
+  border-color: rgba(79, 70, 229, 0.35);
 }
 
 .action-buttons-footer {
   @apply border-t pt-6 mt-auto flex justify-end gap-3;
-  border-color: rgba(249, 115, 22, 0.15);
+  border-color: rgba(79, 70, 229, 0.15);
 }
 
 .modal-button {
@@ -601,28 +602,28 @@ const handleTouchEnd = (e) => {
 }
 
 .modal-button-secondary {
-  @apply text-gray-700 bg-white border-2;
-  border-color: rgba(156, 163, 175, 0.3);
+  @apply text-slate-700 bg-white border-2;
+  border-color: rgba(148, 163, 184, 0.3);
 }
 
 .modal-button-secondary:hover {
-  @apply bg-gray-50;
-  border-color: rgba(156, 163, 175, 0.5);
+  @apply bg-slate-50;
+  border-color: rgba(148, 163, 184, 0.5);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .modal-button-primary {
   @apply text-white;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
   border: 2px solid transparent;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
 .modal-button-primary:hover {
-  background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #4338ca 0%, #2563eb 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.5);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.5);
 }
 
 /* Image transitions */
@@ -652,14 +653,14 @@ const handleTouchEnd = (e) => {
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .details-container {
-    background: linear-gradient(to bottom, #1f2937 0%, #111827 100%);
+    background: linear-gradient(to bottom, #1e293b 0%, #0f172a 100%);
   }
   
   .contestant-name-modal {
-    background: linear-gradient(135deg, #f3f4f6 0%, #d1d5db 100%);
+    background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 }
-</style> 
+</style>

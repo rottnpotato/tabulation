@@ -213,6 +213,90 @@ class TabulatorController extends Controller
     }
 
     /**
+     * Create a new judge account for a specific pageant
+     */
+    public function createJudge(Request $request, $pageantId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|min:3|max:30|unique:users,username',
+            'email' => 'nullable|email|max:255|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role_title' => 'nullable|string|max:50',
+        ]);
+
+        // Create the judge account
+        $judge = User::create([
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => $request->password,
+            'role' => 'judge',
+            'pageant_id' => $pageantId,
+            'status' => 'active',
+            'is_verified' => true,
+            'email_verified_at' => now(),
+        ]);
+
+        // Assign the judge to this pageant
+        $pageant->judges()->attach($judge->id, [
+            'role' => $request->role_title ?? 'Judge',
+            'active' => true,
+        ]);
+
+        return back()->with('success', 'Judge account created successfully.');
+    }
+
+    /**
+     * Update judge account
+     */
+    public function updateJudge(Request $request, $pageantId, $judgeId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $judge = User::findOrFail($judgeId);
+
+        // Verify judge is assigned to this pageant
+        if (! $pageant->judges()->where('user_id', $judgeId)->exists()) {
+            return back()->withErrors(['message' => 'Judge not found for this pageant.']);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|min:3|max:30|unique:users,username,'.$judgeId,
+            'email' => 'nullable|email|max:255|unique:users,email,'.$judgeId,
+            'password' => 'nullable|string|min:6',
+            'role_title' => 'nullable|string|max:50',
+        ]);
+
+        // Update judge account
+        $updateData = [
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+        ];
+
+        if ($request->filled('password')) {
+            $updateData['password'] = $request->password;
+        }
+
+        $judge->update($updateData);
+
+        // Update pivot data if role title changed
+        if ($request->has('role_title')) {
+            $pageant->judges()->updateExistingPivot($judgeId, [
+                'role' => $request->role_title ?? 'Judge',
+            ]);
+        }
+
+        return back()->with('success', 'Judge account updated successfully.');
+    }
+
+    /**
      * Show scores for a specific pageant and round
      */
     public function scores($pageantId, $roundId = null)
@@ -405,12 +489,12 @@ class TabulatorController extends Controller
                 'is_pair' => $contestantModel->is_pair ?? false,
                 'member_names' => $memberNames,
                 'member_genders' => $memberGenders,
-                'image' => $contestant['image'],
-                'scores' => $contestant['scores'],
-                'final_score' => $contestant['finalScore'],
-                'rank' => $contestant['rank'],
+                'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                'scores' => $contestant['scores'] ?? [],
+                'final_score' => $contestant['finalScore'] ?? 0,
+                'rank' => $contestant['rank'] ?? 0,
             ];
-        });
+        })->values();
 
         $semiResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'semi-final'))->map(function ($contestant) use ($pageant) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
@@ -432,12 +516,12 @@ class TabulatorController extends Controller
                 'is_pair' => $contestantModel->is_pair ?? false,
                 'member_names' => $memberNames,
                 'member_genders' => $memberGenders,
-                'image' => $contestant['image'],
-                'scores' => $contestant['scores'],
-                'final_score' => $contestant['finalScore'],
-                'rank' => $contestant['rank'],
+                'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                'scores' => $contestant['scores'] ?? [],
+                'final_score' => $contestant['finalScore'] ?? 0,
+                'rank' => $contestant['rank'] ?? 0,
             ];
-        });
+        })->values();
 
         $finalResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'final'))->map(function ($contestant) use ($pageant) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
@@ -459,12 +543,12 @@ class TabulatorController extends Controller
                 'is_pair' => $contestantModel->is_pair ?? false,
                 'member_names' => $memberNames,
                 'member_genders' => $memberGenders,
-                'image' => $contestant['image'],
-                'scores' => $contestant['scores'],
-                'final_score' => $contestant['finalScore'],
-                'rank' => $contestant['rank'],
+                'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                'scores' => $contestant['scores'] ?? [],
+                'final_score' => $contestant['finalScore'] ?? 0,
+                'rank' => $contestant['rank'] ?? 0,
             ];
-        });
+        })->values();
 
         // Get judges for this pageant
         $judges = $pageant->judges->map(function ($judge) {

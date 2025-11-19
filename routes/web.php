@@ -108,6 +108,11 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     Route::get('/pageant/{id}/judges-management', [OrganizerController::class, 'pageantJudges'])->name('organizer.pageant.judges-management');
     Route::get('/pageant/{id}/rounds-management', [OrganizerController::class, 'pageantRounds'])->name('organizer.pageant.rounds-management');
 
+    // Tabulator account creation routes
+    Route::post('/pageant/{pageantId}/tabulators/create', [OrganizerController::class, 'createTabulator'])->name('organizer.pageant.tabulators.create');
+    Route::put('/pageant/{pageantId}/tabulators/{tabulatorId}/update', [OrganizerController::class, 'updateTabulator'])->name('organizer.pageant.tabulators.update');
+    Route::post('/pageant/{pageantId}/disable-accounts', [OrganizerController::class, 'disablePageantAccounts'])->name('organizer.pageant.disable-accounts');
+
     // Rounds management routes
     Route::post('/pageant/{pageantId}/rounds', [OrganizerController::class, 'storeRound'])->name('organizer.pageant.rounds.store');
     Route::put('/pageant/{pageantId}/rounds/{roundId}', [OrganizerController::class, 'updateRound'])->name('organizer.pageant.rounds.update');
@@ -217,6 +222,11 @@ Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulat
     Route::delete('/{pageantId}/judges/{judgeId}', [TabulatorController::class, 'removeJudge'])->name('tabulator.judges.remove');
     Route::post('/{pageantId}/judges/{judgeId}/toggle-status', [TabulatorController::class, 'toggleJudgeStatus'])->name('tabulator.judges.toggle-status');
     Route::post('/{pageantId}/judges/{judgeId}/reset-password', [TabulatorController::class, 'resetJudgePassword'])->name('tabulator.judges.reset-password');
+
+    // Judge account creation routes
+    Route::post('/{pageantId}/judges/create', [TabulatorController::class, 'createJudge'])->name('tabulator.judges.create');
+    Route::put('/{pageantId}/judges/{judgeId}/update', [TabulatorController::class, 'updateJudge'])->name('tabulator.judges.update');
+
     Route::get('/{pageantId}/scores/{roundId?}', [TabulatorController::class, 'scores'])->name('tabulator.scores');
     Route::get('/{pageantId}/rounds/{roundId}/scores/aggregated', [TabulatorController::class, 'getAggregatedScore'])->name('tabulator.scores.aggregated');
     Route::get('/{pageantId}/results', [TabulatorController::class, 'results'])->name('tabulator.results');

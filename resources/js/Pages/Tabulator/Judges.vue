@@ -1,248 +1,416 @@
 <template>
-  <div class="space-y-4 sm:space-y-6">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-slate-50/50 pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header Section -->
-              <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md overflow-hidden">
-        <div class="p-4 sm:p-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div class="text-white">
-              <h1 class="text-2xl sm:text-3xl font-bold">
-                {{ pageant ? `${pageant.name} - Judges Management` : 'Judges Management' }}
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+        <!-- Abstract Background Pattern -->
+        <div class="absolute inset-0">
+          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        </div>
+
+        <div class="relative z-10 p-8">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="space-y-2">
+              <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">
+                {{ pageant ? pageant.name : 'Judges Management' }}
               </h1>
-              <p class="mt-1 text-sm sm:text-base opacity-90">Monitor judge activity and scoring progress</p>
+              <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
+                <Users class="w-5 h-5 text-indigo-500" />
+                Manage Panel & Access
+              </p>
             </div>
-            <div v-if="pageant" class="flex flex-wrap gap-2">
-              <div class="flex gap-2">
-                <button 
-                  v-if="canAddJudges"
-                  @click="showAddJudgeModal = true"
-                  class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
-                >
-                  <Plus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
-                  <span>Add Judge</span>
-                </button>
-                <button 
-                  @click="refreshData"
-                  class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
-                >
-                  <RefreshCw class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
-                  <span>Refresh</span>
-                </button>
-              </div>
+            
+            <div v-if="pageant" class="flex flex-wrap gap-3">
+              <button 
+                @click="showCreateJudgeModal = true"
+                class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-all flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30"
+              >
+                <UserPlus class="w-4 h-4" />
+                <span>Create Account</span>
+              </button>
+              <button 
+                v-if="canAddJudges"
+                @click="showAddJudgeModal = true"
+                class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
+              >
+                <Plus class="w-4 h-4" />
+                <span>Add Existing</span>
+              </button>
+              <button 
+                @click="refreshData"
+                class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm group"
+              >
+                <RefreshCw class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                <span>Refresh</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- No Pageant Assigned -->
-      <div v-if="!pageant" class="text-center py-16">
-        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-12">
-          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-blue-200 mb-6">
-            <Users class="h-12 w-12 text-blue-600" />
+      <div v-if="!pageant" class="text-center py-20 animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-12 max-w-2xl mx-auto">
+          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-slate-50 mb-6">
+            <Users class="h-12 w-12 text-slate-400" />
           </div>
-          <h3 class="text-xl font-medium text-gray-900 mb-2">No Pageant Selected</h3>
-          <p class="text-gray-600 mb-6 max-w-md mx-auto">
-            You haven't been assigned to any pageants yet, or you need to select a pageant to manage judges.
+          <h3 class="text-2xl font-bold text-slate-900 mb-4">No Pageant Selected</h3>
+          <p class="text-slate-500 mb-8 text-lg">
+            Please select a pageant from the dashboard to manage judges.
           </p>
           <Link 
             :href="route('tabulator.dashboard')"
-            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+            class="inline-flex items-center px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
-            <LayoutDashboard class="w-4 h-4 mr-2" />
-            Go to Dashboard
+            <LayoutDashboard class="w-5 h-5 mr-2" />
+            Return to Dashboard
           </Link>
         </div>
       </div>
 
-      <!-- Summary Cards -->
-      <div v-if="pageant" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <TabulatorCard 
-          title="Total Judges"
-          :value="judges.length"
-          description="Assigned judges"
-          :icon="Users"
-          color="blue"
-        />
-
-        <TabulatorCard 
-          title="Required Judges"
-          :value="pageant.required_judges || 'No limit'"
-          description="Target number"
-          :icon="Target"
-          color="purple"
-        />
-
-        <TabulatorCard 
-          title="Active Judges"
-          :value="activeJudgesCount"
-          description="Currently online"
-          :icon="CheckCircle"
-          color="green"
-        />
-
-        <TabulatorCard 
-          title="Avg. Submissions"
-          :value="averageSubmissions"
-          description="Scores per judge"
-          :icon="FileText"
-          color="purple"
-        />
-      </div>
-
-      <!-- Judges Table -->
-      <div v-if="pageant" class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-        <div class="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-gray-100">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg sm:text-xl font-semibold text-gray-900">Judge List</h3>
-            <button 
-              @click="refreshData"
-              class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
-            >
-              <RefreshCw class="w-4 h-4 mr-2" />
-              Refresh
-            </button>
-          </div>
-        </div>
-
-        <div v-if="judges.length > 0" class="divide-y divide-gray-200">
-          <div 
-            v-for="judge in judges" 
-            :key="judge.id"
-            class="px-6 py-4 hover:bg-gray-50 transition-colors duration-200"
-          >
-            <div class="flex items-center justify-between">
-              <!-- Judge Info -->
-              <div class="flex items-center space-x-4">
-                <div class="flex-shrink-0">
-                  <div class="h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User class="h-6 w-6 text-gray-500" />
-                  </div>
-                </div>
-                <div>
-                  <h4 class="font-semibold text-gray-900">{{ judge.name }}</h4>
-                  <p class="text-sm text-gray-500">{{ judge.email }}</p>
-                  <p class="text-xs text-gray-400">{{ judge.title }}</p>
-                </div>
+      <div v-else class="space-y-8 animate-fade-in">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative flex items-start justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-500 mb-1">Total Judges</p>
+                <h4 class="text-3xl font-bold text-slate-900">{{ judges.length }}</h4>
+                <p class="text-xs text-indigo-600 font-medium mt-2">Assigned Panel</p>
               </div>
+              <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                <Users class="w-6 h-6" />
+              </div>
+            </div>
+          </div>
 
-              <!-- Judge Status and Stats -->
-              <div class="flex items-center space-x-6">
-                <!-- Scores Submitted -->
-                <div class="text-center">
-                  <p class="text-lg font-semibold text-gray-900">{{ judge.scoresSubmitted }}</p>
-                  <p class="text-xs text-gray-500">Scores Submitted</p>
-                </div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative flex items-start justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-500 mb-1">Required</p>
+                <h4 class="text-3xl font-bold text-slate-900">{{ pageant.required_judges || '∞' }}</h4>
+                <p class="text-xs text-blue-600 font-medium mt-2">Target Count</p>
+              </div>
+              <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <Target class="w-6 h-6" />
+              </div>
+            </div>
+          </div>
 
-                <!-- Status Badge -->
-                <div class="flex items-center">
-                  <span 
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    :class="getStatusClass(judge.isActive)"
-                  >
-                    <span 
-                      class="w-1.5 h-1.5 rounded-full mr-1.5" 
-                      :class="judge.isActive ? 'bg-green-400' : 'bg-gray-400'"
-                    ></span>
-                    {{ judge.isActive ? 'Active' : 'Inactive' }}
-                  </span>
-                </div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative flex items-start justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-500 mb-1">Active</p>
+                <h4 class="text-3xl font-bold text-slate-900">{{ activeJudgesCount }}</h4>
+                <p class="text-xs text-indigo-600 font-medium mt-2">Currently Online</p>
+              </div>
+              <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                <CheckCircle class="w-6 h-6" />
+              </div>
+            </div>
+          </div>
 
-                <!-- Actions -->
-                <div class="flex items-center space-x-2">
-                  <button
-                    @click="resetPassword(judge.id)"
-                    class="inline-flex items-center p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition duration-150 ease-in-out"
-                    title="Reset Password"
-                  >
-                    <Key class="w-4 h-4" />
-                  </button>
-                  <button
-                    @click="toggleStatus(judge.id)"
-                    class="inline-flex items-center p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded transition duration-150 ease-in-out"
-                    :title="judge.isActive ? 'Deactivate' : 'Activate'"
-                  >
-                    <Power class="w-4 h-4" />
-                  </button>
-                  <button
-                    @click="removeJudge(judge.id)"
-                    class="inline-flex items-center p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition duration-150 ease-in-out"
-                    title="Remove Judge"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
-                </div>
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-md transition-all">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative flex items-start justify-between">
+              <div>
+                <p class="text-sm font-medium text-slate-500 mb-1">Avg. Scores</p>
+                <h4 class="text-3xl font-bold text-slate-900">{{ averageSubmissions }}</h4>
+                <p class="text-xs text-blue-600 font-medium mt-2">Per Judge</p>
+              </div>
+              <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <FileText class="w-6 h-6" />
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Empty State -->
-        <div v-else class="text-center py-12">
-          <Users class="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 class="text-lg font-medium text-gray-900 mb-2">No Judges Assigned</h3>
-          <p class="text-gray-500">
-            No judges have been assigned to this pageant yet.
-          </p>
+        <!-- Judges List -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <h3 class="text-lg font-bold text-slate-900">Judge List</h3>
+            <span class="text-sm text-slate-500">{{ judges.length }} members</span>
+          </div>
+
+          <div v-if="judges.length > 0" class="divide-y divide-slate-100">
+            <div 
+              v-for="judge in judges" 
+              :key="judge.id"
+              class="px-6 py-4 hover:bg-slate-50 transition-colors duration-200 group"
+            >
+              <div class="flex items-center justify-between">
+                <!-- Judge Info -->
+                <div class="flex items-center gap-4">
+                  <div class="flex-shrink-0">
+                    <div class="h-12 w-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center text-slate-500 font-bold text-lg shadow-inner">
+                      {{ judge.name.charAt(0) }}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{{ judge.name }}</h4>
+                    <p class="text-sm text-slate-500">{{ judge.email }}</p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                        {{ judge.title || 'Judge' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Judge Status and Stats -->
+                <div class="flex items-center gap-8">
+                  <!-- Scores Submitted -->
+                  <div class="text-center hidden sm:block">
+                    <p class="text-lg font-bold text-slate-900">{{ judge.scoresSubmitted }}</p>
+                    <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Scores</p>
+                  </div>
+
+                  <!-- Status Badge -->
+                  <div class="flex items-center">
+                    <span 
+                      class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border"
+                      :class="judge.isActive 
+                        ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                        : 'bg-slate-100 text-slate-600 border-slate-200'"
+                    >
+                      <span 
+                        class="w-1.5 h-1.5 rounded-full mr-1.5" 
+                        :class="judge.isActive ? 'bg-blue-500' : 'bg-slate-400'"
+                      ></span>
+                      {{ judge.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="flex items-center gap-1">
+                    <button
+                      @click="resetPassword(judge.id)"
+                      class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="Reset Password"
+                    >
+                      <Key class="w-4 h-4" />
+                    </button>
+                    <button
+                      @click="toggleStatus(judge.id)"
+                      class="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                      :title="judge.isActive ? 'Deactivate' : 'Activate'"
+                    >
+                      <Power class="w-4 h-4" />
+                    </button>
+                    <button
+                      @click="removeJudge(judge.id)"
+                      class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      title="Remove Judge"
+                    >
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="text-center py-16">
+            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users class="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">No Judges Assigned</h3>
+            <p class="text-slate-500 max-w-sm mx-auto">
+              Start by creating a new judge account or adding an existing judge to this pageant.
+            </p>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Add Judge Modal -->
     <Modal :show="showAddJudgeModal" @close="closeAddJudgeModal">
-      <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-gray-900">Add Judge</h3>
-          <button @click="closeAddJudgeModal" class="text-gray-400 hover:text-gray-600">
-            <X class="h-6 w-6" />
+      <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full border border-slate-100 overflow-hidden">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="text-xl font-bold text-slate-900 flex items-center gap-3">
+            <UserPlus class="w-6 h-6 text-indigo-600" />
+            Add Existing Judge
+          </h3>
+          <button @click="closeAddJudgeModal" class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100 rounded-full">
+            <X class="h-5 w-5" />
           </button>
         </div>
 
-        <form @submit.prevent="submitAddJudge" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Select Judge</label>
-            <select 
-              v-model="addJudgeForm.judge_id" 
-              class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              required
-            >
-              <option value="">Choose a judge...</option>
-              <option 
-                v-for="judge in availableJudges" 
-                :key="judge.id" 
-                :value="judge.id"
-              >
-                {{ judge.name }} ({{ judge.email }})
-              </option>
-            </select>
-          </div>
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Role (Optional)</label>
-            <input
-              type="text"
-              v-model="addJudgeForm.role"
-              placeholder="e.g. Head Judge, Guest Judge"
-              class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+        <div class="p-8">
+          <form @submit.prevent="submitAddJudge" class="space-y-6">
+            <div class="grid grid-cols-4 gap-6 items-center">
+              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Select Judge</label>
+              <div class="col-span-3 relative">
+                <select 
+                  v-model="addJudgeForm.judge_id" 
+                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 pl-4 pr-10 transition-all appearance-none"
+                  required
+                >
+                  <option value="">Choose a judge...</option>
+                  <option 
+                    v-for="judge in availableJudges" 
+                    :key="judge.id" 
+                    :value="judge.id"
+                  >
+                    {{ judge.name }} ({{ judge.email }})
+                  </option>
+                </select>
+                <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-6 items-center">
+              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Role <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+              <div class="col-span-3">
+                <input
+                  type="text"
+                  v-model="addJudgeForm.role"
+                  placeholder="e.g. Head Judge, Guest Judge"
+                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
+                />
+              </div>
+            </div>
 
-          <div class="mt-6 flex justify-end space-x-3">
-            <button
-              type="button"
-              @click="closeAddJudgeModal"
-              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              :disabled="addJudgeForm.processing"
-              class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg hover:from-blue-600 hover:to-blue-800 shadow-sm transition-all disabled:opacity-50"
-            >
-              {{ addJudgeForm.processing ? 'Adding...' : 'Add Judge' }}
-            </button>
-          </div>
-        </form>
+            <div class="pt-6 flex justify-end gap-3 border-t border-slate-100 mt-8">
+              <button
+                type="button"
+                @click="closeAddJudgeModal"
+                class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="addJudgeForm.processing"
+                class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md shadow-indigo-200 transition-all disabled:opacity-50"
+              >
+                {{ addJudgeForm.processing ? 'Adding...' : 'Add Judge' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Create New Judge Modal -->
+    <Modal :show="showCreateJudgeModal" @close="closeCreateJudgeModal">
+      <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full border border-slate-100 overflow-hidden">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="text-xl font-bold text-slate-900 flex items-center gap-3">
+            <UserPlus class="w-6 h-6 text-indigo-600" />
+            Create Judge Account
+          </h3>
+          <button @click="closeCreateJudgeModal" class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100 rounded-full">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div class="p-8">
+          <form @submit.prevent="submitCreateJudge" class="space-y-6">
+            <div class="grid grid-cols-4 gap-6 items-center">
+              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Full Name <span class="text-red-500">*</span></label>
+              <div class="col-span-3">
+                <input
+                  type="text"
+                  v-model="createJudgeForm.name"
+                  placeholder="Enter full name"
+                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
+                  required
+                />
+                <p v-if="createJudgeForm.errors.name" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.name }}</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-6 items-center">
+              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Username <span class="text-red-500">*</span></label>
+              <div class="col-span-3">
+                <input
+                  type="text"
+                  v-model="createJudgeForm.username"
+                  placeholder="Enter username"
+                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
+                  required
+                  minlength="3"
+                  maxlength="30"
+                />
+                <p v-if="createJudgeForm.errors.username" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.username }}</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-6 items-center">
+              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Email <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+              <div class="col-span-3">
+                <input
+                  type="email"
+                  v-model="createJudgeForm.email"
+                  placeholder="Enter email address"
+                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
+                />
+                <p v-if="createJudgeForm.errors.email" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.email }}</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-6 items-start">
+              <label class="col-span-1 text-right text-sm font-medium text-slate-600 pt-3">Password <span class="text-red-500">*</span></label>
+              <div class="col-span-3">
+                <input
+                  type="password"
+                  v-model="createJudgeForm.password"
+                  placeholder="Enter password"
+                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
+                  required
+                  minlength="6"
+                />
+                <p class="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
+                <p v-if="createJudgeForm.errors.password" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.password }}</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-6 items-center">
+              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Role Title <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+              <div class="col-span-3">
+                <input
+                  type="text"
+                  v-model="createJudgeForm.role_title"
+                  placeholder="e.g. Head Judge, Guest Judge"
+                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
+                />
+              </div>
+            </div>
+
+            <div class="col-span-4 bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex gap-3">
+              <div class="flex-shrink-0">
+                <div class="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">i</div>
+              </div>
+              <p class="text-xs text-indigo-800 leading-relaxed">
+                This account will be linked to this pageant only and will be automatically disabled when the pageant is completed.
+              </p>
+            </div>
+
+            <div class="pt-6 flex justify-end gap-3 border-t border-slate-100 mt-8">
+              <button
+                type="button"
+                @click="closeCreateJudgeModal"
+                class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="createJudgeForm.processing"
+                class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md shadow-indigo-200 transition-all disabled:opacity-50"
+              >
+                {{ createJudgeForm.processing ? 'Creating...' : 'Create Account' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </Modal>
   </div>
@@ -264,7 +432,8 @@ import {
   Plus,
   Target,
   Trash2,
-  X
+  X,
+  UserPlus
 } from 'lucide-vue-next'
 import TabulatorCard from '../../Components/tabulator/TabulatorCard.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
@@ -307,11 +476,21 @@ const props = defineProps<Props>()
 
 // Modal state
 const showAddJudgeModal = ref(false)
+const showCreateJudgeModal = ref(false)
 
 // Form for adding judges
 const addJudgeForm = useForm({
   judge_id: '',
   role: ''
+})
+
+// Form for creating new judge accounts
+const createJudgeForm = useForm({
+  name: '',
+  username: '',
+  email: '',
+  password: '',
+  role_title: ''
 })
 
 const activeJudgesCount = computed(() => {
@@ -346,10 +525,23 @@ const closeAddJudgeModal = () => {
   addJudgeForm.reset()
 }
 
+const closeCreateJudgeModal = () => {
+  showCreateJudgeModal.value = false
+  createJudgeForm.reset()
+}
+
 const submitAddJudge = () => {
   addJudgeForm.post(route('tabulator.judges.assign', props.pageant?.id), {
     onSuccess: () => {
       closeAddJudgeModal()
+    }
+  })
+}
+
+const submitCreateJudge = () => {
+  createJudgeForm.post(route('tabulator.judges.create', props.pageant?.id), {
+    onSuccess: () => {
+      closeCreateJudgeModal()
     }
   })
 }
@@ -370,3 +562,26 @@ const toggleStatus = (judgeId: number) => {
   router.post(route('tabulator.judges.toggle-status', [props.pageant?.id, judgeId]))
 }
 </script>
+
+<style scoped>
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+</style>

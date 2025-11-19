@@ -84,8 +84,29 @@ class ContestantController extends Controller
      */
     public function store(Request $request, $pageantId)
     {
-        $pageant = Pageant::findOrFail($pageantId);
-        Gate::authorize('update', $pageant);
+        try {
+            $pageant = Pageant::findOrFail($pageantId);
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pageant not found',
+                ], 404);
+            }
+            abort(404, 'Pageant not found');
+        }
+        
+        try {
+            Gate::authorize('update', $pageant);
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized action',
+                ], 403);
+            }
+            abort(403, 'Unauthorized');
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -248,8 +269,29 @@ class ContestantController extends Controller
      */
     public function storePair(Request $request, int $pageantId)
     {
-        $pageant = Pageant::findOrFail($pageantId);
-        Gate::authorize('update', $pageant);
+        try {
+            $pageant = Pageant::findOrFail($pageantId);
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pageant not found',
+                ], 404);
+            }
+            abort(404, 'Pageant not found');
+        }
+        
+        try {
+            Gate::authorize('update', $pageant);
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized action',
+                ], 403);
+            }
+            abort(403, 'Unauthorized');
+        }
 
         $validated = $request->validate([
             'member_ids' => 'required|array|size:2',
@@ -403,8 +445,29 @@ class ContestantController extends Controller
      */
     public function update(Request $request, $pageantId, $contestantId)
     {
-        $pageant = Pageant::findOrFail($pageantId);
-        Gate::authorize('update', $pageant);
+        try {
+            $pageant = Pageant::findOrFail($pageantId);
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pageant not found',
+                ], 404);
+            }
+            abort(404, 'Pageant not found');
+        }
+        
+        try {
+            Gate::authorize('update', $pageant);
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized action',
+                ], 403);
+            }
+            abort(403, 'Unauthorized');
+        }
 
         $contestant = Contestant::where('pageant_id', $pageantId)
             ->findOrFail($contestantId);
@@ -575,7 +638,7 @@ class ContestantController extends Controller
             "Deleted contestant '{$contestantName}' from pageant ID {$pageantId}"
         );
 
-        return redirect()->back()->with('success', 'Contestant deleted successfully');
+        return back()->with('success', 'Contestant deleted successfully');
     }
 
     /**

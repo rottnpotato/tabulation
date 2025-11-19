@@ -198,14 +198,14 @@ class Pageant extends Model
     protected function getProgressFromStatus(): int
     {
         $statusMap = [
-            'Pending_Approval' => 5,
-            'Draft' => 10,
+            // Simplified status system
+            'Draft' => 25,
+            'Ongoing' => 60,
+            'Completed' => 100,
+            // Legacy statuses (in case old data exists)
             'Setup' => 25,
             'Active' => 60,
-            'Completed' => 100,
             'Unlocked_For_Edit' => 100,
-            'Archived' => 100,
-            'Cancelled' => 100,
         ];
 
         return $statusMap[$this->status] ?? 0;
@@ -436,7 +436,15 @@ class Pageant extends Model
     }
 
     /**
-     * Check if the pageant is in setup status
+     * Check if the pageant is ongoing
+     */
+    public function isOngoing(): bool
+    {
+        return $this->status === 'Ongoing';
+    }
+
+    /**
+     * Check if the pageant is in setup status (legacy)
      */
     public function isSetup(): bool
     {
@@ -444,11 +452,11 @@ class Pageant extends Model
     }
 
     /**
-     * Check if the pageant is active
+     * Check if the pageant is active (legacy, treated as ongoing)
      */
     public function isActive(): bool
     {
-        return $this->status === 'Active';
+        return $this->status === 'Active' || $this->status === 'Ongoing';
     }
 
     /**

@@ -1,22 +1,46 @@
+```
 <template>
-  <div class="space-y-4 sm:space-y-6">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-slate-50/50 pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header Section -->
-      <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md overflow-hidden">
-        <div class="p-4 sm:p-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div class="text-white">
-              <h1 class="text-2xl sm:text-3xl font-bold">
-                {{ pageant ? `${pageant.name} - Score Tracking` : 'Score Tracking' }}
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+        <!-- Abstract Background Pattern -->
+        <div class="absolute inset-0">
+          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        </div>
+
+        <div class="relative z-10 p-8">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="space-y-2">
+              <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">
+                Scores & Tabulation
               </h1>
-              <p class="mt-1 text-sm sm:text-base opacity-90">Monitor judge submissions and scoring progress</p>
+              <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
+                <Activity class="w-5 h-5 text-indigo-500" />
+                Real-time Score Monitoring
+              </p>
             </div>
-            <div v-if="pageant" class="flex flex-wrap gap-2">
+            
+            <div v-if="pageant" class="flex items-center bg-white/60 backdrop-blur-md rounded-2xl p-4 border border-indigo-100 shadow-sm">
+              <div class="text-indigo-600 mr-3">
+                <div class="p-2 bg-indigo-50 rounded-lg">
+                  <Crown class="w-5 h-5" />
+                </div>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-0.5">Active Pageant</div>
+                <div class="text-lg font-bold text-slate-900 leading-none">{{ pageant.name }}</div>
+              </div>
+            </div>
+            
+            <div v-else class="flex flex-wrap gap-3">
               <button 
                 @click="refreshData"
-                class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
+                class="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium hover:bg-white/20 transition-all flex items-center gap-2 shadow-lg group"
               >
-                <RefreshCw class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
+                <RefreshCw class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
                 <span>Refresh Data</span>
               </button>
             </div>
@@ -25,80 +49,80 @@
       </div>
 
       <!-- No Pageant Assigned -->
-      <div v-if="!pageant" class="text-center py-16">
-        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-12">
-          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-blue-200 mb-6">
-            <ClipboardList class="h-12 w-12 text-blue-600" />
+      <div v-if="!pageant" class="text-center py-20 animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-12 max-w-2xl mx-auto">
+          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-slate-50 mb-6">
+            <ClipboardList class="h-12 w-12 text-slate-400" />
           </div>
-          <h3 class="text-xl font-medium text-gray-900 mb-2">No Pageant Selected</h3>
-          <p class="text-gray-600 mb-6 max-w-md mx-auto">
-            You haven't been assigned to any pageants yet, or you need to select a pageant to view scores.
+          <h3 class="text-2xl font-bold text-slate-900 mb-4">No Pageant Selected</h3>
+          <p class="text-slate-500 mb-8 text-lg">
+            Please select a pageant from the dashboard to view scores.
           </p>
           <Link 
             :href="route('tabulator.dashboard')"
-            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+            class="inline-flex items-center px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
-            <LayoutDashboard class="w-4 h-4 mr-2" />
-            Go to Dashboard
+            <LayoutDashboard class="w-5 h-5 mr-2" />
+            Return to Dashboard
           </Link>
         </div>
       </div>
 
-      <!-- Round Selection -->
-      <div v-if="pageant" class="bg-white rounded-xl shadow-md border border-gray-100 p-4 sm:p-6 mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-            <h2 class="text-lg font-semibold text-gray-900">Current Round:</h2>
-            <div class="w-full sm:w-48">
-              <CustomSelect
-                v-model="currentRoundId"
-                :options="roundOptions"
-                placeholder="Select Round"
-              />
+      <div v-else class="space-y-6 animate-fade-in">
+        <!-- Toolbar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4 flex-1">
+              <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+                <Target class="w-4 h-4 text-slate-500" />
+                <span class="text-sm font-medium text-slate-700">Current Round</span>
+              </div>
+              <div class="w-full sm:w-72">
+                <CustomSelect
+                  v-model="currentRoundId"
+                  :options="roundOptions"
+                  placeholder="Select Round"
+                />
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+               <button
+                @click="exportScores"
+                class="inline-flex items-center px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+              >
+                <Download class="w-4 h-4 mr-2 text-slate-500" />
+                Export CSV
+              </button>
             </div>
           </div>
-          <button 
-            @click="refreshData"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
-          >
-            <RefreshCw class="w-4 h-4 mr-2" />
-            Refresh Data
-          </button>
         </div>
-      </div>
 
-      <!-- No Rounds Message -->
-      <div v-if="pageant && (!rounds || rounds.length === 0)" class="text-center py-12">
-        <div class="bg-white rounded-xl shadow-md border border-gray-100 p-12">
-          <Target class="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 class="text-lg font-medium text-gray-900 mb-2">No Rounds Available</h3>
-          <p class="text-gray-500">
-            No competition rounds have been set up for this pageant yet.
-          </p>
+        <!-- No Rounds Message -->
+        <div v-if="!rounds || rounds.length === 0" class="text-center py-20">
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-12 max-w-xl mx-auto">
+            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Target class="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">No Rounds Found</h3>
+            <p class="text-slate-500">
+              This pageant doesn't have any scoring rounds configured yet.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- Scores Table -->
-      <div v-if="pageant && rounds && rounds.length > 0">
-        <ScoreTable 
-          :title="`Judge Scores - ${getCurrentRoundLabel()}`"
-          :contestants="contestants"
-          :judges="judges"
-          :scores="localScores"
-          :score-key="currentRound?.id.toString()"
-          empty-title="No Scores Available"
-          empty-message="Scores will appear here once judges start submitting their evaluations."
-        >
-          <template #actions>
-            <button
-              @click="exportScores"
-              class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
-            >
-              <Download class="w-4 h-4 mr-2" />
-              Export
-            </button>
-          </template>
-        </ScoreTable>
+        <!-- Scores Table -->
+        <div v-else class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <ScoreTable 
+            :title="`Judge Scores - ${getCurrentRoundLabel()}`"
+            :contestants="contestants"
+            :judges="judges"
+            :scores="localScores"
+            :score-key="currentRound?.id.toString()"
+            empty-title="Waiting for Scores"
+            empty-message="Scores will appear here in real-time as judges submit them."
+          />
+        </div>
       </div>
     </div>
 
@@ -111,7 +135,7 @@
 import { ref, computed, watch } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
-import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard } from 'lucide-vue-next'
+import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard, FileText } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
 import ScoreTable from '../../Components/tabulator/ScoreTable.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
@@ -289,3 +313,26 @@ const exportScores = () => {
   console.log('Export scores for round:', currentRoundId.value)
 }
 </script>
+
+<style scoped>
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+</style>
