@@ -21,30 +21,31 @@
                 Manage Panel & Access
               </p>
             </div>
-            
-            <div v-if="pageant" class="flex flex-wrap gap-3">
-              <button 
-                @click="showCreateJudgeModal = true"
-                class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-all flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30"
-              >
-                <UserPlus class="w-4 h-4" />
-                <span>Create Account</span>
-              </button>
-              <button 
-                v-if="canAddJudges"
-                @click="showAddJudgeModal = true"
-                class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
-              >
-                <Plus class="w-4 h-4" />
-                <span>Add Existing</span>
-              </button>
-              <button 
-                @click="refreshData"
-                class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm group"
-              >
-                <RefreshCw class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                <span>Refresh</span>
-              </button>
+            <div v-if="pageant" class="flex flex-wrap gap-2">
+              <div class="flex gap-2">
+                <button 
+                  @click="showCreateJudgeModal = true"
+                  class="bg-green-500 text-white rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-green-600 flex items-center shadow-sm transition-all"
+                >
+                  <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span>Create Judge Account</span>
+                </button>
+                <button 
+                  v-if="canAddJudges"
+                  @click="showAddJudgeModal = true"
+                  class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
+                >
+                  <Plus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
+                  <span>Add Existing Judge</span>
+                </button>
+                <button 
+                  @click="refreshData"
+                  class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
+                >
+                  <RefreshCw class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
+                  <span>Refresh</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -231,186 +232,158 @@
 
     <!-- Add Judge Modal -->
     <Modal :show="showAddJudgeModal" @close="closeAddJudgeModal">
-      <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full border border-slate-100 overflow-hidden">
-        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="text-xl font-bold text-slate-900 flex items-center gap-3">
-            <UserPlus class="w-6 h-6 text-indigo-600" />
-            Add Existing Judge
-          </h3>
-          <button @click="closeAddJudgeModal" class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100 rounded-full">
-            <X class="h-5 w-5" />
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Add Existing Judge</h3>
+          <button @click="closeAddJudgeModal" class="text-gray-400 hover:text-gray-600">
+            <X class="h-6 w-6" />
           </button>
         </div>
 
-        <div class="p-8">
-          <form @submit.prevent="submitAddJudge" class="space-y-6">
-            <div class="grid grid-cols-4 gap-6 items-center">
-              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Select Judge</label>
-              <div class="col-span-3 relative">
-                <select 
-                  v-model="addJudgeForm.judge_id" 
-                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 pl-4 pr-10 transition-all appearance-none"
-                  required
-                >
-                  <option value="">Choose a judge...</option>
-                  <option 
-                    v-for="judge in availableJudges" 
-                    :key="judge.id" 
-                    :value="judge.id"
-                  >
-                    {{ judge.name }} ({{ judge.email }})
-                  </option>
-                </select>
-                <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-            
-            <div class="grid grid-cols-4 gap-6 items-center">
-              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Role <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
-              <div class="col-span-3">
-                <input
-                  type="text"
-                  v-model="addJudgeForm.role"
-                  placeholder="e.g. Head Judge, Guest Judge"
-                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
-                />
-              </div>
-            </div>
+        <form @submit.prevent="submitAddJudge" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Select Judge</label>
+            <select 
+              v-model="addJudgeForm.judge_id" 
+              class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              required
+            >
+              <option value="">Choose a judge...</option>
+              <option 
+                v-for="judge in availableJudges" 
+                :key="judge.id" 
+                :value="judge.id"
+              >
+                {{ judge.name }} ({{ judge.email }})
+              </option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Role (Optional)</label>
+            <input
+              type="text"
+              v-model="addJudgeForm.role"
+              placeholder="e.g. Head Judge, Guest Judge"
+              class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
 
-            <div class="pt-6 flex justify-end gap-3 border-t border-slate-100 mt-8">
-              <button
-                type="button"
-                @click="closeAddJudgeModal"
-                class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                :disabled="addJudgeForm.processing"
-                class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md shadow-indigo-200 transition-all disabled:opacity-50"
-              >
-                {{ addJudgeForm.processing ? 'Adding...' : 'Add Judge' }}
-              </button>
-            </div>
-          </form>
-        </div>
+          <div class="mt-6 flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="closeAddJudgeModal"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="addJudgeForm.processing"
+              class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg hover:from-blue-600 hover:to-blue-800 shadow-sm transition-all disabled:opacity-50"
+            >
+              {{ addJudgeForm.processing ? 'Adding...' : 'Add Judge' }}
+            </button>
+          </div>
+        </form>
       </div>
     </Modal>
 
     <!-- Create New Judge Modal -->
     <Modal :show="showCreateJudgeModal" @close="closeCreateJudgeModal">
-      <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full border border-slate-100 overflow-hidden">
-        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-          <h3 class="text-xl font-bold text-slate-900 flex items-center gap-3">
-            <UserPlus class="w-6 h-6 text-indigo-600" />
-            Create Judge Account
-          </h3>
-          <button @click="closeCreateJudgeModal" class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-100 rounded-full">
-            <X class="h-5 w-5" />
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Create New Judge Account</h3>
+          <button @click="closeCreateJudgeModal" class="text-gray-400 hover:text-gray-600">
+            <X class="h-6 w-6" />
           </button>
         </div>
 
-        <div class="p-8">
-          <form @submit.prevent="submitCreateJudge" class="space-y-6">
-            <div class="grid grid-cols-4 gap-6 items-center">
-              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Full Name <span class="text-red-500">*</span></label>
-              <div class="col-span-3">
-                <input
-                  type="text"
-                  v-model="createJudgeForm.name"
-                  placeholder="Enter full name"
-                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
-                  required
-                />
-                <p v-if="createJudgeForm.errors.name" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.name }}</p>
-              </div>
-            </div>
+        <form @submit.prevent="submitCreateJudge" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              v-model="createJudgeForm.name"
+              placeholder="Enter full name"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+              required
+            />
+            <p v-if="createJudgeForm.errors.name" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.name }}</p>
+          </div>
 
-            <div class="grid grid-cols-4 gap-6 items-center">
-              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Username <span class="text-red-500">*</span></label>
-              <div class="col-span-3">
-                <input
-                  type="text"
-                  v-model="createJudgeForm.username"
-                  placeholder="Enter username"
-                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
-                  required
-                  minlength="3"
-                  maxlength="30"
-                />
-                <p v-if="createJudgeForm.errors.username" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.username }}</p>
-              </div>
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Username <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              v-model="createJudgeForm.username"
+              placeholder="Enter username"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+              required
+              minlength="3"
+              maxlength="30"
+            />
+            <p v-if="createJudgeForm.errors.username" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.username }}</p>
+          </div>
 
-            <div class="grid grid-cols-4 gap-6 items-center">
-              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Email <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
-              <div class="col-span-3">
-                <input
-                  type="email"
-                  v-model="createJudgeForm.email"
-                  placeholder="Enter email address"
-                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
-                />
-                <p v-if="createJudgeForm.errors.email" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.email }}</p>
-              </div>
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
+            <input
+              type="email"
+              v-model="createJudgeForm.email"
+              placeholder="Enter email address"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+            />
+            <p v-if="createJudgeForm.errors.email" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.email }}</p>
+          </div>
 
-            <div class="grid grid-cols-4 gap-6 items-start">
-              <label class="col-span-1 text-right text-sm font-medium text-slate-600 pt-3">Password <span class="text-red-500">*</span></label>
-              <div class="col-span-3">
-                <input
-                  type="password"
-                  v-model="createJudgeForm.password"
-                  placeholder="Enter password"
-                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
-                  required
-                  minlength="6"
-                />
-                <p class="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
-                <p v-if="createJudgeForm.errors.password" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.password }}</p>
-              </div>
-            </div>
-            
-            <div class="grid grid-cols-4 gap-6 items-center">
-              <label class="col-span-1 text-right text-sm font-medium text-slate-600">Role Title <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
-              <div class="col-span-3">
-                <input
-                  type="text"
-                  v-model="createJudgeForm.role_title"
-                  placeholder="e.g. Head Judge, Guest Judge"
-                  class="w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500 py-2.5 px-4 transition-all"
-                />
-              </div>
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Password <span class="text-red-500">*</span></label>
+            <input
+              type="password"
+              v-model="createJudgeForm.password"
+              placeholder="Enter password"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+              required
+              minlength="6"
+            />
+            <p class="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
+            <p v-if="createJudgeForm.errors.password" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.password }}</p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Role Title (Optional)</label>
+            <input
+              type="text"
+              v-model="createJudgeForm.role_title"
+              placeholder="e.g. Head Judge, Guest Judge"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+            />
+          </div>
 
-            <div class="col-span-4 bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex gap-3">
-              <div class="flex-shrink-0">
-                <div class="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">i</div>
-              </div>
-              <p class="text-xs text-indigo-800 leading-relaxed">
-                This account will be linked to this pageant only and will be automatically disabled when the pageant is completed.
-              </p>
-            </div>
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p class="text-xs text-blue-800">
+              <strong>Note:</strong> This account will be linked to this pageant only and will be disabled when the pageant is completed.
+            </p>
+          </div>
 
-            <div class="pt-6 flex justify-end gap-3 border-t border-slate-100 mt-8">
-              <button
-                type="button"
-                @click="closeCreateJudgeModal"
-                class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                :disabled="createJudgeForm.processing"
-                class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md shadow-indigo-200 transition-all disabled:opacity-50"
-              >
-                {{ createJudgeForm.processing ? 'Creating...' : 'Create Account' }}
-              </button>
-            </div>
-          </form>
-        </div>
+          <div class="mt-6 flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="closeCreateJudgeModal"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="createJudgeForm.processing"
+              class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-700 rounded-lg hover:from-green-600 hover:to-green-800 shadow-sm transition-all disabled:opacity-50"
+            >
+              {{ createJudgeForm.processing ? 'Creating...' : 'Create Judge Account' }}
+            </button>
+          </div>
+        </form>
       </div>
     </Modal>
   </div>

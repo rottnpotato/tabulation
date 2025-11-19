@@ -334,8 +334,8 @@ class AdminController extends Controller
             // Attach organizers - only one organizer per pageant
             if (isset($validated['organizer_ids'])) {
                 // Take only the first organizer if multiple are provided
-                $organizerId = is_array($validated['organizer_ids']) 
-                    ? reset($validated['organizer_ids']) 
+                $organizerId = is_array($validated['organizer_ids'])
+                    ? reset($validated['organizer_ids'])
                     : $validated['organizer_ids'];
                 $pageant->organizers()->attach($organizerId);
             }
@@ -777,7 +777,8 @@ class AdminController extends Controller
             $pageant = Pageant::findOrFail($id);
 
             if (! $pageant->canBeApproved()) {
-                return back()->with('error', 'This pageant cannot be approved in its current status.');
+                return redirect()->route('admin.pageants.pending-approvals')
+                    ->with('error', 'This pageant cannot be approved in its current status.');
             }
 
             $pageant->approve();
@@ -790,12 +791,14 @@ class AdminController extends Controller
                 "Approved pageant '{$pageant->name}'"
             );
 
-            return back()->with('success', "Pageant '{$pageant->name}' has been approved successfully!");
+            return redirect()->route('admin.pageants.pending-approvals')
+                ->with('success', "Pageant '{$pageant->name}' has been approved successfully!");
 
         } catch (\Exception $e) {
             Log::error('Error approving pageant: '.$e->getMessage());
 
-            return back()->with('error', 'Failed to approve pageant. Please try again.');
+            return redirect()->route('admin.pageants.pending-approvals')
+                ->with('error', 'Failed to approve pageant. Please try again.');
         }
     }
 
@@ -808,7 +811,8 @@ class AdminController extends Controller
             $pageant = Pageant::findOrFail($id);
 
             if (! $pageant->canBeApproved()) {
-                return back()->with('error', 'This pageant cannot be rejected in its current status.');
+                return redirect()->route('admin.pageants.pending-approvals')
+                    ->with('error', 'This pageant cannot be rejected in its current status.');
             }
 
             $pageant->reject();
@@ -821,12 +825,163 @@ class AdminController extends Controller
                 "Rejected pageant '{$pageant->name}'"
             );
 
-            return back()->with('success', "Pageant '{$pageant->name}' has been rejected.");
+            return redirect()->route('admin.pageants.pending-approvals')
+                ->with('success', "Pageant '{$pageant->name}' has been rejected.");
 
         } catch (\Exception $e) {
             Log::error('Error rejecting pageant: '.$e->getMessage());
 
-            return back()->with('error', 'Failed to reject pageant. Please try again.');
+            return redirect()->route('admin.pageants.pending-approvals')
+                ->with('error', 'Failed to reject pageant. Please try again.');
+        }
+    }
+
+    /**
+     * View all edit access requests
+     */
+    public function editAccessRequests()
+    {
+        $requests = DB::table('edit_access_requests')
+            ->join('pageants', 'edit_access_requests.pageant_id', '=', 'pageants.id')
+            ->join('users as organizers', 'edit_access_requests.organizer_id', '=', 'organizers.id')
+            ->leftJoin('users as reviewers', 'edit_access_requests.reviewed_by', '=', 'reviewers.id')
+            ->select(
+                'edit_access_requests.*',
+                'pageants.name as pageant_name',
+                'pageants.start_date as pageant_start_date',
+                'organizers.name as organizer_name',
+                'organizers.email as organizer_email',
+                'reviewers.name as reviewer_name'
+            )
+            ->orderByRaw("CASE 
+                WHEN edit_access_requests.status = 'pending' THEN 1 
+                WHEN edit_access_requests.status = 'approved' THEN 2 
+                WHEN edit_access_requests.status = 'rejected' THEN 3 
+                ELSE 4 
+            END")
+            ->orderBy('edit_access_requests.created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Admin/EditAccessRequests', [
+            'requests' => $requests,
+        ]);
+    }
+
+    /**
+     * Approve an edit access request
+     */
+    public function approveEditAccessRequest(Request $request, $requestId)
+    {
+        $admin = Auth::user();
+
+        try {
+            $editRequest = DB::table('edit_access_requests')
+                ->where('id', $requestId)
+                ->first();
+
+            if (! $editRequest) {
+                return redirect()->route('admin.pageants.edit-access-requests')
+                    ->with('error', 'Edit access request not found.');
+            }
+
+            if ($editRequest->status !== 'pending') {
+                return redirect()->route('admin.pageants.edit-access-requests')
+                    ->with('error', 'This request has already been processed.');
+            }
+
+            $pageant = Pageant::findOrFail($editRequest->pageant_id);
+
+            // Grant edit permission by setting a temporary unlock flag
+            DB::table('pageants')
+                ->where('id', $editRequest->pageant_id)
+                ->update([
+                    'is_temporarily_editable' => true,
+                    'temporary_edit_granted_by' => $admin->id,
+                    'temporary_edit_granted_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            // Update the request status
+            DB::table('edit_access_requests')
+                ->where('id', $requestId)
+                ->update([
+                    'status' => 'approved',
+                    'reviewed_by' => $admin->id,
+                    'admin_notes' => $request->input('notes'),
+                    'reviewed_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            // Log the action
+            $this->auditLogService->log(
+                'EDIT_ACCESS_GRANTED',
+                'Pageant',
+                $pageant->id,
+                "Admin {$admin->name} granted edit access for pageant '{$pageant->name}' to organizer ID {$editRequest->organizer_id}"
+            );
+
+            return redirect()->route('admin.pageants.edit-access-requests')
+                ->with('success', 'Edit access has been granted for this pageant.');
+
+        } catch (\Exception $e) {
+            Log::error('Error approving edit access request: '.$e->getMessage());
+
+            return redirect()->route('admin.pageants.edit-access-requests')
+                ->with('error', 'Failed to approve edit access request. Please try again.');
+        }
+    }
+
+    /**
+     * Reject an edit access request
+     */
+    public function rejectEditAccessRequest(Request $request, $requestId)
+    {
+        $admin = Auth::user();
+
+        try {
+            $editRequest = DB::table('edit_access_requests')
+                ->where('id', $requestId)
+                ->first();
+
+            if (! $editRequest) {
+                return redirect()->route('admin.pageants.edit-access-requests')
+                    ->with('error', 'Edit access request not found.');
+            }
+
+            if ($editRequest->status !== 'pending') {
+                return redirect()->route('admin.pageants.edit-access-requests')
+                    ->with('error', 'This request has already been processed.');
+            }
+
+            $pageant = Pageant::findOrFail($editRequest->pageant_id);
+
+            // Update the request status
+            DB::table('edit_access_requests')
+                ->where('id', $requestId)
+                ->update([
+                    'status' => 'rejected',
+                    'reviewed_by' => $admin->id,
+                    'admin_notes' => $request->input('notes'),
+                    'reviewed_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            // Log the action
+            $this->auditLogService->log(
+                'EDIT_ACCESS_REJECTED',
+                'Pageant',
+                $pageant->id,
+                "Admin {$admin->name} rejected edit access request for pageant '{$pageant->name}' from organizer ID {$editRequest->organizer_id}"
+            );
+
+            return redirect()->route('admin.pageants.edit-access-requests')
+                ->with('success', 'Edit access request has been rejected.');
+
+        } catch (\Exception $e) {
+            Log::error('Error rejecting edit access request: '.$e->getMessage());
+
+            return redirect()->route('admin.pageants.edit-access-requests')
+                ->with('error', 'Failed to reject edit access request. Please try again.');
         }
     }
 }

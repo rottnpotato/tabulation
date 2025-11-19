@@ -433,7 +433,7 @@ class UserManagementController extends Controller
         ]);
 
         // Only update password if provided
-        if (!isset($validated['password'])) {
+        if (! isset($validated['password'])) {
             unset($validated['password']);
         }
 

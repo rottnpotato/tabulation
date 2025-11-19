@@ -1,103 +1,117 @@
 <template>
-  <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+  <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
     <!-- Header -->
-    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
-        <div v-if="slots.actions" class="flex items-center space-x-2">
-          <slot name="actions" />
-        </div>
+    <div class="flex items-center justify-between border-b border-gray-100 bg-gray-50/80 px-6 py-4">
+      <h3 class="text-base font-semibold text-gray-900">{{ title }}</h3>
+      <div v-if="slots.actions" class="flex items-center space-x-2">
+        <slot name="actions" />
       </div>
     </div>
 
-    <!-- Results List -->
-    <div class="divide-y divide-gray-200">
-      <div 
-        v-for="(contestant, index) in rankedContestants" 
-        :key="contestant.id"
-        class="px-6 py-4 hover:bg-gray-50 transition-colors duration-200"
-      >
-        <div class="flex items-center justify-between">
-          <!-- Rank and Contestant Info -->
-          <div class="flex items-center space-x-4">
-            <!-- Rank Badge -->
-            <div class="flex-shrink-0">
-              <div 
-                class="flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg"
+    <!-- Results Table -->
+    <div v-if="contestants.length" class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-100 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              scope="col"
+              class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Rank
+            </th>
+            <th
+              scope="col"
+              class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Contestant
+            </th>
+            <th
+              v-for="round in rounds"
+              :key="round.id"
+              scope="col"
+              class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              {{ round.name }}
+            </th>
+            <th
+              scope="col"
+              class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Total
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 bg-white">
+          <tr
+            v-for="(contestant, index) in rankedContestants"
+            :key="contestant.id"
+            class="hover:bg-gray-50/80"
+          >
+            <!-- Rank -->
+            <td class="whitespace-nowrap px-4 py-3 text-center">
+              <span
+                class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
                 :class="getRankBadgeClass(index + 1)"
               >
-                {{ getRankDisplay(index + 1) }}
-              </div>
-            </div>
+                <span class="mr-1 tabular-nums">{{ index + 1 }}</span>
+                <span v-if="index < 3">{{ getRankDisplay(index + 1) }}</span>
+              </span>
+            </td>
 
-            <!-- Contestant Photo and Details -->
-            <div class="flex items-center space-x-3">
-              <img 
-                :src="contestant.image" 
-                :alt="contestant.name"
-                class="h-12 w-12 rounded-full object-cover border-2 border-gray-200"
-              />
-              <div>
-                <p class="font-semibold text-gray-900">
-                  {{ contestant.name }}
-                  <span v-if="contestant.is_pair && contestant.member_genders && contestant.member_genders.length > 0" class="text-sm text-gray-500">
-                    ({{ contestant.member_genders.map(g => g === 'male' ? 'Mr' : 'Ms').join(' & ') }})
-                  </span>
-                </p>
-                <p class="text-sm text-gray-500">#{{ contestant.number }} • {{ contestant.region }}</p>
+            <!-- Contestant Info -->
+            <td class="whitespace-nowrap px-4 py-3">
+              <div class="flex items-center gap-3">
+                <img
+                  :src="contestant.image"
+                  :alt="contestant.name"
+                  class="h-10 w-10 flex-shrink-0 rounded-full border border-gray-200 object-cover"
+                />
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-gray-900">
+                    {{ contestant.name }}
+                    <span
+                      v-if="contestant.is_pair && contestant.member_genders && contestant.member_genders.length > 0"
+                      class="text-xs font-normal text-gray-500"
+                    >
+                      ({{ contestant.member_genders.map(g => g === 'male' ? 'Mr' : 'Ms').join(' & ') }})
+                    </span>
+                  </p>
+                  <p class="mt-0.5 text-xs text-gray-500">
+                    #{{ contestant.number }}
+                    <span v-if="contestant.region"> • {{ contestant.region }}</span>
+                  </p>
+                </div>
               </div>
-            </div>
-          </div>
+            </td>
 
-          <!-- Scores -->
-          <div class="flex items-center space-x-6">
-            <!-- Individual Round Scores -->
-            <div class="hidden md:flex items-center space-x-3">
-              <div 
-                v-for="round in rounds" 
-                :key="round.id"
-                class="text-center"
-              >
-                <p class="text-xs text-gray-500 uppercase tracking-wide">{{ round.name }}</p>
-                <p class="font-semibold text-gray-900">
-                  {{ formatScore(contestant.scores[round.name] || 0) }}
-                </p>
-              </div>
-            </div>
+            <!-- Round Scores -->
+            <td
+              v-for="round in rounds"
+              :key="round.id"
+              class="whitespace-nowrap px-4 py-3 text-right text-sm font-medium tabular-nums text-gray-900"
+            >
+              {{ formatScore(contestant.scores[round.name] || 0) }}
+            </td>
 
             <!-- Total Score -->
-            <div class="text-center">
-              <p class="text-xs text-gray-500 uppercase tracking-wide">Total</p>
-              <p class="text-2xl font-bold" :class="getScoreClass(contestant.totalScore)">
+            <td class="whitespace-nowrap px-4 py-3 text-right">
+              <span
+                class="text-sm font-semibold tabular-nums"
+                :class="getScoreClass(contestant.totalScore)"
+              >
                 {{ formatScore(contestant.totalScore) }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Mobile Round Scores -->
-        <div class="mt-4 md:hidden">
-          <div class="grid grid-cols-2 gap-3">
-            <div 
-              v-for="round in rounds" 
-              :key="round.id"
-              class="text-center bg-gray-50 rounded-lg py-2"
-            >
-              <p class="text-xs text-gray-500 uppercase tracking-wide">{{ round.name }}</p>
-              <p class="font-semibold text-gray-900">
-                {{ formatScore(contestant.scores[round.name] || 0) }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Empty State -->
-    <div v-if="contestants.length === 0" class="text-center py-12">
+    <div v-else class="py-12 text-center">
       <div class="text-gray-500">
         <Trophy class="mx-auto h-12 w-12 text-gray-400" />
-        <p class="mt-2 text-lg font-medium">No Results Available</p>
+        <p class="mt-2 text-lg font-medium">No results available</p>
         <p class="text-sm">Results will appear here once scoring is complete.</p>
       </div>
     </div>
@@ -106,7 +120,7 @@
 
 <script setup lang="ts">
 import { computed, useSlots } from 'vue'
-import { Trophy, Crown, Medal, Award } from 'lucide-vue-next'
+import { Trophy } from 'lucide-vue-next'
 
 const slots = useSlots()
 

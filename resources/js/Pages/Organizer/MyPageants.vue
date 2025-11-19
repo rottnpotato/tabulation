@@ -258,7 +258,6 @@ const sortOrderOptions = [
 const tabs = [
   { name: 'All Pageants', value: 'total', icon: Calendar },
   { name: 'Draft', value: 'draft', icon: Clock },
-  { name: 'Setup', value: 'setup', icon: Play },
   { name: 'Active', value: 'active', icon: Play },
   { name: 'Completed', value: 'completed', icon: CheckCircle },
   { name: 'Unlocked', value: 'unlocked_for_edit', icon: AlertCircle },
@@ -318,8 +317,6 @@ const getStatusClass = (status) => {
   switch (status) {
     case 'Draft':
       return { badge: 'bg-gray-100 text-gray-800' }
-    case 'Setup':
-      return { badge: 'bg-blue-100 text-blue-800' }
     case 'Active':
       return { badge: 'bg-green-100 text-green-800' }
     case 'Completed':
@@ -336,8 +333,6 @@ const getActionTextByStatus = (status) => {
   switch (status) {
     case 'Draft':
       return 'Continue Setup'
-    case 'Setup':
-      return 'Complete Setup'
     case 'Active':
       return 'View Live Status'
     case 'Completed':
@@ -356,8 +351,6 @@ const getTabTooltip = (tabValue) => {
       return 'View all pageants assigned to you'
     case 'draft':
       return 'Pageants still being planned and configured'
-    case 'setup':
-      return 'Pageants ready for contestants and judges assignment'
     case 'active':
       return 'Currently running pageants with ongoing scoring'
     case 'completed':
@@ -374,8 +367,6 @@ const getStatusTooltip = (status) => {
   switch (status) {
     case 'Draft':
       return 'This pageant is still being planned. Add contestants and criteria to progress.'
-    case 'Setup':
-      return 'Pageant configuration is complete. Ready for contestant registration and judge assignments.'
     case 'Active':
       return 'This pageant is currently running. Judges are scoring and results are being tabulated live.'
     case 'Completed':
@@ -395,7 +386,6 @@ const filteredPageants = computed(() => {
   if (activeTab.value !== 'total') {
     const statusMap = {
       'draft': 'Draft',
-      'setup': 'Setup',
       'active': 'Active',
       'completed': 'Completed',
       'unlocked_for_edit': 'Unlocked_For_Edit'

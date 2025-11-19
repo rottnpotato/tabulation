@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreatePairRequest;
+use App\Http\Requests\StoreContestantRequest;
+use App\Http\Requests\UpdateContestantRequest;
 use App\Models\Contestant;
 use App\Models\ContestantImage;
 use App\Models\Pageant;
@@ -10,7 +13,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class ContestantController extends Controller
 {
@@ -82,7 +84,7 @@ class ContestantController extends Controller
     /**
      * Store a new contestant
      */
-    public function store(Request $request, $pageantId)
+    public function store(StoreContestantRequest $request, $pageantId)
     {
         try {
             $pageant = Pageant::findOrFail($pageantId);
@@ -95,7 +97,7 @@ class ContestantController extends Controller
             }
             abort(404, 'Pageant not found');
         }
-        
+
         try {
             Gate::authorize('update', $pageant);
         } catch (\Exception $e) {
@@ -108,26 +110,7 @@ class ContestantController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'number' => [
-                'required',
-                'integer',
-                // Allow same number per pageant as long as gender differs
-                Rule::unique('contestants')->where(function ($query) use ($pageantId, $request) {
-                    return $query->where('pageant_id', $pageantId)
-                        ->where('gender', $request->input('gender'))
-                        ->where('is_pair', false);
-                }),
-            ],
-            'gender' => ['required', 'string', Rule::in(['male', 'female'])],
-            'origin' => 'nullable|string|max:255',
-            'age' => 'nullable|integer|min:1|max:150',
-            'bio' => 'nullable|string',
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg|max:10240',
-            'metadata' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {
@@ -267,7 +250,7 @@ class ContestantController extends Controller
     /**
      * Create a pair from two existing contestants within the same pageant
      */
-    public function storePair(Request $request, int $pageantId)
+    public function storePair(CreatePairRequest $request, int $pageantId)
     {
         try {
             $pageant = Pageant::findOrFail($pageantId);
@@ -280,7 +263,7 @@ class ContestantController extends Controller
             }
             abort(404, 'Pageant not found');
         }
-        
+
         try {
             Gate::authorize('update', $pageant);
         } catch (\Exception $e) {
@@ -293,10 +276,7 @@ class ContestantController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $validated = $request->validate([
-            'member_ids' => 'required|array|size:2',
-            'member_ids.*' => 'integer|distinct|exists:contestants,id',
-        ]);
+        $validated = $request->validated();
 
         // Load members and validate they belong to the same pageant
         $members = Contestant::whereIn('id', $validated['member_ids'])->get();
@@ -443,7 +423,7 @@ class ContestantController extends Controller
     /**
      * Update a contestant
      */
-    public function update(Request $request, $pageantId, $contestantId)
+    public function update(UpdateContestantRequest $request, $pageantId, $contestantId)
     {
         try {
             $pageant = Pageant::findOrFail($pageantId);
@@ -456,7 +436,7 @@ class ContestantController extends Controller
             }
             abort(404, 'Pageant not found');
         }
-        
+
         try {
             Gate::authorize('update', $pageant);
         } catch (\Exception $e) {
@@ -472,29 +452,7 @@ class ContestantController extends Controller
         $contestant = Contestant::where('pageant_id', $pageantId)
             ->findOrFail($contestantId);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'number' => [
-                'required',
-                'integer',
-                Rule::unique('contestants')->where(function ($query) use ($pageantId, $request) {
-                    return $query->where('pageant_id', $pageantId)
-                        ->where('gender', $request->input('gender'))
-                        ->where('is_pair', false);
-                })->ignore($contestantId),
-            ],
-            'gender' => ['required', 'string', Rule::in(['male', 'female'])],
-            'origin' => 'nullable|string|max:255',
-            'age' => 'nullable|integer|min:1|max:150',
-            'bio' => 'nullable|string',
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg|max:10240',
-            'metadata' => 'nullable|array',
-            'active' => 'nullable|boolean',
-            'remove_image_ids' => 'nullable|array',
-            'remove_image_ids.*' => 'integer',
-            'primary_image_id' => 'nullable|integer',
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {

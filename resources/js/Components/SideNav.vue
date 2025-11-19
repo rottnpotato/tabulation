@@ -284,7 +284,8 @@ import {
   Gavel,
   UsersRound,
   ClipboardSignature,
-  Star
+  Star,
+  Edit
 } from 'lucide-vue-next'
 import Tooltip from '@/Components/Tooltip.vue'
 
@@ -404,6 +405,7 @@ const navigation = computed(() => {
           children: [
             { name: 'All Pageants', href: route('admin.pageants.index'), route: 'admin.pageants.index', icon: LayoutList },
             { name: 'Pending Approvals', href: route('admin.pageants.pending-approvals'), route: 'admin.pageants.pending-approvals', icon: Clock },
+            { name: 'Edit Access Requests', href: route('admin.pageants.edit-access-requests'), route: 'admin.pageants.edit-access-requests', icon: Edit },
             { name: 'Create Pageant', href: route('admin.pageants.create'), route: 'admin.pageants.create', icon: Plus },
             { name: 'Previous Pageants', href: route('admin.pageants.previous'), route: 'admin.pageants.previous', icon: Award },
             { name: 'Archived Pageants', href: route('admin.pageants.archived'), route: 'admin.pageants.archived', icon: Archive }

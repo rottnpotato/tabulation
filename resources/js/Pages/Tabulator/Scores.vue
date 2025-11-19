@@ -1,4 +1,4 @@
-```
+
 <template>
   <div class="min-h-screen bg-slate-50/50 pb-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -38,9 +38,9 @@
             <div v-else class="flex flex-wrap gap-3">
               <button 
                 @click="refreshData"
-                class="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium hover:bg-white/20 transition-all flex items-center gap-2 shadow-lg group"
+                class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2 shadow-sm group"
               >
-                <RefreshCw class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                <RefreshCw class="w-4 h-4 text-slate-500 group-hover:rotate-180 transition-transform duration-500" />
                 <span>Refresh Data</span>
               </button>
             </div>
@@ -70,10 +70,12 @@
 
       <div v-else class="space-y-6 animate-fade-in">
         <!-- Toolbar -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-4 flex-1">
-              <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+        <!-- Toolbar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+          <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
+              <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200 w-fit">
                 <Target class="w-4 h-4 text-slate-500" />
                 <span class="text-sm font-medium text-slate-700">Current Round</span>
               </div>
@@ -89,7 +91,7 @@
             <div class="flex items-center gap-2">
                <button
                 @click="exportScores"
-                class="inline-flex items-center px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                class="inline-flex items-center px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 shadow-sm"
               >
                 <Download class="w-4 h-4 mr-2 text-slate-500" />
                 Export CSV
@@ -111,18 +113,28 @@
           </div>
         </div>
 
-        <!-- Scores Table -->
-        <div v-else class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-          <ScoreTable 
-            :title="`Judge Scores - ${getCurrentRoundLabel()}`"
-            :contestants="contestants"
-            :judges="judges"
-            :scores="localScores"
-            :score-key="currentRound?.id.toString()"
-            empty-title="Waiting for Scores"
-            empty-message="Scores will appear here in real-time as judges submit them."
-          />
-        </div>
+      <!-- Detailed Scores Table -->
+      <div v-if="pageant && rounds && rounds.length > 0 && currentRound">
+        <DetailedScoreTable 
+          :title="`Judge Scores - ${getCurrentRoundLabel()}`"
+          :contestants="contestants"
+          :judges="judges"
+          :scores="localScores"
+          :criteria="criteria"
+          :detailed-scores="detailedScores"
+          :score-key="currentRound?.id.toString()"
+          empty-title="No Scores Available"
+          empty-message="Scores will appear here once judges start submitting their evaluations."
+        />
+      </div>
+
+      <!-- Audit Logs Viewer -->
+      <div v-if="pageant && currentRound">
+        <AuditLogsViewer 
+          :pageant-id="pageant.id"
+          :round-id="currentRound.id"
+        />
+      </div>
       </div>
     </div>
 
@@ -135,9 +147,10 @@
 import { ref, computed, watch } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
-import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard, FileText } from 'lucide-vue-next'
+import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard, FileText, Activity, Crown } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
-import ScoreTable from '../../Components/tabulator/ScoreTable.vue'
+import DetailedScoreTable from '../../Components/tabulator/DetailedScoreTable.vue'
+import AuditLogsViewer from '../../Components/tabulator/AuditLogsViewer.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 import NotificationSystem from '../../Components/NotificationSystem.vue'
 import { onMounted, onUnmounted } from 'vue'
@@ -158,6 +171,8 @@ interface Contestant {
   name: string
   number: number
   image: string
+  is_pair?: boolean
+  members_text?: string
 }
 
 interface Judge {
@@ -170,6 +185,15 @@ interface Pageant {
   name: string
 }
 
+interface Criteria {
+  id: number
+  name: string
+  description?: string
+  weight: number
+  min_score: number
+  max_score: number
+}
+
 interface Props {
   pageant?: Pageant
   rounds: Round[]
@@ -177,16 +201,30 @@ interface Props {
   contestants: Contestant[]
   judges: Judge[]
   scores: Record<string, number> | Map<string, number>
+  criteria: Criteria[]
+  detailedScores: Record<string, any>
 }
 
 const props = defineProps<Props>()
 
 const localScores = ref(props.scores ? new Map(Object.entries(props.scores)) : new Map())
+const criteria = ref(props.criteria || [])
+const detailedScores = ref(props.detailedScores || {})
 const notificationSystem = ref<any>(null)
 
 // Watch for changes in props.scores and update localScores accordingly
 watch(() => props.scores, (newScores) => {
   localScores.value = newScores ? new Map(Object.entries(newScores)) : new Map()
+}, { immediate: true })
+
+// Watch for changes in criteria
+watch(() => props.criteria, (newCriteria) => {
+  criteria.value = newCriteria || []
+}, { immediate: true })
+
+// Watch for changes in detailedScores
+watch(() => props.detailedScores, (newDetailedScores) => {
+  detailedScores.value = newDetailedScores || {}
 }, { immediate: true })
 
 onMounted(() => {
@@ -304,13 +342,13 @@ const getCurrentRoundLabel = () => {
   return selectedRound ? selectedRound.name : 'Unknown Round'
 }
 
-const refreshData = () => {
-  router.reload()
+const exportScores = () => {
+  // TODO: Implement CSV export
+  console.log('Export scores functionality to be implemented')
 }
 
-const exportScores = () => {
-  // TODO: Implement score export functionality
-  console.log('Export scores for round:', currentRoundId.value)
+const refreshData = () => {
+  router.reload()
 }
 </script>
 

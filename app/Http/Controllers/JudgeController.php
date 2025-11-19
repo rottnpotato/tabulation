@@ -8,6 +8,7 @@ use App\Models\Criteria;
 use App\Models\Pageant;
 use App\Models\Round;
 use App\Models\Score;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,13 @@ use Inertia\Inertia;
 
 class JudgeController extends Controller
 {
+    protected AuditLogService $auditLogService;
+
+    public function __construct(AuditLogService $auditLogService)
+    {
+        $this->auditLogService = $auditLogService;
+    }
+
     /**
      * Show judge dashboard with assigned pageants
      */
@@ -316,8 +324,20 @@ class JudgeController extends Controller
         }
 
         // Continue with transaction for saving scores
-        DB::transaction(function () use ($judge, $pageantId, $roundId, $contestantId, $scores, $notes) {
+        DB::transaction(function () use ($judge, $pageantId, $roundId, $contestantId, $scores, $notes, $contestant, $round) {
             foreach ($scores as $criteriaId => $score) {
+                // Check if score already exists
+                $existingScore = Score::where([
+                    'judge_id' => $judge->id,
+                    'pageant_id' => $pageantId,
+                    'round_id' => $roundId,
+                    'criteria_id' => $criteriaId,
+                    'contestant_id' => $contestantId,
+                ])->first();
+
+                $isUpdate = $existingScore !== null;
+                $oldScore = $isUpdate ? $existingScore->score : null;
+
                 $newScore = Score::updateOrCreate(
                     [
                         'judge_id' => $judge->id,
@@ -332,6 +352,25 @@ class JudgeController extends Controller
                         'submitted_at' => now(),
                     ]
                 );
+
+                // Log the action in audit log
+                if ($isUpdate && $oldScore != $score) {
+                    $criteria = Criteria::find($criteriaId);
+                    $this->auditLogService->log(
+                        'SCORE_UPDATED',
+                        'Score',
+                        $newScore->id,
+                        "Judge '{$judge->name}' updated score for contestant '{$contestant->name}' in round '{$round->name}' - Criteria: '{$criteria->name}' - Old: {$oldScore}, New: {$score}"
+                    );
+                } elseif (! $isUpdate) {
+                    $criteria = Criteria::find($criteriaId);
+                    $this->auditLogService->log(
+                        'SCORE_CREATED',
+                        'Score',
+                        $newScore->id,
+                        "Judge '{$judge->name}' submitted score for contestant '{$contestant->name}' in round '{$round->name}' - Criteria: '{$criteria->name}' - Score: {$score}"
+                    );
+                }
 
                 ScoreUpdated::dispatch($newScore);
             }

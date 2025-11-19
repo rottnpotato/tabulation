@@ -21,7 +21,7 @@ class RedirectIfAuthenticated
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
                 $user = Auth::guard($guard)->user();
-                
+
                 // Redirect based on user role
                 switch ($user->role) {
                     case 'admin':

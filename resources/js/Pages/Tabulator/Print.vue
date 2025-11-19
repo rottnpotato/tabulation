@@ -1,13 +1,13 @@
 <template>
   <div class="print-container min-h-screen bg-slate-50/50">
     <!-- Screen View -->
-    <div class="screen-only py-8">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="screen-only min-h-screen pb-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header Section -->
-        <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-slate-200">
+        <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
           <!-- Abstract Background Pattern -->
           <div class="absolute inset-0">
-            <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/30 to-white opacity-90"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
             <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
             <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
           </div>
@@ -15,23 +15,43 @@
           <div class="relative z-10 p-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div class="space-y-2">
+                <div class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 uppercase tracking-wide border border-indigo-100 mb-2">
+                  <Printer class="mr-1.5 h-3.5 w-3.5" />
+                  <span>Print Center</span>
+                </div>
                 <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">
-                  Print Results
+                  Print Final Results
                 </h1>
                 <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
-                  <FileText class="w-5 h-5 text-indigo-500" />
-                  {{ pageant ? pageant.name : 'Report Generation' }}
+                  {{ pageant ? pageant.name : 'Select a pageant' }}
+                  <span v-if="reportTitle" class="text-slate-400 mx-2">|</span>
+                  <span v-if="reportTitle" class="text-indigo-600 font-medium">{{ reportTitle }}</span>
                 </p>
+                
+                <div v-if="pageant" class="flex flex-wrap gap-2 mt-4">
+                  <span v-if="pageant.date" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
+                    {{ pageant.date }}
+                  </span>
+                  <span v-if="pageant.venue" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400 mr-1.5"></span>
+                    {{ pageant.venue }}
+                  </span>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span>
+                    {{ judges.length }} Judges
+                  </span>
+                </div>
               </div>
               
-              <div v-if="pageant" class="flex flex-wrap gap-3">
-                <Link 
-                  :href="route('tabulator.dashboard')"
-                  class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
+              <div v-if="pageant" class="flex items-center">
+                <button
+                  @click="printResults"
+                  class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
                 >
-                  <LayoutDashboard class="w-4 h-4" />
-                  <span>Dashboard</span>
-                </Link>
+                  <Printer class="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                  <span>Print Report</span>
+                </button>
               </div>
             </div>
           </div>
@@ -39,13 +59,13 @@
 
         <!-- No Pageant Assigned -->
         <div v-if="!pageant" class="text-center py-20 animate-fade-in">
-          <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-12 max-w-xl mx-auto">
-            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Printer class="h-8 w-8 text-slate-400" />
+          <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-12 max-w-2xl mx-auto">
+            <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-slate-50 mb-6">
+              <Printer class="h-12 w-12 text-slate-400" />
             </div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2">No Pageant Selected</h3>
-            <p class="text-slate-500 mb-8">
-              Please select a pageant to generate reports.
+            <h3 class="text-2xl font-bold text-slate-900 mb-4">No Pageant Selected</h3>
+            <p class="text-slate-500 mb-8 text-lg">
+              Once an organizer assigns you to a pageant, you will be able to generate and print final results here.
             </p>
             <Link 
               :href="route('tabulator.dashboard')"
@@ -57,70 +77,110 @@
           </div>
         </div>
 
-        <div v-else class="animate-fade-in">
-          <!-- Controls Toolbar -->
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-8 sticky top-4 z-20">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div class="flex items-center gap-4 flex-1">
+        <div v-else class="space-y-8 animate-fade-in">
+          <!-- Print Settings Card -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+            <div class="relative z-10">
+              <h3 class="text-lg font-bold text-slate-900 mb-4">Print Settings</h3>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Stage Selector -->
-                <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Layers class="h-4 w-4 text-slate-400" />
-                  </div>
-                  <select
-                    v-model="selectedStage"
-                    class="pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full transition-shadow cursor-pointer hover:bg-slate-100 appearance-none font-medium"
-                  >
-                    <option v-for="(label, key) in stageLabels" :key="key" :value="key">
-                      {{ label }}
-                    </option>
-                  </select>
-                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <ChevronDown class="h-4 w-4 text-slate-400" />
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Result Stage</label>
+                  <div class="relative">
+                    <button
+                      @click="showStageDropdown = !showStageDropdown"
+                      class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-indigo-300 hover:ring-2 hover:ring-indigo-50 transition-all focus:outline-none"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <span>{{ stageLabels[selectedStage] }}</span>
+                      </div>
+                      <ChevronDown class="h-4 w-4 text-slate-400" />
+                    </button>
+                    
+                    <div
+                      v-if="showStageDropdown"
+                      class="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl ring-1 ring-black/5"
+                    >
+                      <div class="p-1">
+                        <button
+                          v-for="(label, key) in stageLabels"
+                          :key="key"
+                          @click="selectedStage = key as StageKey; showStageDropdown = false"
+                          class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm rounded-lg transition-colors"
+                          :class="selectedStage === key ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'"
+                        >
+                          <span class="w-1.5 h-1.5 rounded-full" :class="selectedStage === key ? 'bg-indigo-500' : 'bg-slate-300'"></span>
+                          {{ label }}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Paper Size Selector -->
-                <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Maximize class="h-4 w-4 text-slate-400" />
-                  </div>
-                  <select
-                    v-model="selectedPaperSize"
-                    class="pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full transition-shadow cursor-pointer hover:bg-slate-100 appearance-none font-medium"
-                  >
-                    <option v-for="(paper, key) in paperSizes" :key="key" :value="key">
-                      {{ paper.name }}
-                    </option>
-                  </select>
-                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <ChevronDown class="h-4 w-4 text-slate-400" />
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Paper Size</label>
+                  <div class="relative">
+                    <button
+                      @click="showPaperSizeDropdown = !showPaperSizeDropdown"
+                      class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-indigo-300 hover:ring-2 hover:ring-indigo-50 transition-all focus:outline-none"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span>{{ paperSizes[selectedPaperSize].name }}</span>
+                      </div>
+                      <ChevronDown class="h-4 w-4 text-slate-400" />
+                    </button>
+                    
+                    <div
+                      v-if="showPaperSizeDropdown"
+                      class="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl ring-1 ring-black/5"
+                    >
+                      <div class="p-1">
+                        <button
+                          v-for="(paper, key) in paperSizes"
+                          :key="key"
+                          @click="selectedPaperSize = key; showPaperSizeDropdown = false"
+                          class="flex w-full items-center justify-between px-3 py-2 text-left text-sm rounded-lg transition-colors"
+                          :class="selectedPaperSize === key ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'"
+                        >
+                          <span>{{ paper.name }}</span>
+                          <span class="w-1.5 h-1.5 rounded-full" :class="selectedPaperSize === key ? 'bg-blue-500' : 'bg-slate-300'"></span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-              
-              <!-- Print Button -->
-              <button
-                @click="printResults"
-                class="inline-flex items-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg shadow-blue-200 transform active:scale-95"
-              >
-                <Printer class="w-4 h-4 mr-2" />
-                Print Report
-              </button>
             </div>
           </div>
 
-          <!-- Print Preview Container -->
-          <div class="bg-slate-200/50 rounded-3xl p-8 border border-slate-200 overflow-hidden flex justify-center">
-            <div class="bg-white shadow-2xl transition-transform duration-300 origin-top" 
-                 :style="{ width: getPreviewWidth(), minHeight: '11in' }">
-              <div class="print-content p-8" ref="printArea">
-                <PrintableResults 
-                  :pageant="pageant"
-                  :results="resultsToShow"
-                  :judges="judges"
-                  :report-title="reportTitle"
-                />
+          <!-- Preview Card -->
+          <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-bold text-slate-900">Print Preview</h2>
+                <p class="text-sm text-slate-500">Preview how the document will look when printed</p>
+              </div>
+              <div class="text-right hidden sm:block">
+                <div class="text-sm font-medium text-slate-900">{{ pageant.name }}</div>
+                <div class="text-xs text-slate-500">{{ reportTitle }}</div>
+              </div>
+            </div>
+            
+            <div class="p-8 bg-slate-100/50 overflow-x-auto">
+              <div class="bg-white shadow-lg mx-auto transition-all duration-300" :style="{ width: getPreviewWidth(), minHeight: '11in' }">
+                <div class="p-8" ref="printArea">
+                  <PrintableResults
+                    :pageant="pageant"
+                    :results="resultsToShow"
+                    :judges="judges"
+                    :report-title="reportTitle"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -130,7 +190,7 @@
 
     <!-- Print-Only Content -->
     <div v-if="pageant" class="print-only">
-      <PrintableResults 
+      <PrintableResults
         :pageant="pageant"
         :results="resultsToShow"
         :judges="judges"
@@ -186,6 +246,8 @@ interface Props {
 const props = defineProps<Props>()
 
 const printArea = ref<HTMLElement | null>(null)
+const showStageDropdown = ref(false)
+const showPaperSizeDropdown = ref(false)
 const selectedPaperSize = ref<keyof typeof paperSizes>('letter')
 type StageKey = 'overall' | 'semi-final' | 'final' | 'final-top3'
 const selectedStage = ref<StageKey>('overall')
@@ -234,6 +296,11 @@ const printResults = () => {
   
   // Get selected paper size configuration
   const paperConfig = paperSizes[selectedPaperSize.value];
+  const pageantInfo = props.pageant;
+  const judgeCount = props.judges?.length ?? 0;
+  const stageLabel = reportTitle.value;
+  const paperName = paperConfig.name;
+  const generatedAt = new Date().toLocaleString();
   
   // Get all stylesheets from the current page
   const stylesheets = Array.from(document.styleSheets)
@@ -282,7 +349,68 @@ const printResults = () => {
           margin: 0;
           padding: 0;
           font-family: system-ui, -apple-system, sans-serif;
+          background-color: #f3f4f6;
         }
+
+        .print-shell {
+          min-height: 100vh;
+          box-sizing: border-box;
+          padding: 24px;
+        }
+
+        .print-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 24px;
+          padding-bottom: 12px;
+          margin-bottom: 16px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .print-title {
+          margin: 0;
+          font-size: 20px;
+          font-weight: 600;
+          letter-spacing: -0.02em;
+          color: #111827;
+        }
+
+        .print-subtitle {
+          margin: 4px 0 0 0;
+          font-size: 12px;
+          color: #4b5563;
+        }
+
+        .print-meta {
+          font-size: 11px;
+          color: #4b5563;
+        }
+
+        .print-meta-row {
+          display: flex;
+          justify-content: flex-end;
+          gap: 4px;
+          margin-bottom: 2px;
+        }
+
+        .print-meta-label {
+          font-weight: 500;
+          color: #374151;
+        }
+
+        .print-main {
+          margin-top: 12px;
+        }
+
+        .print-content-card {
+          background-color: #ffffff;
+          border-radius: 12px;
+          padding: 16px 20px;
+          box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+          border: 1px solid #e5e7eb;
+        }
+
         @media print {
           @page {
             size: ${paperConfig.size};
@@ -394,11 +522,45 @@ const printResults = () => {
           .rounded, .rounded-lg, .rounded-xl, .rounded-3xl {
             border-radius: 0 !important;
           }
+
+          .print-shell {
+            padding: 0;
+          }
+
+          .print-content-card {
+            box-shadow: none;
+            border-radius: 0;
+            border: none;
+            padding: 0;
+          }
         }
       </style>
     </head>
     <body>
-      ${printContent.innerHTML}
+      <div class="print-shell">
+        <header class="print-header">
+          <div>
+            <h1 class="print-title">${pageantInfo?.name ?? 'Final Results Report'}</h1>
+            <p class="print-subtitle">
+              ${stageLabel ? stageLabel : ''}
+            </p>
+          </div>
+          <div class="print-meta">
+            ${pageantInfo?.date ? `<div class="print-meta-row"><span class="print-meta-label">Date:</span><span>${pageantInfo.date}</span></div>` : ''}
+            ${pageantInfo?.venue ? `<div class="print-meta-row"><span class="print-meta-label">Venue:</span><span>${pageantInfo.venue}</span></div>` : ''}
+            ${pageantInfo?.location ? `<div class="print-meta-row"><span class="print-meta-label">Location:</span><span>${pageantInfo.location}</span></div>` : ''}
+            <div class="print-meta-row"><span class="print-meta-label">Stage:</span><span>${stageLabel}</span></div>
+            <div class="print-meta-row"><span class="print-meta-label">Paper:</span><span>${paperName}</span></div>
+            <div class="print-meta-row"><span class="print-meta-label">Judges:</span><span>${judgeCount}</span></div>
+            <div class="print-meta-row"><span class="print-meta-label">Generated:</span><span>${generatedAt}</span></div>
+          </div>
+        </header>
+        <main class="print-main">
+          <div class="print-content-card">
+            ${printContent.innerHTML}
+          </div>
+        </main>
+      </div>
     </body>
     </html>
   `);

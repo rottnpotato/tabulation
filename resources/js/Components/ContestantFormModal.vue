@@ -287,17 +287,17 @@
                     />
                     <p v-if="errors.number" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors.number }}</p>
                     <p v-else class="mt-1.5 text-xs text-gray-500 font-medium">Both members will share this number</p>
-                  </div>                  <!-- Member 1 - Compact -->
-                  <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border-2 border-blue-100 shadow-sm">
-                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center pb-3 border-b border-blue-200">
-                      <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3">
+                  </div>                  <!-- Female Candidate -->
+                  <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-5 border-2 border-pink-100 shadow-sm">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center pb-3 border-b border-pink-200">
+                      <div class="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center mr-3">
                         <Users class="h-4 w-4 text-white" />
                       </div>
-                      <span>Member 1</span>
-                      <span class="ml-auto text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">Primary</span>
+                      <span>Female Candidate</span>
+                      <span class="ml-auto text-xs font-medium text-pink-600 bg-pink-100 px-2 py-1 rounded-full">♀ Female</span>
                     </h4>
                     <div class="grid grid-cols-2 gap-4">
-                      <div>
+                      <div class="col-span-2">
                         <label class="block text-sm font-semibold text-gray-800 mb-2">
                           Full Name <span class="text-red-500">*</span>
                         </label>
@@ -310,23 +310,6 @@
                           required
                         />
                         <p v-if="errors['member1.name']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member1.name'] }}</p>
-                      </div>
-                      
-                      <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-2">
-                          Gender <span class="text-red-500">*</span>
-                        </label>
-                        <select
-                          v-model="form.member1.gender"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium cursor-pointer"
-                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.gender'] }"
-                          required
-                        >
-                          <option value="" disabled>Select gender</option>
-                          <option value="male">♂ Male</option>
-                          <option value="female">♀ Female</option>
-                        </select>
-                        <p v-if="errors['member1.gender']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member1.gender'] }}</p>
                       </div>
 
                       <div>
@@ -373,17 +356,17 @@
                     </div>
                   </div>
 
-                  <!-- Member 2 - Compact -->
-                  <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-5 border-2 border-pink-100 shadow-sm">
-                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center pb-3 border-b border-pink-200">
-                      <div class="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center mr-3">
+                  <!-- Male Candidate -->
+                  <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border-2 border-blue-100 shadow-sm">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center pb-3 border-b border-blue-200">
+                      <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3">
                         <Users class="h-4 w-4 text-white" />
                       </div>
-                      <span>Member 2</span>
-                      <span class="ml-auto text-xs font-medium text-pink-600 bg-pink-100 px-2 py-1 rounded-full">Secondary</span>
+                      <span>Male Candidate</span>
+                      <span class="ml-auto text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">♂ Male</span>
                     </h4>
                     <div class="grid grid-cols-2 gap-4">
-                      <div>
+                      <div class="col-span-2">
                         <label class="block text-sm font-semibold text-gray-800 mb-2">
                           Full Name <span class="text-red-500">*</span>
                         </label>
@@ -396,23 +379,6 @@
                           required
                         />
                         <p v-if="errors['member2.name']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member2.name'] }}</p>
-                      </div>
-                      
-                      <div>
-                        <label class="block text-sm font-semibold text-gray-800 mb-2">
-                          Gender <span class="text-red-500">*</span>
-                        </label>
-                        <select
-                          v-model="form.member2.gender"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium cursor-pointer"
-                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.gender'] }"
-                          required
-                        >
-                          <option value="" disabled>Select gender</option>
-                          <option value="male">♂ Male</option>
-                          <option value="female">♀ Female</option>
-                        </select>
-                        <p v-if="errors['member2.gender']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member2.gender'] }}</p>
                       </div>
 
                       <div>
@@ -534,14 +500,14 @@ const form = reactive({
   // Pair-specific fields
   member1: {
     name: '',
-    gender: '',
+    gender: 'female',
     age: '',
     origin: '',
     bio: '',
   },
   member2: {
     name: '',
-    gender: '',
+    gender: 'male',
     age: '',
     origin: '',
     bio: '',
@@ -563,14 +529,14 @@ const resetForm = () => {
   form.bio = ''
   form.member1 = {
     name: '',
-    gender: '',
+    gender: 'female',
     age: '',
     origin: '',
     bio: '',
   }
   form.member2 = {
     name: '',
-    gender: '',
+    gender: 'male',
     age: '',
     origin: '',
     bio: '',
@@ -657,24 +623,15 @@ const handleSubmit = async () => {
     const formData = new FormData()
     
     if (props.mode === 'pair' && !props.contestant) {
-      // Client-side validation for pairs
-      if (form.member1.gender === form.member2.gender) {
-        errors['member2.gender'] = 'Pair members must have different genders'
-        isLoading.value = false
-        return
-      }
-      
       // Validate required fields for both members
-      if (!form.member1.name || !form.member1.gender) {
-        errors['member1.name'] = !form.member1.name ? 'Member 1 name is required' : ''
-        errors['member1.gender'] = !form.member1.gender ? 'Member 1 gender is required' : ''
+      if (!form.member1.name) {
+        errors['member1.name'] = 'Female candidate name is required'
         isLoading.value = false
         return
       }
       
-      if (!form.member2.name || !form.member2.gender) {
-        errors['member2.name'] = !form.member2.name ? 'Member 2 name is required' : ''
-        errors['member2.gender'] = !form.member2.gender ? 'Member 2 gender is required' : ''
+      if (!form.member2.name) {
+        errors['member2.name'] = 'Male candidate name is required'
         isLoading.value = false
         return
       }
