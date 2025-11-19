@@ -27,13 +27,6 @@
         
         <!-- Decorative corner accent -->
         <div class="corner-accent"></div>
-
-        <!-- Contestant number badge -->
-        <div class="absolute top-4 right-4 contestant-badge">
-          <span class="contestant-badge-inner">
-            #{{ displayNumber(contestant) }}
-          </span>
-        </div>
         
         <!-- Pair badge for paired contestants -->
         <div v-if="contestant.is_paired" class="absolute top-4 left-4">

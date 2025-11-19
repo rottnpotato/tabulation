@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCriteriaRequest;
+use App\Http\Requests\UpdateCriteriaRequest;
 use App\Models\Criteria;
 use App\Models\Pageant;
 use App\Services\AuditLogService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -48,7 +49,7 @@ class CriteriaController extends Controller
     /**
      * Store a new criterion
      */
-    public function store(Request $request, $pageantId)
+    public function store(StoreCriteriaRequest $request, $pageantId)
     {
         $pageant = Pageant::findOrFail($pageantId);
 
@@ -63,17 +64,7 @@ class CriteriaController extends Controller
             abort(403, 'You do not have access to this pageant.');
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'weight' => 'required|integer|min:0|max:100',
-            'min_score' => 'nullable|numeric|min:0',
-            'max_score' => 'nullable|numeric|gt:min_score',
-            'allow_decimals' => 'nullable|boolean',
-            'decimal_places' => 'nullable|integer|min:0|max:5',
-            'segment_id' => 'nullable|exists:segments,id',
-            'category_id' => 'nullable|exists:categories,id',
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {
@@ -123,7 +114,7 @@ class CriteriaController extends Controller
     /**
      * Update a criterion
      */
-    public function update(Request $request, $pageantId, $criterionId)
+    public function update(UpdateCriteriaRequest $request, $pageantId, $criterionId)
     {
         $pageant = Pageant::findOrFail($pageantId);
 
@@ -141,18 +132,7 @@ class CriteriaController extends Controller
         $criterion = Criteria::where('pageant_id', $pageantId)
             ->findOrFail($criterionId);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'weight' => 'required|integer|min:0|max:100',
-            'min_score' => 'nullable|numeric|min:0',
-            'max_score' => 'nullable|numeric|gt:min_score',
-            'allow_decimals' => 'nullable|boolean',
-            'decimal_places' => 'nullable|integer|min:0|max:5',
-            'segment_id' => 'nullable|exists:segments,id',
-            'category_id' => 'nullable|exists:categories,id',
-            'display_order' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
         try {

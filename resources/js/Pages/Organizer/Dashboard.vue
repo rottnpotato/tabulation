@@ -96,53 +96,11 @@
       </div>
     </div>
 
-    <!-- Enhanced Status Overview -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-      <div
-        v-for="(status, index) in statusCards"
-        :key="index"
-        :class="[
-          status.bgColor,
-          'group relative rounded-xl shadow-md p-4 sm:p-5 flex flex-col items-center justify-center text-center border-2 transition-all duration-300 cursor-pointer overflow-hidden',
-          'hover:shadow-xl hover:-translate-y-1 hover:scale-105'
-        ]"
-        :style="`border-color: ${status.borderColor}`"
-      >
-        <!-- Decorative background -->
-        <div :class="['absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300', status.bgGradient]"></div>
-        
-        <template v-if="isLoading">
-          <div class="flex flex-col items-center space-y-2 relative z-10">
-            <div class="h-10 w-10 bg-gray-200 rounded-full shimmer"></div>
-            <div class="h-5 w-20 bg-gray-200 rounded shimmer"></div>
-            <div class="h-8 w-12 bg-gray-200 rounded shimmer"></div>
-          </div>
-        </template>
-        <template v-else>
-          <div class="relative z-10 flex flex-col items-center">
-            <div :class="['p-3 rounded-xl mb-3 transition-all duration-300 group-hover:scale-110', status.iconBg]">
-              <component :is="status.icon" :class="['h-6 w-6 sm:h-7 sm:w-7', status.iconColor]" />
-            </div>
-            <h3 :class="['text-xs sm:text-sm font-semibold uppercase tracking-wide', status.textColor]">
-              {{ status.title }}
-            </h3>
-            <div class="mt-2 flex items-baseline gap-1">
-              <p :class="['text-2xl sm:text-3xl font-bold', status.countColor]">
-                {{ getStatusCount(status.key) }}
-              </p>
-              <span class="text-xs text-gray-500">
-                {{ getStatusCount(status.key) === 1 ? 'pageant' : 'pageants' }}
-              </span>
-            </div>
-          </div>
-        </template>
-      </div>
-    </div>
 
-    <!-- Enhanced Quick Actions and Recent Pageants Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+    <!-- Recent Pageants -->
+    <div class="grid grid-cols-1 gap-4 sm:gap-6">
       <!-- Recent Pageants with Enhanced Design -->
-      <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
         <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-5 border-b border-orange-200">
           <div class="flex items-center justify-between">
             <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
@@ -225,72 +183,6 @@
             <Link :href="route('organizer.my-pageants')" class="group text-sm font-semibold text-orange-600 hover:text-orange-800 flex items-center transition-all">
               <span>View all pageants</span>
               <ChevronRight class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </Tooltip>
-        </div>
-      </div>
-
-      <!-- Enhanced Quick Actions -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-        <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-5 border-b border-orange-200">
-          <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
-            <div class="p-2 bg-orange-200 rounded-lg mr-3">
-              <Zap class="h-5 w-5 text-orange-700" />
-            </div>
-            Quick Actions
-          </h2>
-        </div>
-        
-        <div class="p-5 space-y-3">
-          <Tooltip text="View and manage all your assigned pageants" position="right">
-            <Link :href="route('organizer.my-pageants')" class="group flex items-start gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-all duration-300 border-2 border-gray-100 hover:border-orange-300 transform hover:-translate-y-0.5 hover:shadow-lg">
-              <div class="p-2.5 bg-orange-100 group-hover:bg-orange-200 rounded-xl transition-colors">
-                <Crown class="h-5 w-5 text-orange-600" />
-              </div>
-              <div class="flex-1">
-                <div class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">My Pageants</div>
-                <div class="text-xs text-gray-600 mt-0.5">View and manage all your events</div>
-              </div>
-              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
-            </Link>
-          </Tooltip>
-          
-          <Tooltip text="Add and manage contestants for your pageants" position="right">
-            <Link :href="route('organizer.contestants')" class="group flex items-start gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-all duration-300 border-2 border-gray-100 hover:border-orange-300 transform hover:-translate-y-0.5 hover:shadow-lg">
-              <div class="p-2.5 bg-orange-100 group-hover:bg-orange-200 rounded-xl transition-colors">
-                <UserPlus class="h-5 w-5 text-orange-600" />
-              </div>
-              <div class="flex-1">
-                <div class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">Manage Contestants</div>
-                <div class="text-xs text-gray-600 mt-0.5">Register new participants</div>
-              </div>
-              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
-            </Link>
-          </Tooltip>
-          
-          <Tooltip text="Set up scoring criteria and weight distributions" position="right">
-            <Link :href="route('organizer.criteria')" class="group flex items-start gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-all duration-300 border-2 border-gray-100 hover:border-orange-300 transform hover:-translate-y-0.5 hover:shadow-lg">
-              <div class="p-2.5 bg-orange-100 group-hover:bg-orange-200 rounded-xl transition-colors">
-                <ListChecks class="h-5 w-5 text-orange-600" />
-              </div>
-              <div class="flex-1">
-                <div class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">Configure Criteria</div>
-                <div class="text-xs text-gray-600 mt-0.5">Setup judging criteria</div>
-              </div>
-              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
-            </Link>
-          </Tooltip>
-          
-          <Tooltip text="Choose and configure your pageant's scoring methodology" position="right">
-            <Link :href="route('organizer.scoring')" class="group flex items-start gap-3 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-all duration-300 border-2 border-gray-100 hover:border-orange-300 transform hover:-translate-y-0.5 hover:shadow-lg">
-              <div class="p-2.5 bg-orange-100 group-hover:bg-orange-200 rounded-xl transition-colors">
-                <BarChart2 class="h-5 w-5 text-orange-600" />
-              </div>
-              <div class="flex-1">
-                <div class="text-sm font-bold text-gray-900 group-hover:text-orange-700 transition-colors">Scoring System</div>
-                <div class="text-xs text-gray-600 mt-0.5">Configure methodology</div>
-              </div>
-              <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
             </Link>
           </Tooltip>
         </div>

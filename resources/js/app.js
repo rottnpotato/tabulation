@@ -20,8 +20,8 @@ router.on('finish', () => NProgress.done());
 router.on('error', (event) => {
   if (event.detail.response?.status === 419) {
     // Let the server handle the redirect with flash message
-    // Don't show any client-side error modal
-    return
+    window.location.reload();
+    // return
   }
 })
 

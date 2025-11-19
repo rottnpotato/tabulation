@@ -23,13 +23,13 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
         <div class="flex items-center space-x-3">
           <div class="relative">
-            <Search class="h-4 w-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               v-model="searchQuery"
               type="text"
               placeholder="Search pageants..."
-              class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
+              class="pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm"
             />
+            <Search class="h-4 w-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
         
@@ -324,16 +324,19 @@ const confirmActionHandler = () => {
   if (!selectedPageant.value) return
   
   isProcessing.value = true
-  processingPageants.value.push(selectedPageant.value.id)
+  const pageantId = selectedPageant.value.id
+  const pageantName = selectedPageant.value.name
+  processingPageants.value.push(pageantId)
   lastAction.value = confirmAction.value
   
   const action = confirmAction.value === 'approve' ? 'approve' : 'reject'
-  const url = `/admin/pageants/${selectedPageant.value.id}/${action}`
+  const actionLabel = confirmAction.value
+  const url = `/admin/pageants/${pageantId}/${action}`
   
   router.post(url, {}, {
     onSuccess: (page) => {
       notify.success(
-        `Pageant "${selectedPageant.value.name}" has been ${confirmAction.value}d successfully!`
+        `Pageant "${pageantName}" has been ${actionLabel}d successfully!`
       )
       closeConfirmModal()
       
@@ -352,14 +355,14 @@ const confirmActionHandler = () => {
         const firstError = Object.values(errors)[0]
         notify.error(Array.isArray(firstError) ? firstError[0] : firstError)
       } else {
-        notify.error(`Failed to ${confirmAction.value} pageant. Please try again.`)
+        notify.error(`Failed to ${actionLabel} pageant. Please try again.`)
       }
       
       closeConfirmModal()
     },
     onFinish: () => {
       isProcessing.value = false
-      const index = processingPageants.value.indexOf(selectedPageant.value.id)
+      const index = processingPageants.value.indexOf(pageantId)
       if (index > -1) {
         processingPageants.value.splice(index, 1)
       }

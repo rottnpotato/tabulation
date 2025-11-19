@@ -50,8 +50,8 @@
         :class="[
           'absolute left-0 top-full mt-2 origin-top rounded-xl',
           'bg-white/95 backdrop-blur-md border border-gray-200/60',
-          'shadow-2xl shadow-gray-900/20 ring-1 ring-black ring-opacity-5 z-50',
-          'min-w-[100%]',
+          'shadow-2xl shadow-gray-900/20 ring-1 ring-black ring-opacity-5',
+          'min-w-[100%] z-[100]',
           dropdownPosition
         ]"
         role="listbox"

@@ -78,27 +78,27 @@
         </div>
       </div>
 
-      <!-- Scores Table -->
-      <div v-if="pageant && rounds && rounds.length > 0">
-        <ScoreTable 
+      <!-- Detailed Scores Table -->
+      <div v-if="pageant && rounds && rounds.length > 0 && currentRound">
+        <DetailedScoreTable 
           :title="`Judge Scores - ${getCurrentRoundLabel()}`"
           :contestants="contestants"
           :judges="judges"
           :scores="localScores"
+          :criteria="criteria"
+          :detailed-scores="detailedScores"
           :score-key="currentRound?.id.toString()"
           empty-title="No Scores Available"
           empty-message="Scores will appear here once judges start submitting their evaluations."
-        >
-          <template #actions>
-            <button
-              @click="exportScores"
-              class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
-            >
-              <Download class="w-4 h-4 mr-2" />
-              Export
-            </button>
-          </template>
-        </ScoreTable>
+        />
+      </div>
+
+      <!-- Audit Logs Viewer -->
+      <div v-if="pageant && currentRound">
+        <AuditLogsViewer 
+          :pageant-id="pageant.id"
+          :round-id="currentRound.id"
+        />
       </div>
     </div>
 
@@ -113,7 +113,8 @@ import { router, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
-import ScoreTable from '../../Components/tabulator/ScoreTable.vue'
+import DetailedScoreTable from '../../Components/tabulator/DetailedScoreTable.vue'
+import AuditLogsViewer from '../../Components/tabulator/AuditLogsViewer.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 import NotificationSystem from '../../Components/NotificationSystem.vue'
 import { onMounted, onUnmounted } from 'vue'
@@ -134,6 +135,8 @@ interface Contestant {
   name: string
   number: number
   image: string
+  is_pair?: boolean
+  members_text?: string
 }
 
 interface Judge {
@@ -146,6 +149,15 @@ interface Pageant {
   name: string
 }
 
+interface Criteria {
+  id: number
+  name: string
+  description?: string
+  weight: number
+  min_score: number
+  max_score: number
+}
+
 interface Props {
   pageant?: Pageant
   rounds: Round[]
@@ -153,16 +165,30 @@ interface Props {
   contestants: Contestant[]
   judges: Judge[]
   scores: Record<string, number> | Map<string, number>
+  criteria: Criteria[]
+  detailedScores: Record<string, any>
 }
 
 const props = defineProps<Props>()
 
 const localScores = ref(props.scores ? new Map(Object.entries(props.scores)) : new Map())
+const criteria = ref(props.criteria || [])
+const detailedScores = ref(props.detailedScores || {})
 const notificationSystem = ref<any>(null)
 
 // Watch for changes in props.scores and update localScores accordingly
 watch(() => props.scores, (newScores) => {
   localScores.value = newScores ? new Map(Object.entries(newScores)) : new Map()
+}, { immediate: true })
+
+// Watch for changes in criteria
+watch(() => props.criteria, (newCriteria) => {
+  criteria.value = newCriteria || []
+}, { immediate: true })
+
+// Watch for changes in detailedScores
+watch(() => props.detailedScores, (newDetailedScores) => {
+  detailedScores.value = newDetailedScores || {}
 }, { immediate: true })
 
 onMounted(() => {
@@ -282,10 +308,5 @@ const getCurrentRoundLabel = () => {
 
 const refreshData = () => {
   router.reload()
-}
-
-const exportScores = () => {
-  // TODO: Implement score export functionality
-  console.log('Export scores for round:', currentRoundId.value)
 }
 </script>

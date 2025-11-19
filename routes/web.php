@@ -82,6 +82,7 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     Route::put('/pageant/{id}/status', [OrganizerController::class, 'updatePageantStatus'])->name('organizer.pageant.status.update');
     Route::post('/pageant/{id}/lock', [OrganizerController::class, 'lockPageant'])->name('organizer.pageant.lock');
     Route::post('/pageant/{id}/unlock', [OrganizerController::class, 'unlockPageant'])->name('organizer.pageant.unlock');
+    Route::post('/pageant/{id}/request-edit-access', [OrganizerController::class, 'requestEditAccess'])->name('organizer.pageant.request-edit-access');
     Route::delete('/pageant/{id}/tabulators/{tabulatorId}', [OrganizerController::class, 'removeTabulator'])->name('organizer.pageant.tabulators.remove');
 
     // Criteria routes
@@ -107,6 +108,11 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     Route::get('/pageant/{id}/criteria-management', [OrganizerController::class, 'pageantCriteria'])->name('organizer.pageant.criteria-management');
     Route::get('/pageant/{id}/judges-management', [OrganizerController::class, 'pageantJudges'])->name('organizer.pageant.judges-management');
     Route::get('/pageant/{id}/rounds-management', [OrganizerController::class, 'pageantRounds'])->name('organizer.pageant.rounds-management');
+
+    // Tabulator account creation routes
+    Route::post('/pageant/{pageantId}/tabulators/create', [OrganizerController::class, 'createTabulator'])->name('organizer.pageant.tabulators.create');
+    Route::put('/pageant/{pageantId}/tabulators/{tabulatorId}/update', [OrganizerController::class, 'updateTabulator'])->name('organizer.pageant.tabulators.update');
+    Route::post('/pageant/{pageantId}/disable-accounts', [OrganizerController::class, 'disablePageantAccounts'])->name('organizer.pageant.disable-accounts');
 
     // Rounds management routes
     Route::post('/pageant/{pageantId}/rounds', [OrganizerController::class, 'storeRound'])->name('organizer.pageant.rounds.store');
@@ -182,6 +188,11 @@ Route::middleware(['auth', 'verified', 'check_role:admin'])->prefix('admin')->gr
         Route::post('/{id}/approve', [AdminController::class, 'approvePageant'])->name('admin.pageants.approve');
         Route::post('/{id}/reject', [AdminController::class, 'rejectPageant'])->name('admin.pageants.reject');
 
+        // Edit access request routes
+        Route::get('/edit-access-requests', [AdminController::class, 'editAccessRequests'])->name('admin.pageants.edit-access-requests');
+        Route::post('/edit-access-requests/{requestId}/approve', [AdminController::class, 'approveEditAccessRequest'])->name('admin.pageants.edit-access-requests.approve');
+        Route::post('/edit-access-requests/{requestId}/reject', [AdminController::class, 'rejectEditAccessRequest'])->name('admin.pageants.edit-access-requests.reject');
+
         Route::get('/', [AdminController::class, 'allPageants'])->name('admin.pageants.index');
 
         Route::get('/previous', [AdminController::class, 'previousPageants'])->name('admin.pageants.previous');
@@ -217,8 +228,14 @@ Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulat
     Route::delete('/{pageantId}/judges/{judgeId}', [TabulatorController::class, 'removeJudge'])->name('tabulator.judges.remove');
     Route::post('/{pageantId}/judges/{judgeId}/toggle-status', [TabulatorController::class, 'toggleJudgeStatus'])->name('tabulator.judges.toggle-status');
     Route::post('/{pageantId}/judges/{judgeId}/reset-password', [TabulatorController::class, 'resetJudgePassword'])->name('tabulator.judges.reset-password');
+
+    // Judge account creation routes
+    Route::post('/{pageantId}/judges/create', [TabulatorController::class, 'createJudge'])->name('tabulator.judges.create');
+    Route::put('/{pageantId}/judges/{judgeId}/update', [TabulatorController::class, 'updateJudge'])->name('tabulator.judges.update');
+
     Route::get('/{pageantId}/scores/{roundId?}', [TabulatorController::class, 'scores'])->name('tabulator.scores');
     Route::get('/{pageantId}/rounds/{roundId}/scores/aggregated', [TabulatorController::class, 'getAggregatedScore'])->name('tabulator.scores.aggregated');
+    Route::get('/{pageantId}/rounds/{roundId}/audit-logs', [TabulatorController::class, 'getScoreAuditLogs'])->name('tabulator.scores.audit-logs');
     Route::get('/{pageantId}/results', [TabulatorController::class, 'results'])->name('tabulator.results');
     Route::get('/{pageantId}/print', [TabulatorController::class, 'print'])->name('tabulator.print');
 

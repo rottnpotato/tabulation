@@ -104,10 +104,12 @@
               id="start_date"
               v-model="form.start_date"
               type="date"
+              :min="todayDate"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
               :class="{ 'border-red-500': errors.start_date }"
             />
             <p v-if="errors.start_date" class="mt-1 text-sm text-red-600">{{ errors.start_date }}</p>
+            <p v-else class="mt-1 text-sm text-gray-500">Cannot select a date before today</p>
           </div>
 
           <!-- End Date -->
@@ -119,14 +121,17 @@
               id="end_date"
               v-model="form.end_date"
               type="date"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              :min="form.start_date || todayDate"
+              :disabled="!form.start_date"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
               :class="{ 'border-red-500': errors.end_date }"
             />
             <p v-if="errors.end_date" class="mt-1 text-sm text-red-600">{{ errors.end_date }}</p>
+            <p v-else-if="!form.start_date" class="mt-1 text-sm text-gray-500">Please select a start date first</p>
           </div>
         </div>
 
-        <!-- Pageant Date -->
+          <!-- Pageant Date -->
         <div>
           <label for="pageant_date" class="block text-sm font-medium text-gray-700 mb-2">
             Main Pageant Date *
@@ -135,15 +140,14 @@
             id="pageant_date"
             v-model="form.pageant_date"
             type="date"
+            :min="todayDate"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
             :class="{ 'border-red-500': errors.pageant_date }"
             required
           />
           <p v-if="errors.pageant_date" class="mt-1 text-sm text-red-600">{{ errors.pageant_date }}</p>
           <p class="mt-1 text-sm text-gray-500">The main competition date for this pageant</p>
-        </div>
-
-        <!-- Location Details -->
+        </div>        <!-- Location Details -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Venue -->
           <div>
@@ -162,19 +166,41 @@
           </div>
 
           <!-- Location -->
-          <div>
+          <div class="relative">
             <label for="location" class="block text-sm font-medium text-gray-700 mb-2">
-              Location
+              Location (Bohol Only) *
             </label>
             <input
               id="location"
-              v-model="form.location"
+              v-model="locationInput"
+              @input="handleLocationInput"
+              @blur="handleLocationBlur"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-              placeholder="City, State/Province, Country"
+              placeholder="Start typing a municipality/city in Bohol..."
               :class="{ 'border-red-500': errors.location }"
+              autocomplete="off"
             />
+            
+            <!-- Suggestions Dropdown -->
+            <div
+              v-if="showLocationSuggestions && filteredLocations.length > 0"
+              class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto"
+            >
+              <button
+                v-for="(location, index) in filteredLocations"
+                :key="index"
+                type="button"
+                @click="selectLocation(location)"
+                class="w-full px-3 py-2 text-left hover:bg-orange-50 transition-colors border-b border-gray-100 last:border-b-0"
+              >
+                <div class="font-medium text-gray-900">{{ location }}</div>
+                <div class="text-xs text-gray-500">Bohol, Philippines</div>
+              </button>
+            </div>
+            
             <p v-if="errors.location" class="mt-1 text-sm text-red-600">{{ errors.location }}</p>
+            <p v-else class="mt-1 text-sm text-gray-500">Only locations within Bohol province are accepted</p>
           </div>
         </div>
 
@@ -223,7 +249,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import CustomSelect from '@/Components/CustomSelect.vue'
@@ -239,6 +265,109 @@ defineOptions({
 
 // Composables
 const notify = useNotification()
+
+// Get today's date in YYYY-MM-DD format
+const todayDate = computed(() => {
+  const today = new Date()
+  return today.toISOString().split('T')[0]
+})
+
+// Bohol municipalities and cities
+const boholLocations = [
+  'Tagbilaran City',
+  'Alburquerque',
+  'Alicia',
+  'Anda',
+  'Antequera',
+  'Baclayon',
+  'Balilihan',
+  'Batuan',
+  'Bien Unido',
+  'Bilar',
+  'Buenavista',
+  'Calape',
+  'Candijay',
+  'Carmen',
+  'Catigbian',
+  'Clarin',
+  'Corella',
+  'Cortes',
+  'Dagohoy',
+  'Danao',
+  'Dauis',
+  'Dimiao',
+  'Duero',
+  'Garcia Hernandez',
+  'Getafe',
+  'Guindulman',
+  'Inabanga',
+  'Jagna',
+  'Lila',
+  'Loay',
+  'Loboc',
+  'Loon',
+  'Mabini',
+  'Maribojoc',
+  'Panglao',
+  'Pilar',
+  'President Carlos P. Garcia',
+  'Sagbayan',
+  'San Isidro',
+  'San Miguel',
+  'Sevilla',
+  'Sierra Bullones',
+  'Sikatuna',
+  'Talibon',
+  'Trinidad',
+  'Tubigon',
+  'Ubay',
+  'Valencia'
+]
+
+// Location input handling
+const locationInput = ref('')
+const showLocationSuggestions = ref(false)
+
+const filteredLocations = computed(() => {
+  if (!locationInput.value) return []
+  
+  const searchTerm = locationInput.value.toLowerCase()
+  return boholLocations.filter(location => 
+    location.toLowerCase().includes(searchTerm)
+  )
+})
+
+const handleLocationInput = () => {
+  showLocationSuggestions.value = true
+  // Clear the form location if user is typing
+  if (form.location !== locationInput.value) {
+    form.location = ''
+  }
+}
+
+const handleLocationBlur = () => {
+  // Delay to allow click on suggestion
+  setTimeout(() => {
+    showLocationSuggestions.value = false
+    
+    // Validate if the entered location is in Bohol
+    if (locationInput.value && !boholLocations.includes(locationInput.value)) {
+      errors.value.location = 'Please select a valid location from Bohol'
+      form.location = ''
+    }
+  }, 200)
+}
+
+const selectLocation = (location) => {
+  locationInput.value = location
+  form.location = location
+  showLocationSuggestions.value = false
+  
+  // Clear location error if exists
+  if (errors.value.location) {
+    delete errors.value.location
+  }
+}
 
 // Form state
 const form = reactive({
@@ -293,6 +422,21 @@ const submitForm = () => {
     errors.value.pageant_date = 'Main pageant date is required'
   }
   
+  // Validate pageant date is not in the past
+  if (form.pageant_date && new Date(form.pageant_date) < new Date(todayDate.value)) {
+    errors.value.pageant_date = 'Pageant date cannot be in the past'
+  }
+  
+  // Validate start date is not in the past (if provided)
+  if (form.start_date && new Date(form.start_date) < new Date(todayDate.value)) {
+    errors.value.start_date = 'Start date cannot be in the past'
+  }
+  
+  // Validate location is from Bohol
+  if (locationInput.value && !boholLocations.includes(locationInput.value)) {
+    errors.value.location = 'Please select a valid location from Bohol'
+  }
+  
   // Validate dates
   if (form.start_date && form.end_date && new Date(form.end_date) < new Date(form.start_date)) {
     errors.value.end_date = 'End date must be after start date'
@@ -307,7 +451,7 @@ const submitForm = () => {
   // Submit the form
   isSubmitting.value = true
   
-  router.post('/organizer/pageants/create', form, {
+  router.post(route('organizer.pageants.store'), form, {
     onSuccess: () => {
       notify.success(`Pageant "${form.name}" has been submitted for approval!`)
       isSubmitting.value = false

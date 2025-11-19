@@ -39,6 +39,9 @@ class Pageant extends Model
         'locked_at',
         'locked_by',
         'current_round_id',
+        'is_temporarily_editable',
+        'temporary_edit_granted_by',
+        'temporary_edit_granted_at',
     ];
 
     /**
@@ -54,6 +57,8 @@ class Pageant extends Model
         'edit_permission_expires_at' => 'datetime',
         'is_locked' => 'boolean',
         'locked_at' => 'datetime',
+        'is_temporarily_editable' => 'boolean',
+        'temporary_edit_granted_at' => 'datetime',
     ];
 
     /**
@@ -198,14 +203,14 @@ class Pageant extends Model
     protected function getProgressFromStatus(): int
     {
         $statusMap = [
-            'Pending_Approval' => 5,
-            'Draft' => 10,
+            // Simplified status system
+            'Draft' => 25,
+            'Ongoing' => 60,
+            'Completed' => 100,
+            // Legacy statuses (in case old data exists)
             'Setup' => 25,
             'Active' => 60,
-            'Completed' => 100,
             'Unlocked_For_Edit' => 100,
-            'Archived' => 100,
-            'Cancelled' => 100,
         ];
 
         return $statusMap[$this->status] ?? 0;
@@ -436,7 +441,15 @@ class Pageant extends Model
     }
 
     /**
-     * Check if the pageant is in setup status
+     * Check if the pageant is ongoing
+     */
+    public function isOngoing(): bool
+    {
+        return $this->status === 'Ongoing';
+    }
+
+    /**
+     * Check if the pageant is in setup status (legacy)
      */
     public function isSetup(): bool
     {
@@ -444,11 +457,11 @@ class Pageant extends Model
     }
 
     /**
-     * Check if the pageant is active
+     * Check if the pageant is active (legacy, treated as ongoing)
      */
     public function isActive(): bool
     {
-        return $this->status === 'Active';
+        return $this->status === 'Active' || $this->status === 'Ongoing';
     }
 
     /**
@@ -536,7 +549,42 @@ class Pageant extends Model
             return false;
         }
 
-        return in_array($this->status, ['Draft', 'Setup', 'Unlocked_For_Edit']);
+        // Completed pageants cannot be edited, even with temporary edit access
+        if ($this->isCompleted()) {
+            return false;
+        }
+
+        // Check if temporary edit access has been granted
+        if ($this->is_temporarily_editable === true) {
+            return true;
+        }
+
+        // Check if status allows editing
+        if (! in_array($this->status, ['Draft', 'Setup', 'Unlocked_For_Edit'])) {
+            return false;
+        }
+
+        // Check if start date has been reached (pageants cannot be edited on or after start date)
+        if ($this->hasStartDateReached()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if start date has been reached
+     */
+    public function hasStartDateReached(): bool
+    {
+        if (! $this->start_date) {
+            return false;
+        }
+
+        $today = now()->startOfDay();
+        $startDate = $this->start_date->startOfDay();
+
+        return $today >= $startDate;
     }
 
     /**

@@ -39,6 +39,7 @@ class FixOrganizerPasswords extends Command
 
         if ($organizers->isEmpty()) {
             $this->info('No organizers found.');
+
             return 0;
         }
 
@@ -52,7 +53,7 @@ class FixOrganizerPasswords extends Command
             // Try to verify with a known test password first
             // If neither common password works, assume it's a user-created password
             // that we need to reset
-            $canAuthWithCommon = Hash::check('password', $organizer->password) || 
+            $canAuthWithCommon = Hash::check('password', $organizer->password) ||
                                  Hash::check('password123', $organizer->password) ||
                                  Hash::check('testpassword123', $organizer->password);
 
@@ -64,7 +65,7 @@ class FixOrganizerPasswords extends Command
             // For other users, we'll assume they need a password reset
             // since we can't verify their original password
             $affectedCount++;
-            
+
             if ($dryRun) {
                 $this->warn("Would reset password for: {$organizer->name} ({$organizer->email})");
             } else {
@@ -72,7 +73,7 @@ class FixOrganizerPasswords extends Command
                 $organizer->update([
                     'password' => $defaultPassword, // Model cast will hash it once
                 ]);
-                
+
                 $this->info("✓ Reset password for: {$organizer->name} ({$organizer->email})");
                 $this->line("  New password: {$defaultPassword}");
             }

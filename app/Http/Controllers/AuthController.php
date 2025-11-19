@@ -32,7 +32,7 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
-        
+
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
@@ -53,8 +53,6 @@ class AuthController extends Controller
                     return redirect()->route('admin.dashboard');
             }
         }
-    
-
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',

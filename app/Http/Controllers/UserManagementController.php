@@ -208,7 +208,7 @@ class UserManagementController extends Controller
                 "Updated organizer status: {$organizer->name}. Status changed to: ".($organizer->is_active ? 'Active' : 'Inactive')
             );
 
-            return redirect()->back()->with('success', "Organizer {$organizer->name}'s status updated successfully.");
+            return back()->with('success', "Organizer {$organizer->name}'s status updated successfully.");
         } else {
             // Full update with all validations
             $validated = $request->validate([
@@ -231,7 +231,7 @@ class UserManagementController extends Controller
                 "Updated organizer user: {$organizer->name}. Status: ".($organizer->is_active ? 'Active' : 'Inactive')
             );
 
-            return redirect()->back()->with('success', "Organizer {$organizer->name} updated successfully.");
+            return back()->with('success', "Organizer {$organizer->name} updated successfully.");
         }
     }
 
@@ -245,7 +245,7 @@ class UserManagementController extends Controller
 
         // Check if organizer has pageants
         if ($organizer->pageants()->count() > 0) {
-            return redirect()->back()->with('error', "Cannot delete organizer {$name} because they have associated pageants.");
+            return back()->with('error', "Cannot delete organizer {$name} because they have associated pageants.");
         }
 
         // Log the action before deletion
@@ -259,7 +259,7 @@ class UserManagementController extends Controller
 
         $organizer->delete();
 
-        return redirect()->back()->with('success', "Organizer {$name} deleted successfully.");
+        return back()->with('success', "Organizer {$name} deleted successfully.");
     }
 
     /**
@@ -270,7 +270,7 @@ class UserManagementController extends Controller
         $organizer = User::findOrFail($id);
 
         if ($organizer->email_verified_at) {
-            return redirect()->back()->with('warning', "Email for {$organizer->name} is already verified.");
+            return back()->with('warning', "Email for {$organizer->name} is already verified.");
         }
 
         try {
@@ -286,11 +286,11 @@ class UserManagementController extends Controller
                 "Resent verification email to organizer: {$organizer->name}"
             );
 
-            return redirect()->back()->with('success', "Verification email has been resent to {$organizer->name}.");
+            return back()->with('success', "Verification email has been resent to {$organizer->name}.");
         } catch (\Exception $e) {
             Log::error('Failed to send verification email: '.$e->getMessage());
 
-            return redirect()->back()->with('error', 'Failed to send verification email. Please try again later.');
+            return back()->with('error', 'Failed to send verification email. Please try again later.');
         }
     }
 
@@ -433,7 +433,7 @@ class UserManagementController extends Controller
         ]);
 
         // Only update password if provided
-        if (!isset($validated['password'])) {
+        if (! isset($validated['password'])) {
             unset($validated['password']);
         }
 
@@ -634,7 +634,7 @@ class UserManagementController extends Controller
                 "Updated tabulator status: {$tabulator->name}. Status changed to: ".($tabulator->is_active ? 'Active' : 'Inactive')
             );
 
-            return redirect()->back()->with('success', "Tabulator {$tabulator->name}'s status updated successfully.");
+            return back()->with('success', "Tabulator {$tabulator->name}'s status updated successfully.");
         } else {
             // Full update with all validations
             $validated = $request->validate([
@@ -816,7 +816,7 @@ class UserManagementController extends Controller
                 "Updated judge status: {$judge->name}. Status changed to: ".($judge->is_active ? 'Active' : 'Inactive')
             );
 
-            return redirect()->back()->with('success', "Judge {$judge->name}'s status updated successfully.");
+            return back()->with('success', "Judge {$judge->name}'s status updated successfully.");
         } else {
             // Full update with all validations
             $validated = $request->validate([

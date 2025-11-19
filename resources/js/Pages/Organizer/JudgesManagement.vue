@@ -173,10 +173,19 @@
         <!-- Tabulator Assignment Section -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <div class="p-4 sm:p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              <Calculator class="h-5 w-5 mr-2 text-orange-500" />
-              Assign Tabulator
-            </h2>
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                <Calculator class="h-5 w-5 mr-2 text-orange-500" />
+                Assign Tabulator
+              </h2>
+              <button
+                @click="showCreateTabulatorModal = true"
+                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+              >
+                <UserPlus class="h-3.5 w-3.5 mr-1" />
+                Create New Account
+              </button>
+            </div>
             <p class="text-sm text-gray-500 mb-4">
               Assign a tabulator to this pageant. Tabulators are responsible for creating judge accounts and managing the scoring process.
             </p>
@@ -275,6 +284,100 @@
       :message="`Are you sure you want to remove this tabulator from the pageant? This action will remove their access to manage this pageant.`"
       :processing="deleteTabulatorProcessing"
     />
+
+    <!-- Create Tabulator Account Modal -->
+    <div v-if="showCreateTabulatorModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" @click="closeCreateTabulatorModal"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 sm:mx-0 sm:h-10 sm:w-10">
+                <UserPlus class="h-6 w-6 text-orange-600" />
+              </div>
+              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Create New Tabulator Account
+                </h3>
+                <div class="mt-4 space-y-4">
+                  <div>
+                    <label for="tabulator-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input
+                      type="text"
+                      id="tabulator-name"
+                      v-model="createTabulatorForm.name"
+                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      :class="{ 'border-red-300': createTabulatorForm.errors.name }"
+                      placeholder="Enter full name"
+                    />
+                    <p v-if="createTabulatorForm.errors.name" class="mt-1 text-sm text-red-600">{{ createTabulatorForm.errors.name }}</p>
+                  </div>
+
+                  <div>
+                    <label for="tabulator-username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input
+                      type="text"
+                      id="tabulator-username"
+                      v-model="createTabulatorForm.username"
+                      @blur="checkTabulatorUsername"
+                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      :class="{ 'border-red-300': createTabulatorForm.errors.username || usernameExists }"
+                      placeholder="Enter username"
+                    />
+                    <p v-if="createTabulatorForm.errors.username" class="mt-1 text-sm text-red-600">{{ createTabulatorForm.errors.username }}</p>
+                    <p v-if="usernameExists && !createTabulatorForm.errors.username" class="mt-1 text-sm text-red-600">This username is already taken</p>
+                  </div>
+
+                  <div>
+                    <label for="tabulator-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input
+                      type="password"
+                      id="tabulator-password"
+                      v-model="createTabulatorForm.password"
+                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      :class="{ 'border-red-300': createTabulatorForm.errors.password }"
+                      placeholder="Enter password"
+                    />
+                    <p v-if="createTabulatorForm.errors.password" class="mt-1 text-sm text-red-600">{{ createTabulatorForm.errors.password }}</p>
+                  </div>
+
+                  <div>
+                    <label for="tabulator-password-confirmation" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input
+                      type="password"
+                      id="tabulator-password-confirmation"
+                      v-model="createTabulatorForm.password_confirmation"
+                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      placeholder="Confirm password"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button
+              type="button"
+              @click="createTabulatorAccount"
+              :disabled="createTabulatorForm.processing || usernameExists"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Loader2 v-if="createTabulatorForm.processing" class="h-4 w-4 mr-1.5 animate-spin" />
+              Create Account
+            </button>
+            <button
+              type="button"
+              @click="closeCreateTabulatorModal"
+              :disabled="createTabulatorForm.processing"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -289,7 +392,8 @@ import {
   Calculator, 
   Save, 
   Loader2, 
-  Trash 
+  Trash,
+  UserPlus
 } from 'lucide-vue-next'
 import { useForm } from '@inertiajs/vue3'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
@@ -341,6 +445,16 @@ const tabulatorOptions = computed(() =>
 const showDeleteModal = ref(false)
 const tabulatorToDelete = ref(null)
 const deleteTabulatorProcessing = ref(false)
+const showCreateTabulatorModal = ref(false)
+const usernameExists = ref(false)
+
+// Create Tabulator Form
+const createTabulatorForm = useForm({
+  name: '',
+  username: '',
+  password: '',
+  password_confirmation: ''
+})
 
 // Scoring systems
 const scoringSystems = [
@@ -412,5 +526,41 @@ const removeTabulator = () => {
     .finally(() => {
       deleteTabulatorProcessing.value = false
     })
+}
+
+const checkTabulatorUsername = async () => {
+  if (!createTabulatorForm.username) {
+    usernameExists.value = false
+    return
+  }
+
+  try {
+    const response = await axios.post(route('organizer.check-username'), {
+      username: createTabulatorForm.username
+    })
+    usernameExists.value = response.data.exists
+  } catch (error) {
+    console.error('Error checking username:', error)
+  }
+}
+
+const createTabulatorAccount = () => {
+  createTabulatorForm.post(route('organizer.pageant.tabulators.create', props.pageant.id), {
+    onSuccess: () => {
+      closeCreateTabulatorModal()
+      // Reload to show new tabulator
+      window.location.reload()
+    },
+    onError: (errors) => {
+      console.error('Validation errors:', errors)
+    }
+  })
+}
+
+const closeCreateTabulatorModal = () => {
+  showCreateTabulatorModal.value = false
+  createTabulatorForm.reset()
+  createTabulatorForm.clearErrors()
+  usernameExists.value = false
 }
 </script> 

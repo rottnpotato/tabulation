@@ -85,7 +85,8 @@ class PageantPolicy
             }
 
             // Check if pageant can be edited based on status
-            return $pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit();
+            // Allow editing for Draft, Setup, Pending_Approval, and Unlocked pageants
+            return $pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit() || $pageant->status === 'Pending_Approval';
         }
 
         return false;

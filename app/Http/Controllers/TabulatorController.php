@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Events\RoundUpdated;
+use App\Http\Requests\AssignJudgeRequest;
+use App\Http\Requests\StoreJudgeRequest;
+use App\Http\Requests\UpdateJudgeRequest;
+use App\Models\AuditLog;
 use App\Models\Contestant;
 use App\Models\Criteria;
 use App\Models\Pageant;
@@ -128,12 +132,9 @@ class TabulatorController extends Controller
     /**
      * Assign a judge to the pageant
      */
-    public function assignJudge(Request $request, $pageantId)
+    public function assignJudge(AssignJudgeRequest $request, $pageantId)
     {
-        $request->validate([
-            'judge_id' => 'required|exists:users,id',
-            'role' => 'nullable|string|max:50',
-        ]);
+        $validated = $request->validated();
 
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
@@ -144,13 +145,13 @@ class TabulatorController extends Controller
         }
 
         // Check if judge is already assigned
-        if ($pageant->judges()->where('user_id', $request->judge_id)->exists()) {
+        if ($pageant->judges()->where('user_id', $validated['judge_id'])->exists()) {
             return back()->withErrors(['message' => 'This judge is already assigned to this pageant.']);
         }
 
         // Assign the judge
-        $pageant->judges()->attach($request->judge_id, [
-            'role' => $request->role ?? 'judge',
+        $pageant->judges()->attach($validated['judge_id'], [
+            'role' => $validated['role'] ?? 'judge',
             'active' => true,
         ]);
 
@@ -210,6 +211,78 @@ class TabulatorController extends Controller
         }
 
         return back()->withErrors(['message' => 'Judge not found.']);
+    }
+
+    /**
+     * Create a new judge account for a specific pageant
+     */
+    public function createJudge(StoreJudgeRequest $request, $pageantId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $validated = $request->validated();
+
+        // Create the judge account
+        $judge = User::create([
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'] ?? null,
+            'password' => $validated['password'],
+            'role' => 'judge',
+            'pageant_id' => $pageantId,
+            'status' => 'active',
+            'is_verified' => true,
+            'email_verified_at' => now(),
+        ]);
+
+        // Assign the judge to this pageant
+        $pageant->judges()->attach($judge->id, [
+            'role' => $validated['role_title'] ?? 'Judge',
+            'active' => true,
+        ]);
+
+        return back()->with('success', 'Judge account created successfully.');
+    }
+
+    /**
+     * Update judge account
+     */
+    public function updateJudge(UpdateJudgeRequest $request, $pageantId, $judgeId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $judge = User::findOrFail($judgeId);
+
+        // Verify judge is assigned to this pageant
+        if (! $pageant->judges()->where('user_id', $judgeId)->exists()) {
+            return back()->withErrors(['message' => 'Judge not found for this pageant.']);
+        }
+
+        $validated = $request->validated();
+
+        // Update judge account
+        $updateData = [
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'] ?? null,
+        ];
+
+        if (! empty($validated['password'])) {
+            $updateData['password'] = $validated['password'];
+        }
+
+        $judge->update($updateData);
+
+        // Update pivot data if role title changed
+        if (isset($validated['role_title'])) {
+            $pageant->judges()->updateExistingPivot($judgeId, [
+                'role' => $validated['role_title'] ?? 'Judge',
+            ]);
+        }
+
+        return back()->with('success', 'Judge account updated successfully.');
     }
 
     /**
@@ -301,6 +374,35 @@ class TabulatorController extends Controller
             }
         }
 
+        // Get criteria for this round with their details
+        $criteria = $currentRound->criteria()->orderBy('display_order')->get()->map(function ($criterion) {
+            return [
+                'id' => $criterion->id,
+                'name' => $criterion->name,
+                'description' => $criterion->description,
+                'weight' => $criterion->weight,
+                'min_score' => (float) $criterion->min_score,
+                'max_score' => (float) $criterion->max_score,
+            ];
+        });
+
+        // Get individual criterion scores for detailed view
+        $detailedScores = Score::where('pageant_id', $pageantId)
+            ->where('round_id', $roundId)
+            ->get()
+            ->map(function ($score) {
+                return [
+                    'key' => "{$score->contestant_id}-{$score->judge_id}-{$score->criteria_id}",
+                    'contestant_id' => $score->contestant_id,
+                    'judge_id' => $score->judge_id,
+                    'criteria_id' => $score->criteria_id,
+                    'score' => (float) $score->score,
+                    'notes' => $score->notes,
+                    'submitted_at' => $score->submitted_at?->format('M d, Y h:i A'),
+                ];
+            })
+            ->keyBy('key');
+
         return Inertia::render('Tabulator/Scores', [
             'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
             'rounds' => $rounds,
@@ -311,6 +413,8 @@ class TabulatorController extends Controller
             'contestants' => $contestants,
             'judges' => $judges,
             'scores' => $scores,
+            'criteria' => $criteria,
+            'detailedScores' => $detailedScores,
         ]);
     }
 
@@ -405,12 +509,12 @@ class TabulatorController extends Controller
                 'is_pair' => $contestantModel->is_pair ?? false,
                 'member_names' => $memberNames,
                 'member_genders' => $memberGenders,
-                'image' => $contestant['image'],
-                'scores' => $contestant['scores'],
-                'final_score' => $contestant['finalScore'],
-                'rank' => $contestant['rank'],
+                'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                'scores' => $contestant['scores'] ?? [],
+                'final_score' => $contestant['finalScore'] ?? 0,
+                'rank' => $contestant['rank'] ?? 0,
             ];
-        });
+        })->values();
 
         $semiResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'semi-final'))->map(function ($contestant) use ($pageant) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
@@ -432,12 +536,12 @@ class TabulatorController extends Controller
                 'is_pair' => $contestantModel->is_pair ?? false,
                 'member_names' => $memberNames,
                 'member_genders' => $memberGenders,
-                'image' => $contestant['image'],
-                'scores' => $contestant['scores'],
-                'final_score' => $contestant['finalScore'],
-                'rank' => $contestant['rank'],
+                'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                'scores' => $contestant['scores'] ?? [],
+                'final_score' => $contestant['finalScore'] ?? 0,
+                'rank' => $contestant['rank'] ?? 0,
             ];
-        });
+        })->values();
 
         $finalResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'final'))->map(function ($contestant) use ($pageant) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
@@ -459,12 +563,12 @@ class TabulatorController extends Controller
                 'is_pair' => $contestantModel->is_pair ?? false,
                 'member_names' => $memberNames,
                 'member_genders' => $memberGenders,
-                'image' => $contestant['image'],
-                'scores' => $contestant['scores'],
-                'final_score' => $contestant['finalScore'],
-                'rank' => $contestant['rank'],
+                'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                'scores' => $contestant['scores'] ?? [],
+                'final_score' => $contestant['finalScore'] ?? 0,
+                'rank' => $contestant['rank'] ?? 0,
             ];
-        });
+        })->values();
 
         // Get judges for this pageant
         $judges = $pageant->judges->map(function ($judge) {
@@ -710,6 +814,49 @@ class TabulatorController extends Controller
         }
 
         return response()->json(['aggregated_score' => $aggregatedScore]);
+    }
+
+    /**
+     * Get audit logs for score edits in a specific round
+     */
+    public function getScoreAuditLogs($pageantId, $roundId, Request $request)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+        $round = $pageant->rounds()->findOrFail($roundId);
+
+        // Get all score IDs for this round
+        $scoreIds = Score::where('pageant_id', $pageantId)
+            ->where('round_id', $roundId)
+            ->pluck('id');
+
+        // Fetch audit logs for score updates and creations
+        $auditLogs = AuditLog::whereIn('target_entity', ['Score'])
+            ->whereIn('action_type', ['SCORE_UPDATED', 'SCORE_CREATED'])
+            ->whereIn('target_id', $scoreIds)
+            ->with('user:id,name')
+            ->orderBy('created_at', 'desc')
+            ->limit(200)
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'user' => $log->user ? [
+                        'id' => $log->user->id,
+                        'name' => $log->user->name,
+                    ] : null,
+                    'user_role' => $log->user_role,
+                    'action_type' => $log->action_type,
+                    'details' => $log->details,
+                    'created_at' => $log->created_at->format('M d, Y h:i A'),
+                    'timestamp' => $log->created_at->timestamp,
+                ];
+            });
+
+        return response()->json([
+            'audit_logs' => $auditLogs,
+            'round_name' => $round->name,
+        ]);
     }
 
     /**

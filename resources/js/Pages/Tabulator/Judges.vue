@@ -14,12 +14,19 @@
             <div v-if="pageant" class="flex flex-wrap gap-2">
               <div class="flex gap-2">
                 <button 
+                  @click="showCreateJudgeModal = true"
+                  class="bg-green-500 text-white rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-green-600 flex items-center shadow-sm transition-all"
+                >
+                  <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span>Create Judge Account</span>
+                </button>
+                <button 
                   v-if="canAddJudges"
                   @click="showAddJudgeModal = true"
                   class="bg-white text-blue-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-blue-50 flex items-center shadow-sm transition-all"
                 >
                   <Plus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-blue-600" />
-                  <span>Add Judge</span>
+                  <span>Add Existing Judge</span>
                 </button>
                 <button 
                   @click="refreshData"
@@ -191,7 +198,7 @@
     <Modal :show="showAddJudgeModal" @close="closeAddJudgeModal">
       <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-gray-900">Add Judge</h3>
+          <h3 class="text-xl font-bold text-gray-900">Add Existing Judge</h3>
           <button @click="closeAddJudgeModal" class="text-gray-400 hover:text-gray-600">
             <X class="h-6 w-6" />
           </button>
@@ -245,6 +252,104 @@
         </form>
       </div>
     </Modal>
+
+    <!-- Create New Judge Modal -->
+    <Modal :show="showCreateJudgeModal" @close="closeCreateJudgeModal">
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-bold text-gray-900">Create New Judge Account</h3>
+          <button @click="closeCreateJudgeModal" class="text-gray-400 hover:text-gray-600">
+            <X class="h-6 w-6" />
+          </button>
+        </div>
+
+        <form @submit.prevent="submitCreateJudge" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              v-model="createJudgeForm.name"
+              placeholder="Enter full name"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+              required
+            />
+            <p v-if="createJudgeForm.errors.name" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.name }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Username <span class="text-red-500">*</span></label>
+            <input
+              type="text"
+              v-model="createJudgeForm.username"
+              placeholder="Enter username"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+              required
+              minlength="3"
+              maxlength="30"
+            />
+            <p v-if="createJudgeForm.errors.username" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.username }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
+            <input
+              type="email"
+              v-model="createJudgeForm.email"
+              placeholder="Enter email address"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+            />
+            <p v-if="createJudgeForm.errors.email" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.email }}</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Password <span class="text-red-500">*</span></label>
+            <input
+              type="password"
+              v-model="createJudgeForm.password"
+              placeholder="Enter password"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+              required
+              minlength="6"
+            />
+            <p class="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
+            <p v-if="createJudgeForm.errors.password" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.password }}</p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Role Title (Optional)</label>
+            <input
+              type="text"
+              v-model="createJudgeForm.role_title"
+              placeholder="e.g. Head Judge, Guest Judge"
+              class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+            />
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p class="text-xs text-blue-800">
+              <strong>Note:</strong> This account will be linked to this pageant only and will be disabled when the pageant is completed.
+            </p>
+          </div>
+
+          <div class="mt-6 flex justify-end space-x-3">
+            <button
+              type="button"
+              @click="closeCreateJudgeModal"
+              class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="createJudgeForm.processing"
+              class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-700 rounded-lg hover:from-green-600 hover:to-green-800 shadow-sm transition-all disabled:opacity-50"
+            >
+              {{ createJudgeForm.processing ? 'Creating...' : 'Create Judge Account' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -264,7 +369,8 @@ import {
   Plus,
   Target,
   Trash2,
-  X
+  X,
+  UserPlus
 } from 'lucide-vue-next'
 import TabulatorCard from '../../Components/tabulator/TabulatorCard.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
@@ -307,11 +413,21 @@ const props = defineProps<Props>()
 
 // Modal state
 const showAddJudgeModal = ref(false)
+const showCreateJudgeModal = ref(false)
 
 // Form for adding judges
 const addJudgeForm = useForm({
   judge_id: '',
   role: ''
+})
+
+// Form for creating new judge accounts
+const createJudgeForm = useForm({
+  name: '',
+  username: '',
+  email: '',
+  password: '',
+  role_title: ''
 })
 
 const activeJudgesCount = computed(() => {
@@ -346,10 +462,23 @@ const closeAddJudgeModal = () => {
   addJudgeForm.reset()
 }
 
+const closeCreateJudgeModal = () => {
+  showCreateJudgeModal.value = false
+  createJudgeForm.reset()
+}
+
 const submitAddJudge = () => {
   addJudgeForm.post(route('tabulator.judges.assign', props.pageant?.id), {
     onSuccess: () => {
       closeAddJudgeModal()
+    }
+  })
+}
+
+const submitCreateJudge = () => {
+  createJudgeForm.post(route('tabulator.judges.create', props.pageant?.id), {
+    onSuccess: () => {
+      closeCreateJudgeModal()
     }
   })
 }

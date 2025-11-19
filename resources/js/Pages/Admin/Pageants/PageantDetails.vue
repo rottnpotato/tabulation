@@ -456,13 +456,6 @@
           <PauseCircle class="h-5 w-5 mr-2 text-amber-500" />
           Pause Pageant
         </button>
-        <button
-         
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-teal-600 border border-teal-700 rounded-md shadow-sm hover:bg-teal-700 transition-colors duration-150 ease-in-out cursor-pointer"
-        >
-          <ChevronRight class="h-5 w-5 mr-2" />
-          Advance to Next Round
-        </button>
       </div>
     </div>
   </template>
