@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-slate-50/50">
     <Head title="Event Organizer Portal" />
     <SideNav>
       <div class="p-6">
@@ -59,13 +59,13 @@ const UpdateSettings = (settings) => {
 </script>
 
 <style>
-/* Custom shimmer animation with orange color for loading skeletons */
-.shimmer-orange {
+/* Custom shimmer animation with blue color for loading skeletons */
+.shimmer-blue {
   background-image: linear-gradient(
     to right,
     #f9f9f9 0%,
     #f5f5f5 20%,
-    rgba(249, 115, 22, 0.2) 40%,
+    rgba(99, 102, 241, 0.2) 40%, /* indigo-500 */
     #f5f5f5 60%,
     #f9f9f9 80%,
     #f9f9f9 100%

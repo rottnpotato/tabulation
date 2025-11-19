@@ -1,25 +1,33 @@
 <template>
   <div class="max-w-4xl mx-auto space-y-6">
     <!-- Page Header -->
-    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-md overflow-hidden">
-      <div class="p-6">
+    <!-- Page Header -->
+    <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+      <!-- Abstract Background Pattern -->
+      <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+      </div>
+
+      <div class="relative z-10 p-8">
         <div class="flex items-center justify-between">
-          <div class="text-white">
-            <h1 class="text-3xl font-bold">Create New Pageant</h1>
-            <p class="mt-1 text-orange-100">Submit a new pageant for admin approval</p>
+          <div class="space-y-2">
+            <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">Create New Pageant</h1>
+            <p class="text-slate-500 text-lg font-light">Submit a new pageant for admin approval</p>
           </div>
-          <div class="bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-4 py-2">
-            <Crown class="h-6 w-6 text-white" />
+          <div class="bg-white/60 backdrop-blur-md border border-indigo-100 rounded-2xl p-4 shadow-sm">
+            <Crown class="h-8 w-8 text-indigo-600" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- Creation Form -->
-    <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
       <div class="p-6 border-b border-gray-100">
         <h2 class="text-xl font-semibold text-gray-900 flex items-center">
-          <FileText class="h-5 w-5 mr-2 text-orange-500" />
+          <FileText class="h-5 w-5 mr-2 text-indigo-500" />
           Pageant Information
         </h2>
         <p class="mt-1 text-sm text-gray-600">
@@ -40,7 +48,7 @@
               v-model="form.name"
               type="text"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               placeholder="Enter pageant name"
               :class="{ 'border-red-500': errors.name }"
             />
@@ -56,7 +64,7 @@
               v-model="form.scoring_system"
               :options="scoringSystemOptions"
               placeholder="Select scoring system"
-              variant="orange"
+              variant="indigo"
             />
             <p v-if="errors.scoring_system" class="mt-1 text-sm text-red-600">{{ errors.scoring_system }}</p>
           </div>
@@ -70,7 +78,7 @@
               v-model="form.contestant_type"
               :options="contestantTypeOptions"
               placeholder="Select contestant type"
-              variant="orange"
+              variant="indigo"
             />
             <p v-if="errors.contestant_type" class="mt-1 text-sm text-red-600">{{ errors.contestant_type }}</p>
             <p class="mt-1 text-sm text-gray-500">Choose what type of contestants can participate in this pageant</p>
@@ -86,7 +94,7 @@
             id="description"
             v-model="form.description"
             rows="4"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             placeholder="Describe your pageant, its theme, and objectives..."
             :class="{ 'border-red-500': errors.description }"
           ></textarea>
@@ -105,7 +113,7 @@
               v-model="form.start_date"
               type="date"
               :min="todayDate"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               :class="{ 'border-red-500': errors.start_date }"
             />
             <p v-if="errors.start_date" class="mt-1 text-sm text-red-600">{{ errors.start_date }}</p>
@@ -123,7 +131,7 @@
               type="date"
               :min="form.start_date || todayDate"
               :disabled="!form.start_date"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
               :class="{ 'border-red-500': errors.end_date }"
             />
             <p v-if="errors.end_date" class="mt-1 text-sm text-red-600">{{ errors.end_date }}</p>
@@ -141,7 +149,7 @@
             v-model="form.pageant_date"
             type="date"
             :min="todayDate"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             :class="{ 'border-red-500': errors.pageant_date }"
             required
           />
@@ -158,7 +166,7 @@
               id="venue"
               v-model="form.venue"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               placeholder="Pageant venue name"
               :class="{ 'border-red-500': errors.venue }"
             />
@@ -176,7 +184,7 @@
               @input="handleLocationInput"
               @blur="handleLocationBlur"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               placeholder="Start typing a municipality/city in Bohol..."
               :class="{ 'border-red-500': errors.location }"
               autocomplete="off"
@@ -192,7 +200,7 @@
                 :key="index"
                 type="button"
                 @click="selectLocation(location)"
-                class="w-full px-3 py-2 text-left hover:bg-orange-50 transition-colors border-b border-gray-100 last:border-b-0"
+                class="w-full px-3 py-2 text-left hover:bg-indigo-50 transition-colors border-b border-gray-100 last:border-b-0"
               >
                 <div class="font-medium text-gray-900">{{ location }}</div>
                 <div class="text-xs text-gray-500">Bohol, Philippines</div>
@@ -205,12 +213,12 @@
         </div>
 
         <!-- Approval Notice -->
-        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
           <div class="flex items-start">
-            <AlertCircle class="h-5 w-5 text-orange-500 mr-3 mt-0.5 flex-shrink-0" />
+            <AlertCircle class="h-5 w-5 text-indigo-500 mr-3 mt-0.5 flex-shrink-0" />
             <div>
-              <h3 class="text-sm font-medium text-orange-800">Approval Required</h3>
-              <p class="mt-1 text-sm text-orange-700">
+              <h3 class="text-sm font-medium text-indigo-800">Approval Required</h3>
+              <p class="mt-1 text-sm text-indigo-700">
                 Your pageant will be submitted for admin approval. Once approved, you'll be able to manage 
                 contestants, criteria, judges, and other pageant details. You'll receive a notification when 
                 the status changes.
@@ -224,7 +232,7 @@
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="flex-1 bg-orange-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             <template v-if="isSubmitting">
               <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -467,3 +475,25 @@ const submitForm = () => {
   })
 }
 </script>
+<style scoped>
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+</style>

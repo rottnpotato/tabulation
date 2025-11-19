@@ -1,27 +1,43 @@
 <template>
   <div class="space-y-8">
     <!-- Page Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">My Pageants</h1>
-        <p class="mt-1 text-sm text-gray-500">Manage all pageants assigned to you</p>
+    <!-- Page Header -->
+    <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+      <!-- Abstract Background Pattern -->
+      <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
       </div>
-      
-      <div class="flex items-center space-x-3">
-        <Tooltip text="Filter and sort pageants by status, date, or name" position="bottom">
-          <button 
-            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-all transform hover:-translate-y-0.5"
-            @click="toggleFilters"
-          >
-            <Filter class="h-4 w-4 mr-2 text-gray-500" />
-            Filter
-          </button>
-        </Tooltip>
+
+      <div class="relative z-10 p-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div class="space-y-2">
+            <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">
+              My Pageants
+            </h1>
+            <p class="text-slate-500 text-lg max-w-2xl font-light flex items-center gap-2">
+              Manage all pageants assigned to you
+            </p>
+          </div>
+          
+          <div class="flex items-center space-x-3">
+            <Tooltip text="Filter and sort pageants by status, date, or name" position="bottom">
+              <button 
+                class="inline-flex items-center px-4 py-2 border border-indigo-200 rounded-xl shadow-sm text-sm font-medium text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:-translate-y-0.5"
+                @click="toggleFilters"
+              >
+                <Filter class="h-4 w-4 mr-2 text-indigo-500" />
+                Filter
+              </button>
+            </Tooltip>
+          </div>
+        </div>
       </div>
     </div>
     
     <!-- Status Tabs -->
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+    <div class="bg-white shadow-sm rounded-2xl overflow-hidden border border-slate-100">
       <div class="border-b border-gray-200">
         <nav class="flex overflow-x-auto">
           <Tooltip
@@ -33,17 +49,17 @@
             <button 
               :class="[
                 activeTab === tab.value 
-                  ? 'border-orange-500 text-orange-600' 
+                  ? 'border-indigo-500 text-indigo-600' 
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                 'group inline-flex items-center py-4 px-4 sm:px-6 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 transition-all'
               ]"
               @click="activeTab = tab.value"
             >
-              <component :is="tab.icon" class="h-5 w-5 mr-2 transition-colors" :class="activeTab === tab.value ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-500'" />
+              <component :is="tab.icon" class="h-5 w-5 mr-2 transition-colors" :class="activeTab === tab.value ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'" />
               {{ tab.name }}
               <span
                 :class="[
-                  activeTab === tab.value ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-900',
+                  activeTab === tab.value ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-900',
                   'ml-2 py-0.5 px-2.5 rounded-full text-xs font-medium transition-colors'
                 ]"
               >
@@ -62,7 +78,7 @@
             type="text" 
             id="search" 
             v-model="searchQuery" 
-            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md"
+            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
             placeholder="Search pageants..."
           />
         </div>
@@ -72,7 +88,7 @@
           <CustomSelect
             v-model="sortBy"
             :options="sortByOptions"
-            variant="orange"
+            variant="indigo"
           />
         </div>
         
@@ -81,7 +97,7 @@
           <CustomSelect
             v-model="sortOrder"
             :options="sortOrderOptions"
-            variant="orange"
+            variant="indigo"
           />
         </div>
       </div>
@@ -103,7 +119,7 @@
           <div 
             v-for="pageant in filteredPageants" 
             :key="pageant.id" 
-            class="bg-white overflow-hidden rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 group cursor-pointer"
+            class="bg-white overflow-hidden rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
             @click="managePageant(pageant)"
           >
             <!-- Card Header with Banner + Logo -->
@@ -114,7 +130,7 @@
                      class="w-full h-full object-cover" />
                 <div class="absolute inset-0 bg-black/30"></div>
               </div>
-              <div v-else class="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-300"></div>
+              <div v-else class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-300"></div>
 
               <!-- Status Badge -->
               <Tooltip :text="getStatusTooltip(pageant.status)" position="right">
@@ -142,7 +158,7 @@
               </div>
               
               <!-- View Details hover effect -->
-              <div class="absolute inset-0 bg-orange-600 bg-opacity-80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div class="absolute inset-0 bg-indigo-600 bg-opacity-80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div class="text-white flex items-center font-medium">
                   <ChevronRight class="h-5 w-5 mr-1" />
                   View Details
@@ -163,15 +179,15 @@
               <!-- Stats -->
               <div class="flex items-center justify-between text-xs text-gray-500">
                 <div class="flex items-center">
-                  <Users class="h-4 w-4 text-orange-400 mr-1" />
+                  <Users class="h-4 w-4 text-indigo-400 mr-1" />
                   <span>{{ pageant.contestants_count }} Contestants</span>
                 </div>
                 <div class="flex items-center">
-                  <ListChecks class="h-4 w-4 text-orange-400 mr-1" />
+                  <ListChecks class="h-4 w-4 text-indigo-400 mr-1" />
                   <span>{{ pageant.criteria_count }} Criteria</span>
                 </div>
                 <div class="flex items-center">
-                  <Scale class="h-4 w-4 text-orange-400 mr-1" />
+                  <Scale class="h-4 w-4 text-indigo-400 mr-1" />
                   <span>{{ pageant.judges_count }} Judges</span>
                 </div>
               </div>
@@ -180,7 +196,7 @@
             <!-- Card Footer -->
             <div class="border-t border-gray-100 bg-gray-50 p-3 flex justify-between items-center">
               <div class="flex items-center">
-                <Crown class="h-4 w-4 text-orange-500 mr-1.5" />
+                <Crown class="h-4 w-4 text-indigo-500 mr-1.5" />
                 <span class="text-xs font-medium text-gray-600">
                   {{ getActionTextByStatus(pageant.status) }}
                 </span>
@@ -189,7 +205,7 @@
                 <Tooltip :text="getActionTextByStatus(pageant.status)" position="left">
                   <button
                     @click.stop="managePageant(pageant)"
-                    class="p-1.5 rounded-full text-gray-400 bg-white border border-gray-200 hover:text-orange-600 hover:border-orange-300 transition-all transform hover:scale-110 hover:shadow-md"
+                    class="p-1.5 rounded-full text-gray-400 bg-white border border-gray-200 hover:text-indigo-600 hover:border-indigo-300 transition-all transform hover:scale-110 hover:shadow-md"
                   >
                     <ChevronRight class="h-4 w-4" />
                   </button>
@@ -423,7 +439,7 @@ onMounted(() => {
 })
 </script>
 
-<style>
+<style scoped>
 /* Line clamp utility for multi-line text truncation */
 .line-clamp-2 {
   display: -webkit-box;
@@ -431,5 +447,26 @@ onMounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 </style> 

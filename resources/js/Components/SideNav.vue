@@ -330,9 +330,9 @@ const user = computed(() => {
 const roleColor = computed(() => {
   switch (user.value?.role) {
     case 'admin': return 'text-teal-600'
-    case 'organizer': return 'text-orange-600'
-    case 'tabulator': return 'text-indigo-600'
-    case 'judge': return 'text-blue-600'
+    case 'organizer': return 'text-teal-600'
+    case 'tabulator': return 'text-teal-600'
+    case 'judge': return 'text-teal-600'
     default: return 'text-gray-600'
   }
 })
@@ -340,9 +340,9 @@ const roleColor = computed(() => {
 const activeClass = computed(() => {
   switch (user.value?.role) {
     case 'admin': return 'bg-teal-600'
-    case 'organizer': return 'bg-orange-600'
-    case 'tabulator': return 'bg-indigo-600'
-    case 'judge': return 'bg-blue-600'
+    case 'organizer': return 'bg-teal-600'
+    case 'tabulator': return 'bg-teal-600'
+    case 'judge': return 'bg-teal-600'
     default: return 'bg-gray-600'
   }
 })
@@ -350,9 +350,9 @@ const activeClass = computed(() => {
 const hoverBorderColor = computed(() => {
   switch (user.value?.role) {
     case 'admin': return 'border-teal-600'
-    case 'organizer': return 'border-orange-600'
-    case 'tabulator': return 'border-indigo-600'
-    case 'judge': return 'border-blue-600'
+    case 'organizer': return 'border-teal-600'
+    case 'tabulator': return 'border-teal-600'
+    case 'judge': return 'border-teal-600'
     default: return 'border-gray-600'
   }
 })
@@ -460,45 +460,45 @@ const navigation = computed(() => {
           href: route('tabulator.dashboard', currentPageantId), 
           route: 'tabulator.dashboard', 
           icon: LayoutDashboard,
-          activeBg: 'bg-indigo-600',
-          activeColor: 'text-indigo-600',
-          activeBorder: 'border-indigo-600'
+          activeBg: 'bg-teal-600',
+          activeColor: 'text-teal-600',
+          activeBorder: 'border-teal-600'
         },
         { 
           name: 'Judges', 
           href: route('tabulator.judges', currentPageantId), 
           route: 'tabulator.judges', 
           icon: Users,
-          activeBg: 'bg-blue-600',
-          activeColor: 'text-blue-600',
-          activeBorder: 'border-blue-600'
+          activeBg: 'bg-teal-600',
+          activeColor: 'text-teal-600',
+          activeBorder: 'border-teal-600'
         },
         { 
           name: 'Round Management', 
           href: route('tabulator.rounds', currentPageantId), 
           route: 'tabulator.rounds', 
           icon: Settings,
-          activeBg: 'bg-sky-600',
-          activeColor: 'text-sky-600',
-          activeBorder: 'border-sky-600'
+          activeBg: 'bg-teal-600',
+          activeColor: 'text-teal-600',
+          activeBorder: 'border-teal-600'
         },
         { 
           name: 'Scores', 
           href: route('tabulator.scores', currentPageantId), 
           route: 'tabulator.scores', 
           icon: ClipboardList,
-          activeBg: 'bg-indigo-500',
-          activeColor: 'text-indigo-500',
-          activeBorder: 'border-indigo-500'
+          activeBg: 'bg-teal-600',
+          activeColor: 'text-teal-600',
+          activeBorder: 'border-teal-600'
         },
         { 
           name: 'Results', 
           href: route('tabulator.results', currentPageantId), 
           route: 'tabulator.results', 
           icon: Award,
-          activeBg: 'bg-blue-500',
-          activeColor: 'text-blue-500',
-          activeBorder: 'border-blue-500'
+          activeBg: 'bg-teal-600',
+          activeColor: 'text-teal-600',
+          activeBorder: 'border-teal-600'
         },
         { 
           name: 'Print', 

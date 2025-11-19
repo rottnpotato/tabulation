@@ -1,61 +1,62 @@
 <template>
   <div class="space-y-4 sm:space-y-6">
     <!-- Page Header with Enhanced Design -->
-    <div class="relative bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 rounded-2xl shadow-xl overflow-hidden">
-      <!-- Decorative Background Elements -->
-      <div class="absolute inset-0 overflow-hidden opacity-10">
-        <div class="absolute -top-10 -right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-10 -left-10 w-60 h-60 bg-white rounded-full blur-3xl"></div>
+    <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+      <!-- Abstract Background Pattern -->
+      <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
       </div>
       
-      <div class="relative p-4 sm:p-6 lg:p-8">
+      <div class="relative z-10 p-8">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0 gap-4">
-          <div class="text-white">
+          <div class="space-y-2">
             <div class="flex items-center gap-3 mb-2">
-              <div class="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Crown class="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+              <div class="p-2 bg-indigo-50 rounded-xl border border-indigo-100">
+                <Crown class="h-8 w-8 text-indigo-600" />
               </div>
               <div>
-                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Organizer Dashboard</h1>
-                <p class="mt-1 text-sm sm:text-base opacity-90">Manage pageants, contestants, and track progress</p>
+                <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">Organizer Dashboard</h1>
+                <p class="text-slate-500 text-lg font-light">Manage pageants, contestants, and track progress</p>
               </div>
             </div>
           </div>
           
           <!-- Enhanced Stats Cards -->
           <div class="flex flex-wrap gap-3">
-            <div class="group bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-3 text-sm font-medium text-white transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
-              <div class="flex items-center gap-2">
-                <div class="p-1.5 bg-white/30 rounded-lg">
-                  <Calendar class="h-4 w-4 text-white" />
+            <div class="group bg-white/80 backdrop-blur-sm border border-indigo-100 rounded-2xl px-5 py-4 text-sm font-medium text-slate-600 transition-all duration-300 hover:shadow-md hover:border-indigo-200">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                  <Calendar class="h-5 w-5" />
                 </div>
                 <div>
-                  <div class="text-xs opacity-75">Total Pageants</div>
-                  <div class="text-xl font-bold">{{ totalPageants }}</div>
+                  <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Pageants</div>
+                  <div class="text-2xl font-bold text-slate-900 leading-none mt-0.5">{{ totalPageants }}</div>
                 </div>
               </div>
             </div>
             
-            <div class="group bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-3 text-sm font-medium text-white transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
-              <div class="flex items-center gap-2">
-                <div class="p-1.5 bg-white/30 rounded-lg">
-                  <Activity class="h-4 w-4 text-white" />
+            <div class="group bg-white/80 backdrop-blur-sm border border-indigo-100 rounded-2xl px-5 py-4 text-sm font-medium text-slate-600 transition-all duration-300 hover:shadow-md hover:border-indigo-200">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                  <Activity class="h-5 w-5" />
                 </div>
                 <div>
-                  <div class="text-xs opacity-75">Active Now</div>
-                  <div class="text-xl font-bold">{{ pageantCounts?.active || 0 }}</div>
+                  <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Active Now</div>
+                  <div class="text-2xl font-bold text-slate-900 leading-none mt-0.5">{{ pageantCounts?.active || 0 }}</div>
                 </div>
               </div>
             </div>
             
-            <div class="group bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-3 text-sm font-medium text-white transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl">
-              <div class="flex items-center gap-2">
-                <div class="p-1.5 bg-white/30 rounded-lg">
-                  <CheckCircle class="h-4 w-4 text-white" />
+            <div class="group bg-white/80 backdrop-blur-sm border border-indigo-100 rounded-2xl px-5 py-4 text-sm font-medium text-slate-600 transition-all duration-300 hover:shadow-md hover:border-indigo-200">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                  <CheckCircle class="h-5 w-5" />
                 </div>
                 <div>
-                  <div class="text-xs opacity-75">Completed</div>
-                  <div class="text-xl font-bold">{{ pageantCounts?.completed || 0 }}</div>
+                  <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Completed</div>
+                  <div class="text-2xl font-bold text-slate-900 leading-none mt-0.5">{{ pageantCounts?.completed || 0 }}</div>
                 </div>
               </div>
             </div>
@@ -64,32 +65,32 @@
       </div>
       
       <!-- Enhanced Quick Links Bar -->
-      <div class="relative bg-gradient-to-r from-orange-700/40 to-orange-800/40 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-4">
+      <div class="relative bg-slate-50/50 border-t border-indigo-50 px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex flex-wrap gap-2 sm:gap-3">
-          <Link :href="route('organizer.pageants.create')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white text-orange-700 hover:bg-orange-50 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
-            <div class="p-1 bg-orange-100 rounded-lg mr-2 group-hover:bg-orange-200 transition-colors">
-              <Plus class="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+          <Link :href="route('organizer.pageants.create')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-300 shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <div class="p-1 bg-white/20 rounded-lg mr-2 group-hover:bg-white/30 transition-colors">
+              <Plus class="h-3 w-3 sm:h-4 sm:w-4 text-white" />
             </div>
             <span>Create Pageant</span>
           </Link>
           
-          <Link :href="route('organizer.my-pageants')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
-            <Crown class="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:scale-110 transition-transform" />
+          <Link :href="route('organizer.my-pageants')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <Crown class="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-500" />
             <span>My Pageants</span>
           </Link>
           
-          <Link :href="route('organizer.contestants')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
-            <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:scale-110 transition-transform" />
+          <Link :href="route('organizer.contestants')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-blue-500" />
             <span>Contestants</span>
           </Link>
           
-          <Link :href="route('organizer.criteria')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
-            <ListChecks class="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:scale-110 transition-transform" />
+          <Link :href="route('organizer.criteria')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <ListChecks class="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-teal-500" />
             <span>Criteria</span>
           </Link>
           
-          <Link :href="route('organizer.scoring')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
-            <BarChart2 class="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:scale-110 transition-transform" />
+          <Link :href="route('organizer.scoring')" class="group flex items-center px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-xs sm:text-sm font-medium">
+            <BarChart2 class="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-purple-500" />
             <span>Scoring</span>
           </Link>
         </div>
@@ -100,16 +101,16 @@
     <!-- Recent Pageants -->
     <div class="grid grid-cols-1 gap-4 sm:gap-6">
       <!-- Recent Pageants with Enhanced Design -->
-      <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-        <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-5 border-b border-orange-200">
+      <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+        <div class="bg-slate-50/50 p-5 border-b border-slate-100">
           <div class="flex items-center justify-between">
             <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
-              <div class="p-2 bg-orange-200 rounded-lg mr-3">
-                <Calendar class="h-5 w-5 text-orange-700" />
+              <div class="p-2 bg-indigo-200 rounded-lg mr-3">
+                <Calendar class="h-5 w-5 text-indigo-700" />
               </div>
               Recent Pageants
             </h2>
-            <div class="text-sm text-orange-700 font-medium">
+            <div class="text-sm text-indigo-700 font-medium">
               {{ recentPageants.length }} {{ recentPageants.length === 1 ? 'pageant' : 'pageants' }}
             </div>
           </div>
@@ -117,21 +118,21 @@
         
         <div v-if="isLoading" class="p-6 space-y-4">
           <div v-for="i in 5" :key="i" class="border-b pb-4 last:border-b-0 last:pb-0">
-            <div class="h-6 w-2/3 bg-gray-200 rounded-lg shimmer shimmer-orange mb-3"></div>
-            <div class="h-4 w-1/2 bg-gray-200 rounded shimmer shimmer-orange"></div>
+            <div class="h-6 w-2/3 bg-gray-200 rounded-lg shimmer shimmer-blue mb-3"></div>
+            <div class="h-4 w-1/2 bg-gray-200 rounded shimmer shimmer-blue"></div>
           </div>
         </div>
         
         <div v-else-if="recentPageants.length === 0" class="p-8 text-center py-16">
-          <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 mb-6 shadow-md">
-            <Calendar class="h-10 w-10 text-orange-600" />
+          <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 mb-6 shadow-md">
+            <Calendar class="h-10 w-10 text-indigo-600" />
           </div>
           <h3 class="mt-2 text-lg font-bold text-gray-900">No pageants found</h3>
           <p class="mt-2 text-sm text-gray-600 max-w-sm mx-auto">
             You haven't been assigned to any pageants yet. Create your first pageant to get started!
           </p>
           <div class="mt-6">
-            <Link :href="route('organizer.pageants.create')" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium">
+            <Link :href="route('organizer.pageants.create')" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium">
               <Plus class="h-5 w-5 mr-2" />
               Create Your First Pageant
             </Link>
@@ -140,16 +141,16 @@
         
         <div v-else class="divide-y divide-gray-100">
           <div v-for="(pageant, index) in recentPageants" :key="index" 
-               class="group p-5 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-50/50 transition-all duration-300 cursor-pointer border-l-4 border-transparent hover:border-orange-500"
+               class="group p-5 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-indigo-50/50 transition-all duration-300 cursor-pointer border-l-4 border-transparent hover:border-indigo-500"
                @click="viewPageant(pageant)">
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1 min-w-0">
                 <div class="flex items-start gap-3">
-                  <div class="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
-                    <Crown class="h-5 w-5 text-orange-600" />
+                  <div class="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <Crown class="h-5 w-5 text-indigo-600" />
                   </div>
                   <div class="flex-1 min-w-0">
-                    <h3 class="text-base sm:text-lg font-bold text-gray-900 group-hover:text-orange-700 transition-colors truncate">
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900 group-hover:text-indigo-700 transition-colors truncate">
                       {{ pageant.name }}
                     </h3>
                     <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs sm:text-sm text-gray-600">
@@ -172,7 +173,7 @@
                     {{ formatStatusText(pageant.status) }}
                   </span>
                 </Tooltip>
-                <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
+                <ChevronRight class="h-5 w-5 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           </div>
@@ -180,7 +181,7 @@
         
         <div class="border-t-2 border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100 px-5 py-4 rounded-b-2xl">
           <Tooltip text="View and manage all your pageants" position="top">
-            <Link :href="route('organizer.my-pageants')" class="group text-sm font-semibold text-orange-600 hover:text-orange-800 flex items-center transition-all">
+            <Link :href="route('organizer.my-pageants')" class="group text-sm font-semibold text-indigo-600 hover:text-indigo-800 flex items-center transition-all">
               <span>View all pageants</span>
               <ChevronRight class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -190,16 +191,16 @@
     </div>
 
     <!-- Enhanced Recent Activity Section -->
-    <div class="bg-white shadow-lg rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
-      <div class="bg-gradient-to-r from-orange-50 to-orange-100 p-5 border-b border-orange-200">
+    <div class="bg-white shadow-sm rounded-3xl border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+      <div class="bg-slate-50/50 p-5 border-b border-slate-100">
         <div class="flex items-center justify-between">
           <h2 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
-            <div class="p-2 bg-orange-200 rounded-lg mr-3">
-              <Activity class="h-5 w-5 text-orange-700" />
+            <div class="p-2 bg-indigo-200 rounded-lg mr-3">
+              <Activity class="h-5 w-5 text-indigo-700" />
             </div>
             Recent Activity
           </h2>
-          <div v-if="activities.length > 0" class="text-sm text-orange-700 font-medium">
+          <div v-if="activities.length > 0" class="text-sm text-indigo-700 font-medium">
             {{ activities.length }} {{ activities.length === 1 ? 'activity' : 'activities' }}
           </div>
         </div>
@@ -208,10 +209,10 @@
       <div class="p-6 sm:p-8">
         <div v-if="isLoading" class="space-y-6">
           <div v-for="i in 5" :key="i" class="flex items-start gap-4">
-            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-gray-200 shimmer shimmer-orange"></div>
+            <div class="flex-shrink-0 h-12 w-12 rounded-full bg-gray-200 shimmer shimmer-blue"></div>
             <div class="flex-1 space-y-2">
-              <div class="h-5 w-3/4 bg-gray-200 rounded shimmer shimmer-orange"></div>
-              <div class="h-4 w-1/2 bg-gray-200 rounded shimmer shimmer-orange"></div>
+              <div class="h-5 w-3/4 bg-gray-200 rounded shimmer shimmer-blue"></div>
+              <div class="h-4 w-1/2 bg-gray-200 rounded shimmer shimmer-blue"></div>
             </div>
           </div>
         </div>
@@ -220,9 +221,9 @@
           <div class="flex items-center justify-center py-12 text-center">
             <div class="max-w-md">
               <div class="relative inline-flex items-center justify-center">
-                <div class="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full blur-xl opacity-20 animate-pulse"></div>
-                <div class="relative flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 shadow-lg">
-                  <Activity class="h-10 w-10 text-orange-600" />
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full blur-xl opacity-20 animate-pulse"></div>
+                <div class="relative flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 shadow-lg">
+                  <Activity class="h-10 w-10 text-indigo-600" />
                 </div>
               </div>
               <h3 class="mt-6 text-xl font-bold text-gray-900">No Recent Activity</h3>
@@ -230,11 +231,11 @@
                 Activities from your tabulators and judges will appear here. This includes scoring updates, contestant changes, and other pageant actions.
               </p>
               <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-                <Link :href="route('organizer.pageants.create')" class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
+                <Link :href="route('organizer.pageants.create')" class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold">
                   <Plus class="h-5 w-5 mr-2" />
                   Create Pageant
                 </Link>
-                <Link :href="route('organizer.my-pageants')" class="inline-flex items-center justify-center px-6 py-3 bg-white text-orange-600 border-2 border-orange-300 rounded-xl hover:bg-orange-50 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold">
+                <Link :href="route('organizer.my-pageants')" class="inline-flex items-center justify-center px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-300 rounded-xl hover:bg-indigo-50 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold">
                   <Crown class="h-5 w-5 mr-2" />
                   View Pageants
                 </Link>
@@ -246,7 +247,7 @@
         <!-- Activity List -->
         <div v-else class="space-y-3">
           <div v-for="activity in activities" :key="activity.id"
-               class="group flex items-start gap-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-50/30 transition-all duration-300 border border-gray-100 hover:border-orange-200">
+               class="group flex items-start gap-4 p-4 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50 hover:to-indigo-50/30 transition-all duration-300 border border-gray-100 hover:border-indigo-200">
             <!-- Activity Icon -->
             <div class="flex-shrink-0">
               <div class="p-3 rounded-xl bg-gradient-to-br group-hover:scale-110 transition-transform duration-300"
@@ -268,7 +269,7 @@
                       {{ activity.user_name }}
                     </span>
                     <span class="text-gray-400">•</span>
-                    <span class="font-medium text-orange-600">{{ activity.pageant_name }}</span>
+                    <span class="font-medium text-indigo-600">{{ activity.pageant_name }}</span>
                     <span class="text-gray-400">•</span>
                     <span>{{ activity.formatted_time }}</span>
                   </div>
@@ -518,7 +519,7 @@ const getActivityIconClass = (actionType) => {
     'ROUND_COMPLETED': 'from-purple-400 to-purple-600',
     'CRITERIA_CREATED': 'from-teal-400 to-teal-600',
     'CRITERIA_UPDATED': 'from-blue-400 to-blue-600',
-    'PAGEANT_UPDATED': 'from-orange-400 to-orange-600',
+    'PAGEANT_UPDATED': 'from-indigo-400 to-indigo-600',
     'STATUS_CHANGED': 'from-pink-400 to-pink-600',
   }
   return classMap[actionType] || 'from-gray-400 to-gray-600'
@@ -528,7 +529,7 @@ const getRoleBadgeClass = (role) => {
   const classMap = {
     'judge': 'bg-purple-100 text-purple-800',
     'tabulator': 'bg-indigo-100 text-indigo-800',
-    'organizer': 'bg-orange-100 text-orange-800',
+    'organizer': 'bg-indigo-100 text-indigo-800',
     'admin': 'bg-red-100 text-red-800',
     'system': 'bg-gray-100 text-gray-800',
   }
@@ -622,5 +623,26 @@ onUnmounted(() => {
 
 .hover\:scale-105:hover {
   transform: scale(1.05);
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 </style>

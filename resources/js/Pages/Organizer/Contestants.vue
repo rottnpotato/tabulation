@@ -1,17 +1,25 @@
 <template>
   <div class="space-y-6">
     <!-- Header Section with Gradient Background -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
+    <!-- Header Section with Gradient Background -->
+    <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+      <!-- Abstract Background Pattern -->
+      <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+      </div>
+
+      <div class="relative z-10 p-8">
         <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-semibold text-gray-800">Contestants</h1>
-            <p class="mt-1 text-sm text-gray-600">Manage contestants across all your pageants</p>
+          <div class="space-y-2">
+            <h1 class="text-3xl font-bold tracking-tight font-display text-slate-900">Contestants</h1>
+            <p class="text-slate-500 text-lg font-light">Manage contestants across all your pageants</p>
           </div>
           <button
             v-if="PageantSummaries && PageantSummaries.length > 0"
             @click="openAddContestantModal"
-            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5 flex items-center"
+            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all transform hover:-translate-y-0.5 flex items-center"
           >
             <Plus class="h-4 w-4 mr-2" />
             Add Contestant
@@ -47,11 +55,11 @@
     </div>
 
     <!-- Contestant List -->
-    <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+    <div class="bg-white shadow-sm rounded-2xl overflow-hidden border border-slate-100">
       <div class="px-6 py-5 border-b border-gray-200">
         <div class="flex justify-between items-center">
-          <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-            <Users class="h-5 w-5 mr-2 text-orange-500" />
+          <h2 class="text-xl font-semibold text-slate-800 flex items-center">
+            <Users class="h-5 w-5 mr-2 text-indigo-500" />
             All Contestants 
             <span class="ml-2 text-gray-500 text-sm font-normal">({{ TotalContestants || 0 }})</span>
           </h2>
@@ -63,7 +71,7 @@
                 v-model="selectedPageant"
                 :options="pageantOptions"
                 placeholder="All Pageants"
-                variant="orange"
+                variant="indigo"
                 @change="filterContestants"
               />
             </div>
@@ -74,8 +82,8 @@
       <div class="p-6">
         <!-- No contestants message -->
         <div v-if="filteredContestants.length === 0" class="text-center py-12">
-          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-orange-200 mb-4">
-            <Users class="h-12 w-12 text-orange-500" />
+          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-indigo-50 mb-4">
+            <Users class="h-12 w-12 text-indigo-500" />
           </div>
           <h3 class="text-lg font-medium text-gray-900 mb-1">
             {{ PageantSummaries && PageantSummaries.length === 0 ? 'No pageants created yet' : 'No contestants found' }}
@@ -92,14 +100,14 @@
             <button
               v-if="PageantSummaries && PageantSummaries.length > 0"
               @click="ShowAddModal = true"
-              class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all transform hover:-translate-y-0.5"
+              class="px-6 py-3 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all transform hover:-translate-y-0.5"
             >
               <Plus class="h-4 w-4 inline mr-2" />
               Add Contestant
             </button>
             <Link
               :href="route('organizer.pageants.create')"
-              class="px-6 py-3 text-sm font-medium text-orange-700 hover:text-orange-900 bg-orange-50 border border-orange-200 hover:border-orange-300 rounded-lg transition-all shadow-sm hover:shadow-md flex items-center"
+              class="px-6 py-3 text-sm font-medium text-indigo-700 hover:text-indigo-900 bg-indigo-50 border border-indigo-200 hover:border-indigo-300 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center"
             >
               <Plus class="h-4 w-4 mr-2" />
               {{ PageantSummaries && PageantSummaries.length === 0 ? 'Create First Pageant' : 'Create New Pageant' }}
@@ -168,7 +176,7 @@
                       v-model="selectedPageant"
                       :options="pageantOptions"
                       placeholder="Choose a pageant"
-                      variant="orange"
+                      variant="indigo"
                       required
                     />
                     <p class="mt-1 text-xs text-gray-500">Select which pageant this contestant belongs to</p>
@@ -185,7 +193,7 @@
                           id="contestNumber"
                           v-model="Form.contestNumber"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 001"
                           required
                         />
@@ -302,10 +310,10 @@
                     <!-- Upload New Photos -->
                     <div class="flex flex-col w-full">
                       <label
-                        class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-orange-400 hover:bg-orange-50 transition-colors cursor-pointer"
+                        class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer"
                       >
                         <div class="flex flex-col items-center justify-center pt-7">
-                          <Camera class="w-8 h-8 text-orange-400 group-hover:text-orange-600" />
+                          <Camera class="w-8 h-8 text-indigo-400 group-hover:text-indigo-600" />
                           <p class="pt-1 text-sm tracking-wider text-gray-600 group-hover:text-gray-600">
                             Upload contestant photos
                           </p>
@@ -336,7 +344,7 @@
                     <button
                       type="submit"
                       :disabled="isSubmitting"
-                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span v-if="isSubmitting" class="flex items-center">
                         <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -407,7 +415,7 @@
                       
                       <!-- Contestant number badge -->
                       <div class="absolute top-4 right-4">
-                        <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-orange-500 text-white text-lg font-bold shadow-md">
+                        <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-indigo-500 text-white text-lg font-bold shadow-md">
                           #{{ SelectedContestant.contestNumber }}
                         </span>
                       </div>
@@ -476,17 +484,17 @@
                       
                       <!-- Info cards -->
                       <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-orange-50 rounded-lg p-4">
+                        <div class="bg-indigo-50 rounded-lg p-4">
                           <div class="flex items-center">
-                            <Calendar class="h-5 w-5 text-orange-600 mr-2" />
+                            <Calendar class="h-5 w-5 text-indigo-600 mr-2" />
                             <span class="text-sm font-medium text-gray-600">Age</span>
                           </div>
                           <p class="mt-1 text-lg font-semibold text-gray-900">{{ SelectedContestant.age }} years</p>
                         </div>
                         
-                        <div class="bg-orange-50 rounded-lg p-4">
+                        <div class="bg-indigo-50 rounded-lg p-4">
                           <div class="flex items-center">
-                            <MapPin class="h-5 w-5 text-orange-600 mr-2" />
+                            <MapPin class="h-5 w-5 text-indigo-600 mr-2" />
                             <span class="text-sm font-medium text-gray-600">Location</span>
                           </div>
                           <p class="mt-1 text-lg font-semibold text-gray-900">{{ SelectedContestant.city }}</p>
@@ -496,7 +504,7 @@
                       <!-- Biography -->
                       <div class="bg-white border border-gray-200 rounded-lg p-5">
                         <h3 class="text-xl font-semibold text-gray-800 mb-3 flex items-center">
-                          <FileText class="h-5 w-5 text-orange-500 mr-2" />
+                          <FileText class="h-5 w-5 text-indigo-500 mr-2" />
                           Biography
                         </h3>
                         <p class="text-gray-700 leading-relaxed">{{ SelectedContestant.bio }}</p>
@@ -904,5 +912,26 @@ const handleImageLoad = (event) => {
 :deep(.md\:h-\[600px\]) {
   height: 80vh !important; /* Make image height responsive to viewport */
   max-height: 800px !important; /* But cap it at a reasonable max */
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
 }
 </style>
