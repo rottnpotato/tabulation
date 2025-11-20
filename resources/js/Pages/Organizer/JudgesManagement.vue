@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <!-- Header Section with Gradient Background -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-rose-50">
+      <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-teal-50">
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-semibold text-gray-800">{{ pageant.name }}</h1>
@@ -13,7 +13,7 @@
               :href="route('organizer.pageant.view', pageant.id)"
               class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-lg transition-colors shadow-sm hover:shadow flex items-center"
             >
-              <ArrowLeft class="h-4 w-4 mr-2 text-orange-500" />
+              <ArrowLeft class="h-4 w-4 mr-2 text-teal-500" />
               Back to Pageant
             </Link>
           </div>
@@ -29,7 +29,7 @@
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <div class="p-4 sm:p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              <Scale class="h-5 w-5 mr-2 text-orange-500" />
+              <Scale class="h-5 w-5 mr-2 text-teal-500" />
               Required Judges
             </h2>
             <p class="text-sm text-gray-500 mb-4">
@@ -45,14 +45,14 @@
                   v-model="requiredJudgesForm.required_judges" 
                   min="0" 
                   max="20"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                 />
               </div>
               <div class="flex justify-end">
                 <button 
                   type="submit"
                   :disabled="requiredJudgesForm.processing"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Loader2 v-if="requiredJudgesForm.processing" class="h-4 w-4 mr-1.5 animate-spin" />
                   <Save v-else class="h-4 w-4 mr-1.5" />
@@ -68,7 +68,7 @@
           <div class="p-4 sm:p-6">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-semibold text-gray-900 flex items-center">
-                <Users class="h-5 w-5 mr-2 text-orange-500" />
+                <Users class="h-5 w-5 mr-2 text-teal-500" />
                 Judges
               </h2>
               <div class="flex items-center">
@@ -96,8 +96,8 @@
                 class="bg-gray-50 rounded-lg p-4 hover:shadow-sm transition-shadow"
               >
                 <div class="flex items-center">
-                  <div class="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                    <User2 class="h-5 w-5 text-orange-600" />
+                  <div class="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                    <User2 class="h-5 w-5 text-teal-600" />
                   </div>
                   <div class="ml-3">
                     <h3 class="font-medium text-gray-900">{{ judge.name }}</h3>
@@ -113,7 +113,7 @@
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <div class="p-4 sm:p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              <Calculator class="h-5 w-5 mr-2 text-orange-500" />
+              <Calculator class="h-5 w-5 mr-2 text-teal-500" />
               Scoring System
             </h2>
             <p class="text-sm text-gray-500 mb-4">
@@ -126,8 +126,8 @@
                   v-for="system in scoringSystems" 
                   :key="system.type" 
                   @click="scoringSystemForm.scoring_system = system.type"
-                  class="relative border rounded-lg p-4 cursor-pointer hover:bg-orange-50 transition-colors"
-                  :class="scoringSystemForm.scoring_system === system.type ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200' : 'border-gray-300'"
+                  class="relative border rounded-lg p-4 cursor-pointer hover:bg-teal-50 transition-colors"
+                  :class="scoringSystemForm.scoring_system === system.type ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'"
                 >
                   <div class="flex items-start">
                     <div class="flex items-center h-5">
@@ -136,7 +136,7 @@
                         :id="system.type" 
                         :value="system.type" 
                         v-model="scoringSystemForm.scoring_system"
-                        class="h-4 w-4 text-orange-600 border-gray-300 focus:ring-orange-500"
+                        class="h-4 w-4 text-teal-600 border-gray-300 focus:ring-orange-500"
                       />
                     </div>
                     <div class="ml-3 text-sm">
@@ -144,7 +144,7 @@
                       <p class="text-gray-500">{{ system.description }}</p>
                     </div>
                   </div>
-                  <div v-if="scoringSystemForm.scoring_system === system.type" class="absolute top-2 right-2 text-orange-600">
+                  <div v-if="scoringSystemForm.scoring_system === system.type" class="absolute top-2 right-2 text-teal-600">
                     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                       <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
                     </svg>
@@ -156,7 +156,7 @@
                 <button 
                   type="submit"
                   :disabled="scoringSystemForm.processing"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Loader2 v-if="scoringSystemForm.processing" class="h-4 w-4 mr-1.5 animate-spin" />
                   <Save v-else class="h-4 w-4 mr-1.5" />
@@ -175,12 +175,12 @@
           <div class="p-4 sm:p-6">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-semibold text-gray-900 flex items-center">
-                <Calculator class="h-5 w-5 mr-2 text-orange-500" />
+                <Calculator class="h-5 w-5 mr-2 text-teal-500" />
                 Assign Tabulator
               </h2>
               <button
                 @click="showCreateTabulatorModal = true"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
               >
                 <UserPlus class="h-3.5 w-3.5 mr-1" />
                 Create New Account
@@ -197,7 +197,7 @@
                   v-model="tabulatorForm.tabulator_id"
                   :options="tabulatorOptions"
                   placeholder="Select a tabulator"
-                  variant="orange"
+                  variant="teal"
                 />
               </div>
               <div>
@@ -206,7 +206,7 @@
                   id="tabulatorNotes" 
                   v-model="tabulatorForm.notes" 
                   rows="2"
-                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                   placeholder="Add any notes about this tabulator assignment"
                 ></textarea>
               </div>
@@ -214,7 +214,7 @@
                 <button 
                   type="submit"
                   :disabled="tabulatorForm.processing || !tabulatorForm.tabulator_id"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Loader2 v-if="tabulatorForm.processing" class="h-4 w-4 mr-1.5 animate-spin" />
                   <Save v-else class="h-4 w-4 mr-1.5" />
@@ -229,7 +229,7 @@
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
           <div class="p-4 sm:p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              <Calculator class="h-5 w-5 mr-2 text-orange-500" />
+              <Calculator class="h-5 w-5 mr-2 text-teal-500" />
               Assigned Tabulators
             </h2>
 
@@ -252,8 +252,8 @@
                 class="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
               >
                 <div class="flex items-center">
-                  <div class="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                    <Calculator class="h-5 w-5 text-orange-600" />
+                  <div class="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                    <Calculator class="h-5 w-5 text-teal-600" />
                   </div>
                   <div class="ml-3">
                     <h3 class="font-medium text-gray-900">{{ tabulator.name }}</h3>
@@ -293,8 +293,8 @@
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div class="sm:flex sm:items-start">
-              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 sm:mx-0 sm:h-10 sm:w-10">
-                <UserPlus class="h-6 w-6 text-orange-600" />
+              <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-teal-100 sm:mx-0 sm:h-10 sm:w-10">
+                <UserPlus class="h-6 w-6 text-teal-600" />
               </div>
               <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
                 <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
@@ -307,7 +307,7 @@
                       type="text"
                       id="tabulator-name"
                       v-model="createTabulatorForm.name"
-                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                       :class="{ 'border-red-300': createTabulatorForm.errors.name }"
                       placeholder="Enter full name"
                     />
@@ -321,7 +321,7 @@
                       id="tabulator-username"
                       v-model="createTabulatorForm.username"
                       @blur="checkTabulatorUsername"
-                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                       :class="{ 'border-red-300': createTabulatorForm.errors.username || usernameExists }"
                       placeholder="Enter username"
                     />
@@ -335,7 +335,7 @@
                       type="password"
                       id="tabulator-password"
                       v-model="createTabulatorForm.password"
-                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                       :class="{ 'border-red-300': createTabulatorForm.errors.password }"
                       placeholder="Enter password"
                     />
@@ -348,7 +348,7 @@
                       type="password"
                       id="tabulator-password-confirmation"
                       v-model="createTabulatorForm.password_confirmation"
-                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                       placeholder="Confirm password"
                     />
                   </div>

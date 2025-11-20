@@ -7,7 +7,7 @@
         'relative w-full cursor-pointer rounded-xl border-0 py-3 pl-4 pr-12 text-left transition-all duration-200',
         'bg-white/80 backdrop-blur-sm',
         'shadow-sm hover:shadow-md',
-        'ring-1 ring-slate-200 hover:ring-indigo-300',
+        'ring-1 ring-slate-200 hover:ring-teal-300',
         'focus:outline-none focus:ring-2 focus:ring-offset-2',
         focusRingColor,
         disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'
@@ -30,7 +30,7 @@
         <ChevronUpDownIcon 
           :class="[
             'h-5 w-5 transition-transform duration-200',
-            isOpen ? 'rotate-180 text-indigo-500' : 'text-slate-400'
+            isOpen ? 'rotate-180 text-teal-500' : 'text-slate-400'
           ]"
           aria-hidden="true" 
         />
@@ -65,8 +65,8 @@
             :class="[
               'relative cursor-pointer select-none py-3 px-4 mx-2 rounded-lg transition-all duration-150',
               option.value === modelValue 
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' 
-                : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'
+                ? 'bg-teal-600 text-white shadow-md shadow-teal-600/20' 
+                : 'text-slate-700 hover:bg-slate-50 hover:text-teal-600'
             ]"
             role="option"
             :aria-selected="option.value === modelValue"
@@ -126,8 +126,8 @@ const props = defineProps({
   },
   variant: {
     type: String,
-    default: 'indigo',
-    validator: (value) => ['indigo', 'blue', 'slate', 'emerald', 'orange'].includes(value)
+    default: 'teal',
+    validator: (value) => ['indigo', 'blue', 'slate', 'emerald', 'orange', 'teal'].includes(value)
   },
   dropdownPosition: {
     type: String,
@@ -154,8 +154,10 @@ const focusRingColor = computed(() => {
       return 'focus:ring-orange-500'
     case 'slate':
       return 'focus:ring-slate-500'
+    case 'teal':
+      return 'focus:ring-teal-500'
     default:
-      return 'focus:ring-indigo-500'
+      return 'focus:ring-teal-500'
   }
 })
 

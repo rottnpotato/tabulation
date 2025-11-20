@@ -77,13 +77,13 @@ const UpdateSettings = (settings) => {
 </script>
 
 <style>
-/* Custom shimmer animation with blue color for loading skeletons */
-.shimmer-blue {
+/* Custom shimmer animation with teal color for loading skeletons */
+.shimmer-teal {
   background-image: linear-gradient(
     to right,
     #f9f9f9 0%,
     #f5f5f5 20%,
-    rgba(99, 102, 241, 0.2) 40%, /* indigo-500 */
+    rgba(20, 184, 166, 0.2) 40%, /* teal-500 */
     #f5f5f5 60%,
     #f9f9f9 80%,
     #f9f9f9 100%

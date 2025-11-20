@@ -2,12 +2,12 @@
   <div class="space-y-8">
     <!-- Page Header -->
     <!-- Page Header -->
-    <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+    <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
       <!-- Abstract Background Pattern -->
       <div class="absolute inset-0">
-        <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
-        <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-teal-50 via-teal-50/50 to-white opacity-90"></div>
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
       </div>
 
       <div class="relative z-10 p-8">
@@ -24,10 +24,10 @@
           <div class="flex items-center space-x-3">
             <Tooltip text="Filter and sort pageants by status, date, or name" position="bottom">
               <button 
-                class="inline-flex items-center px-4 py-2 border border-indigo-200 rounded-xl shadow-sm text-sm font-medium text-indigo-700 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:-translate-y-0.5"
+                class="inline-flex items-center px-4 py-2 border border-teal-200 rounded-xl shadow-sm text-sm font-medium text-teal-700 bg-white hover:bg-teal-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all transform hover:-translate-y-0.5"
                 @click="toggleFilters"
               >
-                <Filter class="h-4 w-4 mr-2 text-indigo-500" />
+                <Filter class="h-4 w-4 mr-2 text-teal-500" />
                 Filter
               </button>
             </Tooltip>
@@ -49,17 +49,17 @@
             <button 
               :class="[
                 activeTab === tab.value 
-                  ? 'border-indigo-500 text-indigo-600' 
+                  ? 'border-teal-500 text-teal-600' 
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
                 'group inline-flex items-center py-4 px-4 sm:px-6 border-b-2 font-medium text-sm whitespace-nowrap flex-shrink-0 transition-all'
               ]"
               @click="activeTab = tab.value"
             >
-              <component :is="tab.icon" class="h-5 w-5 mr-2 transition-colors" :class="activeTab === tab.value ? 'text-indigo-500' : 'text-gray-400 group-hover:text-gray-500'" />
+              <component :is="tab.icon" class="h-5 w-5 mr-2 transition-colors" :class="activeTab === tab.value ? 'text-teal-500' : 'text-gray-400 group-hover:text-gray-500'" />
               {{ tab.name }}
               <span
                 :class="[
-                  activeTab === tab.value ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-900',
+                  activeTab === tab.value ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-900',
                   'ml-2 py-0.5 px-2.5 rounded-full text-xs font-medium transition-colors'
                 ]"
               >
@@ -78,7 +78,7 @@
             type="text" 
             id="search" 
             v-model="searchQuery" 
-            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md"
             placeholder="Search pageants..."
           />
         </div>
@@ -88,7 +88,7 @@
           <CustomSelect
             v-model="sortBy"
             :options="sortByOptions"
-            variant="indigo"
+            variant="teal"
           />
         </div>
         
@@ -97,7 +97,7 @@
           <CustomSelect
             v-model="sortOrder"
             :options="sortOrderOptions"
-            variant="indigo"
+            variant="teal"
           />
         </div>
       </div>
@@ -130,7 +130,7 @@
                      class="w-full h-full object-cover" />
                 <div class="absolute inset-0 bg-black/30"></div>
               </div>
-              <div v-else class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-300"></div>
+              <div v-else class="absolute inset-0 bg-gradient-to-r from-teal-500 to-teal-300"></div>
 
               <!-- Status Badge -->
               <Tooltip :text="getStatusTooltip(pageant.status)" position="right">
@@ -158,7 +158,7 @@
               </div>
               
               <!-- View Details hover effect -->
-              <div class="absolute inset-0 bg-indigo-600 bg-opacity-80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div class="absolute inset-0 bg-teal-600 bg-opacity-80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div class="text-white flex items-center font-medium">
                   <ChevronRight class="h-5 w-5 mr-1" />
                   View Details
@@ -179,15 +179,15 @@
               <!-- Stats -->
               <div class="flex items-center justify-between text-xs text-gray-500">
                 <div class="flex items-center">
-                  <Users class="h-4 w-4 text-indigo-400 mr-1" />
+                  <Users class="h-4 w-4 text-teal-400 mr-1" />
                   <span>{{ pageant.contestants_count }} Contestants</span>
                 </div>
                 <div class="flex items-center">
-                  <ListChecks class="h-4 w-4 text-indigo-400 mr-1" />
+                  <ListChecks class="h-4 w-4 text-teal-400 mr-1" />
                   <span>{{ pageant.criteria_count }} Criteria</span>
                 </div>
                 <div class="flex items-center">
-                  <Scale class="h-4 w-4 text-indigo-400 mr-1" />
+                  <Scale class="h-4 w-4 text-teal-400 mr-1" />
                   <span>{{ pageant.judges_count }} Judges</span>
                 </div>
               </div>
@@ -196,7 +196,7 @@
             <!-- Card Footer -->
             <div class="border-t border-gray-100 bg-gray-50 p-3 flex justify-between items-center">
               <div class="flex items-center">
-                <Crown class="h-4 w-4 text-indigo-500 mr-1.5" />
+                <Crown class="h-4 w-4 text-teal-500 mr-1.5" />
                 <span class="text-xs font-medium text-gray-600">
                   {{ getActionTextByStatus(pageant.status) }}
                 </span>
@@ -205,7 +205,7 @@
                 <Tooltip :text="getActionTextByStatus(pageant.status)" position="left">
                   <button
                     @click.stop="managePageant(pageant)"
-                    class="p-1.5 rounded-full text-gray-400 bg-white border border-gray-200 hover:text-indigo-600 hover:border-indigo-300 transition-all transform hover:scale-110 hover:shadow-md"
+                    class="p-1.5 rounded-full text-gray-400 bg-white border border-gray-200 hover:text-teal-600 hover:border-teal-300 transition-all transform hover:scale-110 hover:shadow-md"
                   >
                     <ChevronRight class="h-4 w-4" />
                   </button>
@@ -334,11 +334,11 @@ const getStatusClass = (status) => {
     case 'Draft':
       return { badge: 'bg-gray-100 text-gray-800' }
     case 'Active':
-      return { badge: 'bg-green-100 text-green-800' }
+      return { badge: 'bg-teal-100 text-teal-800' }
     case 'Completed':
-      return { badge: 'bg-purple-100 text-purple-800' }
+      return { badge: 'bg-teal-100 text-teal-800' }
     case 'Unlocked_For_Edit':
-      return { badge: 'bg-yellow-100 text-yellow-800' }
+      return { badge: 'bg-teal-100 text-teal-800' }
     default:
       return { badge: 'bg-gray-100 text-gray-800' }
   }
@@ -469,4 +469,4 @@ onMounted(() => {
     transform: translate(0px, 0px) scale(1);
   }
 }
-</style> 
+</style>

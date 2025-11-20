@@ -5,7 +5,7 @@
         <h2 class="text-2xl font-semibold text-gray-900">Pageant Criteria</h2>
         <button
           @click="ShowAddModal = true"
-          class="bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white px-4 py-2 rounded-lg flex items-center"
+          class="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-4 py-2 rounded-lg flex items-center"
         >
           <Plus class="h-5 w-5 mr-2" />
           Add Criteria
@@ -47,14 +47,14 @@
 
       <!-- Empty State -->
       <div v-else-if="Criteria.length === 0" class="text-center py-12">
-        <div class="flex items-center justify-center h-16 w-16 mx-auto bg-orange-100 rounded-full mb-4">
-          <ListChecks class="h-8 w-8 text-orange-500" />
+        <div class="flex items-center justify-center h-16 w-16 mx-auto bg-teal-100 rounded-full mb-4">
+          <ListChecks class="h-8 w-8 text-teal-500" />
         </div>
         <h3 class="text-lg font-medium text-gray-900 mb-1">No criteria defined yet</h3>
         <p class="text-gray-500 mb-4 max-w-md mx-auto">Define judging criteria to determine how contestants will be evaluated during the pageant</p>
         <button
           @click="ShowAddModal = true"
-          class="bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white px-4 py-2 rounded-lg flex items-center mx-auto"
+          class="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white px-4 py-2 rounded-lg flex items-center mx-auto"
         >
           <Plus class="h-5 w-5 mr-2" />
           Add First Criterion
@@ -74,13 +74,13 @@
               <p class="text-gray-600">{{ criterion.description }}</p>
             </div>
             <div class="flex items-center space-x-4">
-              <div class="text-lg font-semibold text-orange-600">
+              <div class="text-lg font-semibold text-teal-600">
                 {{ criterion.weight }}%
               </div>
               <div class="flex space-x-2">
                 <button
                   @click="EditCriterion(criterion)"
-                  class="text-gray-600 hover:text-orange-600"
+                  class="text-gray-600 hover:text-teal-600"
                 >
                   <Edit2 class="h-5 w-5" />
                 </button>
@@ -122,11 +122,11 @@
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <div class="bg-gradient-to-r from-orange-500 to-rose-500 -m-6 mb-6 p-6 text-white">
+                <div class="bg-gradient-to-r from-teal-500 to-teal-600 -m-6 mb-6 p-6 text-white">
                   <DialogTitle as="h3" class="text-lg font-medium leading-6 mb-1">
                     {{ EditingCriterion ? 'Edit Criterion' : 'Add New Criterion' }}
                   </DialogTitle>
-                  <p class="text-orange-100 text-sm">{{ EditingCriterion ? 'Update the details of this criterion' : 'Add a new judging criterion to your pageant' }}</p>
+                  <p class="text-teal-100 text-sm">{{ EditingCriterion ? 'Update the details of this criterion' : 'Add a new judging criterion to your pageant' }}</p>
                 </div>
 
                 <form @submit.prevent="HandleSubmit" class="space-y-4">
@@ -135,7 +135,7 @@
                     <input
                       type="text"
                       v-model="Form.name"
-                      class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                       required
                     />
                     <p v-if="formErrors.name" class="mt-1 text-sm text-red-600">{{ formErrors.name }}</p>
@@ -145,7 +145,7 @@
                     <textarea
                       v-model="Form.description"
                       rows="3"
-                      class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                       required
                     ></textarea>
                     <p v-if="formErrors.description" class="mt-1 text-sm text-red-600">{{ formErrors.description }}</p>
@@ -157,7 +157,7 @@
                       v-model="Form.weight"
                       min="0"
                       max="100"
-                      class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                       required
                     />
                     <p v-if="formErrors.weight" class="mt-1 text-sm text-red-600">{{ formErrors.weight }}</p>
@@ -179,7 +179,7 @@
                     </button>
                     <button
                       type="submit"
-                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-rose-500 rounded-lg hover:from-orange-600 hover:to-rose-600 shadow-sm transition-colors flex items-center"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg hover:from-teal-600 hover:to-teal-700 shadow-sm transition-colors flex items-center"
                       :disabled="isSubmitting"
                     >
                       <Loader2 v-if="isSubmitting" class="mr-2 h-4 w-4 animate-spin" />

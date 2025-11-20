@@ -158,7 +158,7 @@ const getContestantDisplayName = (contestant) => {
 .card-contestant::before {
   content: '';
   @apply absolute inset-0 rounded-2xl transition-all duration-500;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(13, 148, 136, 0.1) 100%);
   opacity: 0;
   transform: scale(0.95);
   z-index: -1;
@@ -167,7 +167,7 @@ const getContestantDisplayName = (contestant) => {
 .card-contestant:hover::before {
   opacity: 1;
   transform: scale(1.05);
-  box-shadow: 0 20px 40px -15px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 20px 40px -15px rgba(20, 184, 166, 0.3);
 }
 
 .corner-accent {
@@ -194,7 +194,7 @@ const getContestantDisplayName = (contestant) => {
 
 .contestant-badge-inner {
   @apply inline-flex items-center justify-center h-10 w-10 rounded-full text-white text-sm font-bold shadow-xl;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   border: 2px solid rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(8px);
   transition: all 0.3s ease;
@@ -202,12 +202,12 @@ const getContestantDisplayName = (contestant) => {
 
 .card-contestant:hover .contestant-badge-inner {
   transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.5);
+  box-shadow: 0 8px 20px rgba(20, 184, 166, 0.5);
 }
 
 .pair-badge {
   @apply inline-flex items-center px-3 py-1 rounded-full text-white text-xs font-semibold shadow-lg;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   border: 1.5px solid rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(8px);
   transition: all 0.3s ease;
@@ -269,12 +269,12 @@ const getContestantDisplayName = (contestant) => {
 
 .action-btn-primary {
   @apply text-white;
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  box-shadow: 0 4px 15px rgba(20, 184, 166, 0.4);
 }
 
 .action-btn-primary:hover {
-  box-shadow: 0 6px 25px rgba(249, 115, 22, 0.6);
+  box-shadow: 0 6px 25px rgba(20, 184, 166, 0.6);
   border-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -345,13 +345,13 @@ const getContestantDisplayName = (contestant) => {
 
 .contestant-partner {
   @apply text-xs mb-2 truncate;
-  color: rgba(167, 243, 208, 0.95);
+  color: rgba(204, 251, 241, 0.95);
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
 }
 
 .contestant-members {
   @apply text-xs mb-2 truncate;
-  color: rgba(167, 243, 208, 0.95);
+  color: rgba(204, 251, 241, 0.95);
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
 }
 
@@ -367,12 +367,12 @@ const getContestantDisplayName = (contestant) => {
 }
 
 .card-contestant:hover .contestant-detail-item {
-  color: rgba(255, 237, 213, 1);
+  color: rgba(204, 251, 241, 1);
 }
 
 .detail-icon {
   @apply h-3.5 w-3.5 flex-shrink-0;
-  color: rgba(251, 146, 60, 0.9);
+  color: rgba(45, 212, 191, 0.9);
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 
@@ -392,7 +392,7 @@ const getContestantDisplayName = (contestant) => {
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .card-contestant::before {
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(236, 72, 153, 0.15) 100%);
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.2) 0%, rgba(13, 148, 136, 0.15) 100%);
   }
 }
 </style>

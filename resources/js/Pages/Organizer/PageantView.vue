@@ -94,7 +94,7 @@
                         id="edit-reason"
                         v-model="editAccessForm.reason"
                         rows="4"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm"
                         placeholder="Explain why you need to edit this pageant..."
                         required
                       ></textarea>
@@ -110,7 +110,7 @@
                     type="button"
                     @click="closeEditAccessModal"
                     :disabled="editAccessForm.processing"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
@@ -118,7 +118,7 @@
                     type="button"
                     @click="submitEditAccessRequest"
                     :disabled="editAccessForm.processing || !editAccessForm.reason.trim()"
-                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-4 py-2 text-sm font-medium text-white bg-teal-600 border border-transparent rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span v-if="editAccessForm.processing">Submitting...</span>
                     <span v-else>Submit Request</span>
@@ -132,18 +132,18 @@
     </TransitionRoot>
     
     <!-- Header Section -->
-    <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-indigo-100">
+    <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
       <!-- Abstract Background Pattern -->
       <div class="absolute inset-0">
         <!-- Use cover image if available, otherwise use abstract pattern -->
         <div v-if="pageant.coverImage" class="absolute inset-0">
           <img :src="pageant.coverImage" class="w-full h-full object-cover" alt="Pageant Cover" />
-          <div class="absolute inset-0 bg-gradient-to-r from-indigo-900/90 via-indigo-800/80 to-indigo-900/40 backdrop-blur-sm"></div>
+          <div class="absolute inset-0 bg-gradient-to-r from-teal-900/90 via-teal-800/80 to-teal-900/40 backdrop-blur-sm"></div>
         </div>
         <div v-else class="absolute inset-0">
-          <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50/50 to-white opacity-90"></div>
-          <div class="absolute -top-24 -left-24 w-96 h-96 bg-indigo-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-teal-50 via-teal-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
         </div>
       </div>
 
@@ -178,21 +178,21 @@
                 <h1 class="text-3xl sm:text-4xl font-bold tracking-tight font-display text-white mb-2">
                   {{ pageant.name }}
                 </h1>
-                <p class="text-indigo-100 text-lg max-w-2xl font-light leading-relaxed mb-4">
+                <p class="text-teal-100 text-lg max-w-2xl font-light leading-relaxed mb-4">
                   {{ pageant.description || 'No description provided.' }}
                 </p>
                 
-                <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-indigo-100/80">
+                <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-teal-100/80">
                   <div class="flex items-center">
-                    <Calendar class="h-4 w-4 mr-2 text-indigo-300" />
+                    <Calendar class="h-4 w-4 mr-2 text-teal-300" />
                     {{ pageant.start_date || 'Date not set' }}
                   </div>
                   <div class="flex items-center">
-                    <MapPin class="h-4 w-4 mr-2 text-indigo-300" />
+                    <MapPin class="h-4 w-4 mr-2 text-teal-300" />
                     {{ pageant.venue || pageant.location || 'Venue not specified' }}
                   </div>
                   <div class="flex items-center">
-                    <Users class="h-4 w-4 mr-2 text-indigo-300" />
+                    <Users class="h-4 w-4 mr-2 text-teal-300" />
                     {{ pageant.contestants.length }} Contestants
                   </div>
                 </div>
@@ -204,7 +204,7 @@
             <Link
               v-if="canEdit"
               :href="route('organizer.pageant.edit', pageant.id)"
-              class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-white text-indigo-600 hover:bg-indigo-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-white text-teal-600 hover:bg-teal-50 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <Edit class="h-4 w-4 mr-2" />
               Edit Pageant
@@ -231,14 +231,14 @@
             :class="[
               activeTab === tab.id 
                 ? 'border-white text-white' 
-                : 'border-transparent text-indigo-200 hover:text-white hover:border-indigo-300',
+                : 'border-transparent text-teal-200 hover:text-white hover:border-teal-300',
               'whitespace-nowrap flex items-center py-4 border-b-2 font-medium text-sm transition-all'
             ]"
             @click="activeTab = tab.id"
           >
             <component :is="tab.icon" 
               class="h-4 w-4 mr-2" 
-              :class="activeTab === tab.id ? 'text-white' : 'text-indigo-300'" 
+              :class="activeTab === tab.id ? 'text-white' : 'text-teal-300'" 
             />
             {{ tab.name }}
           </button>
@@ -250,7 +250,7 @@
         <!-- Overview Tab -->
         <div v-if="activeTab === 'overview'" class="space-y-6 overflow-visible">
           <!-- Pageant Progress -->
-          <div class="bg-indigo-50 rounded-lg p-4 sm:p-6 shadow-sm">
+          <div class="bg-teal-50 rounded-lg p-4 sm:p-6 shadow-sm">
             <h3 class="text-lg font-semibold text-gray-900 mb-3">Pageant Progress</h3>
             
             <div class="mb-4">
@@ -261,7 +261,7 @@
               <Tooltip :text="getProgressTooltip(pageant.progress || 0)" position="top">
                 <div class="w-full bg-gray-200 rounded-full h-2.5 hover:h-3 transition-all cursor-help">
                   <div
-                    class="bg-indigo-600 h-2.5 hover:h-3 rounded-full transition-all"
+                    class="bg-teal-600 h-2.5 hover:h-3 rounded-full transition-all"
                     :style="{ width: `${pageant.progress || 0}%` }"
                   ></div>
                 </div>
@@ -273,8 +273,8 @@
               This pageant has been completed.
             </div>
             
-            <div v-else-if="isOngoing" class="flex items-center text-sm text-blue-700 bg-blue-50 p-3 rounded-md">
-              <Activity class="h-5 w-5 mr-2 text-blue-500" />
+            <div v-else-if="isOngoing" class="flex items-center text-sm text-teal-700 bg-teal-50 p-3 rounded-md">
+              <Activity class="h-5 w-5 mr-2 text-teal-500" />
               This pageant is currently ongoing.
             </div>
             
@@ -306,12 +306,12 @@
               </div>
               
               <!-- Admin-only notice -->
-              <div v-if="!isAdmin && isCompleted" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div v-if="!isAdmin && isCompleted" class="mb-4 p-3 bg-teal-50 border border-teal-200 rounded-md">
                 <div class="flex items-start">
-                  <Info class="h-5 w-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <Info class="h-5 w-5 text-teal-500 mt-0.5 mr-2 flex-shrink-0" />
                   <div>
-                    <h5 class="text-sm font-medium text-blue-800">Administrative Status</h5>
-                    <p class="text-xs text-blue-700 mt-1">
+                    <h5 class="text-sm font-medium text-teal-800">Administrative Status</h5>
+                    <p class="text-xs text-teal-700 mt-1">
                       Only administrators can modify the status of completed pageants or unlock them for editing.
                     </p>
                   </div>
@@ -336,7 +336,7 @@
                       v-model="selectedNewStatus"
                       :options="availableStatusTransitions"
                       placeholder="Select new status"
-                      variant="indigo"
+                      variant="teal"
                     />
                   </div>
                   
@@ -344,7 +344,7 @@
                     v-if="selectedNewStatus"
                     @click="updateStatus"
                     :disabled="statusUpdateForm.processing"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <AlertCircle class="h-4 w-4 mr-1.5" />
                     {{ statusUpdateForm.processing ? 'Updating...' : 'Update Status' }}
@@ -357,8 +357,8 @@
               </div>
               
               <!-- Status transition help -->
-              <div v-if="selectedNewStatus" class="mt-3 p-3 bg-blue-50 rounded-md">
-                <p class="text-sm text-blue-700">
+              <div v-if="selectedNewStatus" class="mt-3 p-3 bg-teal-50 rounded-md">
+                <p class="text-sm text-teal-700">
                   <strong>{{ pageant.status }} → {{ selectedNewStatus }}:</strong>
                   {{ getStatusTransitionHelp(pageant.status, selectedNewStatus) }}
                 </p>
@@ -385,11 +385,11 @@
                   Pageant completed
                 </div>
               </div>
-              <div class="mt-3 p-3 bg-blue-50 rounded-md">
+              <div class="mt-3 p-3 bg-teal-50 rounded-md">
                 <div class="flex items-start">
-                  <Info class="h-5 w-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <Info class="h-5 w-5 text-teal-500 mt-0.5 mr-2 flex-shrink-0" />
                   <div>
-                    <p class="text-sm text-blue-700">
+                    <p class="text-sm text-teal-700">
                       <strong>This pageant has been completed.</strong> 
                       Only administrators can unlock completed pageants for editing or make status changes.
                     </p>
@@ -400,20 +400,20 @@
           </div>
           
           <!-- Quick Settings Panel -->
-          <div v-if="canEdit" class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg border border-indigo-200 p-6">
+          <div v-if="canEdit" class="bg-gradient-to-r from-teal-50 to-teal-50 rounded-lg border border-teal-200 p-6">
             <h4 class="text-base font-medium text-gray-900 mb-4 flex items-center">
-              <Calculator class="h-5 w-5 text-indigo-600 mr-2" />
+              <Calculator class="h-5 w-5 text-teal-600 mr-2" />
               Quick Settings
             </h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Current Scoring System -->
-              <div class="bg-white rounded-lg p-4 border border-indigo-100">
+              <div class="bg-white rounded-lg p-4 border border-teal-100">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Current Scoring System</label>
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-gray-900 font-medium">{{ getScoringSystemName(pageant.scoring_system) }}</span>
                   <button 
                     @click="activeTab = 'scoring'"
-                    class="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                    class="text-xs text-teal-600 hover:text-teal-800 font-medium"
                   >
                     Change
                   </button>
@@ -422,7 +422,7 @@
               </div>
               
               <!-- Required Judges Quick Setting -->
-              <div class="bg-white rounded-lg p-4 border border-indigo-100">
+              <div class="bg-white rounded-lg p-4 border border-teal-100">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Required Judges</label>
                 <div class="flex items-center space-x-2">
                   <input 
@@ -431,12 +431,12 @@
                     min="0" 
                     max="20"
                     @change="updateRequiredJudgesQuick"
-                    class="w-20 text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    class="w-20 text-sm border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500"
                   />
                   <span class="text-sm text-gray-500">judges</span>
                   <button 
                     @click="activeTab = 'judges'"
-                    class="text-xs text-indigo-600 hover:text-indigo-800 font-medium ml-auto"
+                    class="text-xs text-teal-600 hover:text-teal-800 font-medium ml-auto"
                   >
                     Manage
                   </button>
@@ -453,8 +453,8 @@
               <div class="p-4">
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-semibold text-gray-900">Contestants</h3>
-                  <div class="p-2 bg-indigo-100 rounded-full">
-                    <Users class="h-5 w-5 text-indigo-600" />
+                  <div class="p-2 bg-teal-100 rounded-full">
+                    <Users class="h-5 w-5 text-teal-600" />
                   </div>
                 </div>
                 <p class="mt-2 text-3xl font-bold text-gray-900">{{ pageant.contestants.length }}</p>
@@ -463,7 +463,7 @@
               <div class="border-t border-gray-100 bg-gray-50 px-4 py-3">
                 <Link 
                   :href="route('organizer.pageant.contestants-management', pageant.id)"
-                  class="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center"
+                  class="text-sm font-medium text-teal-600 hover:text-teal-800 flex items-center"
                 >
                   Manage Contestants <ChevronRight class="h-4 w-4 ml-1" />
                 </Link>
@@ -475,8 +475,8 @@
               <div class="p-4">
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-semibold text-gray-900">Rounds</h3>
-                  <div class="p-2 bg-purple-100 rounded-full">
-                    <Target class="h-5 w-5 text-purple-600" />
+                  <div class="p-2 bg-teal-100 rounded-full">
+                    <Target class="h-5 w-5 text-teal-600" />
                   </div>
                 </div>
                 <p class="mt-2 text-3xl font-bold text-gray-900">{{ pageant.rounds?.length || 0 }}</p>
@@ -485,7 +485,7 @@
               <div class="border-t border-gray-100 bg-gray-50 px-4 py-3">
                 <button 
                   @click="activeTab = 'rounds'"
-                  class="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center"
+                  class="text-sm font-medium text-teal-600 hover:text-teal-800 flex items-center"
                 >
                   View Rounds <ChevronRight class="h-4 w-4 ml-1" />
                 </button>
@@ -497,8 +497,8 @@
               <div class="p-4">
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-semibold text-gray-900">Judges</h3>
-                  <div class="p-2 bg-indigo-100 rounded-full">
-                    <Scale class="h-5 w-5 text-indigo-600" />
+                  <div class="p-2 bg-teal-100 rounded-full">
+                    <Scale class="h-5 w-5 text-teal-600" />
                   </div>
                 </div>
                 <p class="mt-2 text-3xl font-bold text-gray-900">{{ pageant.judges.length }}</p>
@@ -507,7 +507,7 @@
               <div class="border-t border-gray-100 bg-gray-50 px-4 py-3">
                 <Link 
                   :href="route('organizer.pageant.judges-management', pageant.id)"
-                  class="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center"
+                  class="text-sm font-medium text-teal-600 hover:text-teal-800 flex items-center"
                 >
                   Manage Judges <ChevronRight class="h-4 w-4 ml-1" />
                 </Link>
@@ -529,7 +529,7 @@
               <button
                 v-if="allowsSoloContestants"
                 @click="openAddContestantModal"
-                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                class="inline-flex items-center px-3 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
               >
                 <Plus class="h-4 w-4 mr-1.5" />
                 Add Contestant
@@ -537,7 +537,7 @@
               <button
                 v-if="allowsPairContestants"
                 @click="openAddPairModal"
-                class="inline-flex items-center px-3 py-2 bg-emerald-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                class="inline-flex items-center px-3 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
               >
                 <Users class="h-4 w-4 mr-1.5" />
                 Add Pair
@@ -589,7 +589,7 @@
                   </div>
                 </div>
                 <div class="absolute top-2 left-2 bg-white rounded-full h-8 w-8 flex items-center justify-center shadow-md">
-                  <span class="font-bold text-indigo-600">{{ contestant.number || '?' }}</span>
+                  <span class="font-bold text-teal-600">{{ contestant.number || '?' }}</span>
                 </div>
                 <!-- Debug info (remove in production) -->
                 <div v-if="isDevelopment" class="absolute bottom-2 left-2 bg-black bg-opacity-75 text-white text-xs p-1 rounded">
@@ -606,7 +606,7 @@
                   <Tooltip text="Edit contestant information" position="top">
                     <button 
                       @click="openEditContestantModal(contestant)"
-                      class="p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all transform hover:scale-110"
+                      class="p-1 rounded-md text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-all transform hover:scale-110"
                     >
                       <Edit class="h-4 w-4" />
                     </button>
@@ -632,7 +632,7 @@
             <div v-if="canEdit" class="flex items-center space-x-2">
               <button
                 @click="openAddRoundModal"
-                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                class="inline-flex items-center px-3 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
               >
                 <Plus class="h-4 w-4 mr-1.5" />
                 Add Round
@@ -670,8 +670,8 @@
               <div class="p-4 border-b border-gray-100">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-3">
-                    <div class="p-2 bg-purple-100 rounded-lg">
-                      <Target class="h-5 w-5 text-purple-600" />
+                    <div class="p-2 bg-teal-100 rounded-lg">
+                      <Target class="h-5 w-5 text-teal-600" />
                     </div>
                     <div>
                       <h4 class="font-semibold text-gray-900">
@@ -682,7 +682,7 @@
                     </div>
                   </div>
                   <div class="flex items-center space-x-3">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
                       {{ round.weight }}% Weight
                     </span>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -699,7 +699,7 @@
                       <Tooltip text="Edit round" position="top">
                         <button 
                           @click="openEditRoundModal(round)"
-                          class="p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all transform hover:scale-110"
+                          class="p-1 rounded-md text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-all transform hover:scale-110"
                         >
                           <Edit class="h-4 w-4" />
                         </button>
@@ -724,7 +724,7 @@
                   <button
                     v-if="canEdit"
                     @click="openAddCriteriaModal(round)"
-                    class="inline-flex items-center px-2 py-1 bg-indigo-600 border border-transparent rounded text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
+                    class="inline-flex items-center px-2 py-1 bg-teal-600 border border-transparent rounded text-xs font-medium text-white hover:bg-teal-700 transition-colors"
                   >
                     <Plus class="h-3 w-3 mr-1" />
                     Add Criteria
@@ -746,7 +746,7 @@
                   >
                     <div class="flex items-center justify-between mb-2">
                       <h6 class="font-medium text-gray-900">{{ criteria.name }}</h6>
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-600">
                         {{ criteria.weight }}%
                       </span>
                     </div>
@@ -756,7 +756,7 @@
                       <div v-if="canEdit" class="flex space-x-1">
                         <button 
                           @click="openEditCriteriaModal(round, criteria)"
-                          class="p-1 rounded text-gray-400 hover:text-indigo-600 transition-colors"
+                          class="p-1 rounded text-gray-400 hover:text-teal-600 transition-colors"
                         >
                           <Edit class="h-3 w-3" />
                         </button>
@@ -812,8 +812,8 @@
                   class="bg-gray-50 rounded-lg p-4 hover:shadow-sm transition-shadow"
                 >
                   <div class="flex items-center">
-                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                      <User2 class="h-5 w-5 text-indigo-600" />
+                    <div class="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <User2 class="h-5 w-5 text-teal-600" />
                     </div>
                     <div class="ml-3">
                       <h5 class="font-medium text-gray-900">{{ judge.name }}</h5>
@@ -847,14 +847,14 @@
                     v-model="requiredJudgesForm.required_judges" 
                     min="0" 
                     max="20"
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                   />
                 </div>
                 <div class="flex justify-end">
                   <button 
                     type="submit"
                     :disabled="requiredJudgesForm.processing"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Save class="h-4 w-4 mr-1.5" />
                     Save
@@ -877,7 +877,7 @@
                 <button
                   type="button"
                   @click="openCreateTabulatorModal"
-                  class="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-md text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                  class="inline-flex items-center px-3 py-2 border border-teal-300 rounded-md text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors"
                 >
                   <Plus class="h-4 w-4 mr-1.5" />
                   Create New
@@ -893,7 +893,7 @@
                 <button
                   type="button"
                   @click="openCreateTabulatorModal"
-                  class="inline-flex items-center px-3 py-2 border border-indigo-300 rounded-md text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                  class="inline-flex items-center px-3 py-2 border border-teal-300 rounded-md text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors"
                 >
                   <Plus class="h-4 w-4 mr-1.5" />
                   Create New
@@ -907,7 +907,7 @@
                     <CustomSelect
                       v-model="tabulatorForm.tabulator_id"
                       :options="tabulatorOptions"
-                      variant="indigo"
+                      variant="teal"
                       placeholder="Select a tabulator"
                     />
                   </div>
@@ -918,7 +918,7 @@
                     id="tabulatorNotes" 
                     v-model="tabulatorForm.notes" 
                     rows="2"
-                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
                     placeholder="Add any notes about this tabulator assignment"
                   ></textarea>
                 </div>
@@ -926,7 +926,7 @@
                   <button 
                     type="submit"
                     :disabled="tabulatorForm.processing || !tabulatorForm.tabulator_id"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Save class="h-4 w-4 mr-1.5" />
                     Assign Tabulator
@@ -961,8 +961,8 @@
                   class="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
                 >
                   <div class="flex items-center">
-                    <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                      <Calculator class="h-5 w-5 text-indigo-600" />
+                    <div class="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                      <Calculator class="h-5 w-5 text-teal-600" />
                     </div>
                     <div class="ml-3">
                       <h5 class="font-medium text-gray-900">{{ tabulator.name }}</h5>
@@ -990,9 +990,9 @@
           <h3 class="text-lg font-semibold text-gray-900">Scoring System</h3>
           
           <!-- Current Scoring System Card -->
-          <div class="bg-indigo-50 rounded-lg p-6">
+          <div class="bg-teal-50 rounded-lg p-6">
             <div class="flex items-start">
-              <Calculator class="h-6 w-6 text-indigo-500 mt-0.5" />
+              <Calculator class="h-6 w-6 text-teal-500 mt-0.5" />
               <div class="ml-3">
                 <h4 class="text-base font-medium text-gray-900">{{ getScoringSystemName(pageant.scoring_system) }}</h4>
                 <p class="text-sm text-gray-500 mt-1">
@@ -1000,7 +1000,7 @@
                 </p>
                 <button 
                   @click="toggleScoringDetails(pageant.scoring_system)"
-                  class="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-800 inline-flex items-center"
+                  class="mt-2 text-sm font-medium text-teal-600 hover:text-teal-800 inline-flex items-center"
                 >
                   {{ showScoringDetails && selectedScoringSystem === pageant.scoring_system ? 'Hide details' : 'View details' }}
                   <ChevronRight v-if="!(showScoringDetails && selectedScoringSystem === pageant.scoring_system)" class="h-4 w-4 ml-1" />
@@ -1012,7 +1012,7 @@
             <!-- Expanded Details for Current System -->
             <div 
               v-if="showScoringDetails && selectedScoringSystem === pageant.scoring_system" 
-              class="mt-4 border-t border-indigo-100 pt-4"
+              class="mt-4 border-t border-teal-100 pt-4"
             >
               <h5 class="text-sm font-medium text-gray-900 mb-2">Detailed Information</h5>
               <p class="text-sm text-gray-600 mb-4">{{ currentScoringSystem.details }}</p>
@@ -1047,23 +1047,23 @@
               </div>
             </div>
             
-            <div class="mt-4 border-t border-indigo-100 pt-4">
+            <div class="mt-4 border-t border-teal-100 pt-4">
               <h5 class="text-sm font-medium text-gray-900 mb-2">Scoring Method</h5>
               <ul class="space-y-2 text-sm text-gray-600">
                 <li class="flex items-start">
-                  <CheckCircle class="h-4 w-4 text-indigo-500 mt-0.5 mr-2" />
+                  <CheckCircle class="h-4 w-4 text-teal-500 mt-0.5 mr-2" />
                   Judges score each contestant on every criterion using the specified range
                 </li>
                 <li class="flex items-start">
-                  <CheckCircle class="h-4 w-4 text-indigo-500 mt-0.5 mr-2" />
+                  <CheckCircle class="h-4 w-4 text-teal-500 mt-0.5 mr-2" />
                   Scores are weighted according to each criterion's importance
                 </li>
                 <li class="flex items-start">
-                  <CheckCircle class="h-4 w-4 text-indigo-500 mt-0.5 mr-2" />
+                  <CheckCircle class="h-4 w-4 text-teal-500 mt-0.5 mr-2" />
                   Highest and lowest scores may be dropped to prevent bias
                 </li>
                 <li class="flex items-start">
-                  <CheckCircle class="h-4 w-4 text-indigo-500 mt-0.5 mr-2" />
+                  <CheckCircle class="h-4 w-4 text-teal-500 mt-0.5 mr-2" />
                   Final ranking is determined by total weighted scores
                 </li>
               </ul>
@@ -1084,8 +1084,8 @@
                     v-for="system in scoringSystems" 
                     :key="system.type" 
                     @click="scoringSystemForm.scoring_system = system.type"
-                    class="relative border rounded-lg p-4 cursor-pointer hover:bg-indigo-50 transition-colors"
-                    :class="scoringSystemForm.scoring_system === system.type ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-gray-300'"
+                    class="relative border rounded-lg p-4 cursor-pointer hover:bg-teal-50 transition-colors"
+                    :class="scoringSystemForm.scoring_system === system.type ? 'border-indigo-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'"
                   >
                     <div class="flex items-start">
                       <div class="flex items-center h-5">
@@ -1094,7 +1094,7 @@
                           :id="system.type" 
                           :value="system.type" 
                           v-model="scoringSystemForm.scoring_system"
-                          class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                          class="h-4 w-4 text-teal-600 border-gray-300 focus:ring-teal-500"
                         />
                       </div>
                       <div class="ml-3 text-sm">
@@ -1102,7 +1102,7 @@
                         <p class="text-gray-500">{{ system.description }}</p>
                       </div>
                     </div>
-                    <div v-if="scoringSystemForm.scoring_system === system.type" class="absolute top-2 right-2 text-indigo-600">
+                    <div v-if="scoringSystemForm.scoring_system === system.type" class="absolute top-2 right-2 text-teal-600">
                       <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
                       </svg>
@@ -1114,7 +1114,7 @@
                   <button 
                     type="submit"
                     :disabled="scoringSystemForm.processing"
-                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Save class="h-4 w-4 mr-1.5" />
                     Save Scoring System
@@ -1137,8 +1137,8 @@
                   <div 
                     v-for="system in scoringSystems" 
                     :key="system.type" 
-                    class="relative border rounded-lg p-4 cursor-pointer hover:bg-indigo-50 transition-colors"
-                    :class="scoringSystemForm.scoring_system === system.type ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200' : 'border-gray-300'"
+                    class="relative border rounded-lg p-4 cursor-pointer hover:bg-teal-50 transition-colors"
+                    :class="scoringSystemForm.scoring_system === system.type ? 'border-indigo-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'"
                   >
                     <div class="flex flex-col">
                       <!-- Basic info -->
@@ -1154,7 +1154,7 @@
                         <button 
                           type="button"
                           @click.prevent="toggleScoringDetails(system.type)"
-                          class="text-sm font-medium text-indigo-600 hover:text-indigo-800 inline-flex items-center"
+                          class="text-sm font-medium text-teal-600 hover:text-teal-800 inline-flex items-center"
                         >
                           {{ showScoringDetails && selectedScoringSystem === system.type ? 'Hide details' : 'View details' }}
                           <ChevronRight v-if="!(showScoringDetails && selectedScoringSystem === system.type)" class="h-4 w-4 ml-1" />
@@ -1201,7 +1201,7 @@
                     </div>
                     
                     <!-- Current system indicator -->
-                    <div v-if="pageant.scoring_system === system.type" class="absolute top-2 right-2 text-indigo-600">
+                    <div v-if="pageant.scoring_system === system.type" class="absolute top-2 right-2 text-teal-600">
                       <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
                       </svg>
@@ -1221,7 +1221,7 @@
                             <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Feature</th>
                             <th v-for="system in scoringSystems" :key="system.type" scope="col" 
                               class="px-3 py-3.5 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider"
-                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-indigo-50 text-indigo-700' : ''"
+                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-teal-50 text-teal-700' : ''"
                             >
                               {{ system.name }}
                             </th>
@@ -1231,7 +1231,7 @@
                           <tr>
                             <td class="py-3 pl-4 pr-3 text-xs font-medium text-gray-700">Scoring Range</td>
                             <td v-for="system in scoringSystems" :key="`range-${system.type}`" class="px-3 py-3 text-center text-xs text-gray-600"
-                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-indigo-50' : ''"
+                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-teal-50' : ''"
                             >
                               {{ system.type === 'percentage' ? '0-100%' : 
                                  system.type === '1-10' ? '1-10 points' : 
@@ -1242,7 +1242,7 @@
                           <tr>
                             <td class="py-3 pl-4 pr-3 text-xs font-medium text-gray-700">Scoring Precision</td>
                             <td v-for="system in scoringSystems" :key="`precision-${system.type}`" class="px-3 py-3 text-center text-xs text-gray-600"
-                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-indigo-50' : ''"
+                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-teal-50' : ''"
                             >
                               {{ system.type === 'percentage' ? 'Very High' : 
                                  (system.type === '1-10' ? 'High' : 
@@ -1253,7 +1253,7 @@
                           <tr>
                             <td class="py-3 pl-4 pr-3 text-xs font-medium text-gray-700">Scoring Speed</td>
                             <td v-for="system in scoringSystems" :key="`speed-${system.type}`" class="px-3 py-3 text-center text-xs text-gray-600"
-                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-indigo-50' : ''"
+                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-teal-50' : ''"
                             >
                               {{ system.type === 'percentage' ? 'Moderate' : 
                                  (system.type === '1-10' ? 'Fast' : 
@@ -1264,7 +1264,7 @@
                           <tr>
                             <td class="py-3 pl-4 pr-3 text-xs font-medium text-gray-700">Score Inflation Risk</td>
                             <td v-for="system in scoringSystems" :key="`inflation-${system.type}`" class="px-3 py-3 text-center text-xs text-gray-600"
-                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-indigo-50' : ''"
+                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-teal-50' : ''"
                             >
                               {{ system.type === 'percentage' ? 'High' : 
                                  (system.type === '1-10' ? 'Medium' : 
@@ -1275,7 +1275,7 @@
                           <tr>
                             <td class="py-3 pl-4 pr-3 text-xs font-medium text-gray-700">Ease of Understanding</td>
                             <td v-for="system in scoringSystems" :key="`ease-${system.type}`" class="px-3 py-3 text-center text-xs text-gray-600"
-                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-indigo-50' : ''"
+                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-teal-50' : ''"
                             >
                               {{ system.type === 'percentage' ? 'High' : 
                                  (system.type === '1-10' ? 'Very High' : 
@@ -1286,7 +1286,7 @@
                           <tr>
                             <td class="py-3 pl-4 pr-3 text-xs font-medium text-gray-700">Suitability for Tie-Breaking</td>
                             <td v-for="system in scoringSystems" :key="`ties-${system.type}`" class="px-3 py-3 text-center text-xs text-gray-600"
-                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-indigo-50' : ''"
+                              :class="scoringSystemForm.scoring_system === system.type ? 'bg-teal-50' : ''"
                             >
                               {{ system.type === 'percentage' ? 'High' : 
                                  (system.type === '1-10' ? 'Medium' : 
@@ -1309,7 +1309,7 @@
               <p class="text-sm text-gray-500 mb-4">
                 {{ isActive ? 'This pageant is currently active. You can view live scoring results as they come in.' : 'This pageant has been completed. You can view the final results and rankings.' }}
               </p>
-              <button class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 btn-transition">
+              <button class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 btn-transition">
                 <ChartBar class="h-4 w-4 mr-1.5" />
                 {{ isActive ? 'View Live Results' : 'View Final Results' }}
               </button>
@@ -1371,7 +1371,7 @@
                           id="contestNumber"
                           v-model="contestantForm.number"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 001"
                           required
                         />
@@ -1386,7 +1386,7 @@
                           id="name"
                           v-model="contestantForm.name"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. Jane Smith"
                           required
                         />
@@ -1401,7 +1401,7 @@
                           id="age"
                           v-model="contestantForm.age"
                           type="number"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 24"
                           required
                         />
@@ -1418,7 +1418,7 @@
                         <select
                           id="gender"
                           v-model="contestantForm.gender"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           required
                         >
                           <option value="" disabled>Select gender</option>
@@ -1435,7 +1435,7 @@
                           id="origin"
                           v-model="contestantForm.origin"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. New York, USA"
                           required
                         />
@@ -1450,7 +1450,7 @@
                           id="bio"
                           v-model="contestantForm.bio"
                           rows="4"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="Share the contestant's background, achievements, interests..."
                           required
                         ></textarea>
@@ -1490,10 +1490,10 @@
                     <!-- Upload New Photos -->
                     <div class="flex flex-col w-full">
                       <label
-                        class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer"
+                        class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-teal-400 hover:bg-teal-50 transition-colors cursor-pointer"
                       >
                         <div class="flex flex-col items-center justify-center pt-7">
-                          <Camera class="w-8 h-8 text-indigo-400 group-hover:text-indigo-600" />
+                          <Camera class="w-8 h-8 text-teal-400 group-hover:text-teal-600" />
                           <p class="pt-1 text-sm tracking-wider text-gray-600 group-hover:text-gray-600">
                             Upload contestant photos
                           </p>
@@ -1523,7 +1523,7 @@
                     </button>
                     <button
                       type="submit"
-                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
                     >
                       {{ editingContestant ? 'Save Changes' : 'Add Contestant' }}
                     </button>
@@ -1565,7 +1565,7 @@
             <button
               type="button"
               @click="closeDeleteContestantModal"
-              class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
             >
               Cancel
             </button>
@@ -1573,7 +1573,7 @@
               type="button"
               @click="deleteContestant"
               :disabled="deleteContestantProcessing"
-              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ deleteContestantProcessing ? 'Removing...' : 'Remove Contestant' }}
             </button>
@@ -1634,7 +1634,7 @@
                           id="roundName"
                           v-model="roundForm.name"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. Production Number, Q&A, Evening Gown"
                           required
                         />
@@ -1648,7 +1648,7 @@
                         <select
                           id="roundType"
                           v-model="roundForm.type"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           required
                         >
                           <option value="semi-final">Semi-Final</option>
@@ -1666,7 +1666,7 @@
                           v-model="roundForm.identifier"
                           type="text"
                           maxlength="50"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. SF1, F, Q1"
                         />
                         <p class="mt-1 text-xs text-gray-500">Unique identifier for this round (optional)</p>
@@ -1682,7 +1682,7 @@
                           type="number"
                           min="1"
                           max="100"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 40"
                           required
                         />
@@ -1700,7 +1700,7 @@
                           id="roundDescription"
                           v-model="roundForm.description"
                           rows="4"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="Describe what this round involves..."
                         ></textarea>
                         <p class="mt-1 text-xs text-gray-500">Optional description of this round</p>
@@ -1715,7 +1715,7 @@
                           v-model.number="roundForm.display_order"
                           type="number"
                           min="0"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 1"
                         />
                         <p class="mt-1 text-xs text-gray-500">Order in which this round appears (0 = first)</p>
@@ -1734,7 +1734,7 @@
                     <button
                       type="submit"
                       :disabled="roundForm.processing"
-                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {{ roundForm.processing ? 'Saving...' : (editingRound ? 'Save Changes' : 'Add Round') }}
                     </button>
@@ -1799,7 +1799,7 @@
                           id="criteriaName"
                           v-model="criteriaForm.name"
                           type="text"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. Beauty, Poise, Intelligence"
                           required
                         />
@@ -1816,7 +1816,7 @@
                           type="number"
                           min="1"
                           max="100"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 30"
                           required
                         />
@@ -1833,7 +1833,7 @@
                             v-model.number="criteriaForm.min_score"
                             type="number"
                             step="0.01"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                             placeholder="0"
                             required
                           />
@@ -1847,7 +1847,7 @@
                             v-model.number="criteriaForm.max_score"
                             type="number"
                             step="0.01"
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                             placeholder="100"
                             required
                           />
@@ -1865,7 +1865,7 @@
                           id="criteriaDescription"
                           v-model="criteriaForm.description"
                           rows="4"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="Describe what judges should evaluate..."
                         ></textarea>
                         <p class="mt-1 text-xs text-gray-500">Optional description for judges</p>
@@ -1876,7 +1876,7 @@
                           <input
                             v-model="criteriaForm.allow_decimals"
                             type="checkbox"
-                            class="rounded border-gray-300 text-orange-600 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
+                            class="rounded border-gray-300 text-teal-600 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50"
                           />
                           <span class="ml-2 text-sm text-gray-700">Allow decimal scores</span>
                         </label>
@@ -1892,7 +1892,7 @@
                           type="number"
                           min="1"
                           max="4"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="2"
                         />
                         <p class="mt-1 text-xs text-gray-500">Number of decimal places allowed</p>
@@ -1907,7 +1907,7 @@
                           v-model.number="criteriaForm.display_order"
                           type="number"
                           min="0"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="0"
                         />
                         <p class="mt-1 text-xs text-gray-500">Order in which this criteria appears</p>
@@ -1926,7 +1926,7 @@
                     <button
                       type="submit"
                       :disabled="criteriaForm.processing"
-                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {{ criteriaForm.processing ? 'Saving...' : (editingCriteria ? 'Save Changes' : 'Add Criteria') }}
                     </button>
@@ -1983,14 +1983,14 @@
             >
               <DialogPanel class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
                 <!-- Modal Header -->
-                <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5">
+                <div class="bg-gradient-to-r from-teal-500 to-orange-600 px-6 py-5">
                   <DialogTitle as="h3" class="text-xl font-semibold text-white flex items-center">
                     <div class="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
                       <User class="h-6 w-6 text-white" />
                     </div>
                     Create New Tabulator Account
                   </DialogTitle>
-                  <p class="text-orange-50 text-sm mt-2">
+                  <p class="text-teal-50 text-sm mt-2">
                     Create a new tabulator account for this pageant
                   </p>
                 </div>
@@ -2005,7 +2005,7 @@
                       v-model="createTabulatorForm.name"
                       type="text"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Enter full name"
                     />
                     <p v-if="createTabulatorForm.errors.name" class="mt-2 text-sm text-red-600 flex items-center">
@@ -2022,7 +2022,7 @@
                       v-model="createTabulatorForm.username"
                       type="text"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Enter username"
                     />
                     <p v-if="createTabulatorForm.errors.username" class="mt-2 text-sm text-red-600 flex items-center">
@@ -2039,7 +2039,7 @@
                       v-model="createTabulatorForm.email"
                       type="email"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="email@example.com"
                     />
                     <p class="mt-1.5 text-xs text-gray-500">Used for login and notifications</p>
@@ -2057,7 +2057,7 @@
                       v-model="createTabulatorForm.password"
                       type="password"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Enter password (min. 6 characters)"
                     />
                     <p v-if="createTabulatorForm.errors.password" class="mt-2 text-sm text-red-600 flex items-center">
@@ -2074,7 +2074,7 @@
                       v-model="createTabulatorForm.password_confirmation"
                       type="password"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Re-enter password"
                     />
                     <p v-if="createTabulatorForm.errors.password_confirmation" class="mt-2 text-sm text-red-600 flex items-center">
@@ -2090,7 +2090,7 @@
                       id="tabulator-notes"
                       v-model="createTabulatorForm.notes"
                       rows="3"
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Add any notes about this tabulator"
                     ></textarea>
                   </div>
@@ -2101,14 +2101,14 @@
                       type="button"
                       @click="closeCreateTabulatorModal"
                       :disabled="createTabulatorForm.processing"
-                      class="px-5 py-2.5 border border-gray-300 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 transition-colors"
+                      class="px-5 py-2.5 border border-gray-300 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       :disabled="createTabulatorForm.processing"
-                      class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <Save v-if="!createTabulatorForm.processing" class="h-5 w-5 mr-2" />
                       {{ createTabulatorForm.processing ? 'Creating...' : 'Create Tabulator' }}
@@ -2148,14 +2148,14 @@
             >
               <DialogPanel class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
                 <!-- Modal Header -->
-                <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5">
+                <div class="bg-gradient-to-r from-teal-500 to-orange-600 px-6 py-5">
                   <DialogTitle as="h3" class="text-xl font-semibold text-white flex items-center">
                     <div class="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
                       <User class="h-6 w-6 text-white" />
                     </div>
                     Create New Tabulator Account
                   </DialogTitle>
-                  <p class="text-orange-50 text-sm mt-2">
+                  <p class="text-teal-50 text-sm mt-2">
                     Create a new tabulator account for this pageant
                   </p>
                 </div>
@@ -2170,7 +2170,7 @@
                       v-model="createTabulatorForm.name"
                       type="text"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Enter full name"
                     />
                     <p v-if="createTabulatorForm.errors.name" class="mt-2 text-sm text-red-600 flex items-center">
@@ -2187,7 +2187,7 @@
                       v-model="createTabulatorForm.username"
                       type="text"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Enter username"
                     />
                     <p v-if="createTabulatorForm.errors.username" class="mt-2 text-sm text-red-600 flex items-center">
@@ -2204,7 +2204,7 @@
                       v-model="createTabulatorForm.email"
                       type="email"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="email@example.com"
                     />
                     <p class="mt-1.5 text-xs text-gray-500">Used for login and notifications</p>
@@ -2222,7 +2222,7 @@
                       v-model="createTabulatorForm.password"
                       type="password"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Enter password (min. 6 characters)"
                     />
                     <p v-if="createTabulatorForm.errors.password" class="mt-2 text-sm text-red-600 flex items-center">
@@ -2239,7 +2239,7 @@
                       v-model="createTabulatorForm.password_confirmation"
                       type="password"
                       required
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Re-enter password"
                     />
                     <p v-if="createTabulatorForm.errors.password_confirmation" class="mt-2 text-sm text-red-600 flex items-center">
@@ -2255,7 +2255,7 @@
                       id="tabulator-notes"
                       v-model="createTabulatorForm.notes"
                       rows="3"
-                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base transition-colors"
+                      class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-base transition-colors"
                       placeholder="Add any notes about this tabulator"
                     ></textarea>
                   </div>
@@ -2266,14 +2266,14 @@
                       type="button"
                       @click="closeCreateTabulatorModal"
                       :disabled="createTabulatorForm.processing"
-                      class="px-5 py-2.5 border border-gray-300 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 transition-colors"
+                      class="px-5 py-2.5 border border-gray-300 rounded-lg text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       :disabled="createTabulatorForm.processing"
-                      class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      class="inline-flex items-center px-5 py-2.5 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       <Save v-if="!createTabulatorForm.processing" class="h-5 w-5 mr-2" />
                       {{ createTabulatorForm.processing ? 'Creating...' : 'Create Tabulator' }}
@@ -2910,9 +2910,9 @@ const getStatusClass = (status) => {
     case 'Draft':
       return { badge: 'bg-gray-100 text-gray-800' }
     case 'Ongoing':
-      return { badge: 'bg-green-100 text-green-800' }
+      return { badge: 'bg-teal-100 text-teal-800' }
     case 'Completed':
-      return { badge: 'bg-purple-100 text-purple-800' }
+      return { badge: 'bg-teal-100 text-teal-800' }
     default:
       return { badge: 'bg-gray-100 text-gray-800' }
   }
@@ -2964,17 +2964,17 @@ const getContestantTypeClass = (type) => {
   switch (type) {
     case 'solo':
       return { 
-        badge: 'bg-blue-100 text-blue-800',
+        badge: 'bg-teal-100 text-teal-800',
         icon: User
       }
     case 'pairs':
       return { 
-        badge: 'bg-emerald-100 text-emerald-800',
+        badge: 'bg-teal-100 text-teal-800',
         icon: Users
       }
     case 'both':
       return { 
-        badge: 'bg-purple-100 text-purple-800',
+        badge: 'bg-teal-100 text-teal-800',
         icon: Users
       }
     default:
