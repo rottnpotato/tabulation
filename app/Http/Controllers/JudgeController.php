@@ -66,6 +66,7 @@ class JudgeController extends Controller
                     'pageant_date' => $pageant->pageant_date,
                     'venue' => $pageant->venue,
                     'location' => $pageant->location,
+                    'cover_image' => $pageant->cover_image,
                     'contestants_count' => $pageant->contestants->count(),
                     'rounds_count' => $pageant->rounds->count(),
                     'scoring_progress' => $progressPercentage,

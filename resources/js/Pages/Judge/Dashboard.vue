@@ -1,245 +1,216 @@
 <template>
-  <div class="space-y-8">
-    <!-- Header Section -->
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-600 via-teal-600 to-teal-700 shadow-xl">
-      <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_1px_1px,#fff_1px,transparent_1px)] [background-size:20px_20px]"></div>
-      <div class="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
-      <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-teal-400 opacity-10 rounded-full blur-3xl"></div>
-      
-      <div class="relative p-8 md:p-12">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-          <div class="text-white space-y-2">
-            <div class="flex items-center gap-3">
-              <h1 class="text-3xl md:text-4xl font-black tracking-tight">Judge Dashboard</h1>
-              <span class="inline-flex items-center text-xs font-bold px-3 py-1 rounded-full bg-white/20 border border-white/30 backdrop-blur-sm shadow-sm">
-                Judge Panel
-              </span>
-            </div>
-            <p class="text-teal-100 text-lg font-light">Welcome back, <span class="font-semibold text-white">{{ judge.name }}</span>.</p>
-            <p class="text-sm text-teal-200 max-w-xl">Review and score contestants across your assigned pageants with precision and clarity.</p>
-          </div>
-          
-          <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md rounded-2xl px-5 py-4 border border-white/20 shadow-inner">
-            <div class="p-2 bg-white/20 rounded-xl">
-              <User class="h-6 w-6 text-white" />
-            </div>
-            <div class="text-teal-50 leading-tight">
-              <div class="text-sm font-bold text-white">{{ judge.email }}</div>
-              <div class="text-xs opacity-80 flex items-center gap-1">
-                <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                Active Session
-              </div>
-            </div>
-          </div>
+  <div class="min-h-screen bg-slate-50/50 pb-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header Section -->
+      <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
+        <!-- Abstract Background Pattern -->
+        <div class="absolute inset-0">
+          <div class="absolute inset-0 bg-gradient-to-br from-teal-50 via-teal-50/50 to-white opacity-90"></div>
+          <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+          <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
         </div>
-      </div>
-    </div>
 
-    <!-- Tools: Search / Filter / Sort -->
-    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-1">
-      <div class="flex flex-col lg:flex-row gap-2 p-2">
-        <div class="flex-1 relative group">
-          <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
-          <input
-            id="search"
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search pageants, venue, location…"
-            class="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
-          />
-        </div>
-        
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
-          <div class="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
-            <div class="px-3 py-2 text-slate-500">
-              <Filter class="h-4 w-4" />
-            </div>
-            <select v-model="statusFilter" class="bg-transparent border-none text-sm font-medium text-slate-700 focus:ring-0 cursor-pointer py-2 pr-8 pl-0">
-              <option value="all">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="SETUP">Setup</option>
-              <option value="DRAFT">Draft</option>
-              <option value="PENDING_APPROVAL">Pending</option>
-              <option value="COMPLETED">Completed</option>
-            </select>
-          </div>
-
-          <div class="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
-            <div class="px-3 py-2 text-slate-500">
-              <ArrowUpDown class="h-4 w-4" />
-            </div>
-            <select v-model="sortKey" class="bg-transparent border-none text-sm font-medium text-slate-700 focus:ring-0 cursor-pointer py-2 pr-8 pl-0">
-              <option value="date">Date</option>
-              <option value="progress">Progress</option>
-              <option value="name">Name</option>
-            </select>
-            <button 
-              @click="toggleSortDir" 
-              type="button" 
-              class="ml-1 p-2 rounded-lg hover:bg-white hover:shadow-sm text-slate-500 transition-all"
-              :title="sortDir === 'asc' ? 'Ascending' : 'Descending'"
-            >
-              <span v-if="sortDir === 'desc'">↓</span>
-              <span v-else>↑</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- No Pageants State -->
-    <div v-if="pageants.length === 0" class="relative text-center py-24">
-      <div class="absolute inset-0 bg-gradient-to-b from-teal-50/50 to-transparent rounded-3xl"></div>
-      <div class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-teal-100 p-12 max-w-2xl mx-auto">
-        <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-teal-50 mb-6 shadow-inner">
-          <Calendar class="h-10 w-10 text-teal-600" />
-        </div>
-        <h3 class="text-2xl font-bold text-slate-900 mb-3">No Pageants Assigned</h3>
-        <p class="text-slate-600 mb-8 max-w-md mx-auto leading-relaxed">
-          You haven't been assigned to any pageants yet. Once a tabulator assigns you, they will appear here automatically.
-        </p>
-        <button
-          @click="refreshData"
-          class="inline-flex items-center px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl shadow-lg shadow-teal-600/20 hover:shadow-teal-600/30 transition-all duration-200 transform hover:-translate-y-0.5"
-        >
-          <RefreshCw class="w-5 h-5 mr-2" />
-          Refresh Dashboard
-        </button>
-      </div>
-    </div>
-
-    <!-- Pageants Grid -->
-    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div
-        v-for="pageant in displayedPageants"
-        :key="pageant.id"
-        class="group bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-xl hover:border-teal-200 transition-all duration-300 flex flex-col"
-      >
-        <!-- Pageant Header -->
-        <div class="p-7 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex-1 min-w-0 space-y-3">
-              <div class="flex flex-wrap gap-2">
-                <span
-                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase"
-                  :class="getStatusClass(pageant.status)"
-                >
-                  {{ formatStatus(pageant.status) }}
-                </span>
-                <span v-if="pageant.pageant_date" class="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
-                  <Calendar class="h-3 w-3 mr-1.5" />
-                  {{ formatDate(pageant.pageant_date) }}
+        <div class="relative z-10 p-8">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div class="space-y-2">
+              <div class="flex items-center gap-3">
+                <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Judge Dashboard</h1>
+                <span class="inline-flex items-center text-xs font-bold px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
+                  Judge Panel
                 </span>
               </div>
-              
-              <h3 class="text-xl font-bold text-slate-900 leading-tight group-hover:text-teal-600 transition-colors">
-                {{ pageant.name }}
-              </h3>
-              <p v-if="pageant.description" class="text-sm text-slate-500 line-clamp-2 leading-relaxed">
-                {{ pageant.description }}
+              <p class="text-slate-500 text-lg font-light">
+                Welcome back, <span class="font-semibold text-slate-900">{{ judge.name }}</span>.
+              </p>
+              <p class="text-sm text-slate-400 max-w-xl">
+                Review and score contestants across your assigned pageants with precision and clarity.
               </p>
             </div>
 
-            <div class="text-right pl-4">
-              <div class="relative inline-flex items-center justify-center">
-                <svg class="w-16 h-16 transform -rotate-90">
-                  <circle
-                    class="text-slate-100"
-                    stroke-width="6"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="28"
-                    cx="32"
-                    cy="32"
-                  />
-                  <circle
-                    class="transition-all duration-1000 ease-out"
-                    :class="getProgressColor(pageant.scoring_progress)"
-                    stroke-width="6"
-                    :stroke-dasharray="175.9"
-                    :stroke-dashoffset="175.9 - (175.9 * pageant.scoring_progress) / 100"
-                    stroke-linecap="round"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r="28"
-                    cx="32"
-                    cy="32"
-                  />
-                </svg>
-                <span class="absolute text-xs font-bold text-slate-700">
-                  {{ pageant.scoring_progress }}%
-                </span>
+            <div class="flex items-center gap-4 bg-white/60 backdrop-blur-md rounded-2xl px-5 py-4 border border-teal-100 shadow-sm">
+              <div class="p-2 bg-teal-50 rounded-xl">
+                <User class="h-6 w-6 text-teal-600" />
+              </div>
+              <div class="leading-tight">
+                <div class="text-sm font-bold text-slate-900">{{ judge.email }}</div>
+                <div class="text-xs text-slate-500 flex items-center gap-1">
+                  <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  Active Session
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Pageant Body -->
-        <div class="p-7 flex-grow flex flex-col">
-          <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
-              <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Contestants</div>
-              <div class="text-lg font-bold text-slate-900">{{ pageant.contestants_count }}</div>
+      <!-- Tools: Search / Filter / Sort -->
+      <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-2 mb-8 relative z-20">
+        <div class="flex flex-col lg:flex-row gap-2">
+          <div class="flex-1 relative group">
+            <Search class="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-teal-400/70 group-focus-within:text-teal-500 transition-colors" />
+            <input
+              id="search"
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search pageants, venue, location…"
+              class="w-full pl-12 pr-4 py-3 rounded-xl bg-white border border-teal-100 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all text-sm font-medium text-teal-900 placeholder:text-teal-400/60 shadow-sm"
+            />
+          </div>
+          
+          <div class="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0">
+            <div class="flex items-center bg-white rounded-xl p-1 border border-teal-100 shadow-sm">
+              <div class="px-3 py-2 text-teal-500">
+                <Filter class="h-4 w-4" />
+              </div>
+              <select v-model="statusFilter" class="bg-transparent border-none text-sm font-medium text-teal-900 focus:ring-0 cursor-pointer py-2 pr-8 pl-0">
+                <option value="all">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="SETUP">Setup</option>
+                <option value="DRAFT">Draft</option>
+                <option value="PENDING_APPROVAL">Pending</option>
+                <option value="COMPLETED">Completed</option>
+              </select>
             </div>
-            <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
-              <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Rounds</div>
-              <div class="text-lg font-bold text-slate-900">{{ pageant.rounds_count }}</div>
-            </div>
-            <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
-              <div class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Scores Left</div>
-              <div class="text-lg font-bold text-slate-900">{{ Math.max(0, pageant.total_scores_needed - pageant.scores_submitted) }}</div>
+
+            <div class="flex items-center bg-white rounded-xl p-1 border border-teal-100 shadow-sm">
+              <div class="px-3 py-2 text-teal-500">
+                <ArrowUpDown class="h-4 w-4" />
+              </div>
+              <select v-model="sortKey" class="bg-transparent border-none text-sm font-medium text-teal-900 focus:ring-0 cursor-pointer py-2 pr-8 pl-0">
+                <option value="date">Date</option>
+                <option value="progress">Progress</option>
+                <option value="name">Name</option>
+              </select>
+              <button 
+                @click="toggleSortDir" 
+                type="button" 
+                class="ml-1 p-2 rounded-lg hover:bg-teal-50 text-teal-500 transition-all"
+                :title="sortDir === 'asc' ? 'Ascending' : 'Descending'"
+              >
+                <span v-if="sortDir === 'desc'">↓</span>
+                <span v-else>↑</span>
+              </button>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Venue Info -->
-          <div v-if="pageant.venue || pageant.location" class="space-y-2 mb-6">
-            <div v-if="pageant.venue" class="flex items-center text-sm text-slate-600">
-              <div class="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center mr-3 text-teal-500">
-                <MapPin class="h-4 w-4" />
+      <!-- No Pageants State -->
+      <div v-if="pageants.length === 0" class="relative text-center py-24">
+        <div class="absolute inset-0 bg-gradient-to-b from-teal-50/50 to-transparent rounded-3xl"></div>
+        <div class="relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-teal-100 p-12 max-w-2xl mx-auto">
+          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-teal-50 mb-6 shadow-inner">
+            <Calendar class="h-10 w-10 text-teal-600" />
+          </div>
+          <h3 class="text-2xl font-bold text-teal-900 mb-3">No Pageants Assigned</h3>
+          <p class="text-teal-600/80 mb-8 max-w-md mx-auto leading-relaxed">
+            You haven't been assigned to any pageants yet. Once a tabulator assigns you, they will appear here automatically.
+          </p>
+          <button
+            @click="refreshData"
+            class="inline-flex items-center px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl shadow-lg shadow-teal-600/20 hover:shadow-teal-600/30 transition-all duration-200 transform hover:-translate-y-0.5"
+          >
+            <RefreshCw class="w-5 h-5 mr-2" />
+            Refresh Dashboard
+          </button>
+        </div>
+      </div>
+
+      <!-- Pageants Grid -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div
+          v-for="pageant in displayedPageants"
+          :key="pageant.id"
+          class="group relative flex flex-col bg-teal-950 rounded-[2rem] overflow-hidden shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-teal-900/50"
+        >
+          <!-- Image / Cover Area -->
+          <div class="relative h-64 w-full overflow-hidden">
+            <!-- Cover Image or Gradient -->
+            <div 
+              v-if="pageant.cover_image"
+              class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+              :style="{ backgroundImage: `url(${pageant.cover_image})` }"
+            ></div>
+            <div 
+              v-else
+              class="absolute inset-0 bg-gradient-to-br from-teal-500 via-emerald-600 to-cyan-600 group-hover:scale-110 transition-transform duration-700"
+            ></div>
+            
+            <!-- Dark Overlay for text readability if image exists -->
+            <div class="absolute inset-0 bg-gradient-to-t from-teal-950/90 via-teal-950/40 to-transparent opacity-60"></div>
+            
+            <!-- Decorative Pattern overlay (only for gradient) -->
+            <div v-if="!pageant.cover_image" class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_1px_1px,#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+            
+            <!-- Top Right: Progress Indicator -->
+            <div class="absolute top-4 right-4">
+              <div class="relative flex items-center justify-center w-12 h-12 bg-black/30 backdrop-blur-md rounded-full border border-white/10 shadow-lg">
+                 <span class="text-xs font-bold text-white">{{ pageant.scoring_progress }}%</span>
+                 <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
+                    <path class="text-white/20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3" />
+                    <path class="text-teal-400 transition-all duration-1000 ease-out" :stroke-dasharray="pageant.scoring_progress + ', 100'" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3" />
+                 </svg>
               </div>
-              <span class="font-medium">{{ pageant.venue }}</span>
             </div>
-            <div v-if="pageant.location" class="flex items-center text-sm text-slate-600">
-              <div class="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center mr-3 text-teal-500">
-                <Globe class="h-4 w-4" />
-              </div>
-              <span class="font-medium">{{ pageant.location }}</span>
-            </div>
+
+            <!-- Status Badge (Top Left) -->
+             <div class="absolute top-4 left-4">
+                <span 
+                  class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border border-white/10 shadow-sm"
+                  :class="getStatusBadgeClass(pageant.status)"
+                >
+                  {{ formatStatus(pageant.status) }}
+                </span>
+             </div>
           </div>
 
-          <div class="mt-auto space-y-4">
-            <!-- Current Round Status -->
-            <div v-if="pageant.current_round" class="p-4 bg-teal-50/50 border border-teal-100 rounded-2xl">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-bold text-teal-600 uppercase tracking-wide">Current Round</span>
-                <span v-if="pageant.current_round.is_locked" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-600">
-                  LOCKED
-                </span>
-                <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                  ACTIVE
-                </span>
-              </div>
-              <div class="font-semibold text-slate-900">
-                {{ pageant.current_round.name }}
+          <!-- Content Body -->
+          <div class="p-6 flex flex-col flex-grow gap-4">
+            <!-- Title & Meta -->
+            <div class="flex justify-between items-start gap-2">
+              <h3 class="text-2xl font-bold text-white leading-tight">{{ pageant.name }}</h3>
+              <!-- Date Pill -->
+              <div v-if="pageant.pageant_date" class="shrink-0 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-white text-xs font-bold backdrop-blur-sm">
+                 {{ formatDateShort(pageant.pageant_date) }}
               </div>
             </div>
 
-            <!-- Actions -->
-            <div class="flex">
+            <!-- Description -->
+            <p v-if="pageant.description" class="text-teal-200/70 text-sm line-clamp-2 leading-relaxed">
+              {{ pageant.description }}
+            </p>
+
+            <!-- Tags / Stats Row -->
+            <div class="flex flex-wrap gap-2 mt-auto">
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-900/50 text-teal-100 text-xs font-medium border border-teal-800/50">
+                 <User class="w-3.5 h-3.5 text-teal-400" />
+                 {{ pageant.contestants_count }} Contestants
+              </div>
+              <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-900/50 text-teal-100 text-xs font-medium border border-teal-800/50">
+                 <Layers class="w-3.5 h-3.5 text-teal-400" />
+                 {{ pageant.rounds_count }} Rounds
+              </div>
+               <div v-if="pageant.venue" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-900/50 text-teal-100 text-xs font-medium border border-teal-800/50">
+                 <MapPin class="w-3.5 h-3.5 text-teal-400" />
+                 {{ pageant.venue }}
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="pt-2">
               <Link
                 v-if="pageant.id && pageant.rounds_count > 0"
                 :href="getScoringUrl(pageant.id)"
-                prefetch
-                class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 hover:bg-teal-600 text-white text-sm font-bold rounded-xl transition-all duration-200 shadow-lg shadow-slate-900/10 hover:shadow-teal-600/20 group-hover:translate-y-0"
+                class="w-full py-3.5 bg-white hover:bg-teal-50 text-teal-950 font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-white/5 group-hover:scale-[1.02]"
               >
-                <Star class="h-4 w-4 mr-2" />
+                <Star class="w-4 h-4 text-teal-900" />
                 {{ pageant.current_round ? 'Continue Scoring' : 'Start Scoring' }}
               </Link>
               <div
                 v-else
-                class="w-full inline-flex items-center justify-center px-6 py-3.5 bg-slate-100 text-slate-400 text-sm font-bold rounded-xl cursor-not-allowed"
+                class="w-full py-3.5 bg-teal-900/40 text-teal-500/50 font-bold rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-teal-900/50"
               >
-                <Star class="h-4 w-4 mr-2" />
+                <Star class="w-4 h-4" />
                 No Rounds Available
               </div>
             </div>
@@ -262,7 +233,8 @@ import {
   Globe,
   Search,
   Filter,
-  ArrowUpDown
+  ArrowUpDown,
+  Layers
 } from 'lucide-vue-next'
 import JudgeLayout from '../../Layouts/JudgeLayout.vue'
 
@@ -315,29 +287,42 @@ const formatDate = (dateString) => {
   })
 }
 
+const formatDateShort = (dateString) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
 const formatStatus = (status) => {
   if (!status) return 'Unknown'
   return status.replace(/_/g, ' ')
 }
 
-const getStatusClass = (status) => {
+const getStatusBadgeClass = (status) => {
   const normalized = (status || '').toString().trim().toUpperCase().replace(/\s+/g, '_')
   const map = {
-    DRAFT: 'bg-slate-100 text-slate-600',
-    SETUP: 'bg-teal-100 text-teal-700',
-    ACTIVE: 'bg-emerald-100 text-emerald-700',
-    COMPLETED: 'bg-teal-100 text-teal-700',
-    PENDING_APPROVAL: 'bg-amber-100 text-amber-700'
+    DRAFT: 'bg-slate-500/20 text-slate-200 border-slate-500/30',
+    SETUP: 'bg-teal-500/20 text-teal-200 border-teal-500/30',
+    ACTIVE: 'bg-teal-400/20 text-teal-100 border-teal-400/30 shadow-[0_0_10px_rgba(45,212,191,0.2)]',
+    ONGOING: 'bg-teal-400/20 text-teal-100 border-teal-400/30 shadow-[0_0_10px_rgba(45,212,191,0.2)]',
+    COMPLETED: 'bg-cyan-500/20 text-cyan-200 border-cyan-500/30',
+    PENDING_APPROVAL: 'bg-amber-500/20 text-amber-200 border-amber-500/30'
   }
-  return map[normalized] || 'bg-slate-100 text-slate-600'
+  return map[normalized] || 'bg-slate-500/20 text-slate-200 border-slate-500/30'
+}
+
+const getStatusClass = (status) => {
+  // Kept for backward compatibility if needed, though getStatusBadgeClass is preferred for new cards
+  return getStatusBadgeClass(status)
 }
 
 const getProgressColor = (progress) => {
-  if (progress >= 100) return 'text-emerald-500'
-  if (progress >= 80) return 'text-teal-500'
+  if (progress >= 100) return 'text-teal-300'
+  if (progress >= 80) return 'text-teal-400'
   if (progress >= 60) return 'text-teal-500'
-  if (progress >= 40) return 'text-teal-500'
-  return 'text-slate-300'
+  if (progress >= 40) return 'text-teal-600'
+  return 'text-teal-800'
 }
 
 // Derived list with search / filter / sort
@@ -388,7 +373,27 @@ const toggleSortDir = () => {
 }
 </script>
 
-<style>
+<style scoped>
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

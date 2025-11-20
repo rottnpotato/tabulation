@@ -1,7 +1,17 @@
 <template>
-  <div class="h-screen bg-[#F8FAFC] flex flex-col overflow-hidden selection:bg-teal-500 selection:text-white font-sans">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-slate-200 text-slate-800 font-sans selection:bg-teal-500 selection:text-white overflow-x-hidden relative">
+    
+    <!-- Dynamic Background -->
+    <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-teal-500/20 blur-[120px] animate-blob"></div>
+        <div class="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/20 blur-[120px] animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-[-10%] left-[20%] w-[40%] h-[40%] rounded-full bg-sky-500/20 blur-[120px] animate-blob animation-delay-4000"></div>
+        <!-- CSS Noise Pattern -->
+        <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 24px 24px;"></div>
+    </div>
+
     <!-- Real-time Loading Overlay -->
-    <div v-if="realtimeLoading" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-50">
+    <div v-if="realtimeLoading" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-[100]">
       <div class="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center space-y-4 animate-in fade-in zoom-in duration-200">
         <div class="relative">
           <div class="w-12 h-12 border-4 border-teal-100 rounded-full"></div>
@@ -11,324 +21,308 @@
       </div>
     </div>
 
-    <!-- Header Section -->
-    <div class="bg-white/80 backdrop-blur-xl border-b border-slate-200 z-30 shrink-0 sticky top-0 supports-[backdrop-filter]:bg-white/60">
-      <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-5">
-        <!-- Left: Navigation & Context -->
-        <div class="flex items-center gap-5 min-w-0">
-          <Link :href="route('judge.dashboard')" 
-            class="group flex items-center justify-center w-12 h-12 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-teal-600 hover:border-teal-200 hover:bg-teal-50 transition-all shadow-sm shrink-0"
-          >
-            <ChevronLeft class="w-6 h-6 transition-transform group-hover:-translate-x-0.5" />
-          </Link>
-          
-          <div class="flex flex-col min-w-0 justify-center">
-            <div class="flex items-center gap-2 text-xs font-bold tracking-wider text-teal-500 uppercase leading-none mb-1.5">
-              <span>Judge Panel</span>
-              <span class="w-1 h-1 rounded-full bg-teal-300"></span>
-              <span class="truncate max-w-[200px]">{{ pageant?.name }}</span>
-            </div>
-            <div class="flex items-center gap-3 min-w-0 leading-none">
-              <h1 class="text-2xl font-black text-slate-900 truncate tracking-tight">
-                {{ currentRound?.name || 'Loading...' }}
-              </h1>
-              <span v-if="currentRound?.identifier" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-mono text-slate-600 font-bold">
-                {{ currentRound.identifier }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Status & Tools -->
-        <div class="flex items-center gap-4 shrink-0">
-          <!-- Round Status -->
-          <div v-if="currentRound" class="hidden md:flex items-center">
-            <div v-if="pageant.current_round_id === currentRound.id && !currentRound.is_locked" 
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 text-sm font-bold uppercase tracking-wider border border-emerald-100 shadow-sm">
-              <span class="relative flex h-2.5 w-2.5">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              Live
-            </div>
-            <div v-if="currentRound.is_locked" 
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-sm font-bold uppercase tracking-wider border border-slate-200 shadow-sm">
-              <Lock class="w-4 h-4" />
-              Locked
-            </div>
-          </div>
-
-          <!-- Round Switcher -->
-          <div v-if="rounds.length > 0" class="w-56 hidden md:block">
-            <CustomSelect
-              v-model="currentRoundId"
-              :options="roundOptions"
-              :disabled="isLoading || !isChannelReady"
-              variant="teal"
-              placeholder="Switch Round"
-              @change="handleRoundChange"
-              class="shadow-sm"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Content Area (Split View) -->
-    <div class="flex-1 flex overflow-hidden relative">
-      
-      <!-- Error State -->
-      <div v-if="error" class="absolute inset-0 z-50 bg-slate-50 flex items-center justify-center p-8">
-        <div class="bg-white border border-red-100 rounded-3xl p-8 text-center shadow-xl max-w-md">
-          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle class="h-8 w-8 text-red-600" />
-          </div>
-          <h3 class="text-lg font-bold text-red-900 mb-2">Unable to Load Scoring Interface</h3>
-          <p class="text-red-600 mb-6">{{ error }}</p>
-          <Link :href="route('judge.dashboard')" class="btn-primary">Return to Dashboard</Link>
-        </div>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="contestants.length === 0" class="absolute inset-0 z-50 bg-slate-50 flex items-center justify-center p-8">
-        <div class="text-center">
-          <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Users class="w-10 h-10 text-slate-400" />
-          </div>
-          <h3 class="text-xl font-bold text-slate-900 mb-2">No Contestants Found</h3>
-          <p class="text-slate-500">There are no contestants assigned to this round yet.</p>
-        </div>
-      </div>
-
-      <!-- Content Split -->
-      <template v-else>
-        <!-- Left Panel: Contestant Visuals (Immersive) -->
-        <div class="hidden lg:flex w-5/12 bg-slate-900 relative flex-col justify-end overflow-hidden group">
-          <!-- Background Image with Blur -->
-          <div class="absolute inset-0 transition-all duration-700 ease-in-out transform scale-105 group-hover:scale-100">
-            <img :src="activeContestant.image" class="w-full h-full object-cover opacity-40 blur-sm" />
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-900/30"></div>
-          </div>
-
-          <!-- Main Content Container -->
-          <div class="relative z-10 w-full h-full flex flex-col items-center justify-center p-4">
-            
-            <!-- Contestant Card -->
-            <div class="relative w-full max-w-sm aspect-[3/4] rounded-[1.5rem] overflow-hidden shadow-2xl ring-1 ring-white/10 transition-all duration-500 transform hover:-translate-y-2 hover:shadow-teal-500/20 group-hover:ring-white/20">
-              <img :src="activeContestant.image" class="w-full h-full object-cover" />
-              
-              <!-- Glassmorphism Overlay -->
-              <div class="absolute bottom-0 inset-x-0 p-4 bg-slate-900/60 backdrop-blur-xl border-t border-white/10">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <h2 class="text-xl font-bold text-white tracking-tight leading-tight mb-0.5 truncate">{{ activeContestant.name }}</h2>
-                    <p class="text-teal-100 font-medium flex items-center gap-1.5 text-xs truncate shadow-sm">
-                      <MapPin class="w-3 h-3 shrink-0" />
-                      {{ activeContestant.origin || 'Unknown Origin' }}
-                    </p>
-                  </div>
-                  <div class="flex flex-col items-center justify-center bg-white/10 backdrop-blur-md rounded-lg p-2 min-w-[3rem] border border-white/10 shrink-0">
-                    <span class="text-[9px] font-bold text-white/60 uppercase tracking-wider">No.</span>
-                    <span class="text-lg font-black text-white leading-none">{{ activeContestant.number }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Navigation Hints -->
-            <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 pointer-events-none">
-              <button 
-                @click="prevContestant" 
-                :disabled="currentIndex === 0"
-                class="p-3 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:scale-110 transition-all pointer-events-auto disabled:opacity-0 cursor-pointer"
-              >
-                <ChevronLeft class="w-6 h-6" />
-              </button>
-              <button 
-                @click="nextContestant" 
-                :disabled="currentIndex === contestants.length - 1"
-                class="p-3 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 text-white/50 hover:text-white hover:bg-white/10 hover:scale-110 transition-all pointer-events-auto disabled:opacity-0 cursor-pointer"
-              >
-                <ChevronRight class="w-6 h-6" />
-              </button>
-            </div>
-
-          </div>
-
-          <!-- Bottom Progress/Dots -->
-          <div class="relative z-20 pb-8 px-12 w-full">
-            <div class="flex items-center gap-2 justify-center">
-              <button 
-                v-for="(c, idx) in contestants" 
-                :key="c.id"
-                @click="currentIndex = idx"
-                class="h-1.5 rounded-full transition-all duration-300"
-                :class="idx === currentIndex ? 'bg-teal-500 w-8' : 'bg-white/20 w-2 hover:bg-white/40'"
-              ></button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Panel: Scoring Mechanism -->
-        <div class="w-full lg:w-7/12 flex flex-col bg-[#F8FAFC] h-full relative">
-          <!-- Mobile Contestant Header -->
-          <div class="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center gap-4 shadow-sm z-20">
-            <div class="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 ring-2 ring-slate-100">
-              <img :src="activeContestant.image" class="w-full h-full object-cover" />
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex justify-between items-start">
-                <h2 class="text-lg font-bold text-slate-900 truncate">{{ activeContestant.name }}</h2>
-                <span class="text-lg font-black text-teal-600">#{{ activeContestant.number }}</span>
-              </div>
-              <p class="text-sm text-slate-500 truncate">{{ activeContestant.origin }}</p>
-            </div>
-          </div>
-
-          <!-- Scrollable Scoring Area -->
-          <div class="flex-1 overflow-y-auto scroll-smooth" id="scoring-container">
-            <div class="max-w-3xl mx-auto p-6 md:p-8 lg:p-10 space-y-8">
-              
-              <!-- Locked Warning -->
-              <div v-if="!canEditScores && currentRound" class="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-                <Lock class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <h3 class="text-sm font-bold text-amber-900">Round Locked</h3>
-                  <p class="text-xs text-amber-700 mt-0.5">Scoring is disabled for this round.</p>
-                </div>
-              </div>
-
-              <!-- Score Sheet Header -->
-              <div class="flex items-end justify-between border-b border-slate-200 pb-6">
-                <div>
-                  <h3 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                    Score Sheet
-                  </h3>
-                  <p class="text-slate-500 mt-1">Rate based on the criteria below.</p>
-                </div>
-                <div class="text-right bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100">
-                  <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Score</div>
-                  <div class="text-4xl font-black tracking-tight tabular-nums leading-none" :class="getAverageScoreColor(currentAverage)">
-                    {{ currentAverage }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Criteria Cards -->
-              <div class="space-y-6">
-                <div 
-                  v-for="criterion in criteria" 
-                  :key="criterion.id" 
-                  class="group bg-white rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-100 transition-all hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-teal-100 relative overflow-hidden"
-                >
-                  <!-- Progress Bar Background -->
-                  <div class="absolute bottom-0 left-0 h-1 bg-teal-500/10 w-full">
-                    <div 
-                      class="h-full bg-teal-500 transition-all duration-500 ease-out"
-                      :style="{ width: `${((scores[`${activeContestant.id}-${criterion.id}`] || 0) / criterion.max_score) * 100}%` }"
-                    ></div>
-                  </div>
-
-                  <div class="flex flex-col gap-6 relative z-10">
-                    <!-- Header -->
-                    <div class="flex items-start justify-between">
-                      <div>
-                        <label class="font-bold text-slate-800 text-lg block group-hover:text-teal-700 transition-colors">{{ criterion.name }}</label>
-                        <div class="flex items-center gap-3 mt-1">
-                          <span class="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500">Weight: {{ criterion.weight }}%</span>
-                          <span class="text-xs font-medium text-slate-400">Range: {{ criterion.min_score }} - {{ criterion.max_score }}</span>
-                        </div>
-                      </div>
-                      <div class="flex items-baseline gap-1">
-                        <span class="text-3xl font-black text-teal-600 tabular-nums tracking-tight">
-                          {{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }}
-                        </span>
-                        <span class="text-slate-400 font-medium text-sm">/ {{ criterion.max_score }}</span>
-                      </div>
+    <!-- Header (Glassmorphism) -->
+    <header class="fixed top-0 inset-x-0 z-40 h-auto min-h-[5rem] pt-2 pb-2 px-4 lg:px-8 flex flex-col md:flex-row items-center justify-between bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-sm transition-all duration-300 supports-[backdrop-filter]:bg-white/60 gap-4">
+        <!-- Left: Back & Title -->
+        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+            <div class="flex items-center gap-4">
+                <Link :href="route('judge.dashboard')" class="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-teal-600 transition-colors shrink-0">
+                    <ChevronLeft class="w-6 h-6" />
+                </Link>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 text-xs font-bold tracking-wider text-teal-600 uppercase truncate">
+                        <span>{{ pageant?.name }}</span>
+                        <span class="w-1 h-1 rounded-full bg-teal-400 shrink-0"></span>
+                        <span>Judge Panel</span>
                     </div>
-                    
-                    <!-- Input Area -->
-                    <div class="bg-slate-50 rounded-xl p-2">
-                      <ScoreInput
+                    <h1 class="text-xl font-black text-slate-800 tracking-tight truncate">{{ currentRound?.name }}</h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Round Navigation (Pills) -->
+        <div class="w-full md:w-auto overflow-x-auto scrollbar-hide pb-1 md:pb-0">
+            <div class="flex items-center gap-2 px-1">
+                <button 
+                    v-for="round in rounds" 
+                    :key="round.id"
+                    @click="handleRoundChange(round.id)"
+                    class="relative px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-2 ring-1 ring-inset"
+                    :class="[
+                        currentRoundId === round.id.toString() 
+                            ? 'bg-slate-800 text-white ring-slate-800 shadow-md transform scale-105' 
+                            : 'bg-white/50 text-slate-600 ring-slate-200 hover:bg-white hover:text-teal-600 hover:ring-teal-200'
+                    ]"
+                >
+                    <span v-if="pageant.current_round_id === round.id && !round.is_locked" class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <Lock v-if="round.is_locked" class="w-3 h-3" />
+                    {{ round.name }}
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="relative z-10 pt-32 md:pt-28 pb-24 min-h-screen flex flex-col lg:flex-row items-stretch justify-center gap-6 px-4 lg:px-8 max-w-[1920px] mx-auto">
+        
+        <!-- Error State -->
+        <div v-if="error" class="absolute inset-0 z-50 bg-slate-50 flex items-center justify-center p-8">
+            <div class="bg-white border border-red-100 rounded-3xl p-8 text-center shadow-xl max-w-md">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle class="h-8 w-8 text-red-600" />
+                </div>
+                <h3 class="text-lg font-bold text-red-900 mb-2">Unable to Load Scoring Interface</h3>
+                <p class="text-red-600 mb-6">{{ error }}</p>
+                <Link :href="route('judge.dashboard')" class="btn-primary">Return to Dashboard</Link>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else-if="contestants.length === 0" class="absolute inset-0 z-50 bg-slate-50 flex items-center justify-center p-8">
+            <div class="text-center">
+                <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Users class="w-10 h-10 text-slate-400" />
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">No Contestants Found</h3>
+                <p class="text-slate-500">There are no contestants assigned to this round yet.</p>
+            </div>
+        </div>
+
+        <template v-else>
+            <!-- Left Scoring Panel -->
+            <div class="hidden lg:flex w-1/4 flex-col gap-3 py-4 overflow-y-auto max-h-[calc(100vh-6rem)] scrollbar-hide pb-20">
+                <div v-for="criterion in leftCriteria" :key="criterion.id" class="bg-white/60 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-white/60 hover:shadow-md hover:bg-white/80 transition-all duration-300 group">
+                    <div class="flex justify-between items-start mb-3">
+                        <label class="font-bold text-slate-700 group-hover:text-teal-700 transition-colors text-sm">{{ criterion.name }}</label>
+                        <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">{{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }} / {{ criterion.max_score }}</span>
+                    </div>
+                    <ScoreInput
                         :min="Number(criterion.min_score)"
                         :max="Number(criterion.max_score)"
                         :step="criterion.allow_decimals ? 0.1 : 1"
                         :allow-decimals="criterion.allow_decimals"
                         :decimal-places="criterion.decimal_places || 1"
                         :disabled="!canEditScores"
+                        :show-slider="false"
                         v-model="scores[`${activeContestant.id}-${criterion.id}`]"
                         @change="(val) => handleScoreChange(val, activeContestant.id, criterion.id, criterion)"
                         class="w-full"
-                      />
-                    </div>
-                  </div>
+                    />
+                    <p class="text-[10px] text-slate-400 mt-2 line-clamp-2" :title="criterion.description">{{ criterion.description }}</p>
                 </div>
-              </div>
-
-              <!-- Notes Section -->
-              <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <label class="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
-                  <span class="p-1 bg-teal-50 rounded text-teal-600"><Target class="w-4 h-4" /></span>
-                  Judge's Notes
-                  <span class="font-normal text-slate-400 ml-auto text-xs">Optional</span>
-                </label>
-                <textarea 
-                  v-model="notes[activeContestant.id]" 
-                  rows="3" 
-                  :disabled="!canEditScores"
-                  class="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-teal-500 focus:ring-teal-500 text-sm resize-none transition-all shadow-sm placeholder:text-slate-400 p-4"
-                  placeholder="Add private comments about this performance..."
-                ></textarea>
-              </div>
-
-              <!-- Spacer -->
-              <div class="h-32"></div>
             </div>
-          </div>
 
-          <!-- Sticky Bottom Action Bar -->
-          <div class="absolute bottom-0 inset-x-0 bg-white/95 backdrop-blur-xl border-t border-slate-200 py-4 px-6 z-30 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.05)]">
-            <div class="max-w-3xl mx-auto flex items-center justify-between gap-4">
-              <!-- Navigation -->
-              <div class="flex items-center gap-3">
-                <button 
-                  @click="prevContestant" 
-                  :disabled="currentIndex === 0"
-                  class="p-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-sm"
-                  title="Previous Contestant"
-                >
-                  <ChevronLeft class="w-5 h-5" />
-                </button>
-                <span class="text-sm font-bold text-slate-400 tabular-nums hidden sm:inline-block min-w-[50px] text-center">
-                  <span class="text-slate-900">{{ currentIndex + 1 }}</span> / {{ contestants.length }}
-                </span>
-                <button 
-                  @click="nextContestant" 
-                  :disabled="currentIndex === contestants.length - 1"
-                  class="p-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-sm"
-                  title="Next Contestant"
-                >
-                  <ChevronRight class="w-5 h-5" />
-                </button>
-              </div>
+            <!-- Center Stage (Carousel) -->
+            <div class="flex-1 flex flex-col items-center justify-center relative min-h-[400px] lg:min-h-[500px]">
+                <!-- Background Text Effect -->
+                <!-- Background Text Effect -->
+                <h2 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15vw] font-black text-slate-900/5 whitespace-nowrap select-none pointer-events-none z-0">
+                    {{ activeContestant.number }}
+                </h2>
 
-              <!-- Submit Actions -->
-              <div class="flex items-center gap-3">
-                <button
-                  @click="submitScores(activeContestant.id, true)"
-                  class="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold text-base rounded-xl shadow-lg shadow-teal-600/20 hover:shadow-teal-600/30 transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none flex items-center gap-2 active:scale-95"
-                  :disabled="!canEditScores || !isContestantScoreComplete(activeContestant.id) || submitLoading[activeContestant.id]"
-                >
-                  <span v-if="submitLoading[activeContestant.id]" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                  <span v-else>Submit Score</span>
-                  <ChevronRight v-if="!submitLoading[activeContestant.id]" class="w-4 h-4 opacity-60" />
+                <!-- Carousel Navigation Buttons -->
+                <button @click="prevContestant" :disabled="currentIndex === 0" class="absolute left-0 lg:-left-4 top-1/2 -translate-y-1/2 z-20 p-3 lg:p-4 rounded-full bg-white/80 backdrop-blur shadow-lg text-slate-600 hover:text-teal-600 hover:scale-110 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-white/50">
+                    <ChevronLeft class="w-6 h-6 lg:w-8 lg:h-8" />
                 </button>
-              </div>
+                <button @click="nextContestant" :disabled="currentIndex === contestants.length - 1" class="absolute right-0 lg:-right-4 top-1/2 -translate-y-1/2 z-20 p-3 lg:p-4 rounded-full bg-white/80 backdrop-blur shadow-lg text-slate-600 hover:text-teal-600 hover:scale-110 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-white/50">
+                    <ChevronRight class="w-6 h-6 lg:w-8 lg:h-8" />
+                </button>
+
+                <!-- Active Card -->
+                <div class="relative z-10 w-full max-w-[300px] sm:max-w-sm lg:max-w-md aspect-[3/4] group cursor-pointer perspective-1000" @click="showDetails = true">
+                    <div class="w-full h-full relative preserve-3d transition-transform duration-500 hover:rotate-y-6 hover:scale-105">
+                        <!-- Image -->
+                        <div class="absolute inset-0 rounded-[2rem] lg:rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-400/20 border-4 border-white bg-white">
+                            <img :src="activeContestant.image" class="w-full h-full object-cover" />
+                            <!-- Overlay Gradient -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-60"></div>
+                        </div>
+                        
+                        <!-- Floating Info -->
+                        <div class="absolute bottom-0 inset-x-0 p-6 flex flex-col items-center text-center">
+                            <h3 class="text-2xl lg:text-3xl font-black text-white leading-none mb-2 drop-shadow-md">{{ activeContestant.name }}</h3>
+                            <p class="text-sm font-bold text-teal-200 flex items-center gap-1 bg-slate-900/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                                <MapPin class="w-3 h-3" /> {{ activeContestant.origin || 'Unknown' }}
+                            </p>
+                        </div>
+
+                        <!-- Number Badge -->
+                        <div class="absolute top-6 right-6 w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white/90 backdrop-blur-md text-slate-900 flex items-center justify-center font-black text-xl lg:text-2xl shadow-lg border border-white/50">
+                            {{ activeContestant.number }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mobile Scoring (Visible only on small screens) -->
+                <div class="lg:hidden w-full mt-12 space-y-4 pb-20">
+                    <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-white/50">
+                        <h3 class="font-bold text-slate-900 mb-4">Scoring Criteria</h3>
+                        <div class="space-y-6">
+                            <div v-for="criterion in criteria" :key="criterion.id" class="space-y-2">
+                                <div class="flex justify-between">
+                                    <label class="text-sm font-medium text-slate-700">{{ criterion.name }}</label>
+                                    <span class="text-xs font-bold text-slate-500">{{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }} / {{ criterion.max_score }}</span>
+                                </div>
+                                <ScoreInput
+                                    :min="Number(criterion.min_score)"
+                                    :max="Number(criterion.max_score)"
+                                    :step="criterion.allow_decimals ? 0.1 : 1"
+                                    :allow-decimals="criterion.allow_decimals"
+                                    :decimal-places="criterion.decimal_places || 1"
+                                    :disabled="!canEditScores"
+                                    :show-slider="false"
+                                    v-model="scores[`${activeContestant.id}-${criterion.id}`]"
+                                    @change="(val) => handleScoreChange(val, activeContestant.id, criterion.id, criterion)"
+                                    class="w-full"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Notes & Submit -->
+                    <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-white/50">
+                        <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Notes</label>
+                        <textarea 
+                            v-model="notes[activeContestant.id]"
+                            rows="2"
+                            class="w-full bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-teal-500 mb-4 resize-none p-3 text-slate-800 placeholder-slate-400"
+                            placeholder="Optional comments..."
+                        ></textarea>
+                        
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-sm font-bold text-slate-500">Total Score</span>
+                            <span class="text-2xl font-black text-teal-600">{{ currentAverage }}</span>
+                        </div>
+
+                        <button 
+                            @click="submitScores(activeContestant.id)"
+                            :disabled="!canEditScores || !isContestantScoreComplete(activeContestant.id) || submitLoading[activeContestant.id]"
+                            class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-teal-600 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            <span v-if="submitLoading[activeContestant.id]" class="animate-spin">...</span>
+                            <span v-else>Submit Score</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </template>
-    </div>
+
+            <!-- Right Scoring Panel -->
+            <div class="hidden lg:flex w-1/4 flex-col gap-3 py-4 overflow-y-auto max-h-[calc(100vh-6rem)] scrollbar-hide pb-20">
+                <!-- Remaining Criteria -->
+                <div v-for="criterion in rightCriteria" :key="criterion.id" class="bg-white/60 backdrop-blur-md rounded-xl p-4 shadow-sm border border-white/60 hover:shadow-md hover:bg-white/80 transition-all duration-300 group">
+                    <div class="flex justify-between items-start mb-3">
+                        <label class="font-bold text-slate-700 group-hover:text-teal-700 transition-colors text-sm">{{ criterion.name }}</label>
+                        <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">{{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }} / {{ criterion.max_score }}</span>
+                    </div>
+                    <ScoreInput
+                        :min="Number(criterion.min_score)"
+                        :max="Number(criterion.max_score)"
+                        :step="criterion.allow_decimals ? 0.1 : 1"
+                        :allow-decimals="criterion.allow_decimals"
+                        :decimal-places="criterion.decimal_places || 1"
+                        :disabled="!canEditScores"
+                        :show-slider="false"
+                        v-model="scores[`${activeContestant.id}-${criterion.id}`]"
+                        @change="(val) => handleScoreChange(val, activeContestant.id, criterion.id, criterion)"
+                        class="w-full"
+                    />
+                    <p class="text-[10px] text-slate-400 mt-2 line-clamp-2" :title="criterion.description">{{ criterion.description }}</p>
+                </div>
+
+                <!-- Notes & Submit -->
+                <div class="mt-auto bg-white/80 backdrop-blur-md rounded-xl p-4 shadow-lg border border-teal-100 sticky bottom-0">
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Judge's Notes</label>
+                    <textarea 
+                        v-model="notes[activeContestant.id]"
+                        rows="3"
+                        class="w-full bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-teal-500 mb-4 resize-none p-3 text-slate-800 placeholder-slate-400"
+                        placeholder="Optional comments..."
+                    ></textarea>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm font-bold text-slate-500">Total Score</span>
+                        <span class="text-3xl font-black text-teal-600">{{ currentAverage }}</span>
+                    </div>
+
+                    <button 
+                        @click="submitScores(activeContestant.id)"
+                        :disabled="!canEditScores || !isContestantScoreComplete(activeContestant.id) || submitLoading[activeContestant.id]"
+                        class="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-teal-600 transition-all shadow-lg hover:shadow-teal-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        <span v-if="submitLoading[activeContestant.id]" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                        <span v-else>Submit Score</span>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </main>
+
+    <!-- Details Modal -->
+    <TransitionRoot appear :show="showDetails" as="template">
+        <Dialog as="div" @close="showDetails = false" class="relative z-[60]">
+            <TransitionChild enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
+                <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm" />
+            </TransitionChild>
+
+            <div class="fixed inset-0 overflow-y-auto">
+                <div class="flex min-h-full items-center justify-center p-4 text-center">
+                    <TransitionChild enter="duration-300 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-200 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
+                        <DialogPanel class="w-full max-w-4xl transform overflow-hidden rounded-3xl bg-white p-0 text-left align-middle shadow-2xl transition-all">
+                            <div class="flex flex-col md:flex-row h-[600px]">
+                                <div class="w-full md:w-1/2 h-full relative bg-slate-100">
+                                    <img :src="activeContestant.image" class="w-full h-full object-cover" />
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8">
+                                        <h2 class="text-4xl font-black text-white mb-1">{{ activeContestant.name }}</h2>
+                                        <p class="text-teal-300 font-bold text-lg flex items-center gap-2">
+                                            <MapPin class="w-5 h-5" /> {{ activeContestant.origin }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="w-full md:w-1/2 p-8 flex flex-col bg-white">
+                                    <div class="flex items-center justify-between mb-8">
+                                        <div class="flex items-center gap-3">
+                                            <span class="px-3 py-1 rounded-lg bg-slate-900 text-white font-black text-lg">#{{ activeContestant.number }}</span>
+                                            <h3 class="text-xl font-bold text-slate-900">Contestant Details</h3>
+                                        </div>
+                                        <button @click="showDetails = false" class="p-2 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                                            <X class="w-6 h-6" />
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="space-y-8 flex-1 overflow-y-auto pr-2">
+                                        <div>
+                                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Description</label>
+                                            <p class="text-slate-600 leading-relaxed text-lg">
+                                                {{ activeContestant.description || 'No description provided for this contestant.' }}
+                                            </p>
+                                        </div>
+                                        
+                                        <div v-if="activeContestant.gallery && activeContestant.gallery.length > 0">
+                                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Gallery</label>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div v-for="(img, idx) in activeContestant.gallery" :key="idx" class="aspect-square rounded-lg overflow-hidden bg-slate-100">
+                                                    <img :src="img" class="w-full h-full object-cover hover:scale-110 transition-transform duration-500" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-auto pt-6 border-t border-slate-100">
+                                        <button @click="showDetails = false" class="w-full py-4 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors">
+                                            Close Details
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </DialogPanel>
+                    </TransitionChild>
+                </div>
+            </div>
+        </Dialog>
+    </TransitionRoot>
 
     <!-- Notification System -->
     <NotificationSystem ref="notificationSystem" />
@@ -336,18 +330,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { Star, Save, CheckCircle, AlertCircle, Lock, MapPin, Target, Users, Calendar, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Star, Save, CheckCircle, AlertCircle, Lock, MapPin, Target, Users, Calendar, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
 import { Link, router } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
-import CustomSelect from '../../Components/CustomSelect.vue'
+import { Dialog, DialogPanel, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import ScoreInput from '../../Components/ScoreInput.vue'
-import JudgeLayout from '../../Layouts/JudgeLayout.vue'
 import NotificationSystem from '../../Components/NotificationSystem.vue'
-import axios from 'axios'
 
+// No layout used for full-screen immersive experience
 defineOptions({
-  layout: JudgeLayout
+  layout: null
 })
 
 const props = defineProps({
@@ -369,6 +362,7 @@ const submitLoading = ref({})
 const notificationSystem = ref(null)
 const realtimeLoading = ref(false)
 const isChannelReady = ref(false)
+const showDetails = ref(false)
 let pageantChannel = null
 
 const scores = ref({ ...props.existingScores })
@@ -377,41 +371,37 @@ const notes = ref({ ...props.existingNotes })
 // Computed
 const activeContestant = computed(() => props.contestants[currentIndex.value] || {})
 
+const leftCriteria = computed(() => {
+    const mid = Math.ceil(props.criteria.length / 2)
+    return props.criteria.slice(0, mid)
+})
+
+const rightCriteria = computed(() => {
+    const mid = Math.ceil(props.criteria.length / 2)
+    return props.criteria.slice(mid)
+})
+
 const currentAverage = computed(() => {
   if (!activeContestant.value.id) return '-'
   return calculateAverage(activeContestant.value.id)
 })
 
-const roundOptions = computed(() => {
-  return props.rounds.map(round => ({
-    value: round.id.toString(),
-    label: round.name + (round.is_locked ? ' (Locked)' : '') + (props.pageant.current_round_id === round.id ? ' (Live)' : '')
-  }))
-})
-
 // Methods
-const handleRoundChange = (option) => {
-  const roundId = parseInt(option.value)
+const handleRoundChange = (roundId) => {
+  if (roundId === props.currentRound.id) return
   router.visit(route('judge.scoring', [props.pageant.id, roundId]))
 }
 
 const nextContestant = () => {
   if (currentIndex.value < props.contestants.length - 1) {
     currentIndex.value++
-    scrollToTop()
   }
 }
 
 const prevContestant = () => {
   if (currentIndex.value > 0) {
     currentIndex.value--
-    scrollToTop()
   }
-}
-
-const scrollToTop = () => {
-  const container = document.getElementById('scoring-container')
-  if (container) container.scrollTop = 0
 }
 
 const handleScoreChange = (value, contestantId, criterionId, criterion) => {
@@ -468,16 +458,6 @@ const calculateAverage = (contestantId) => {
   }
 }
 
-const getAverageScoreColor = (score) => {
-  if (score === '-') return 'text-slate-300'
-  const numScore = parseFloat(score)
-  if (numScore >= 90) return 'text-emerald-600'
-  if (numScore >= 80) return 'text-teal-600'
-  if (numScore >= 70) return 'text-teal-600'
-  if (numScore >= 60) return 'text-amber-600'
-  return 'text-red-600'
-}
-
 const isContestantScoreComplete = (contestantId) => {
   return props.criteria.every(criterion => 
     scores.value[`${contestantId}-${criterion.id}`] !== undefined && scores.value[`${contestantId}-${criterion.id}`] !== null
@@ -509,7 +489,7 @@ const submitScores = async (contestantId, autoAdvance = true) => {
     
     if (hasInvalidScores) throw new Error('Some scores are invalid. Please check your inputs.');
     
-    const response = await axios.post(route('judge.scores.submit', [props.pageant.id, props.currentRound.id]), {
+    const response = await window.axios.post(route('judge.scores.submit', [props.pageant.id, props.currentRound.id]), {
       contestant_id: contestantId,
       scores: contestantScores,
       notes: notes.value[contestantId] || ''
@@ -609,13 +589,32 @@ const handleRoundUpdate = (event) => {
 </script>
 
 <style scoped>
-/* Hide scrollbar for Chrome, Safari and Opera */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
 }
-/* Hide scrollbar for IE, Edge and Firefox */
 .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.perspective-1000 {
+    perspective: 1000px;
+}
+.preserve-3d {
+    transform-style: preserve-3d;
+}
+.animate-blob {
+    animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+    animation-delay: 2s;
+}
+.animation-delay-4000 {
+    animation-delay: 4s;
+}
+@keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
 }
 </style>
