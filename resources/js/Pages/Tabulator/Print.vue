@@ -79,8 +79,10 @@
 
         <div v-else class="space-y-8 animate-fade-in">
           <!-- Print Settings Card -->
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative">
+            <div class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+              <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+            </div>
             <div class="relative z-10">
               <h3 class="text-lg font-bold text-slate-900 mb-4">Print Settings</h3>
               

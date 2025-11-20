@@ -38,10 +38,12 @@
       </div>
 
       <!-- Quick Actions -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden group hover:shadow-md transition-all">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-          <div class="relative z-10">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in relative z-20">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative z-30 group hover:shadow-md transition-all">
+          <div class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+          </div>
+          <div class="relative">
             <h3 class="text-lg font-bold text-slate-900 mb-1">Set Current Round</h3>
             <p class="text-sm text-slate-500 mb-4">Direct judges to score a specific round</p>
             <div class="max-w-xs">
