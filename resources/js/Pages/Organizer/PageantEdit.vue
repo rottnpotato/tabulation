@@ -27,7 +27,7 @@
                 id="name" 
                 v-model="form.name" 
                 type="text" 
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
                 required
               />
             </div>
@@ -39,7 +39,7 @@
                 id="description" 
                 v-model="form.description" 
                 rows="3" 
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
               ></textarea>
             </div>
             
@@ -69,7 +69,7 @@
                     ref="coverImageInput"
                     type="file"
                     @change="handleCoverImageChange"
-                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
                     accept="image/*"
                   />
                   <p class="text-xs text-gray-500">Recommended size: 1200x400px. Max 2MB. JPG, PNG, or GIF format.</p>
@@ -100,7 +100,7 @@
                     ref="logoInput"
                     type="file"
                     @change="handleLogoChange"
-                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100"
                     accept="image/*"
                   />
                   <p class="text-xs text-gray-500">Recommended size: 400x400px. Max 2MB. JPG, PNG, or GIF format.</p>
@@ -116,7 +116,7 @@
                   id="start_date" 
                   v-model="form.start_date" 
                   type="date" 
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
                 />
               </div>
               <div>
@@ -127,7 +127,7 @@
                   type="date"
                   :min="form.start_date"
                   :disabled="!form.start_date"
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <p v-if="!form.start_date" class="mt-1 text-sm text-gray-500">Please select a start date first</p>
               </div>
@@ -141,7 +141,7 @@
                   id="venue" 
                   v-model="form.venue" 
                   type="text" 
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
                 />
               </div>
               <div>
@@ -150,7 +150,7 @@
                   id="location" 
                   v-model="form.location" 
                   type="text" 
-                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -159,13 +159,13 @@
             <div class="mt-6 flex justify-end space-x-3">
               <Link
                 :href="route('organizer.pageant.view', pageant.id)"
-                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
-                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
                 :disabled="processing"
               >
                 <div v-if="processing" class="flex items-center">

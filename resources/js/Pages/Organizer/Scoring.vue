@@ -8,48 +8,48 @@
         <div class="bg-white border rounded-lg p-6">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Scoring Method</h3>
           <div class="space-y-4">
-            <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-colors">
+            <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-teal-50 transition-colors">
               <input
                 type="radio"
                 v-model="scoringMethod"
                 value="points"
-                class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                class="h-4 w-4 text-teal-600 focus:ring-teal-500"
               />
               <div>
                 <span class="font-medium text-gray-900">Points System</span>
                 <p class="text-sm text-gray-600">Assign points from 1-100 for each criterion</p>
               </div>
             </label>
-            <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-colors">
+            <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-teal-50 transition-colors">
               <input
                 type="radio"
                 v-model="scoringMethod"
                 value="rank"
-                class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                class="h-4 w-4 text-teal-600 focus:ring-teal-500"
               />
               <div>
                 <span class="font-medium text-gray-900">Ranking System</span>
                 <p class="text-sm text-gray-600">Rank contestants from 1st to last for each criterion</p>
               </div>
             </label>
-            <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-colors">
+            <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-teal-50 transition-colors">
               <input
                 type="radio"
                 v-model="scoringMethod"
                 value="percentage"
-                class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                class="h-4 w-4 text-teal-600 focus:ring-teal-500"
               />
               <div>
                 <span class="font-medium text-gray-900">Percentage System</span>
                 <p class="text-sm text-gray-600">Score contestants as a percentage of perfection</p>
               </div>
             </label>
-            <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-orange-50 transition-colors">
+            <label class="flex items-center space-x-3 p-3 rounded-lg hover:bg-teal-50 transition-colors">
               <input
                 type="radio"
                 v-model="scoringMethod"
                 value="scale"
-                class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                class="h-4 w-4 text-teal-600 focus:ring-teal-500"
               />
               <div>
                 <span class="font-medium text-gray-900">Scale System</span>
@@ -65,7 +65,7 @@
             <h3 class="text-lg font-medium text-gray-900">Judges</h3>
             <button
               @click="showAddJudgeModal = true"
-              class="text-orange-600 hover:text-orange-700 font-medium flex items-center bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg transition-colors"
+              class="text-teal-600 hover:text-teal-700 font-medium flex items-center bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors"
             >
               <Plus class="h-5 w-5 mr-1" />
               Add Judge
@@ -75,10 +75,10 @@
             <div
               v-for="judge in judges"
               :key="judge.id"
-              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-orange-50 transition-colors group"
+              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors group"
             >
               <div class="flex items-center space-x-3">
-                <UserCircle class="h-8 w-8 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                <UserCircle class="h-8 w-8 text-gray-400 group-hover:text-teal-500 transition-colors" />
                 <div>
                   <p class="font-medium text-gray-900">{{ judge.name }}</p>
                   <p class="text-sm text-gray-600">{{ judge.title }}</p>
@@ -98,7 +98,7 @@
         <div class="bg-white border rounded-lg p-6 md:col-span-2">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Scoring Rules</h3>
           <div class="space-y-4">
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-orange-50 transition-colors">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors">
               <div>
                 <h4 class="font-medium text-gray-900">Decimal Points</h4>
                 <p class="text-sm text-gray-600">Allow decimal points in scoring</p>
@@ -106,7 +106,7 @@
               <Switch
                 v-model="rules.allowDecimals"
                 class="relative inline-flex h-6 w-11 items-center rounded-full"
-                :class="rules.allowDecimals ? 'bg-orange-600' : 'bg-gray-200'"
+                :class="rules.allowDecimals ? 'bg-teal-600' : 'bg-gray-200'"
               >
                 <span class="sr-only">Allow decimal points</span>
                 <span
@@ -116,7 +116,7 @@
               </Switch>
             </div>
             
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-orange-50 transition-colors">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors">
               <div>
                 <h4 class="font-medium text-gray-900">Tie Resolution</h4>
                 <p class="text-sm text-gray-600">Enable automatic tie-breaking</p>
@@ -124,7 +124,7 @@
               <Switch
                 v-model="rules.tieBreaker"
                 class="relative inline-flex h-6 w-11 items-center rounded-full"
-                :class="rules.tieBreaker ? 'bg-orange-600' : 'bg-gray-200'"
+                :class="rules.tieBreaker ? 'bg-teal-600' : 'bg-gray-200'"
               >
                 <span class="sr-only">Enable tie-breaking</span>
                 <span
@@ -134,7 +134,7 @@
               </Switch>
             </div>
 
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-orange-50 transition-colors">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors">
               <div>
                 <h4 class="font-medium text-gray-900">Judge Anonymity</h4>
                 <p class="text-sm text-gray-600">Hide judge names from scoring results</p>
@@ -142,7 +142,7 @@
               <Switch
                 v-model="rules.judgeAnonymity"
                 class="relative inline-flex h-6 w-11 items-center rounded-full"
-                :class="rules.judgeAnonymity ? 'bg-orange-600' : 'bg-gray-200'"
+                :class="rules.judgeAnonymity ? 'bg-teal-600' : 'bg-gray-200'"
               >
                 <span class="sr-only">Enable judge anonymity</span>
                 <span
@@ -152,7 +152,7 @@
               </Switch>
             </div>
 
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-orange-50 transition-colors">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors">
               <div>
                 <h4 class="font-medium text-gray-900">Round Weighting</h4>
                 <p class="text-sm text-gray-600">Allow different rounds to have different weights</p>
@@ -160,7 +160,7 @@
               <Switch
                 v-model="rules.roundWeighting"
                 class="relative inline-flex h-6 w-11 items-center rounded-full"
-                :class="rules.roundWeighting ? 'bg-orange-600' : 'bg-gray-200'"
+                :class="rules.roundWeighting ? 'bg-teal-600' : 'bg-gray-200'"
               >
                 <span class="sr-only">Enable round weighting</span>
                 <span
@@ -184,7 +184,7 @@
                     type="radio"
                     v-model="scaleConfig.range"
                     value="5"
-                    class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    class="h-4 w-4 text-teal-600 focus:ring-teal-500"
                   />
                   <span class="text-gray-900">1-5 Scale</span>
                 </label>
@@ -193,7 +193,7 @@
                     type="radio"
                     v-model="scaleConfig.range"
                     value="10"
-                    class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    class="h-4 w-4 text-teal-600 focus:ring-teal-500"
                   />
                   <span class="text-gray-900">1-10 Scale</span>
                 </label>
@@ -202,7 +202,7 @@
                     type="radio"
                     v-model="scaleConfig.range"
                     value="custom"
-                    class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    class="h-4 w-4 text-teal-600 focus:ring-teal-500"
                   />
                   <span class="text-gray-900">Custom</span>
                 </label>
@@ -216,7 +216,7 @@
                   type="number"
                   id="min-value"
                   v-model="scaleConfig.minValue"
-                  class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                  class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                 />
               </div>
               <div>
@@ -225,7 +225,7 @@
                   type="number"
                   id="max-value"
                   v-model="scaleConfig.maxValue"
-                  class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                  class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                 />
               </div>
             </div>
@@ -238,7 +238,7 @@
                     type="radio"
                     v-model="scaleConfig.increment"
                     value="whole"
-                    class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    class="h-4 w-4 text-teal-600 focus:ring-teal-500"
                   />
                   <span class="text-gray-900">Whole Numbers Only</span>
                 </label>
@@ -247,7 +247,7 @@
                     type="radio"
                     v-model="scaleConfig.increment"
                     value="half"
-                    class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    class="h-4 w-4 text-teal-600 focus:ring-teal-500"
                   />
                   <span class="text-gray-900">Allow Half Points</span>
                 </label>
@@ -256,7 +256,7 @@
                     type="radio"
                     v-model="scaleConfig.increment"
                     value="decimal"
-                    class="h-4 w-4 text-orange-600 focus:ring-orange-500"
+                    class="h-4 w-4 text-teal-600 focus:ring-teal-500"
                   />
                   <span class="text-gray-900">Allow Decimals</span>
                 </label>
@@ -281,7 +281,7 @@
                   v-model="round.weight"
                   min="0"
                   max="100"
-                  class="w-full accent-orange-500"
+                  class="w-full accent-teal-500"
                 />
               </div>
               <div class="w-1/3 flex items-center">
@@ -290,16 +290,16 @@
                   v-model="round.weight"
                   min="0"
                   max="100"
-                  class="w-16 rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                  class="w-16 rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                 />
                 <span class="ml-2 text-gray-700">%</span>
               </div>
             </div>
           </div>
 
-          <div class="mt-4 p-3 bg-orange-50 rounded-lg flex items-center justify-between">
-            <span class="text-sm text-orange-700">Total weight must equal 100%</span>
-            <span class="font-medium" :class="totalWeight === 100 ? 'text-green-600' : 'text-red-600'">
+          <div class="mt-4 p-3 bg-teal-50 rounded-lg flex items-center justify-between">
+            <span class="text-sm text-teal-700">Total weight must equal 100%</span>
+            <span class="font-medium" :class="totalWeight === 100 ? 'text-teal-600' : 'text-red-600'">
               {{ totalWeight }}%
             </span>
           </div>
@@ -331,19 +331,19 @@
               leave-from="opacity-100 scale-100"
               leave-to="opacity-0 scale-95"
             >
-              <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all border border-orange-100">
+              <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all border border-teal-100">
                 <div class="absolute top-0 right-0 pt-4 pr-4">
-                  <button type="button" @click="showAddJudgeModal = false" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <button type="button" @click="showAddJudgeModal = false" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500">
                     <span class="sr-only">Close</span>
                     <X class="h-6 w-6" />
                   </button>
                 </div>
 
-                <div class="bg-gradient-to-r from-orange-500 to-orange-700 -m-6 mb-6 p-6">
+                <div class="bg-gradient-to-r from-teal-500 to-teal-700 -m-6 mb-6 p-6">
                   <DialogTitle as="h3" class="text-lg font-medium leading-6 text-white mb-1">
                     Add New Judge
                   </DialogTitle>
-                  <p class="text-orange-100 text-sm">Enter the details of the judge to add to your panel</p>
+                  <p class="text-teal-100 text-sm">Enter the details of the judge to add to your panel</p>
                 </div>
 
                 <form @submit.prevent="handleAddJudge" class="space-y-4">
@@ -352,7 +352,7 @@
                     <input
                       type="text"
                       v-model="newJudge.name"
-                      class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                       required
                     />
                   </div>
@@ -361,7 +361,7 @@
                     <input
                       type="text"
                       v-model="newJudge.title"
-                      class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                       required
                     />
                   </div>
@@ -370,7 +370,7 @@
                     <input
                       type="email"
                       v-model="newJudge.email"
-                      class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                      class="w-full rounded-lg border-gray-300 focus:border-teal-500 focus:ring-teal-500"
                       required
                     />
                   </div>
@@ -379,7 +379,7 @@
                     <CustomSelect
                       v-model="newJudge.category"
                       :options="categoryOptions"
-                      variant="orange"
+                      variant="teal"
                     />
                   </div>
 
@@ -393,7 +393,7 @@
                     </button>
                     <button
                       type="submit"
-                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-700 rounded-lg hover:from-orange-600 hover:to-orange-800 shadow-sm transition-all"
+                      class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-700 rounded-lg hover:from-teal-600 hover:to-teal-800 shadow-sm transition-all"
                     >
                       Add Judge
                     </button>
@@ -415,7 +415,7 @@
 import { ref, computed } from 'vue'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild, Switch } from '@headlessui/vue'
 import { Plus, UserCircle, X, Settings } from 'lucide-vue-next'
-import ScoringAnalytics from '../../components/scoring/ScoringAnalytics.vue'
+import ScoringAnalytics from '@/Components/scoring/ScoringAnalytics.vue'
 import CustomSelect from '@/Components/CustomSelect.vue'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 

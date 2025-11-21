@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { History, RefreshCw, FileText, Edit2, Plus, User, Clock } from 'lucide-vue-next'
 import { route } from 'ziggy-js'
 
@@ -180,5 +180,20 @@ watch(() => [props.pageantId, props.roundId], () => {
 
 onMounted(() => {
   fetchLogs()
+
+  // Real-time updates
+  if (props.pageantId) {
+    const channelName = `pageant.${props.pageantId}`
+    window.Echo.private(channelName)
+      .listen('ScoreUpdated', refreshLogs)
+  }
+})
+
+onUnmounted(() => {
+  if (props.pageantId) {
+    const channelName = `pageant.${props.pageantId}`
+    // Stop listening to the specific handler, but DO NOT leave the channel
+    window.Echo.private(channelName).stopListening('ScoreUpdated', refreshLogs)
+  }
 })
 </script>

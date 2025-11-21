@@ -24,17 +24,17 @@
     <div class="hidden"></div>
 
     <!-- Warning Banner for Start Date Reached -->
-    <div v-if="hasStartDateReached && !canEdit && !isCompleted" class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg shadow-sm">
+    <div v-if="hasStartDateReached && !canEdit && !isCompleted" class="bg-teal-50 border-l-4 border-teal-400 p-4 rounded-r-lg shadow-sm">
       <div class="flex items-start justify-between">
         <div class="flex">
           <div class="flex-shrink-0">
-            <AlertCircle class="h-5 w-5 text-amber-400" />
+            <AlertCircle class="h-5 w-5 text-teal-400" />
           </div>
           <div class="ml-3">
-            <h3 class="text-sm font-medium text-amber-800">
+            <h3 class="text-sm font-medium text-teal-800">
               Editing Restricted
             </h3>
-            <div class="mt-2 text-sm text-amber-700">
+            <div class="mt-2 text-sm text-teal-700">
               <p>
                 This pageant cannot be edited because the start date has been reached or passed. 
                 If you need to make changes, you can request edit access from an administrator.
@@ -44,7 +44,7 @@
         </div>
         <button
           @click="openEditAccessRequestModal"
-          class="ml-4 inline-flex items-center px-3 py-2 border border-amber-300 rounded-md text-sm font-medium bg-white text-amber-700 hover:bg-amber-50 transition-colors"
+          class="ml-4 inline-flex items-center px-3 py-2 border border-teal-300 rounded-md text-sm font-medium bg-white text-teal-700 hover:bg-teal-50 transition-colors"
         >
           Request Edit Access
         </button>
@@ -268,8 +268,8 @@
               </Tooltip>
             </div>
             
-            <div v-if="isCompleted" class="flex items-center text-sm text-green-700 bg-green-50 p-3 rounded-md">
-              <CheckCircle class="h-5 w-5 mr-2 text-green-500" />
+            <div v-if="isCompleted" class="flex items-center text-sm text-teal-700 bg-teal-50 p-3 rounded-md">
+              <CheckCircle class="h-5 w-5 mr-2 text-teal-500" />
               This pageant has been completed.
             </div>
             
@@ -278,8 +278,8 @@
               This pageant is currently ongoing.
             </div>
             
-            <div v-else-if="isDraft" class="flex items-center text-sm text-amber-700 bg-amber-50 p-3 rounded-md">
-              <AlertCircle class="h-5 w-5 mr-2 text-amber-500" />
+            <div v-else-if="isDraft" class="flex items-center text-sm text-teal-700 bg-teal-50 p-3 rounded-md">
+              <AlertCircle class="h-5 w-5 mr-2 text-teal-500" />
               This pageant is still in draft mode and requires configuration.
             </div>
           </div>
@@ -293,12 +293,12 @@
               </p>
               
               <!-- Auto-completion warning -->
-              <div v-if="isPageantDateElapsed && !isCompleted" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <div v-if="isPageantDateElapsed && !isCompleted" class="mb-4 p-3 bg-teal-50 border border-teal-200 rounded-md">
                 <div class="flex items-start">
-                  <AlertCircle class="h-5 w-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <AlertCircle class="h-5 w-5 text-teal-500 mt-0.5 mr-2 flex-shrink-0" />
                   <div>
-                    <h5 class="text-sm font-medium text-amber-800">Auto-completion Required</h5>
-                    <p class="text-xs text-amber-700 mt-1">
+                    <h5 class="text-sm font-medium text-teal-800">Auto-completion Required</h5>
+                    <p class="text-xs text-teal-700 mt-1">
                       This pageant's date has elapsed ({{ pageant.start_date }}). It should be marked as completed to finalize results.
                     </p>
                   </div>
@@ -1022,7 +1022,7 @@
                   <h6 class="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">Advantages</h6>
                   <ul class="space-y-1 text-sm text-gray-600">
                     <li v-for="(pro, index) in currentScoringSystem.pros" :key="index" class="flex items-start">
-                      <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 mr-1.5 flex-shrink-0" />
+                      <CheckCircle class="h-4 w-4 text-teal-500 mt-0.5 mr-1.5 flex-shrink-0" />
                       {{ pro }}
                     </li>
                   </ul>
@@ -1085,7 +1085,7 @@
                     :key="system.type" 
                     @click="scoringSystemForm.scoring_system = system.type"
                     class="relative border rounded-lg p-4 cursor-pointer hover:bg-teal-50 transition-colors"
-                    :class="scoringSystemForm.scoring_system === system.type ? 'border-indigo-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'"
+                    :class="scoringSystemForm.scoring_system === system.type ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'"
                   >
                     <div class="flex items-start">
                       <div class="flex items-center h-5">
@@ -1138,7 +1138,7 @@
                     v-for="system in scoringSystems" 
                     :key="system.type" 
                     class="relative border rounded-lg p-4 cursor-pointer hover:bg-teal-50 transition-colors"
-                    :class="scoringSystemForm.scoring_system === system.type ? 'border-indigo-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'"
+                    :class="scoringSystemForm.scoring_system === system.type ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'"
                   >
                     <div class="flex flex-col">
                       <!-- Basic info -->
@@ -1174,7 +1174,7 @@
                             <h6 class="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">Advantages</h6>
                             <ul class="space-y-1 text-sm text-gray-600">
                               <li v-for="(pro, index) in system.pros" :key="index" class="flex items-start">
-                                <CheckCircle class="h-4 w-4 text-green-500 mt-0.5 mr-1.5 flex-shrink-0" />
+                                <CheckCircle class="h-4 w-4 text-teal-500 mt-0.5 mr-1.5 flex-shrink-0" />
                                 {{ pro }}
                               </li>
                             </ul>
@@ -1983,7 +1983,7 @@
             >
               <DialogPanel class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
                 <!-- Modal Header -->
-                <div class="bg-gradient-to-r from-teal-500 to-orange-600 px-6 py-5">
+                <div class="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-5">
                   <DialogTitle as="h3" class="text-xl font-semibold text-white flex items-center">
                     <div class="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
                       <User class="h-6 w-6 text-white" />
@@ -2148,7 +2148,7 @@
             >
               <DialogPanel class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all">
                 <!-- Modal Header -->
-                <div class="bg-gradient-to-r from-teal-500 to-orange-600 px-6 py-5">
+                <div class="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-5">
                   <DialogTitle as="h3" class="text-xl font-semibold text-white flex items-center">
                     <div class="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3">
                       <User class="h-6 w-6 text-white" />

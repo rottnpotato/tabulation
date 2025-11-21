@@ -70,9 +70,10 @@
 
       <div v-else class="space-y-6 animate-fade-in">
         <!-- Toolbar -->
-        <!-- Toolbar -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
-          <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative">
+          <div class="absolute inset-0 overflow-hidden rounded-2xl">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+          </div>
           <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div class="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
               <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200 w-fit">
@@ -138,8 +139,6 @@
       </div>
     </div>
 
-    <!-- Notification System -->
-    <NotificationSystem ref="notificationSystem" />
   </div>
 </template>
 
@@ -152,7 +151,7 @@ import CustomSelect from '../../Components/CustomSelect.vue'
 import DetailedScoreTable from '../../Components/tabulator/DetailedScoreTable.vue'
 import AuditLogsViewer from '../../Components/tabulator/AuditLogsViewer.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
-import NotificationSystem from '../../Components/NotificationSystem.vue'
+
 import { onMounted, onUnmounted } from 'vue'
 
 defineOptions({
@@ -210,7 +209,6 @@ const props = defineProps<Props>()
 const localScores = ref(props.scores ? new Map(Object.entries(props.scores)) : new Map())
 const criteria = ref(props.criteria || [])
 const detailedScores = ref(props.detailedScores || {})
-const notificationSystem = ref<any>(null)
 
 // Watch for changes in props.scores and update localScores accordingly
 watch(() => props.scores, (newScores) => {
@@ -227,6 +225,76 @@ watch(() => props.detailedScores, (newDetailedScores) => {
   detailedScores.value = newDetailedScores || {}
 }, { immediate: true })
 
+// Track in-flight fetches to avoid parallel requests for the same key
+const inFlightAggregations = new Set<string>()
+
+// Notification cooldown per (contestant-judge-round)
+const NOTIFICATION_COOLDOWN_MS = 1500
+const notificationCooldowns = new Map<string, number>()
+
+const handleScoreUpdate = async (e: any) => {
+  console.log('ScoreUpdated event received:', e)
+  // When a score is updated, we need to recalculate the aggregated judge score
+  // for this contestant-judge-round combination
+  const { contestant_id, judge_id, round_id } = e;
+
+  console.log('Current round ID:', currentRoundId.value, 'Event round ID:', round_id)
+  if (round_id == currentRoundId.value) {
+    const key = `${contestant_id}-${judge_id}-${round_id}`
+
+    // Avoid duplicate work if a fetch for this key is already in progress
+    if (inFlightAggregations.has(key)) {
+      return
+    }
+    inFlightAggregations.add(key)
+
+    // Fetch just the updated aggregated score for this specific judge-contestant-round
+    try {
+      const response = await fetch(route('tabulator.scores.aggregated', [props.pageant?.id, round_id]) + `?judge_id=${judge_id}&contestant_id=${contestant_id}`, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.aggregated_score !== undefined && data.aggregated_score !== null) {
+          const oldScore = localScores.value.get(key)
+          const newScore = Number(data.aggregated_score)
+          const changed = oldScore === undefined || Math.abs(Number(oldScore) - newScore) > 1e-9
+
+          // Update local cache
+          localScores.value.set(key, newScore)
+          console.log(`Score updated for contestant ${contestant_id} by judge ${judge_id}: ${newScore}`)
+
+          // Only notify if the value actually changed and not within cooldown window
+          const now = Date.now()
+          const lastNotified = notificationCooldowns.get(key) ?? 0
+          const withinCooldown = now - lastNotified < NOTIFICATION_COOLDOWN_MS
+
+          if (changed && !withinCooldown) {
+            // Notification handled globally by TabulatorLayout
+            notificationCooldowns.set(key, now)
+          }
+        }
+      } else {
+        console.warn(`Failed to fetch aggregated score: HTTP ${response.status}`);
+        // Fallback: refresh entire scores data
+        refreshData();
+      }
+    } catch (error) {
+      console.error('Network error while refreshing aggregated score:', error);
+      // small delay before fallback to avoid rapid requests
+      setTimeout(() => {
+        refreshData();
+      }, 1000);
+    } finally {
+      inFlightAggregations.delete(key)
+    }
+  }
+}
+
 onMounted(() => {
   if (props.pageant) {
     const channelName = `pageant.${props.pageant.id}`
@@ -234,87 +302,20 @@ onMounted(() => {
 
     // Ensure we do not attach multiple listeners when the component remounts (HMR / navigation)
     const channel = window.Echo.private(channelName)
-    channel.stopListening('ScoreUpdated')
+    
+    // Do NOT stopListening blindly as it removes Layout listeners too
+    // channel.stopListening('ScoreUpdated')
 
-    // Track in-flight fetches to avoid parallel requests for the same key
-    const inFlightAggregations = new Set<string>()
-
-    // Notification cooldown per (contestant-judge-round)
-    const NOTIFICATION_COOLDOWN_MS = 1500
-    const notificationCooldowns = new Map<string, number>()
-
-    channel.listen('ScoreUpdated', async (e: any) => {
-        console.log('ScoreUpdated event received:', e)
-        // When a score is updated, we need to recalculate the aggregated judge score
-        // for this contestant-judge-round combination
-        const { contestant_id, judge_id, round_id } = e;
-
-        console.log('Current round ID:', currentRoundId.value, 'Event round ID:', round_id)
-        if (round_id == currentRoundId.value) {
-          const key = `${contestant_id}-${judge_id}-${round_id}`
-
-          // Avoid duplicate work if a fetch for this key is already in progress
-          if (inFlightAggregations.has(key)) {
-            return
-          }
-          inFlightAggregations.add(key)
-
-          // Fetch just the updated aggregated score for this specific judge-contestant-round
-          try {
-            const response = await fetch(route('tabulator.scores.aggregated', [props.pageant?.id, round_id]) + `?judge_id=${judge_id}&contestant_id=${contestant_id}`, {
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-              }
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              if (data.aggregated_score !== undefined && data.aggregated_score !== null) {
-                const oldScore = localScores.value.get(key)
-                const newScore = Number(data.aggregated_score)
-                const changed = oldScore === undefined || Math.abs(Number(oldScore) - newScore) > 1e-9
-
-                // Update local cache
-                localScores.value.set(key, newScore)
-                console.log(`Score updated for contestant ${contestant_id} by judge ${judge_id}: ${newScore}`)
-
-                // Only notify if the value actually changed and not within cooldown window
-                const now = Date.now()
-                const lastNotified = notificationCooldowns.get(key) ?? 0
-                const withinCooldown = now - lastNotified < NOTIFICATION_COOLDOWN_MS
-
-                if (changed && !withinCooldown && notificationSystem.value) {
-                  notificationSystem.value.success(`Score updated in real-time: ${newScore}`, {
-                    title: 'Live Score Update',
-                    timeout: 3000
-                  })
-                  notificationCooldowns.set(key, now)
-                }
-              }
-            } else {
-              console.warn(`Failed to fetch aggregated score: HTTP ${response.status}`);
-              // Fallback: refresh entire scores data
-              refreshData();
-            }
-          } catch (error) {
-            console.error('Network error while refreshing aggregated score:', error);
-            // small delay before fallback to avoid rapid requests
-            setTimeout(() => {
-              refreshData();
-            }, 1000);
-          } finally {
-            inFlightAggregations.delete(key)
-          }
-        }
-      });
+    channel.listen('ScoreUpdated', handleScoreUpdate);
   }
 });
 
 onUnmounted(() => {
     if (props.pageant) {
         const channelName = `pageant.${props.pageant.id}`
-        window.Echo.leave(channelName);
+        // Stop listening to the specific handler, but DO NOT leave the channel
+        // as TabulatorLayout might still be using it.
+        window.Echo.private(channelName).stopListening('ScoreUpdated', handleScoreUpdate);
     }
 });
 

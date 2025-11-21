@@ -57,7 +57,7 @@ function handleScoreUpdated(e) {
 function unsubscribeFromChannels() {
     activeChannels.forEach(({ name, channel }) => {
         try {
-            channel.stopListening('ScoreUpdated')
+            // We do not call stopListening here because leave() handles it
             window.Echo.leave(name)
         } catch (e) {
             // noop
@@ -80,7 +80,6 @@ function subscribeToChannels() {
     if (pageantId) {
         const name = `pageant.${pageantId}`
         const channel = window.Echo.private(name)
-            .stopListening('ScoreUpdated')
             .listen('ScoreUpdated', handleScoreUpdated)
         activeChannels.push({ name, channel })
     }
@@ -93,7 +92,6 @@ function subscribeToChannels() {
             const name = `pageant.${p.id}`
             if (activeChannels.some((c) => c.name === name)) return
             const channel = window.Echo.private(name)
-                .stopListening('ScoreUpdated')
                 .listen('ScoreUpdated', handleScoreUpdated)
             activeChannels.push({ name, channel })
         })
@@ -116,4 +114,4 @@ watch(
     }
 )
 
-</script> 
+</script>

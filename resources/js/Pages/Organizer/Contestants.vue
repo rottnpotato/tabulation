@@ -28,14 +28,14 @@
     </div>
 
     <!-- Success Message -->
-    <div v-if="successMessage" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-sm flex items-center justify-between transition-all duration-500 ease-in-out">
+    <div v-if="successMessage" class="bg-teal-100 border-l-4 border-teal-500 text-teal-700 p-4 rounded-lg shadow-sm flex items-center justify-between transition-all duration-500 ease-in-out">
       <div class="flex items-center">
-        <svg class="h-5 w-5 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="h-5 w-5 mr-2 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
         </svg>
         <p>{{ successMessage }}</p>
       </div>
-      <button @click="successMessage = ''" class="text-green-700 hover:text-green-900">
+      <button @click="successMessage = ''" class="text-teal-700 hover:text-teal-900">
         <XCircle class="h-5 w-5" />
       </button>
     </div>
@@ -851,7 +851,7 @@ const getStatusClasses = (status) => {
   const statusMap = {
     'Draft': 'bg-gray-100 text-gray-800',
     'Setup': 'bg-teal-100 text-teal-800',
-    'Active': 'bg-green-100 text-green-800',
+    'Active': 'bg-teal-100 text-teal-800',
     'Completed': 'bg-purple-100 text-purple-800',
     'Pending_Approval': 'bg-yellow-100 text-yellow-800',
     'Cancelled': 'bg-red-100 text-red-800',
