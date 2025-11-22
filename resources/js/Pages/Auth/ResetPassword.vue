@@ -117,7 +117,11 @@ const form = useForm({
 });
 
 const submit = () => {
-  form.post('/reset-password');
+  form.post('/reset-password', {
+    onSuccess: () => {
+      window.location.reload();
+    },
+  });
 };
 </script>
 

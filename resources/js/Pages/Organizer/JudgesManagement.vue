@@ -52,7 +52,7 @@
                 <button 
                   type="submit"
                   :disabled="requiredJudgesForm.processing"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Loader2 v-if="requiredJudgesForm.processing" class="h-4 w-4 mr-1.5 animate-spin" />
                   <Save v-else class="h-4 w-4 mr-1.5" />
@@ -136,7 +136,7 @@
                         :id="system.type" 
                         :value="system.type" 
                         v-model="scoringSystemForm.scoring_system"
-                        class="h-4 w-4 text-teal-600 border-gray-300 focus:ring-orange-500"
+                        class="h-4 w-4 text-teal-600 border-gray-300 focus:ring-teal-500"
                       />
                     </div>
                     <div class="ml-3 text-sm">
@@ -156,7 +156,7 @@
                 <button 
                   type="submit"
                   :disabled="scoringSystemForm.processing"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Loader2 v-if="scoringSystemForm.processing" class="h-4 w-4 mr-1.5 animate-spin" />
                   <Save v-else class="h-4 w-4 mr-1.5" />
@@ -180,7 +180,7 @@
               </h2>
               <button
                 @click="showCreateTabulatorModal = true"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
               >
                 <UserPlus class="h-3.5 w-3.5 mr-1" />
                 Create New Account
@@ -214,7 +214,7 @@
                 <button 
                   type="submit"
                   :disabled="tabulatorForm.processing || !tabulatorForm.tabulator_id"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Loader2 v-if="tabulatorForm.processing" class="h-4 w-4 mr-1.5 animate-spin" />
                   <Save v-else class="h-4 w-4 mr-1.5" />
@@ -361,7 +361,7 @@
               type="button"
               @click="createTabulatorAccount"
               :disabled="createTabulatorForm.processing || usernameExists"
-              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-teal-600 text-base font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Loader2 v-if="createTabulatorForm.processing" class="h-4 w-4 mr-1.5 animate-spin" />
               Create Account
@@ -370,7 +370,7 @@
               type="button"
               @click="closeCreateTabulatorModal"
               :disabled="createTabulatorForm.processing"
-              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
             >
               Cancel
             </button>

@@ -23,21 +23,21 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel class="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
-              <div class="relative bg-gradient-to-r from-orange-600 to-orange-500 p-6 text-white">
+              <div class="relative bg-gradient-to-r from-teal-600 to-teal-500 p-6 text-white">
                 <DialogTitle as="h3" class="text-2xl font-bold leading-6">
                   {{ contestant ? 'Edit Contestant' : (mode === 'pair' ? 'Add New Pair' : 'Add New Contestant') }}
                 </DialogTitle>
-                <p class="mt-2 text-purple-100 max-w-2xl">
+                <p class="mt-2 text-teal-100 max-w-2xl">
                   {{ contestant ? 'Update contestant details and photos' : (mode === 'pair' ? 'Enter pair information and upload photos for both members' : 'Enter contestant information and upload photos') }}
                 </p>
                 <!-- Pageant Type Context -->
-                <div v-if="pageant && pageant.contestant_type && !contestant" class="mt-3 p-3 bg-orange-500/30 rounded-lg border border-orange-400/30">
-                  <p class="text-sm text-orange-100 font-medium mb-1">{{ getPageantTypeTitle() }}</p>
-                  <p class="text-xs text-orange-200">{{ getPageantTypeDescription() }}</p>
+                <div v-if="pageant && pageant.contestant_type && !contestant" class="mt-3 p-3 bg-teal-500/30 rounded-lg border border-teal-400/30">
+                  <p class="text-sm text-teal-100 font-medium mb-1">{{ getPageantTypeTitle() }}</p>
+                  <p class="text-xs text-teal-200">{{ getPageantTypeDescription() }}</p>
                 </div>
                 <button 
                   @click="closeModal" 
-                  class="absolute top-4 right-4 text-white hover:text-purple-200 transition-colors"
+                  class="absolute top-4 right-4 text-white hover:text-teal-200 transition-colors"
                 >
                   <XCircle class="h-6 w-6" />
                 </button>
@@ -61,7 +61,7 @@
                         id="contestantNumber"
                         v-model="form.number"
                         type="number"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.number }"
                         placeholder="e.g. 1"
                         required
@@ -83,7 +83,7 @@
                         id="name"
                         v-model="form.name"
                         type="text"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.name }"
                         placeholder="e.g. Jane Smith"
                         required
@@ -105,7 +105,7 @@
                         id="age"
                         v-model="form.age"
                         type="number"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.age }"
                         placeholder="e.g. 24"
                       />
@@ -126,7 +126,7 @@
                         id="origin"
                         v-model="form.origin"
                         type="text"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.origin }"
                         placeholder="e.g. New York, USA"
                       />
@@ -149,7 +149,7 @@
                       <select
                         id="gender"
                         v-model="form.gender"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.gender }"
                         required
                       >
@@ -174,7 +174,7 @@
                         id="bio"
                         v-model="form.bio"
                         rows="4"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.bio }"
                         placeholder="Share the contestant's background, achievements, interests..."
                       ></textarea>
@@ -194,10 +194,10 @@
                       <div class="flex flex-col w-full">
                         <Tooltip text="Click to browse or drag and drop multiple image files. Supported formats: JPG, PNG, GIF" position="bottom">
                           <label
-                            class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-purple-400 hover:bg-purple-50 transition-all cursor-pointer transform hover:scale-[1.02]"
+                            class="flex flex-col w-full h-32 border-2 border-dashed rounded-lg border-gray-300 hover:border-teal-400 hover:bg-teal-50 transition-all cursor-pointer transform hover:scale-[1.02]"
                           >
                             <div class="flex flex-col items-center justify-center pt-7">
-                              <Camera class="w-8 h-8 text-purple-400 group-hover:text-purple-600 transition-colors" />
+                              <Camera class="w-8 h-8 text-teal-400 group-hover:text-teal-600 transition-colors" />
                               <p class="pt-1 text-sm tracking-wider text-gray-600 group-hover:text-gray-600">
                                 {{ imageFiles.length > 0 ? `${imageFiles.length} file(s) selected` : 'Add photos' }}
                               </p>
@@ -255,7 +255,7 @@
                             </Tooltip>
                           </div>
                           <!-- Primary indicator -->
-                          <div v-if="index === 0" class="absolute top-1 right-1 bg-purple-600 rounded-full px-1.5 py-0.5 text-white text-2xs">
+                          <div v-if="index === 0" class="absolute top-1 right-1 bg-teal-600 rounded-full px-1.5 py-0.5 text-white text-2xs">
                             Primary
                           </div>
                         </div>
@@ -280,7 +280,7 @@
                       id="pairNumber"
                       v-model="form.number"
                       type="number"
-                      class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                      class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
                       :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors.number }"
                       placeholder="Enter pair number"
                       required
@@ -304,7 +304,7 @@
                         <input
                           v-model="form.member1.name"
                           type="text"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
                           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.name'] }"
                           placeholder="Enter full name"
                           required
@@ -319,7 +319,7 @@
                         <input
                           v-model="form.member1.age"
                           type="number"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
                           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.age'] }"
                           placeholder="Age"
                           min="16"
@@ -336,7 +336,7 @@
                         <input
                           v-model="form.member1.origin"
                           type="text"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
                           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.origin'] }"
                           placeholder="City, Country"
                           required
@@ -349,7 +349,7 @@
                         <textarea
                           v-model="form.member1.bio"
                           rows="3"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal resize-none"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal resize-none"
                           placeholder="Share background, achievements, and interests..."
                         ></textarea>
                       </div>
@@ -373,7 +373,7 @@
                         <input
                           v-model="form.member2.name"
                           type="text"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
                           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.name'] }"
                           placeholder="Enter full name"
                           required
@@ -388,7 +388,7 @@
                         <input
                           v-model="form.member2.age"
                           type="number"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
                           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.age'] }"
                           placeholder="Age"
                           min="16"
@@ -405,7 +405,7 @@
                         <input
                           v-model="form.member2.origin"
                           type="text"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal"
                           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.origin'] }"
                           placeholder="City, Country"
                           required
@@ -418,7 +418,7 @@
                         <textarea
                           v-model="form.member2.bio"
                           rows="3"
-                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-orange-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal resize-none"
+                          class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white shadow-sm hover:border-teal-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all duration-200 outline-none text-gray-800 font-medium placeholder:text-gray-400 placeholder:font-normal resize-none"
                           placeholder="Share background, achievements, and interests..."
                         ></textarea>
                       </div>
@@ -436,7 +436,7 @@
                   </button>
                   <button
                     type="submit"
-                    class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                    class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 rounded-lg shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
                     :disabled="isLoading"
                   >
                     <span v-if="isLoading" class="flex items-center">

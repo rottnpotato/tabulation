@@ -13,7 +13,7 @@
       <div class="mb-6">
         <button
           @click="showAddRoundModal = true"
-          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+          class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
         >
           <Plus class="w-5 h-5 mr-2" />
           Add Round
@@ -39,7 +39,7 @@
                     {{ round.description || 'No description' }}
                   </p>
                   <div class="flex items-center space-x-4 mt-2">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
                       {{ round.type }}
                     </span>
                     <span class="text-sm text-gray-500">
@@ -80,7 +80,7 @@
               <h4 class="text-md font-medium text-gray-900">Scoring Criteria</h4>
               <button
                 @click="showAddCriteriaModal(round)"
-                class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition duration-150 ease-in-out"
+                class="inline-flex items-center px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition duration-150 ease-in-out"
               >
                 <Plus class="w-4 h-4 mr-1" />
                 Add Criteria
@@ -132,7 +132,7 @@
         <p class="text-gray-500 mb-4">Start by adding your first competition round.</p>
         <button
           @click="showAddRoundModal = true"
-          class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+          class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition duration-150 ease-in-out"
         >
           <Plus class="w-5 h-5 mr-2" />
           Add First Round
@@ -149,7 +149,7 @@
             v-model="roundForm.name"
             type="text"
             placeholder="e.g. Evening Gown, Q&A, Production Number"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             required
           />
         </div>
@@ -160,7 +160,7 @@
             v-model="roundForm.description"
             rows="3"
             placeholder="Brief description of this round"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           ></textarea>
         </div>
 
@@ -169,7 +169,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
             <select
               v-model="roundForm.type"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               required
             >
               <option value="semi-final">Semi-Final</option>
@@ -184,7 +184,7 @@
               type="number"
               min="1"
               max="100"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               required
             />
           </div>
@@ -196,7 +196,7 @@
             v-model.number="roundForm.display_order"
             type="number"
             min="0"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             required
           />
         </div>
@@ -212,7 +212,7 @@
           <button
             type="submit"
             :disabled="submitLoading"
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+            class="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-medium rounded-lg transition duration-150 ease-in-out"
           >
             {{ roundForm.id ? 'Update' : 'Add' }} Round
           </button>
@@ -229,7 +229,7 @@
             v-model="criteriaForm.name"
             type="text"
             placeholder="e.g. Poise, Presentation, Overall Impact"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             required
           />
         </div>
@@ -240,7 +240,7 @@
             v-model="criteriaForm.description"
             rows="3"
             placeholder="What judges should evaluate for this criteria"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           ></textarea>
         </div>
 
@@ -252,7 +252,7 @@
               type="number"
               min="1"
               max="100"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               required
             />
           </div>
@@ -264,7 +264,7 @@
               type="number"
               min="0"
               step="0.01"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               required
             />
           </div>
@@ -276,7 +276,7 @@
               type="number"
               min="1"
               step="0.01"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               required
             />
           </div>
@@ -288,7 +288,7 @@
               <input
                 v-model="criteriaForm.allow_decimals"
                 type="checkbox"
-                class="form-checkbox h-4 w-4 text-blue-600"
+                class="form-checkbox h-4 w-4 text-teal-600"
               />
               <span class="ml-2 text-sm text-gray-700">Allow decimal scores</span>
             </label>
@@ -301,7 +301,7 @@
               type="number"
               min="0"
               max="4"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               required
             />
           </div>
@@ -313,7 +313,7 @@
             v-model.number="criteriaForm.display_order"
             type="number"
             min="0"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             required
           />
         </div>
@@ -329,7 +329,7 @@
           <button
             type="submit"
             :disabled="submitLoading"
-            class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-medium rounded-lg transition duration-150 ease-in-out"
+            class="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white font-medium rounded-lg transition duration-150 ease-in-out"
           >
             {{ criteriaForm.id ? 'Update' : 'Add' }} Criteria
           </button>

@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <!-- Header Section with Gradient Background -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-orange-100">
+      <div class="px-6 py-5 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-teal-100">
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-semibold text-gray-800">{{ pageant.name }}</h1>
@@ -14,7 +14,7 @@
                 :href="route('organizer.pageant.view', pageant.id)"
                 class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-300 rounded-lg transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center"
               >
-                <ArrowLeft class="h-4 w-4 mr-2 text-orange-500" />
+                <ArrowLeft class="h-4 w-4 mr-2 text-teal-500" />
                 Back to Pageant
               </Link>
             </Tooltip>
@@ -24,7 +24,7 @@
               <Tooltip text="Create a new pair entry for this pairs-only pageant" position="bottom">
                 <button
                   @click="openPairCreationModal"
-                  class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
+                  class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
                 >
                   <Users class="h-4 w-4 mr-2" />
                   Add Pair
@@ -37,7 +37,7 @@
               <Tooltip text="Add a new individual contestant for this solo pageant" position="bottom">
                 <button
                   @click="openIndividualCreationModal"
-                  class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
+                  class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105 flex items-center"
                 >
                   <Plus class="h-4 w-4 mr-2" />
                   Add Contestant
@@ -52,7 +52,7 @@
                   <button
                     @click="openIndividualCreationModal"
                     class="px-4 py-2 text-sm font-medium transition-all flex items-center rounded-l-lg border-r border-gray-300"
-                    :class="selectedCreationType === 'individual' ? 'text-white bg-orange-500 hover:bg-orange-600' : 'text-gray-700 hover:bg-gray-50'"
+                    :class="selectedCreationType === 'individual' ? 'text-white bg-teal-500 hover:bg-teal-600' : 'text-gray-700 hover:bg-gray-50'"
                   >
                     <Plus class="h-4 w-4 mr-2" />
                     Add Individual
@@ -62,7 +62,7 @@
                   <button
                     @click="openPairCreationModal"
                     class="px-4 py-2 text-sm font-medium transition-all flex items-center rounded-r-lg"
-                    :class="selectedCreationType === 'pair' ? 'text-white bg-emerald-500 hover:bg-emerald-600' : 'text-gray-700 hover:bg-gray-50'"
+                    :class="selectedCreationType === 'pair' ? 'text-white bg-teal-500 hover:bg-teal-600' : 'text-gray-700 hover:bg-gray-50'"
                   >
                     <Users class="h-4 w-4 mr-2" />
                     Add Pair
@@ -76,16 +76,16 @@
     </div>
 
     <!-- Pageant Type Info Message -->
-    <div v-if="!allowsBothTypes" class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-sm">
+    <div v-if="!allowsBothTypes" class="bg-teal-100 border-l-4 border-teal-500 text-teal-700 p-4 rounded-lg shadow-sm">
       <div class="flex items-start">
-        <Users v-if="isPairsOnly" class="h-5 w-5 mr-3 text-blue-500 mt-0.5 flex-shrink-0" />
-        <Plus v-else class="h-5 w-5 mr-3 text-blue-500 mt-0.5 flex-shrink-0" />
+        <Users v-if="isPairsOnly" class="h-5 w-5 mr-3 text-teal-500 mt-0.5 flex-shrink-0" />
+        <Plus v-else class="h-5 w-5 mr-3 text-teal-500 mt-0.5 flex-shrink-0" />
         <div>
           <p class="font-semibold">{{ isPairsOnly ? 'Pairs Only Pageant' : 'Solo Only Pageant' }}</p>
-          <p v-if="isPairsOnly" class="mt-1 text-sm text-blue-600">
+          <p v-if="isPairsOnly" class="mt-1 text-sm text-teal-600">
             This pageant only accepts paired contestants (Mr & Ms style). Create pair entries directly using the pair creation form.
           </p>
-          <p v-else class="mt-1 text-sm text-blue-600">
+          <p v-else class="mt-1 text-sm text-teal-600">
             This pageant only accepts individual solo contestants. Each contestant competes independently.
           </p>
         </div>
@@ -119,7 +119,7 @@
       <div class="px-6 py-5 border-b border-gray-200">
         <div class="flex justify-between items-center">
           <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-            <Users class="h-5 w-5 mr-2 text-orange-500" />
+            <Users class="h-5 w-5 mr-2 text-teal-500" />
             Contestants 
             <span class="ml-2 text-gray-500 text-sm font-normal">({{ contestants.length }})</span>
           </h2>
@@ -132,7 +132,7 @@
                 v-model="searchQuery" 
                 type="text" 
                 placeholder="Search contestants..." 
-                class="pl-10 pr-4 py-2 rounded-lg border-gray-300 focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-all shadow-sm hover:shadow-md"
+                class="pl-10 pr-4 py-2 rounded-lg border-gray-300 focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-all shadow-sm hover:shadow-md"
               />
             </div>
           </Tooltip>
@@ -142,8 +142,8 @@
       <div class="p-6">
         <!-- No contestants message -->
         <div v-if="contestants.length === 0" class="text-center py-12">
-          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-orange-100 to-orange-200 mb-4">
-            <Users class="h-12 w-12 text-orange-500" />
+          <div class="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-r from-teal-100 to-teal-200 mb-4">
+            <Users class="h-12 w-12 text-teal-500" />
           </div>
           <h3 class="text-lg font-medium text-gray-900 mb-1">
             {{ isPairsOnly ? 'No contestants or pairs yet' : 'No contestants in this pageant yet' }}
@@ -168,7 +168,7 @@
               <Tooltip text="Create your first pair entry for this pairs-only pageant" position="top">
                 <button
                   @click="openPairCreationModal"
-                  class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+                  class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
                 >
                   <Users class="h-4 w-4 inline mr-2" />
                   Add First Pair
@@ -181,7 +181,7 @@
               <Tooltip text="Add your first contestant to this solo pageant" position="top">
                 <button
                   @click="openIndividualCreationModal"
-                  class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+                  class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
                 >
                   <Plus class="h-4 w-4 inline mr-2" />
                   Add First Contestant
@@ -195,7 +195,7 @@
                 <Tooltip text="Add an individual contestant" position="top">
                   <button
                     @click="openIndividualCreationModal"
-                    class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+                    class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
                   >
                     <Plus class="h-4 w-4 inline mr-2" />
                     Add Individual
@@ -204,7 +204,7 @@
                 <Tooltip text="Create a pair entry" position="top">
                   <button
                     @click="openPairCreationModal"
-                    class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
+                    class="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg shadow-sm hover:shadow-lg transition-all transform hover:-translate-y-0.5 hover:scale-105"
                   >
                     <Users class="h-4 w-4 inline mr-2" />
                     Add Pair
@@ -215,7 +215,7 @@
             <Tooltip text="Return to pageant overview to manage other settings" position="top">
               <Link
                 :href="route('organizer.pageant.view', pageant.id)"
-                class="px-4 py-2 text-sm font-medium text-orange-700 hover:text-orange-900 bg-orange-50 border border-orange-200 hover:border-orange-300 rounded-lg transition-all shadow-sm hover:shadow-md flex items-center"
+                class="px-4 py-2 text-sm font-medium text-teal-700 hover:text-teal-900 bg-teal-50 border border-teal-200 hover:border-teal-300 rounded-lg transition-all shadow-sm hover:shadow-md flex items-center"
               >
                 <ArrowLeft class="h-4 w-4 mr-2" />
                 Back to Pageant Setup

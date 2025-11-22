@@ -102,7 +102,6 @@ import { Crown, AlertCircle, Loader2, ChevronLeft, Eye, EyeOff } from 'lucide-vu
 const processing = ref(false);
 const showPassword = ref(false);
 
-// Pre-fill credentials for easier testing
 const form = useForm({
   email: '',
   password: '',
@@ -112,6 +111,9 @@ const form = useForm({
 const submit = () => {
   processing.value = true;
   form.post('/login', {
+    onSuccess: () => {
+      window.location.reload();
+    },
     onFinish: () => {
       processing.value = false;
     },
@@ -178,4 +180,4 @@ const props = defineProps({
 .delay-200 {
   animation-delay: 0.2s;
 }
-</style> 
+</style>

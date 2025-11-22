@@ -13,7 +13,7 @@
             type="text"
             v-model="searchQuery"
             placeholder="Search pageants..."
-            class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 shadow-sm"
+            class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 shadow-sm"
           />
           <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
             <Search class="w-5 h-5 text-gray-400" />
@@ -24,7 +24,7 @@
           <CustomSelect
             v-model="statusFilter"
             :options="statusFilterOptions"
-            variant="orange"
+            variant="teal"
           />
         </div>
         
@@ -32,7 +32,7 @@
           <CustomSelect
             v-model="sortOrder"
             :options="sortOrderOptions"
-            variant="orange"
+            variant="teal"
           />
         </div>
       </div>
@@ -53,13 +53,13 @@
     <!-- Empty state message if no pageants -->
     <div v-if="!props.pageants || props.pageants.length === 0" class="bg-white rounded-xl shadow-md p-12 text-center max-w-lg mx-auto">
       <div class="p-4 bg-gray-50 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-        <Calendar class="h-10 w-10 text-orange-400" />
+        <Calendar class="h-10 w-10 text-teal-400" />
       </div>
       <h3 class="text-xl font-semibold text-gray-900 mb-2">No pageants found</h3>
       <p class="text-gray-500 mb-6">There are no pageants assigned to you yet.</p>
       <Link 
         href="/organizer/dashboard" 
-        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
       >
         Return to Dashboard
       </Link>
@@ -81,12 +81,12 @@
             <div 
               class="w-full h-full absolute inset-0"
               :class="{ 
-                'bg-gradient-to-r from-orange-600 to-red-500': !pageant.cover_image && pageant.status === 'Draft',
-                'bg-gradient-to-r from-blue-600 to-purple-500': !pageant.cover_image && pageant.status === 'Setup',
-                'bg-gradient-to-r from-green-600 to-teal-500': !pageant.cover_image && pageant.status === 'Active',
-                'bg-gradient-to-r from-purple-600 to-indigo-500': !pageant.cover_image && pageant.status === 'Completed',
-                'bg-gradient-to-r from-yellow-600 to-amber-500': !pageant.cover_image && pageant.status === 'Unlocked_For_Edit',
-                'bg-gradient-to-r from-orange-500 to-pink-500': !pageant.cover_image
+                'bg-gradient-to-r from-teal-600 to-red-500': !pageant.cover_image && pageant.status === 'Draft',
+                'bg-gradient-to-r from-teal-600 to-teal-500': !pageant.cover_image && pageant.status === 'Setup',
+                'bg-gradient-to-r from-teal-600 to-teal-500': !pageant.cover_image && pageant.status === 'Active',
+                'bg-gradient-to-r from-teal-600 to-teal-500': !pageant.cover_image && pageant.status === 'Completed',
+                'bg-gradient-to-r from-teal-600 to-teal-500': !pageant.cover_image && pageant.status === 'Unlocked_For_Edit',
+                'bg-gradient-to-r from-teal-500 to-teal-500': !pageant.cover_image
               }"
             ></div>
             
@@ -139,14 +139,14 @@
               <div class="mb-4">
                 <div class="flex items-center justify-between text-xs mb-1.5">
                   <span class="font-medium">Completion</span>
-                  <span class="font-bold text-orange-600">{{ pageant.progress || 0 }}%</span>
+                  <span class="font-bold text-teal-600">{{ pageant.progress || 0 }}%</span>
                 </div>
                 <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                   <div 
-                    class="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400"
+                    class="h-full rounded-full bg-gradient-to-r from-teal-500 to-teal-400"
                     :class="{
                       'from-gray-400 to-gray-300': !pageant.progress || pageant.progress === 0,
-                      'from-green-500 to-green-400': pageant.progress === 100
+                      'from-teal-500 to-teal-400': pageant.progress === 100
                     }"
                     :style="{ width: `${pageant.progress || 0}%` }"
                   ></div>
@@ -163,7 +163,7 @@
                   </div>
                 </div>
                 
-                <span class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition-colors">
+                <span class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-md transition-colors">
                   View Timeline
                   <ChevronRight class="w-4 h-4 ml-1" />
                 </span>
@@ -183,7 +183,7 @@
       <p class="text-gray-500 mb-6">Try adjusting your search filters to see more pageants.</p>
       <button 
         @click="clearFilters" 
-        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
       >
         <X class="w-4 h-4 mr-2" />
         Clear Filters
@@ -304,11 +304,11 @@ const filteredPageants = computed(() => {
 // Methods
 const getStatusClass = (status) => {
   switch (status) {
-    case 'Active': return 'bg-green-100 text-green-800'
-    case 'Setup': return 'bg-blue-100 text-blue-800'
+    case 'Active': return 'bg-teal-100 text-teal-800'
+    case 'Setup': return 'bg-teal-100 text-teal-800'
     case 'Draft': return 'bg-gray-100 text-gray-800'
-    case 'Completed': return 'bg-purple-100 text-purple-800'
-    case 'Unlocked_For_Edit': return 'bg-yellow-100 text-yellow-800'
+    case 'Completed': return 'bg-teal-100 text-teal-800'
+    case 'Unlocked_For_Edit': return 'bg-teal-100 text-teal-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -330,7 +330,7 @@ const clearFilters = () => {
 .pageant-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.1);
-  border-bottom: 3px solid #f97316;
+  border-bottom: 3px solid #0d9488;
 }
 
 /* Custom scrollbar styles for modern browsers */
@@ -344,12 +344,12 @@ const clearFilters = () => {
 }
   
 ::-webkit-scrollbar-thumb {
-  background: #f97316;
+  background: #0d9488;
   border-radius: 10px;
   border: 3px solid #f1f1f1;
 }
   
 ::-webkit-scrollbar-thumb:hover {
-  background: #e05d05;
+  background: #0f766e;
 }
 </style>
