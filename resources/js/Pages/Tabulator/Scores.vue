@@ -132,6 +132,7 @@
       <!-- Audit Logs Viewer -->
       <div v-if="pageant && currentRound">
         <AuditLogsViewer 
+          :key="currentRound.id"
           :pageant-id="pageant.id"
           :round-id="currentRound.id"
         />
@@ -209,6 +210,14 @@ const props = defineProps<Props>()
 const localScores = ref(props.scores ? new Map(Object.entries(props.scores)) : new Map())
 const criteria = ref(props.criteria || [])
 const detailedScores = ref(props.detailedScores || {})
+const currentRoundId = ref(props.currentRound?.id || (props.rounds[0]?.id))
+
+const roundOptions = computed(() => {
+  return props.rounds.map(round => ({
+    value: round.id.toString(),
+    label: round.name
+  }))
+})
 
 // Watch for changes in props.scores and update localScores accordingly
 watch(() => props.scores, (newScores) => {
@@ -224,6 +233,16 @@ watch(() => props.criteria, (newCriteria) => {
 watch(() => props.detailedScores, (newDetailedScores) => {
   detailedScores.value = newDetailedScores || {}
 }, { immediate: true })
+
+// Watch for round changes and navigate
+watch(currentRoundId, (newRoundId, oldRoundId) => {
+  if (newRoundId && newRoundId !== oldRoundId && props.pageant) {
+    const roundId = parseInt(newRoundId.toString())
+    if (!isNaN(roundId)) {
+      router.visit(route('tabulator.scores', { pageantId: props.pageant.id, roundId }))
+    }
+  }
+})
 
 // Track in-flight fetches to avoid parallel requests for the same key
 const inFlightAggregations = new Set<string>()
@@ -318,25 +337,6 @@ onUnmounted(() => {
         window.Echo.private(channelName).stopListening('ScoreUpdated', handleScoreUpdate);
     }
 });
-
-const currentRoundId = ref(props.currentRound?.id || (props.rounds[0]?.id))
-
-const roundOptions = computed(() => {
-  return props.rounds.map(round => ({
-    value: round.id.toString(),
-    label: round.name
-  }))
-})
-
-// Watch for round changes and navigate
-watch(currentRoundId, (newRoundId, oldRoundId) => {
-  if (newRoundId && newRoundId !== oldRoundId && props.pageant) {
-    const roundId = parseInt(newRoundId.toString())
-    if (!isNaN(roundId)) {
-      router.visit(route('tabulator.scores', { pageantId: props.pageant.id, roundId }))
-    }
-  }
-})
 
 const getCurrentRoundLabel = () => {
   const selectedRound = props.rounds.find(r => r.id.toString() === currentRoundId.value?.toString())
