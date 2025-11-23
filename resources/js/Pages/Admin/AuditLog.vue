@@ -28,13 +28,13 @@
     <!-- Filters -->
     <div class="bg-white shadow-md rounded-xl border border-gray-100 p-4 sm:p-6">
       <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Filters</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
         <div>
           <label for="user_id" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">User</label>
           <select
             id="user_id"
             v-model="filterForm.user_id"
-            class="w-full rounded-md border border-gray-300 py-1.5 sm:py-2 pl-2 sm:pl-3 pr-6 sm:pr-10 text-xs sm:text-sm"
+            class="w-[100%] rounded-md border border-gray-300 py-1.5 sm:py-2 pl-2 sm:pl-3 pr-6 sm:pr-10 text-xs sm:text-sm"
           >
             <option value="">All Users</option>
             <option value="null">System</option>
@@ -71,7 +71,7 @@
         </div>
         <div>
           <label for="date_from" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Date Range</label>
-          <div class="flex space-x-2">
+          <div class="flex space-x-4">
             <input
               id="date_from"
               type="date"
@@ -138,12 +138,39 @@
         <table class="min-w-full divide-y divide-gray-200 hidden sm:table">
           <thead class="bg-gray-50">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="sortBy('created_at')">
+                <div class="flex items-center gap-1">
+                  <span>Timestamp</span>
+                  <component :is="getSortIcon('created_at')" class="h-4 w-4" />
+                </div>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="sortBy('user_id')">
+                <div class="flex items-center gap-1">
+                  <span>User</span>
+                  <component :is="getSortIcon('user_id')" class="h-4 w-4" />
+                </div>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="sortBy('action_type')">
+                <div class="flex items-center gap-1">
+                  <span>Action</span>
+                  <component :is="getSortIcon('action_type')" class="h-4 w-4" />
+                </div>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="sortBy('target_entity')">
+                <div class="flex items-center gap-1">
+                  <span>Target</span>
+                  <component :is="getSortIcon('target_entity')" class="h-4 w-4" />
+                </div>
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Details
+              </th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" @click="sortBy('ip_address')">
+                <div class="flex items-center gap-1">
+                  <span>IP Address</span>
+                  <component :is="getSortIcon('ip_address')" class="h-4 w-4" />
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -287,7 +314,10 @@ import {
   Search, 
   RefreshCw, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-vue-next';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
@@ -304,7 +334,9 @@ const filterForm = ref({
   action_type: props.filters.action_type || '',
   target_entity: props.filters.target_entity || '',
   date_from: props.filters.date_from || '',
-  date_to: props.filters.date_to || ''
+  date_to: props.filters.date_to || '',
+  sort_by: props.filters.sort_by || 'created_at',
+  sort_direction: props.filters.sort_direction || 'desc'
 });
 
 // Format date to readable format
@@ -402,10 +434,37 @@ const resetFilters = () => {
     action_type: '',
     target_entity: '',
     date_from: '',
-    date_to: ''
+    date_to: '',
+    sort_by: 'created_at',
+    sort_direction: 'desc'
   };
   
   router.get(route('admin.audit_log'), filterForm.value);
+};
+
+// Sort by column
+const sortBy = (column) => {
+  if (filterForm.value.sort_by === column) {
+    // Toggle direction if clicking the same column
+    filterForm.value.sort_direction = filterForm.value.sort_direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    // Set new column and default to descending
+    filterForm.value.sort_by = column;
+    filterForm.value.sort_direction = 'desc';
+  }
+  
+  router.get(route('admin.audit_log'), filterForm.value, {
+    preserveState: true,
+    preserveScroll: true
+  });
+};
+
+// Get sort icon for a column
+const getSortIcon = (column) => {
+  if (filterForm.value.sort_by !== column) {
+    return ArrowUpDown;
+  }
+  return filterForm.value.sort_direction === 'asc' ? ArrowUp : ArrowDown;
 };
 </script>
 

@@ -41,7 +41,7 @@ class StoreContestantRequest extends FormRequest
             'age' => ['nullable', 'integer', 'min:1', 'max:150'],
             'bio' => ['nullable', 'string', 'max:5000'],
             'images' => ['nullable', 'array', 'max:10'],
-            'images.*' => ['image', 'mimes:jpeg,png,jpg', 'max:10240'],
+            'images.*' => ['image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
             'metadata' => ['nullable', 'array'],
         ];
     }
@@ -70,7 +70,7 @@ class StoreContestantRequest extends FormRequest
             'images.array' => 'Invalid images format.',
             'images.max' => 'You can upload a maximum of 10 images.',
             'images.*.image' => 'Each file must be a valid image.',
-            'images.*.mimes' => 'Images must be in JPEG, PNG, or JPG format.',
+            'images.*.mimes' => 'Images must be in JPEG, PNG, JPG, or WebP format.',
             'images.*.max' => 'Each image must not exceed 10MB.',
         ];
     }

@@ -94,6 +94,10 @@ class TabulatorController extends Controller
      */
     public function judges($pageantId)
     {
+        if (! Auth::user()->hasPermission('tabulator_view_judges')) {
+            return redirect()->back()->with('error', 'You do not have permission to view judge information.');
+        }
+
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
@@ -235,7 +239,7 @@ class TabulatorController extends Controller
             'is_verified' => true,
             'email_verified_at' => now(),
         ]);
-
+        
         // Assign the judge to this pageant
         $pageant->judges()->attach($judge->id, [
             'role' => $validated['role_title'] ?? 'Judge',
@@ -692,6 +696,10 @@ class TabulatorController extends Controller
      */
     public function lockRound($pageantId, $roundId)
     {
+        if (! Auth::user()->hasPermission('tabulator_tabulate_results')) {
+            return redirect()->back()->with('error', 'You do not have permission to lock rounds.');
+        }
+
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
@@ -714,6 +722,10 @@ class TabulatorController extends Controller
      */
     public function unlockRound($pageantId, $roundId)
     {
+        if (! Auth::user()->hasPermission('tabulator_tabulate_results')) {
+            return redirect()->back()->with('error', 'You do not have permission to unlock rounds.');
+        }
+
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 

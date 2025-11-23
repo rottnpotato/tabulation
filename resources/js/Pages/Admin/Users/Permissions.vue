@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 
@@ -163,9 +163,21 @@ defineOptions({
 
 // Props from controller
 const props = defineProps({
-  permissions: {
-    type: Object,
-    required: true
+  adminPermissions: {
+    type: Array,
+    default: () => []
+  },
+  organizerPermissions: {
+    type: Array,
+    default: () => []
+  },
+  tabulatorPermissions: {
+    type: Array,
+    default: () => []
+  },
+  judgePermissions: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -178,49 +190,11 @@ const tabs = [
   { id: 'judges', name: 'Judges' }
 ]
 
-// Permission lists (would be populated from props in a real implementation)
-const adminPermissions = ref([
-  { id: 'admin_create_pageant', name: 'Create Pageants', granted: true },
-  { id: 'admin_edit_pageant', name: 'Edit Pageants', granted: true },
-  { id: 'admin_delete_pageant', name: 'Delete Pageants', granted: true },
-  { id: 'admin_manage_users', name: 'Manage All Users', granted: true },
-  { id: 'admin_view_audit_log', name: 'View Audit Logs', granted: true },
-  { id: 'admin_system_settings', name: 'Configure System Settings', granted: true },
-  { id: 'admin_grant_permissions', name: 'Grant/Revoke Permissions', granted: true },
-  { id: 'admin_view_reports', name: 'Access All Reports', granted: true }
-])
-
-const organizerPermissions = ref([
-  { id: 'organizer_edit_own_pageant', name: 'Edit Own Pageants', granted: true },
-  { id: 'organizer_create_contestant', name: 'Create & Edit Contestants', granted: true },
-  { id: 'organizer_manage_judges', name: 'Assign Judges', granted: true },
-  { id: 'organizer_manage_criteria', name: 'Configure Criteria & Scoring', granted: true },
-  { id: 'organizer_view_results', name: 'View Results & Reports', granted: true },
-  { id: 'organizer_publish_results', name: 'Publish Final Results', granted: true },
-  { id: 'organizer_export_data', name: 'Export Pageant Data', granted: true },
-  { id: 'organizer_assign_tabulators', name: 'Assign Tabulators', granted: true }
-])
-
-const tabulatorPermissions = ref([
-  { id: 'tabulator_view_judges', name: 'View Judge Information', granted: true },
-  { id: 'tabulator_view_scores', name: 'View Individual Scores', granted: true },
-  { id: 'tabulator_tabulate_results', name: 'Tabulate & Verify Results', granted: true },
-  { id: 'tabulator_print_reports', name: 'Generate Score Reports', granted: true },
-  { id: 'tabulator_view_contestants', name: 'View Contestant Details', granted: true },
-  { id: 'tabulator_edit_scores', name: 'Edit Submitted Scores', granted: false },
-  { id: 'tabulator_export_data', name: 'Export Score Data', granted: true },
-  { id: 'tabulator_publish_results', name: 'Publish Results', granted: false }
-])
-
-const judgePermissions = ref([
-  { id: 'judge_view_criteria', name: 'View Scoring Criteria', granted: true },
-  { id: 'judge_submit_scores', name: 'Submit Scores', granted: true },
-  { id: 'judge_edit_own_scores', name: 'Edit Own Submitted Scores', granted: true },
-  { id: 'judge_view_contestants', name: 'View Contestant Profiles', granted: true },
-  { id: 'judge_view_other_judges', name: 'View Other Judges Profiles', granted: false },
-  { id: 'judge_view_results', name: 'View Results', granted: false },
-  { id: 'judge_export_scores', name: 'Export Own Scores', granted: false }
-])
+// Permission lists - initialize from props
+const adminPermissions = ref(props.adminPermissions || [])
+const organizerPermissions = ref(props.organizerPermissions || [])
+const tabulatorPermissions = ref(props.tabulatorPermissions || [])
+const judgePermissions = ref(props.judgePermissions || [])
 
 // Save permissions
 const savePermissions = (roleType) => {

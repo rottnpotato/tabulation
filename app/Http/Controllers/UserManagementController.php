@@ -24,6 +24,10 @@ class UserManagementController extends Controller
      */
     public function organizers()
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
         $organizers = User::where('role', 'organizer')
             ->withCount('pageants')
             ->orderBy('created_at', 'desc')
@@ -51,6 +55,10 @@ class UserManagementController extends Controller
      */
     public function createOrganizer()
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->route('admin.dashboard')->with('error', 'You do not have permission to manage users.');
+        }
+
         return Inertia::render('Admin/Users/CreateOrganizer');
     }
 
@@ -59,6 +67,10 @@ class UserManagementController extends Controller
      */
     public function storeOrganizer(Request $request)
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -92,10 +104,9 @@ class UserManagementController extends Controller
 
         // Log the action
         $this->auditLogService->log(
-            Auth::user()->id,
+            'CREATE_ORGANIZER',
             'User',
             $organizer->id,
-            'CREATE_ORGANIZER',
             "Created new organizer user: {$organizer->name}"
         );
 
@@ -161,6 +172,10 @@ class UserManagementController extends Controller
      */
     public function updateOrganizer(Request $request, $id)
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
         $organizer = User::findOrFail($id);
 
         // Check if username is null or empty and generate one if needed
@@ -201,10 +216,9 @@ class UserManagementController extends Controller
 
             // Log the status change specifically
             $this->auditLogService->log(
-                Auth::user()->id,
+                'UPDATE_ORGANIZER_STATUS',
                 'User',
                 $organizer->id,
-                'UPDATE_ORGANIZER_STATUS',
                 "Updated organizer status: {$organizer->name}. Status changed to: ".($organizer->is_active ? 'Active' : 'Inactive')
             );
 
@@ -224,10 +238,9 @@ class UserManagementController extends Controller
 
             // Log the action
             $this->auditLogService->log(
-                Auth::user()->id,
+                'UPDATE_ORGANIZER',
                 'User',
                 $organizer->id,
-                'UPDATE_ORGANIZER',
                 "Updated organizer user: {$organizer->name}. Status: ".($organizer->is_active ? 'Active' : 'Inactive')
             );
 
@@ -240,6 +253,10 @@ class UserManagementController extends Controller
      */
     public function deleteOrganizer($id)
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
         $organizer = User::findOrFail($id);
         $name = $organizer->name;
 
@@ -250,10 +267,9 @@ class UserManagementController extends Controller
 
         // Log the action before deletion
         $this->auditLogService->log(
-            Auth::user()->id,
+            'DELETE_ORGANIZER',
             'User',
             $organizer->id,
-            'DELETE_ORGANIZER',
             "Deleted organizer user: {$name}"
         );
 
@@ -279,10 +295,9 @@ class UserManagementController extends Controller
 
             // Log the action
             $this->auditLogService->log(
-                Auth::user()->id,
+                'RESEND_VERIFICATION',
                 'User',
                 $organizer->id,
-                'RESEND_VERIFICATION',
                 "Resent verification email to organizer: {$organizer->name}"
             );
 
@@ -323,6 +338,10 @@ class UserManagementController extends Controller
      */
     public function createAdmin()
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->route('admin.dashboard')->with('error', 'You do not have permission to manage users.');
+        }
+
         return Inertia::render('Admin/Users/CreateAdmin');
     }
 
@@ -331,6 +350,10 @@ class UserManagementController extends Controller
      */
     public function storeAdmin(Request $request)
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -351,10 +374,9 @@ class UserManagementController extends Controller
 
         // Log the action
         $this->auditLogService->log(
-            Auth::user()->id,
+            'CREATE_ADMIN',
             'User',
             $admin->id,
-            'CREATE_ADMIN',
             "Created new admin user: {$admin->name}"
         );
 
@@ -417,6 +439,10 @@ class UserManagementController extends Controller
      */
     public function updateAdmin(Request $request, $id)
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
         $admin = User::findOrFail($id);
 
         // Don't update current user - prevent self-modification
@@ -441,10 +467,9 @@ class UserManagementController extends Controller
 
         // Log the action
         $this->auditLogService->log(
-            Auth::user()->id,
+            'UPDATE_ADMIN',
             'User',
             $admin->id,
-            'UPDATE_ADMIN',
             "Updated admin user: {$admin->name}"
         );
 
@@ -456,6 +481,10 @@ class UserManagementController extends Controller
      */
     public function deleteAdmin($id)
     {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
         $admin = User::findOrFail($id);
 
         // Don't delete current user - prevent self-deletion
@@ -467,10 +496,9 @@ class UserManagementController extends Controller
 
         // Log the action before deletion
         $this->auditLogService->log(
-            Auth::user()->id,
+            'DELETE_ADMIN',
             'User',
             $admin->id,
-            'DELETE_ADMIN',
             "Deleted admin user: {$name}"
         );
 
@@ -627,10 +655,9 @@ class UserManagementController extends Controller
 
             // Log the status change specifically
             $this->auditLogService->log(
-                Auth::user()->id,
+                'UPDATE_TABULATOR_STATUS',
                 'User',
                 $tabulator->id,
-                'UPDATE_TABULATOR_STATUS',
                 "Updated tabulator status: {$tabulator->name}. Status changed to: ".($tabulator->is_active ? 'Active' : 'Inactive')
             );
 
@@ -650,10 +677,9 @@ class UserManagementController extends Controller
 
             // Log the action
             $this->auditLogService->log(
-                Auth::user()->id,
+                'UPDATE_TABULATOR',
                 'User',
                 $tabulator->id,
-                'UPDATE_TABULATOR',
                 "Updated tabulator user: {$tabulator->name}. Status: ".($tabulator->is_active ? 'Active' : 'Inactive')
             );
 
@@ -809,10 +835,9 @@ class UserManagementController extends Controller
 
             // Log the status change specifically
             $this->auditLogService->log(
-                Auth::user()->id,
+                'UPDATE_JUDGE_STATUS',
                 'User',
                 $judge->id,
-                'UPDATE_JUDGE_STATUS',
                 "Updated judge status: {$judge->name}. Status changed to: ".($judge->is_active ? 'Active' : 'Inactive')
             );
 
@@ -832,10 +857,9 @@ class UserManagementController extends Controller
 
             // Log the action
             $this->auditLogService->log(
-                Auth::user()->id,
+                'UPDATE_JUDGE',
                 'User',
                 $judge->id,
-                'UPDATE_JUDGE',
                 "Updated judge user: {$judge->name}. Status: ".($judge->is_active ? 'Active' : 'Inactive')
             );
 
@@ -848,48 +872,45 @@ class UserManagementController extends Controller
      */
     public function permissions()
     {
-        $roles = [
-            'admin' => [
-                'name' => 'Administrator',
-                'permissions' => [
-                    'manage_pageants' => 'Manage all pageants',
-                    'manage_users' => 'Manage all users',
-                    'view_reports' => 'View all reports',
-                    'view_audit_logs' => 'View audit logs',
-                    'grant_permissions' => 'Grant/revoke permissions',
-                    'system_settings' => 'Modify system settings',
-                ],
-            ],
-            'organizer' => [
-                'name' => 'Organizer',
-                'permissions' => [
-                    'manage_own_pageants' => 'Manage assigned pageants',
-                    'create_contestants' => 'Create/edit contestants',
-                    'create_criteria' => 'Create/edit scoring criteria',
-                    'assign_tabulators' => 'Assign tabulators',
-                    'view_results' => 'View pageant results',
-                ],
-            ],
-            'tabulator' => [
-                'name' => 'Tabulator',
-                'permissions' => [
-                    'manage_judges' => 'Manage judges',
-                    'view_scores' => 'View scores',
-                    'tabulate_results' => 'Tabulate results',
-                    'generate_reports' => 'Generate reports',
-                ],
-            ],
-            'judge' => [
-                'name' => 'Judge',
-                'permissions' => [
-                    'score_contestants' => 'Score contestants',
-                    'view_assigned_pageants' => 'View assigned pageants',
-                ],
-            ],
-        ];
+        if (! Auth::user()->hasPermission('admin_grant_permissions')) {
+            return redirect()->route('admin.dashboard')->with('error', 'You do not have permission to manage permissions.');
+        }
+
+        // Get all permissions from database, grouped by role
+        $adminPermissions = \App\Models\RolePermission::where('role', 'admin')->get();
+        $organizerPermissions = \App\Models\RolePermission::where('role', 'organizer')->get();
+        $tabulatorPermissions = \App\Models\RolePermission::where('role', 'tabulator')->get();
+        $judgePermissions = \App\Models\RolePermission::where('role', 'judge')->get();
 
         return Inertia::render('Admin/Users/Permissions', [
-            'roles' => $roles,
+            'adminPermissions' => $adminPermissions->map(function ($perm) {
+                return [
+                    'id' => $perm->permission_key,
+                    'name' => $perm->permission_name,
+                    'granted' => $perm->granted,
+                ];
+            }),
+            'organizerPermissions' => $organizerPermissions->map(function ($perm) {
+                return [
+                    'id' => $perm->permission_key,
+                    'name' => $perm->permission_name,
+                    'granted' => $perm->granted,
+                ];
+            }),
+            'tabulatorPermissions' => $tabulatorPermissions->map(function ($perm) {
+                return [
+                    'id' => $perm->permission_key,
+                    'name' => $perm->permission_name,
+                    'granted' => $perm->granted,
+                ];
+            }),
+            'judgePermissions' => $judgePermissions->map(function ($perm) {
+                return [
+                    'id' => $perm->permission_key,
+                    'name' => $perm->permission_name,
+                    'granted' => $perm->granted,
+                ];
+            }),
         ]);
     }
 
@@ -898,22 +919,34 @@ class UserManagementController extends Controller
      */
     public function updatePermissions(Request $request, $role)
     {
+        if (! Auth::user()->hasPermission('admin_grant_permissions')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage permissions.');
+        }
+
         $validated = $request->validate([
             'permissions' => 'required|array',
+            'permissions.*.id' => 'required|string',
+            'permissions.*.name' => 'required|string',
+            'permissions.*.granted' => 'required|boolean',
         ]);
 
-        // In a real implementation, this would update role permissions in the database
-        // For now, we'll just log the action and return success
+        try {
+            // Update permissions in database
+            \App\Models\RolePermission::updateRolePermissions($role, $validated['permissions']);
 
-        // Log the action
-        $this->auditLogService->log(
-            Auth::user()->id,
-            'Role',
-            $role,
-            'UPDATE_PERMISSIONS',
-            "Updated permissions for role: {$role}"
-        );
+            // Log the action
+            $this->auditLogService->log(
+                'UPDATE_PERMISSIONS',
+                'Role',
+                null,
+                "Updated permissions for role: {$role}"
+            );
 
-        return redirect()->route('admin.users.permissions')->with('success', "Permissions for {$role} role updated successfully.");
+            return back()->with('success', ucfirst($role).' permissions updated successfully.');
+        } catch (\Exception $e) {
+            Log::error('Failed to update permissions: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to update permissions. Please try again.'.$e->getMessage());
+        }
     }
 }

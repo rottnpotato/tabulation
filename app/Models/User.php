@@ -204,4 +204,25 @@ class User extends Authenticatable
 
         return collect([]);
     }
+
+    /**
+     * Check if user has a specific permission
+     */
+    public function hasPermission(string $permissionKey): bool
+    {
+        // Admins always have all permissions
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return RolePermission::hasPermission($this->role, $permissionKey);
+    }
+
+    /**
+     * Get all permissions for this user's role
+     */
+    public function permissions()
+    {
+        return RolePermission::getPermissionsForRole($this->role);
+    }
 }

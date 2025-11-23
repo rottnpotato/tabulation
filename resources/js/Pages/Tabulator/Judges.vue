@@ -345,9 +345,9 @@
               placeholder="Enter password"
               class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
               required
-              minlength="6"
+              minlength="8"
             />
-            <p class="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
+            <p class="mt-1 text-xs text-gray-500">Minimum 8 characters</p>
             <p v-if="createJudgeForm.errors.password" class="mt-1 text-sm text-red-600">{{ createJudgeForm.errors.password }}</p>
           </div>
           

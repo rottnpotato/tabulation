@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 overflow-auto">
     <Head title="Admin Dashboard" />
     <SideNav>
       <div class="p-2 sm:p-4 md:p-6">
@@ -37,11 +37,33 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import SideNav from '@/Components/SideNav.vue'
 import NotificationSystem from '@/Components/NotificationSystem.vue';
 import AdminEventListener from '@/Components/AdminEventListener.vue';
+import { useNotification } from '@/Composables/useNotification';
+
+const page = usePage();
+const notify = useNotification();
+
+// Watch for flash messages
+watch(() => page.props.flash, (flash) => {
+  if (!flash) return;
+  
+  if (flash.success) {
+    notify.success(flash.success);
+  }
+  if (flash.error) {
+    notify.error(flash.error);
+  }
+  if (flash.warning) {
+    notify.warning(flash.warning);
+  }
+  if (flash.info) {
+    notify.info(flash.info);
+  }
+}, { deep: true, immediate: true });
 
 // Add console log for debugging
 console.log('AdminLayout mounted');
