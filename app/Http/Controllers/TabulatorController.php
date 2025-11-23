@@ -433,14 +433,15 @@ class TabulatorController extends Controller
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
-        $rounds = $pageant->rounds->map(function ($round) {
+        $rounds = $pageant->rounds->sortBy('display_order')->map(function ($round) {
             return [
                 'id' => $round->id,
                 'name' => $round->name,
                 'type' => $round->type,
                 'weight' => $round->weight,
+                'top_n_proceed' => $round->top_n_proceed,
             ];
-        });
+        })->values();
 
         // Calculate real final scores using the service
         $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant);
@@ -478,10 +479,41 @@ class TabulatorController extends Controller
             ];
         };
 
-        // Convert to collection for consistency with frontend expectations
+        // Helper function to mark qualified contestants based on top_n_proceed from previous round
+        $markQualifiedContestants = function ($results, $stageType) use ($pageant) {
+            // Find the last round before this stage that has top_n_proceed set
+            $orderedRounds = $pageant->rounds->sortBy('display_order');
+            $topN = null;
+
+            foreach ($orderedRounds as $round) {
+                if ($round->type === $stageType) {
+                    // Found the target stage, stop looking
+                    break;
+                }
+
+                // Check if this round has advancement rules
+                if ($round->top_n_proceed !== null && $round->top_n_proceed > 0) {
+                    $topN = $round->top_n_proceed;
+                }
+            }
+
+            // Mark contestants as qualified or not based on their rank
+            foreach ($results as $index => &$contestant) {
+                $contestant['qualified'] = $topN === null || ($index + 1) <= $topN;
+                $contestant['qualification_cutoff'] = $topN;
+            }
+
+            return $results;
+        };
+
+        // Convert to collection and mark qualified contestants
         $contestants = collect($contestants)->map($formatContestantData);
-        $semiFinalResults = collect($semiFinalResults)->map($formatContestantData);
-        $finalResults = collect($finalResults)->map($formatContestantData);
+
+        $semiFinalResults = collect($semiFinalResults)->map($formatContestantData)->all();
+        $semiFinalResults = $markQualifiedContestants($semiFinalResults, 'semi-final');
+
+        $finalResults = collect($finalResults)->map($formatContestantData)->all();
+        $finalResults = $markQualifiedContestants($finalResults, 'final');
 
         return Inertia::render('Tabulator/Results', [
             'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
@@ -499,6 +531,33 @@ class TabulatorController extends Controller
     {
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        // Helper function to mark qualified contestants based on top_n_proceed from previous round
+        $markQualifiedContestants = function ($results, $stageType) use ($pageant) {
+            // Find the last round before this stage that has top_n_proceed set
+            $orderedRounds = $pageant->rounds->sortBy('display_order');
+            $topN = null;
+
+            foreach ($orderedRounds as $round) {
+                if ($round->type === $stageType) {
+                    // Found the target stage, stop looking
+                    break;
+                }
+
+                // Check if this round has advancement rules
+                if ($round->top_n_proceed !== null && $round->top_n_proceed > 0) {
+                    $topN = $round->top_n_proceed;
+                }
+            }
+
+            // Mark contestants as qualified based on their position
+            return $results->map(function ($contestant, $index) use ($topN) {
+                $contestant['qualified'] = $topN === null || ($index + 1) <= $topN;
+                $contestant['qualification_cutoff'] = $topN;
+
+                return $contestant;
+            });
+        };
 
         // Compute results for each stage
         $overallResults = collect($this->scoreCalculationService->calculatePageantFinalScores($pageant))->map(function ($contestant) use ($pageant) {
@@ -553,7 +612,8 @@ class TabulatorController extends Controller
                 'final_score' => $contestant['finalScore'] ?? 0,
                 'rank' => $contestant['rank'] ?? 0,
             ];
-        })->values();
+        });
+        $semiResults = $markQualifiedContestants($semiResults, 'semi-final')->values();
 
         $finalResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, 'final'))->map(function ($contestant) use ($pageant) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
@@ -580,7 +640,8 @@ class TabulatorController extends Controller
                 'final_score' => $contestant['finalScore'] ?? 0,
                 'rank' => $contestant['rank'] ?? 0,
             ];
-        })->values();
+        });
+        $finalResults = $markQualifiedContestants($finalResults, 'final')->values();
 
         // Get judges for this pageant
         $judges = $pageant->judges->map(function ($judge) {

@@ -198,14 +198,27 @@
 
             <!-- Action Button -->
             <div class="pt-2">
+              <!-- Date restriction warning -->
+              <div v-if="!pageant.can_be_scored && pageant.pageant_date" class="mb-3 px-3 py-2 rounded-lg bg-amber-900/30 border border-amber-700/50 text-amber-200 text-xs flex items-center gap-2">
+                <Calendar class="w-3.5 h-3.5 text-amber-400" />
+                <span>Scoring opens on {{ formatDate(pageant.pageant_date) }}</span>
+              </div>
+              
               <Link
-                v-if="pageant.id && pageant.rounds_count > 0"
+                v-if="pageant.id && pageant.rounds_count > 0 && pageant.can_be_scored"
                 :href="getScoringUrl(pageant.id)"
                 class="w-full py-3.5 bg-white hover:bg-teal-50 text-teal-950 font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-white/5 group-hover:scale-[1.02]"
               >
                 <Star class="w-4 h-4 text-teal-900" />
                 {{ pageant.current_round ? 'Continue Scoring' : 'Start Scoring' }}
               </Link>
+              <div
+                v-else-if="!pageant.can_be_scored && pageant.rounds_count > 0"
+                class="w-full py-3.5 bg-teal-900/40 text-teal-500/50 font-bold rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-teal-900/50"
+              >
+                <Calendar class="w-4 h-4" />
+                Available on Pageant Date
+              </div>
               <div
                 v-else
                 class="w-full py-3.5 bg-teal-900/40 text-teal-500/50 font-bold rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-teal-900/50"

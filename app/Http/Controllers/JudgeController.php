@@ -64,6 +64,7 @@ class JudgeController extends Controller
                     'description' => $pageant->description,
                     'status' => $pageant->status,
                     'pageant_date' => $pageant->pageant_date,
+                    'can_be_scored' => $pageant->canBeScored(),
                     'venue' => $pageant->venue,
                     'location' => $pageant->location,
                     'cover_image' => $pageant->cover_image,
@@ -99,6 +100,18 @@ class JudgeController extends Controller
 
         // Validate judge has access to this pageant
         $pageant = $this->getPageantForJudge($pageantId, $judge->id);
+
+        // Check if pageant can be scored (only on pageant date)
+        if (! $pageant->canBeScored()) {
+            return Inertia::render('Judge/Scoring', [
+                'pageant' => [
+                    'id' => $pageant->id,
+                    'name' => $pageant->name,
+                    'pageant_date' => $pageant->pageant_date?->format('F j, Y'),
+                ],
+                'error' => 'Scoring is only allowed on the pageant date ('.$pageant->pageant_date?->format('F j, Y').'). Please return on that date to submit scores.',
+            ]);
+        }
 
         // Get available rounds for this pageant with locking status
         $rounds = $pageant->rounds()->active()->ordered()->with('lockedBy')->get();
@@ -242,6 +255,14 @@ class JudgeController extends Controller
         // Validate judge has access to this pageant
         $pageant = $this->getPageantForJudge($pageantId, $judge->id);
         $round = $pageant->rounds()->findOrFail($roundId);
+
+        // Check if pageant can be scored (only on pageant date)
+        if (! $pageant->canBeScored()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Scoring is only allowed on the pageant date ('.$pageant->pageant_date?->format('F j, Y').').',
+            ], 403);
+        }
 
         // Check if round is locked for editing
         if ($round->isLocked()) {

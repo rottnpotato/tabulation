@@ -71,7 +71,7 @@
       <div v-else class="space-y-6 animate-fade-in">
         <!-- Toolbar -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative">
-          <div class="absolute inset-0 overflow-hidden rounded-2xl">
+          <div class="absolute inset-0 rounded-2xl pointer-events-none">
             <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
           </div>
           <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -257,38 +257,57 @@ watch(currentRoundId, (newRoundId, oldRoundId) => {
 
 // Track in-flight fetches to avoid parallel requests for the same key
 const inFlightAggregations = new Set<string>()
+const pendingUpdates = new Map<string, ReturnType<typeof setTimeout>>()
 
-// Notification cooldown per (contestant-judge-round)
-const NOTIFICATION_COOLDOWN_MS = 1500
-const notificationCooldowns = new Map<string, number>()
+// Debounce updates to batch multiple score changes
+const DEBOUNCE_MS = 100
 
 const handleScoreUpdate = async (e: any) => {
-  console.log('ScoreUpdated event received:', e)
-  // When a score is updated, we need to recalculate the aggregated judge score
-  // for this contestant-judge-round combination
-  const { contestant_id, judge_id, round_id } = e;
+  console.log('🔔 ScoreUpdated event received:', e)
+  
+  const { contestant_id, judge_id, round_id, score, criteria_name } = e
 
-  console.log('Current round ID:', currentRoundId.value, 'Event round ID:', round_id)
-  if (round_id == currentRoundId.value) {
-    const key = `${contestant_id}-${judge_id}-${round_id}`
+  // Only process if this event is for the currently displayed round
+  if (round_id != currentRoundId.value) {
+    console.log('⏭️ Ignoring score update for different round:', round_id, 'vs current:', currentRoundId.value)
+    return
+  }
 
+  const key = `${contestant_id}-${judge_id}-${round_id}`
+
+  // Clear any existing pending update for this key
+  const existingTimeout = pendingUpdates.get(key)
+  if (existingTimeout) {
+    clearTimeout(existingTimeout)
+  }
+
+  // Debounce the update to batch rapid score changes
+  const timeoutId = setTimeout(async () => {
+    pendingUpdates.delete(key)
+    
     // Avoid duplicate work if a fetch for this key is already in progress
     if (inFlightAggregations.has(key)) {
+      console.log('⚠️ Update already in progress for:', key)
       return
     }
+    
     inFlightAggregations.add(key)
 
-    // Fetch just the updated aggregated score for this specific judge-contestant-round
+    // Fetch the updated aggregated score for this specific judge-contestant-round
     try {
-      const response = await fetch(route('tabulator.scores.aggregated', [props.pageant?.id, round_id]) + `?judge_id=${judge_id}&contestant_id=${contestant_id}`, {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
+      const response = await fetch(
+        route('tabulator.scores.aggregated', [props.pageant?.id, round_id]) + 
+        `?judge_id=${judge_id}&contestant_id=${contestant_id}`,
+        {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
         }
-      });
+      )
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json()
         if (data.aggregated_score !== undefined && data.aggregated_score !== null) {
           const oldScore = localScores.value.get(key)
           const newScore = Number(data.aggregated_score)
@@ -296,58 +315,69 @@ const handleScoreUpdate = async (e: any) => {
 
           // Update local cache
           localScores.value.set(key, newScore)
-          console.log(`Score updated for contestant ${contestant_id} by judge ${judge_id}: ${newScore}`)
-
-          // Only notify if the value actually changed and not within cooldown window
-          const now = Date.now()
-          const lastNotified = notificationCooldowns.get(key) ?? 0
-          const withinCooldown = now - lastNotified < NOTIFICATION_COOLDOWN_MS
-
-          if (changed && !withinCooldown) {
-            // Notification handled globally by TabulatorLayout
-            notificationCooldowns.set(key, now)
+          
+          if (changed) {
+            console.log(`✅ Score updated for contestant ${contestant_id} by judge ${judge_id}: ${newScore}`)
+          } else {
+            console.log(`ℹ️ Score unchanged for contestant ${contestant_id} by judge ${judge_id}: ${newScore}`)
           }
         }
       } else {
-        console.warn(`Failed to fetch aggregated score: HTTP ${response.status}`);
-        // Fallback: refresh entire scores data
-        refreshData();
+        console.warn(`⚠️ Failed to fetch aggregated score: HTTP ${response.status}`)
+        // On error, do a full refresh after a delay
+        setTimeout(() => refreshData(), 2000)
       }
     } catch (error) {
-      console.error('Network error while refreshing aggregated score:', error);
-      // small delay before fallback to avoid rapid requests
-      setTimeout(() => {
-        refreshData();
-      }, 1000);
+      console.error('❌ Network error while fetching aggregated score:', error)
+      // Retry once after a delay
+      setTimeout(() => refreshData(), 2000)
     } finally {
       inFlightAggregations.delete(key)
     }
-  }
+  }, DEBOUNCE_MS)
+
+  pendingUpdates.set(key, timeoutId)
 }
 
+let echoChannel: any = null
+
 onMounted(() => {
-  if (props.pageant) {
-    const channelName = `pageant.${props.pageant.id}`
-    console.log('Subscribing to pageant channel:', channelName)
-
-    // Ensure we do not attach multiple listeners when the component remounts (HMR / navigation)
-    const channel = window.Echo.private(channelName)
-    
-    // Do NOT stopListening blindly as it removes Layout listeners too
-    // channel.stopListening('ScoreUpdated')
-
-    channel.listen('ScoreUpdated', handleScoreUpdate);
+  if (!props.pageant) {
+    console.log('⚠️ No pageant selected, skipping WebSocket subscription')
+    return
   }
-});
+
+  if (typeof window === 'undefined' || !window.Echo) {
+    console.error('❌ Laravel Echo not available')
+    return
+  }
+
+  const channelName = `pageant.${props.pageant.id}`
+  console.log('🔌 Subscribing to channel:', channelName)
+
+  // Subscribe to the pageant channel
+  echoChannel = window.Echo.private(channelName)
+  echoChannel.listen('ScoreUpdated', handleScoreUpdate)
+  
+  console.log('✅ Successfully subscribed to score updates')
+})
 
 onUnmounted(() => {
-    if (props.pageant) {
-        const channelName = `pageant.${props.pageant.id}`
-        // Stop listening to the specific handler, but DO NOT leave the channel
-        // as TabulatorLayout might still be using it.
-        window.Echo.private(channelName).stopListening('ScoreUpdated', handleScoreUpdate);
-    }
-});
+  // Clear any pending debounced updates
+  pendingUpdates.forEach(timeout => clearTimeout(timeout))
+  pendingUpdates.clear()
+  
+  // Clean up in-flight requests
+  inFlightAggregations.clear()
+  
+  // Stop listening to this specific handler
+  if (echoChannel && props.pageant) {
+    const channelName = `pageant.${props.pageant.id}`
+    console.log('🔌 Unsubscribing from channel:', channelName)
+    echoChannel.stopListening('ScoreUpdated', handleScoreUpdate)
+    echoChannel = null
+  }
+})
 
 const getCurrentRoundLabel = () => {
   const selectedRound = props.rounds.find(r => r.id.toString() === currentRoundId.value?.toString())

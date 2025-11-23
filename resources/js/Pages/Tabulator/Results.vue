@@ -173,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { RefreshCw, Printer, Trophy, BarChart3, Users, LayoutDashboard, Target, Award } from 'lucide-vue-next'
@@ -326,6 +326,84 @@ const getResultsTitle = () => {
 const refreshData = () => {
   router.reload()
 }
+
+// WebSocket handling for real-time updates
+let echoChannel: any = null
+let refreshTimeout: ReturnType<typeof setTimeout> | null = null
+const REFRESH_DEBOUNCE_MS = 500
+
+const handleScoreUpdate = (e: any) => {
+  console.log('🔔 ScoreUpdated event received on Results page:', e)
+  
+  // Clear existing timeout
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout)
+  }
+  
+  // Debounce full page refresh to avoid multiple rapid reloads
+  refreshTimeout = setTimeout(() => {
+    console.log('🔄 Refreshing results data after score update')
+    refreshData()
+    refreshTimeout = null
+  }, REFRESH_DEBOUNCE_MS)
+}
+
+const handleRankingsUpdate = (e: any) => {
+  console.log('🏆 RankingsUpdated event received:', e)
+  
+  // Clear existing timeout
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout)
+  }
+  
+  // Refresh immediately for ranking updates
+  refreshTimeout = setTimeout(() => {
+    console.log('🔄 Refreshing results due to rankings update')
+    refreshData()
+    refreshTimeout = null
+  }, 500)
+}
+
+onMounted(() => {
+  if (!props.pageant) {
+    console.log('⚠️ No pageant selected, skipping WebSocket subscription')
+    return
+  }
+
+  if (typeof window === 'undefined' || !window.Echo) {
+    console.error('❌ Laravel Echo not available')
+    return
+  }
+
+  const channelName = `pageant.${props.pageant.id}`
+  console.log('🔌 Subscribing to channel:', channelName)
+
+  // Subscribe to the pageant channel for real-time updates
+  echoChannel = window.Echo.private(channelName)
+  echoChannel
+    .listen('ScoreUpdated', handleScoreUpdate)
+    .listen('RankingsUpdated', handleRankingsUpdate)
+  
+  console.log('✅ Successfully subscribed to results updates')
+})
+
+onUnmounted(() => {
+  // Clear any pending refresh
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout)
+    refreshTimeout = null
+  }
+  
+  // Stop listening to events
+  if (echoChannel && props.pageant) {
+    const channelName = `pageant.${props.pageant.id}`
+    console.log('🔌 Unsubscribing from channel:', channelName)
+    echoChannel
+      .stopListening('ScoreUpdated', handleScoreUpdate)
+      .stopListening('RankingsUpdated', handleRankingsUpdate)
+    echoChannel = null
+  }
+})
 </script>
 
 <style scoped>

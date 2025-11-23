@@ -245,7 +245,7 @@ class OrganizerController extends Controller
         // Get counts by status
         $pageantsByStatus = [
             'draft' => Pageant::whereIn('id', $pageantIds)->where('status', 'Draft')->count(),
-            'ongoing' => Pageant::whereIn('id', $pageantIds)->where('status', 'Ongoing')->count(),
+            'ongoing' => Pageant::whereIn('id', $pageantIds)->where('status', 'Active')->count(),
             'completed' => Pageant::whereIn('id', $pageantIds)->where('status', 'Completed')->count(),
             // Legacy statuses for backward compatibility
             'active' => Pageant::whereIn('id', $pageantIds)->where('status', 'Active')->count(),
@@ -507,7 +507,7 @@ class OrganizerController extends Controller
 
         $pageantCounts = [
             'draft' => Pageant::whereIn('id', $pageantIds)->where('status', 'Draft')->count(),
-            'ongoing' => Pageant::whereIn('id', $pageantIds)->where('status', 'Ongoing')->count(),
+            'ongoing' => Pageant::whereIn('id', $pageantIds)->where('status', 'Active')->count(),
             'completed' => Pageant::whereIn('id', $pageantIds)->where('status', 'Completed')->count(),
             // Legacy statuses for backward compatibility
             'active' => Pageant::whereIn('id', $pageantIds)->where('status', 'Active')->count(),
@@ -558,6 +558,20 @@ class OrganizerController extends Controller
             'organizers',
         ])
             ->findOrFail($id);
+
+        // Auto-update status if start date has been reached and status is still Draft
+        if ($pageant->status === 'Draft' && $pageant->hasStartDateReached()) {
+            $pageant->update(['status' => 'Active']);
+            Log::info("Pageant '{$pageant->name}' (ID: {$pageant->id}) status automatically updated to Active on page view.");
+
+            // Log the action
+            $this->auditLogService->log(
+                'PAGEANT_STATUS_AUTO_UPDATED',
+                'Pageant',
+                $pageant->id,
+                "Pageant '{$pageant->name}' status automatically updated from Draft to Active (start date reached)"
+            );
+        }
 
         // Get all tabulators for selection
         $availableTabulators = User::where('role', 'tabulator')
@@ -800,6 +814,7 @@ class OrganizerController extends Controller
             'name' => $pageant->name,
             'description' => $pageant->description,
             'status' => $pageant->status,
+            'is_temporarily_editable' => $pageant->is_temporarily_editable,
             'start_date' => $pageant->start_date,
             'end_date' => $pageant->end_date,
             'venue' => $pageant->venue,
@@ -853,6 +868,10 @@ class OrganizerController extends Controller
         return Inertia::render('Organizer/PageantEdit', [
             'pageant' => $pageantData,
             'availableTabulators' => $availableTabulators,
+            'hasPendingEditRequest' => \App\Models\EditAccessRequest::where('pageant_id', $id)
+                ->where('organizer_id', Auth::id())
+                ->where('status', 'pending')
+                ->exists(),
         ]);
     }
 
@@ -1529,7 +1548,16 @@ class OrganizerController extends Controller
             'max_score' => 'required|numeric|gt:min_score',
             'allow_decimals' => 'boolean',
             'decimal_places' => 'required|integer|min:0|max:4',
-            'display_order' => 'required|integer|min:0',
+            'display_order' => [
+                'required',
+                'integer',
+                'min:0',
+                \Illuminate\Validation\Rule::unique('criteria')->where(function ($query) use ($roundId) {
+                    return $query->where('round_id', $roundId);
+                })->ignore($criteriaId),
+            ],
+        ], [
+            'display_order.unique' => 'This display order is already in use by another criteria in this round.',
         ]);
 
         $criteria = Criteria::where('pageant_id', $pageantId)
@@ -1870,7 +1898,7 @@ class OrganizerController extends Controller
 
         // Validate the status change request
         $validated = $request->validate([
-            'status' => 'required|in:Draft,Ongoing,Completed,Archived',
+            'status' => 'required|in:Draft,Active,Completed,Archived',
             'reason' => 'nullable|string|max:500',
         ]);
 
@@ -1898,9 +1926,9 @@ class OrganizerController extends Controller
         }
 
         // Check if the status transition is allowed
-        // Allow Draft -> Completed OR Ongoing/Active -> Completed if date has elapsed
+        // Allow Draft -> Completed OR Active -> Completed if date has elapsed
         $allowDirectCompletion = $isDateElapsed &&
-            ($oldStatus === 'Draft' || $oldStatus === 'Ongoing' || $oldStatus === 'Active') &&
+            ($oldStatus === 'Draft' || $oldStatus === 'Active') &&
             $newStatus === 'Completed';
 
         if (! $allowDirectCompletion && ! $this->isValidStatusTransition($oldStatus, $newStatus)) {
@@ -2034,7 +2062,7 @@ class OrganizerController extends Controller
         $result = ['passed' => true, 'message' => ''];
 
         switch ($targetStatus) {
-            case 'Ongoing':
+            case 'Active':
                 // Requires contestants, rounds with criteria, and judges
                 $hasContestants = $pageant->contestants()->count() > 0;
                 $hasRounds = $pageant->rounds()->count() > 0;
@@ -2337,8 +2365,8 @@ class OrganizerController extends Controller
     {
         // Simplified transitions for new status system
         $allowedTransitions = [
-            'Draft' => ['Ongoing'],
-            'Ongoing' => ['Completed'],
+            'Draft' => ['Active'],
+            'Active' => ['Completed'],
             'Completed' => [], // Completed pageants cannot be reverted
         ];
 

@@ -45,17 +45,30 @@
           <tr
             v-for="(contestant, index) in rankedContestants"
             :key="contestant.id"
-            class="hover:bg-gray-50/80"
+            class="hover:bg-gray-50/80 transition-colors"
+            :class="{
+              'bg-emerald-50/30': contestant.qualified && contestant.qualification_cutoff,
+              'opacity-60': !contestant.qualified && contestant.qualification_cutoff !== null && contestant.qualification_cutoff !== undefined
+            }"
           >
             <!-- Rank -->
             <td class="whitespace-nowrap px-4 py-3 text-center">
-              <span
-                class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
-                :class="getRankBadgeClass(index + 1)"
-              >
-                <span class="mr-1 tabular-nums">{{ index + 1 }}</span>
-                <span v-if="index < 3">{{ getRankDisplay(index + 1) }}</span>
-              </span>
+              <div class="flex items-center justify-center gap-2">
+                <span
+                  class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
+                  :class="getRankBadgeClass(index + 1, contestant.qualified)"
+                >
+                  <span class="mr-1 tabular-nums">{{ index + 1 }}</span>
+                  <span v-if="index < 3">{{ getRankDisplay(index + 1) }}</span>
+                </span>
+                <span
+                  v-if="contestant.qualified && contestant.qualification_cutoff"
+                  class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200"
+                  :title="`Qualified (Top ${contestant.qualification_cutoff})`"
+                >
+                  ✓
+                </span>
+              </div>
             </td>
 
             <!-- Contestant Info -->
@@ -69,14 +82,11 @@
                 <div class="min-w-0">
                   <p class="truncate text-sm font-semibold text-gray-900">
                     {{ contestant.name }}
-                    <span
-                      v-if="contestant.is_pair && contestant.member_genders && contestant.member_genders.length > 0"
-                      class="text-xs font-normal text-gray-500"
-                    >
-                      ({{ contestant.member_genders.map(g => g === 'male' ? 'Mr' : 'Ms').join(' & ') }})
-                    </span>
                   </p>
                   <p class="mt-0.5 text-xs text-gray-500">
+                    <span v-if="contestant.is_pair && contestant.member_names && contestant.member_names.length > 0" class="italic">
+                      {{ contestant.member_names.join(' & ') }} •
+                    </span>
                     #{{ contestant.number }}
                     <span v-if="contestant.region"> • {{ contestant.region }}</span>
                   </p>
@@ -142,6 +152,8 @@ interface Contestant {
   image: string
   scores: Record<string, number>
   totalScore: number
+  qualified?: boolean
+  qualification_cutoff?: number | null
 }
 
 interface Props {
@@ -167,7 +179,9 @@ const getRankDisplay = (rank: number): string => {
   return rank.toString()
 }
 
-const getRankBadgeClass = (rank: number): string => {
+const getRankBadgeClass = (rank: number, qualified?: boolean): string => {
+  const isQualified = qualified !== false
+  
   switch (rank) {
     case 1:
       return 'bg-teal-100 text-teal-800 border-2 border-teal-300'
@@ -176,6 +190,9 @@ const getRankBadgeClass = (rank: number): string => {
     case 3:
       return 'bg-slate-100 text-slate-700 border-2 border-slate-300'
     default:
+      if (!isQualified) {
+        return 'bg-slate-50 text-slate-400 border-2 border-slate-100'
+      }
       return 'bg-slate-50 text-slate-600 border-2 border-slate-100'
   }
 }

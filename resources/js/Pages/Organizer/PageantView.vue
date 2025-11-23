@@ -54,8 +54,31 @@
     <!-- Back Button and Page Header (Removed as integrated into new header) -->
     <div class="hidden"></div>
 
+    <!-- Warning Banner for Status Update Needed -->
+    <div v-if="hasStartDateReached && isDraft" class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm mb-6">
+      <div class="flex items-start justify-between">
+        <div class="flex">
+          <AlertCircle class="h-5 w-5 text-amber-500 mr-3 mt-0.5" />
+          <div>
+            <h3 class="text-sm font-semibold text-amber-800 mb-1">Status Update Required</h3>
+            <p class="text-sm text-amber-700">
+              The start date for this pageant has been reached, but the status is still showing as "Draft". 
+              The system may have already updated this to "Active" status. Please refresh the page to see the current status.
+            </p>
+          </div>
+        </div>
+        <button
+          @click="router.reload({ only: ['pageant'] })"
+          class="ml-4 inline-flex items-center px-3 py-2 border border-amber-500 rounded-md text-sm font-medium bg-white text-amber-700 hover:bg-amber-50 transition-colors"
+        >
+          <Activity class="h-4 w-4 mr-2" />
+          Refresh Status
+        </button>
+      </div>
+    </div>
+    
     <!-- Warning Banner for Start Date Reached -->
-    <div v-if="hasStartDateReached && !canEdit && !isCompleted" class="bg-teal-50 border-l-4 border-teal-600 p-4 rounded-r-lg shadow-sm">
+    <div v-if="hasStartDateReached && !canEdit && !isCompleted && !isDraft" class="bg-teal-50 border-l-4 border-teal-600 p-4 rounded-r-lg shadow-sm">
       <div class="flex items-start justify-between">
         <div class="flex">
           <div class="flex-shrink-0">
@@ -1830,9 +1853,19 @@
                           type="number"
                           min="0"
                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': isRoundDisplayOrderUsed(roundForm.display_order) && roundForm.display_order !== editingRound?.display_order }"
                           placeholder="e.g. 1"
                         />
-                        <p class="mt-1 text-xs text-gray-500">Order in which this round appears (0 = first)</p>
+                        <p v-if="isRoundDisplayOrderUsed(roundForm.display_order) && roundForm.display_order !== editingRound?.display_order" class="mt-1 text-xs text-red-600">
+                          ⚠️ This display order is already used by another round
+                        </p>
+                        <p v-else-if="usedRoundDisplayOrders.length > 0" class="mt-1 text-xs text-gray-500">
+                          Order in which this round appears. Used: {{ usedRoundDisplayOrders.join(', ') }}
+                        </p>
+                        <p v-else class="mt-1 text-xs text-gray-500">Order in which this round appears (0 = first)</p>
+                        <p v-if="!editingRound && suggestedRoundDisplayOrder > 0" class="mt-1 text-xs text-teal-600">
+                          💡 Suggested next order: {{ suggestedRoundDisplayOrder }}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2031,9 +2064,19 @@
                           type="number"
                           min="0"
                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
+                          :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': isCriteriaDisplayOrderUsed(criteriaForm.display_order) && criteriaForm.display_order !== editingCriteria?.display_order }"
                           placeholder="0"
                         />
-                        <p class="mt-1 text-xs text-gray-500">Order in which this criteria appears</p>
+                        <p v-if="isCriteriaDisplayOrderUsed(criteriaForm.display_order) && criteriaForm.display_order !== editingCriteria?.display_order" class="mt-1 text-xs text-red-600">
+                          ⚠️ This display order is already used by another criteria in this round
+                        </p>
+                        <p v-else-if="usedCriteriaDisplayOrders.length > 0" class="mt-1 text-xs text-gray-500">
+                          Order in which this criteria appears. Used: {{ usedCriteriaDisplayOrders.join(', ') }}
+                        </p>
+                        <p v-else class="mt-1 text-xs text-gray-500">Order in which this criteria appears</p>
+                        <p v-if="!editingCriteria && suggestedCriteriaDisplayOrder > 0" class="mt-1 text-xs text-teal-600">
+                          💡 Suggested next order: {{ suggestedCriteriaDisplayOrder }}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2833,7 +2876,7 @@ const removeTabulator = () => {
 
 // Computed properties for pageant status
 const isDraft = computed(() => props.pageant.status === 'Draft')
-const isOngoing = computed(() => props.pageant.status === 'Ongoing')
+const isOngoing = computed(() => props.pageant.status === 'Active')
 const isCompleted = computed(() => props.pageant.status === 'Completed')
 
 // Check if user is admin
@@ -2875,7 +2918,7 @@ const getStatusClass = (status) => {
   switch (status) {
     case 'Draft':
       return { badge: 'bg-gray-100 text-gray-800' }
-    case 'Ongoing':
+    case 'Active':
       return { badge: 'bg-teal-100 text-teal-800' }
     case 'Completed':
       return { badge: 'bg-teal-100 text-teal-800' }
@@ -2917,6 +2960,54 @@ const formatScoreDisplay = (minScore, maxScore, scoringSystem = null) => {
     // For other systems (1-10, 0-5, ranks), show decimal format
     return `${minScore} - ${maxScore}`
   }
+}
+
+// Get display orders already in use by rounds (excluding current round if editing)
+const usedRoundDisplayOrders = computed(() => {
+  if (!props.pageant.rounds) return []
+  
+  const orders = props.pageant.rounds
+    .filter(round => !editingRound.value || round.id !== editingRound.value.id)
+    .map(round => round.display_order)
+  
+  return [...new Set(orders)].sort((a, b) => a - b)
+})
+
+// Get display orders already in use by criteria in selected round (excluding current criteria if editing)
+const usedCriteriaDisplayOrders = computed(() => {
+  if (!selectedRound.value || !selectedRound.value.criteria) return []
+  
+  const orders = selectedRound.value.criteria
+    .filter(criteria => !editingCriteria.value || criteria.id !== editingCriteria.value.id)
+    .map(criteria => criteria.display_order)
+  
+  return [...new Set(orders)].sort((a, b) => a - b)
+})
+
+// Get suggested next available display order for rounds
+const suggestedRoundDisplayOrder = computed(() => {
+  if (!props.pageant.rounds || props.pageant.rounds.length === 0) return 0
+  
+  const maxOrder = Math.max(...props.pageant.rounds.map(r => r.display_order || 0))
+  return maxOrder + 1
+})
+
+// Get suggested next available display order for criteria
+const suggestedCriteriaDisplayOrder = computed(() => {
+  if (!selectedRound.value || !selectedRound.value.criteria || selectedRound.value.criteria.length === 0) return 0
+  
+  const maxOrder = Math.max(...selectedRound.value.criteria.map(c => c.display_order || 0))
+  return maxOrder + 1
+})
+
+// Check if a display order is already used for rounds
+const isRoundDisplayOrderUsed = (order) => {
+  return usedRoundDisplayOrders.value.includes(order)
+}
+
+// Check if a display order is already used for criteria
+const isCriteriaDisplayOrderUsed = (order) => {
+  return usedCriteriaDisplayOrders.value.includes(order)
 }
 
 // Validate criteria scores against scoring system
@@ -3027,11 +3118,8 @@ const getStatusTooltipText = (status) => {
   switch (status) {
     case 'Draft':
       return 'This pageant is in draft mode. Continue adding contestants, rounds, and criteria.'
-    case 'Ongoing':
-      return 'This pageant is currently ongoing. Scoring is in progress and results are being calculated.'
-      return 'This pageant is in draft mode. Continue adding contestants, rounds, and criteria.'
-    case 'Ongoing':
-      return 'This pageant is currently ongoing. Scoring is in progress and results are being calculated.'
+    case 'Active':
+      return 'This pageant is currently active. Scoring is in progress and results are being calculated.'
     case 'Completed':
       return 'This pageant has finished. All scoring is complete and final results are available.'
     default:
@@ -3121,8 +3209,8 @@ const availableStatusTransitions = computed(() => {
   }
   
   const baseTransitions = {
-    'Draft': ['Ongoing'],
-    'Ongoing': ['Completed'],
+    'Draft': ['Active'],
+    'Active': ['Completed'],
     'Completed': [], // Completed pageants cannot be reverted
   }
   
@@ -3136,8 +3224,8 @@ const availableStatusTransitions = computed(() => {
 
 const getStatusTransitionHelp = (fromStatus, toStatus) => {
   const transitions = {
-    'Draft->Ongoing': 'Start the pageant competition and begin scoring.',
-    'Ongoing->Completed': 'End the pageant and finalize results.',
+    'Draft->Active': 'Start the pageant competition and begin scoring.',
+    'Active->Completed': 'End the pageant and finalize results.',
   }
   
   // Special case for auto-completion
@@ -3254,7 +3342,7 @@ const resetRoundForm = () => {
     type: '',
     identifier: '',
     weight: 100,
-    display_order: 0,
+    display_order: suggestedRoundDisplayOrder.value,
     top_n_proceed: null,
     processing: false
   }
@@ -3396,7 +3484,7 @@ const resetCriteriaForm = () => {
     max_score: scoringSystemDefaults.max,
     allow_decimals: true,
     decimal_places: 2,
-    display_order: 0,
+    display_order: suggestedCriteriaDisplayOrder.value,
     processing: false
   }
 }

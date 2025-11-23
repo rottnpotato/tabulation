@@ -23,8 +23,11 @@
           <div class="text-xs font-bold uppercase text-gray-500 mb-1">2nd Place</div>
           <div class="border border-gray-300 p-3 rounded bg-gray-50">
             <div class="text-lg font-bold">#{{ topThree[1].number }}</div>
-            <div class="text-sm font-semibold truncate">{{ topThree[1].name }}</div>
-            <div class="text-xs text-gray-500">{{ formatScore(topThree[1].final_score) }} pts</div>
+            <div class="text-sm font-semibold truncate">{{ getTitle(topThree[1]) }} {{ topThree[1].name }}</div>
+            <div v-if="topThree[1].is_pair && topThree[1].member_names && topThree[1].member_names.length > 0" class="text-[10px] text-gray-500 italic mt-0.5">
+              {{ topThree[1].member_names.join(' & ') }}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">{{ formatScore(topThree[1].final_score) }} pts</div>
           </div>
         </div>
 
@@ -33,7 +36,10 @@
           <div class="text-sm font-bold uppercase text-black mb-1">Winner</div>
           <div class="border-2 border-black p-4 rounded bg-gray-100 relative">
             <div class="text-2xl font-bold">#{{ topThree[0].number }}</div>
-            <div class="text-base font-bold truncate">{{ topThree[0].name }}</div>
+            <div class="text-base font-bold truncate">{{ getTitle(topThree[0]) }} {{ topThree[0].name }}</div>
+            <div v-if="topThree[0].is_pair && topThree[0].member_names && topThree[0].member_names.length > 0" class="text-[11px] text-gray-600 italic mt-1">
+              {{ topThree[0].member_names.join(' & ') }}
+            </div>
             <div class="text-sm font-bold mt-1">{{ formatScore(topThree[0].final_score) }} pts</div>
           </div>
         </div>
@@ -43,8 +49,11 @@
           <div class="text-xs font-bold uppercase text-gray-500 mb-1">3rd Place</div>
           <div class="border border-gray-300 p-3 rounded bg-gray-50">
             <div class="text-lg font-bold">#{{ topThree[2].number }}</div>
-            <div class="text-sm font-semibold truncate">{{ topThree[2].name }}</div>
-            <div class="text-xs text-gray-500">{{ formatScore(topThree[2].final_score) }} pts</div>
+            <div class="text-sm font-semibold truncate">{{ getTitle(topThree[2]) }} {{ topThree[2].name }}</div>
+            <div v-if="topThree[2].is_pair && topThree[2].member_names && topThree[2].member_names.length > 0" class="text-[10px] text-gray-500 italic mt-0.5">
+              {{ topThree[2].member_names.join(' & ') }}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">{{ formatScore(topThree[2].final_score) }} pts</div>
           </div>
         </div>
       </div>

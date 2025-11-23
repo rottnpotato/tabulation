@@ -37,7 +37,14 @@ class StoreRoundRequest extends FormRequest
                 }),
             ],
             'weight' => ['required', 'integer', 'min:1', 'max:100'],
-            'display_order' => ['required', 'integer', 'min:0'],
+            'display_order' => [
+                'required',
+                'integer',
+                'min:0',
+                Rule::unique('rounds')->where(function ($query) use ($pageantId) {
+                    return $query->where('pageant_id', $pageantId);
+                }),
+            ],
             'top_n_proceed' => ['nullable', 'integer', 'min:1'],
         ];
     }
@@ -62,6 +69,7 @@ class StoreRoundRequest extends FormRequest
             'weight.max' => 'The weight cannot exceed 100.',
             'display_order.required' => 'The display order is required.',
             'display_order.min' => 'The display order cannot be negative.',
+            'display_order.unique' => 'This display order is already in use by another round in this pageant.',
             'top_n_proceed.min' => 'At least 1 contestant must proceed.',
         ];
     }

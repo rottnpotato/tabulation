@@ -84,9 +84,14 @@ class PageantPolicy
                 return false;
             }
 
+            // Check if the pageant is editable
+            // If ongoing, can only edit with temporary access granted by admin
+            if ($pageant->isOngoing()) {
+                return $pageant->is_temporarily_editable === true;
+            }
+
             // Check if pageant can be edited based on status
-            // Allow editing for Draft, Setup, Pending_Approval, and Unlocked pageants
-            return $pageant->isDraft() || $pageant->isSetup() || $pageant->isUnlockedForEdit() || $pageant->status === 'Pending_Approval';
+            return $pageant->canBeEdited();
         }
 
         return false;

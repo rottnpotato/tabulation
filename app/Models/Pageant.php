@@ -549,6 +549,9 @@ class Pageant extends Model
      */
     public function canBeEdited(): bool
     {
+        // Admins can always edit
+        // This check should be done in the policy, but we need this method for UI
+
         if ($this->isLocked()) {
             return false;
         }
@@ -558,19 +561,18 @@ class Pageant extends Model
             return false;
         }
 
-        // Check if temporary edit access has been granted
+        // If pageant is Ongoing, only allow editing with temporary access granted by admin
+        if ($this->isOngoing()) {
+            return $this->is_temporarily_editable === true;
+        }
+
+        // Check if temporary edit access has been granted (for any status)
         if ($this->is_temporarily_editable === true) {
             return true;
         }
 
         // Check if status allows editing
-        if (! in_array($this->status, ['Draft', 'Setup', 'Unlocked_For_Edit'])) {
-            return false;
-        }
-
-        // Draft pageants can be edited regardless of start date
-        // Only check start date for non-draft pageants
-        if ($this->status !== 'Draft' && $this->hasStartDateReached()) {
+        if (! in_array($this->status, ['Draft', 'Setup', 'Unlocked_For_Edit', 'Pending_Approval'])) {
             return false;
         }
 
@@ -590,6 +592,29 @@ class Pageant extends Model
         $startDate = $this->start_date->startOfDay();
 
         return $today >= $startDate;
+    }
+
+    /**
+     * Check if today is the pageant date
+     */
+    public function isPageantDateToday(): bool
+    {
+        if (! $this->pageant_date) {
+            return false;
+        }
+
+        $today = now()->startOfDay();
+        $pageantDate = $this->pageant_date->startOfDay();
+
+        return $today->equalTo($pageantDate);
+    }
+
+    /**
+     * Check if pageant can be scored (only on pageant date)
+     */
+    public function canBeScored(): bool
+    {
+        return $this->isPageantDateToday();
     }
 
     /**
@@ -674,6 +699,30 @@ class Pageant extends Model
     public function clearCurrentRound(): void
     {
         $this->update(['current_round_id' => null]);
+    }
+
+    /**
+     * Grant temporary edit access for an ongoing pageant
+     */
+    public function grantTemporaryEditAccess(int $grantedBy): void
+    {
+        $this->update([
+            'is_temporarily_editable' => true,
+            'temporary_edit_granted_by' => $grantedBy,
+            'temporary_edit_granted_at' => now(),
+        ]);
+    }
+
+    /**
+     * Revoke temporary edit access
+     */
+    public function revokeTemporaryEditAccess(): void
+    {
+        $this->update([
+            'is_temporarily_editable' => false,
+            'temporary_edit_granted_by' => null,
+            'temporary_edit_granted_at' => null,
+        ]);
     }
 
     /**

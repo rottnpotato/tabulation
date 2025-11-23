@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ContestantController;
 use App\Http\Controllers\CriteriaController;
+use App\Http\Controllers\EditAccessRequestController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JudgeController;
 use App\Http\Controllers\OrganizerController;
@@ -82,7 +83,7 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     Route::put('/pageant/{id}/status', [OrganizerController::class, 'updatePageantStatus'])->name('organizer.pageant.status.update');
     Route::post('/pageant/{id}/lock', [OrganizerController::class, 'lockPageant'])->name('organizer.pageant.lock');
     Route::post('/pageant/{id}/unlock', [OrganizerController::class, 'unlockPageant'])->name('organizer.pageant.unlock');
-    Route::post('/pageant/{id}/request-edit-access', [OrganizerController::class, 'requestEditAccess'])->name('organizer.pageant.request-edit-access');
+    Route::post('/pageant/{pageant}/request-edit-access', [EditAccessRequestController::class, 'store'])->name('organizer.pageant.request-edit-access');
     Route::delete('/pageant/{id}/tabulators/{tabulatorId}', [OrganizerController::class, 'removeTabulator'])->name('organizer.pageant.tabulators.remove');
 
     // Criteria routes
@@ -191,9 +192,10 @@ Route::middleware(['auth', 'verified', 'check_role:admin'])->prefix('admin')->gr
         Route::post('/{id}/reject', [AdminController::class, 'rejectPageant'])->name('admin.pageants.reject');
 
         // Edit access request routes
-        Route::get('/edit-access-requests', [AdminController::class, 'editAccessRequests'])->name('admin.pageants.edit-access-requests');
-        Route::post('/edit-access-requests/{requestId}/approve', [AdminController::class, 'approveEditAccessRequest'])->name('admin.pageants.edit-access-requests.approve');
-        Route::post('/edit-access-requests/{requestId}/reject', [AdminController::class, 'rejectEditAccessRequest'])->name('admin.pageants.edit-access-requests.reject');
+        Route::get('/edit-access-requests', [EditAccessRequestController::class, 'index'])->name('admin.pageants.edit-access-requests');
+        Route::post('/edit-access-requests/{editAccessRequest}/approve', [EditAccessRequestController::class, 'approve'])->name('admin.pageants.edit-access-requests.approve');
+        Route::post('/edit-access-requests/{editAccessRequest}/reject', [EditAccessRequestController::class, 'reject'])->name('admin.pageants.edit-access-requests.reject');
+        Route::post('/{pageant}/revoke-edit-access', [EditAccessRequestController::class, 'revoke'])->name('admin.pageants.revoke-edit-access');
 
         Route::get('/', [AdminController::class, 'allPageants'])->name('admin.pageants.index');
 

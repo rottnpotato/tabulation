@@ -77,11 +77,11 @@
             <div class="flex items-center">
               <button 
                 type="button"
-                @click="form.is_active = true"
+                @click="form.is_active = !form.is_active"
                 class="relative inline-flex flex-shrink-0 h-6 transition-colors duration-200 ease-in-out border-2 border-transparent rounded-full cursor-pointer w-11 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
                 :class="form.is_active ? 'bg-teal-600' : 'bg-gray-200'"
                 role="switch"
-                aria-checked="false"
+                :aria-checked="form.is_active"
                 aria-labelledby="active-label"
               >
                 <span 
