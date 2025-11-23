@@ -22,6 +22,13 @@
             </div>
           </div>
 
+          <div v-if="passwordMismatch" class="bg-red-400/20 border border-red-400/50 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+              <AlertCircle class="h-5 w-5 text-red-400 mt-0.5 flex-shrink-0" />
+              <p class="ml-3 text-sm text-red-300">Passwords do not match. Please make sure both password fields are identical.</p>
+            </div>
+          </div>
+
           <div class="transition-all duration-300 ease-in-out transform hover:scale-[1.02] focus-within:scale-[1.02]">
             <label for="email" class="block text-sm font-medium text-gray-200 mb-2">Email</label>
             <input 
@@ -83,7 +90,7 @@
 
           <button
             type="submit"
-            :disabled="form.processing"
+            :disabled="form.processing || passwordMismatch"
             class="w-full py-3 px-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-lg font-medium hover:from-teal-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-teal-900 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
           >
             <span v-if="form.processing">Resetting...</span>
@@ -96,7 +103,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { Lock, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
 
@@ -116,7 +123,15 @@ const form = useForm({
   password_confirmation: '',
 });
 
+const passwordMismatch = computed(() => {
+  return form.password && form.password_confirmation && form.password !== form.password_confirmation;
+});
+
 const submit = () => {
+  if (passwordMismatch.value) {
+    return;
+  }
+  
   form.post('/reset-password', {
     onSuccess: () => {
       window.location.reload();
