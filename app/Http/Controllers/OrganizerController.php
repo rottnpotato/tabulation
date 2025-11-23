@@ -2216,8 +2216,8 @@ class OrganizerController extends Controller
             'age' => 'required|integer|min:16|max:35',
             'origin' => 'required|string|max:255',
             'bio' => 'nullable|string',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'contestant_id' => 'nullable|integer', // For frontend validation
         ]);
 
