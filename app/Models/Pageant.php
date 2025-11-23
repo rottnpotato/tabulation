@@ -41,7 +41,10 @@ class Pageant extends Model
         'current_round_id',
         'is_temporarily_editable',
         'temporary_edit_granted_by',
+        'temporary_edit_granted_by',
         'temporary_edit_granted_at',
+        'archive_reason',
+        'archived_at',
     ];
 
     /**
@@ -59,6 +62,7 @@ class Pageant extends Model
         'locked_at' => 'datetime',
         'is_temporarily_editable' => 'boolean',
         'temporary_edit_granted_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     /**

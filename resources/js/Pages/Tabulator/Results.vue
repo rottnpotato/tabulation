@@ -97,7 +97,7 @@
                 <button
                   v-for="s in ['overall', 'semi-final', 'final', 'final-top3']"
                   :key="s"
-                  @click="stage = s"
+                  @click="stage = s as typeof stage"
                   class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border"
                   :class="stage === s 
                     ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm' 
@@ -200,6 +200,8 @@ interface Contestant {
   image: string
   scores: Record<string, number>
   totalScore: number
+  finalScore?: number
+  rank?: number
 }
 
 interface Pageant {
@@ -258,6 +260,16 @@ const displayedContestants = computed(() => {
       baseList = props.contestants || []
   }
 
+  // Debug logging
+  if (stage.value !== 'overall') {
+    console.log(`Stage: ${stage.value}, Contestants:`, baseList.length, baseList.map(c => ({
+      id: c.id,
+      name: c.name,
+      totalScore: c.totalScore,
+      finalScore: c.finalScore
+    })))
+  }
+
   return baseList
 })
 
@@ -275,15 +287,33 @@ const displayedRounds = computed(() => {
 })
 
 const highestScore = computed(() => {
-  if (!displayedContestants.value || displayedContestants.value.length === 0) return 0
-  const highest = Math.max(...displayedContestants.value.map(c => c.totalScore))
+  if (!displayedContestants.value || displayedContestants.value.length === 0) return '-'
+  
+  const scores = displayedContestants.value
+    .map(c => {
+      const score = c.totalScore ?? c.finalScore ?? 0
+      return typeof score === 'number' && !isNaN(score) ? score : null
+    })
+    .filter(score => score !== null)
+  
+  if (scores.length === 0) return '-'
+  const highest = Math.max(...scores)
   return parseFloat(highest.toFixed(2))
 })
 
 const averageScore = computed(() => {
-  if (!displayedContestants.value || displayedContestants.value.length === 0) return 0
-  const sum = displayedContestants.value.reduce((acc, contestant) => acc + contestant.totalScore, 0)
-  return parseFloat((sum / displayedContestants.value.length).toFixed(2))
+  if (!displayedContestants.value || displayedContestants.value.length === 0) return '-'
+  
+  const scores = displayedContestants.value
+    .map(c => {
+      const score = c.totalScore ?? c.finalScore ?? 0
+      return typeof score === 'number' && !isNaN(score) ? score : null
+    })
+    .filter(score => score !== null)
+  
+  if (scores.length === 0) return '-'
+  const sum = scores.reduce((acc, score) => acc + score, 0)
+  return parseFloat((sum / scores.length).toFixed(2))
 })
 
 const getResultsTitle = () => {

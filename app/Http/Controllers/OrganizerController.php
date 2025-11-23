@@ -1349,6 +1349,7 @@ class OrganizerController extends Controller
             'identifier' => $validated['identifier'],
             'weight' => $validated['weight'],
             'display_order' => $validated['display_order'],
+            'top_n_proceed' => $validated['top_n_proceed'] ?? null,
             'is_active' => true,
         ]);
 
@@ -1397,6 +1398,7 @@ class OrganizerController extends Controller
             'identifier' => $validated['identifier'] ?? $round->identifier,
             'weight' => $validated['weight'],
             'display_order' => $validated['display_order'],
+            'top_n_proceed' => $validated['top_n_proceed'] ?? null,
             'is_active' => $validated['is_active'] ?? $round->is_active,
         ]);
 
@@ -1868,10 +1870,12 @@ class OrganizerController extends Controller
 
         // Validate the status change request
         $validated = $request->validate([
-            'status' => 'required|in:Draft,Ongoing,Completed',
+            'status' => 'required|in:Draft,Ongoing,Completed,Archived',
+            'reason' => 'nullable|string|max:500',
         ]);
 
         $newStatus = $validated['status'];
+        $reason = $validated['reason'] ?? null;
         $oldStatus = $pageant->status;
 
         // Check if pageant date has elapsed and should be auto-completed
@@ -1880,7 +1884,7 @@ class OrganizerController extends Controller
         $isDateElapsed = $pageantDate && $pageantDate < $today;
 
         // If pageant date has elapsed and it's not completed, suggest completion
-        if ($isDateElapsed && $oldStatus !== 'Completed') {
+        if ($isDateElapsed && $oldStatus !== 'Completed' && $newStatus !== 'Archived') {
             if ($newStatus !== 'Completed') {
                 return back()
                     ->with('warning', 'This pageant\'s date has elapsed. It should be marked as completed.');
@@ -1904,7 +1908,7 @@ class OrganizerController extends Controller
             $errorMessage = "Cannot change status from {$oldStatus} to {$newStatus}";
 
             // Add specific error messages for common issues
-            if ($oldStatus === 'Completed' && $user->role !== 'admin') {
+            if ($oldStatus === 'Completed' && $newStatus !== 'Archived' && $user->role !== 'admin') {
                 $errorMessage .= '. Only administrators can modify completed pageants.';
             }
 
@@ -1928,6 +1932,9 @@ class OrganizerController extends Controller
         $logMessage = "Organizer {$organizer->name} changed pageant '{$pageant->name}' status from '{$oldStatus}' to '{$newStatus}'";
         if ($isDateElapsed && $newStatus === 'Completed') {
             $logMessage .= ' (auto-completion due to elapsed date)';
+        }
+        if ($newStatus === 'Archived' && $reason) {
+            $logMessage .= ". Reason: {$reason}";
         }
 
         $this->auditLogService->log(

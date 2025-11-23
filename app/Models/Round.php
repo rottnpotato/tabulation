@@ -29,6 +29,7 @@ class Round extends Model
         'is_locked',
         'locked_at',
         'locked_by',
+        'top_n_proceed',
     ];
 
     /**
@@ -43,6 +44,7 @@ class Round extends Model
         'scoring_config' => 'array',
         'is_locked' => 'boolean',
         'locked_at' => 'datetime',
+        'top_n_proceed' => 'integer',
     ];
 
     /**
@@ -152,5 +154,68 @@ class Round extends Model
     public function isFinal(): bool
     {
         return $this->type === 'final';
+    }
+
+    /**
+     * Check if this round is a custom elimination round
+     */
+    public function isCustomElimination(): bool
+    {
+        return $this->type === 'custom' && $this->top_n_proceed !== null;
+    }
+
+    /**
+     * Get the round type display name
+     */
+    public function getTypeDisplayAttribute(): string
+    {
+        return match ($this->type) {
+            'semi-final' => 'Semi-Final',
+            'final' => 'Final',
+            'custom' => $this->top_n_proceed ? "Top {$this->top_n_proceed}" : 'Custom',
+            default => ucfirst($this->type)
+        };
+    }
+
+    /**
+     * Check if a judge has completed scoring all contestants for all criteria in this round
+     */
+    public function isJudgeScoringComplete(int $judgeId): bool
+    {
+        $criteriaCount = $this->criteria()->count();
+        $contestantsCount = $this->pageant->contestants()->count();
+        $expectedScores = $criteriaCount * $contestantsCount;
+
+        if ($expectedScores === 0) {
+            return false;
+        }
+
+        $submittedScores = Score::where('round_id', $this->id)
+            ->where('judge_id', $judgeId)
+            ->where('pageant_id', $this->pageant_id)
+            ->count();
+
+        return $submittedScores >= $expectedScores;
+    }
+
+    /**
+     * Get scoring completion percentage for a judge in this round
+     */
+    public function getJudgeScoringProgress(int $judgeId): float
+    {
+        $criteriaCount = $this->criteria()->count();
+        $contestantsCount = $this->pageant->contestants()->count();
+        $expectedScores = $criteriaCount * $contestantsCount;
+
+        if ($expectedScores === 0) {
+            return 0;
+        }
+
+        $submittedScores = Score::where('round_id', $this->id)
+            ->where('judge_id', $judgeId)
+            ->where('pageant_id', $this->pageant_id)
+            ->count();
+
+        return round(($submittedScores / $expectedScores) * 100, 1);
     }
 }

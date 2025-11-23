@@ -128,7 +128,7 @@
 
                   <!-- User status toggle button -->
                   <button
-                    v-if="hasToggleStatus"
+                    v-if="hasToggleStatus && !user.is_current_user"
                     @click="$emit('toggle-status', user)"
                     class="text-blue-600 hover:text-blue-900 bg-blue-50 p-1.5 rounded-md transition-colors duration-150"
                     :title="user.status === 'Active' ? 'Deactivate Account' : 'Activate Account'"
@@ -424,4 +424,4 @@ const canDelete = (user) => {
   }
   return true;
 }
-</script> 
+</script>

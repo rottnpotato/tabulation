@@ -116,8 +116,19 @@
 
       <!-- Detailed Scores Table -->
       <div v-if="pageant && rounds && rounds.length > 0 && currentRound">
+        <div class="mb-3 flex items-center gap-2">
+          <h3 class="text-lg font-semibold text-slate-900">Judge Scores - {{ getCurrentRoundLabel() }}</h3>
+          <span v-if="currentRound.type" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              :class="[
+                  currentRound.type === 'final' ? 'bg-purple-100 text-purple-800' :
+                  currentRound.type === 'semi-final' ? 'bg-blue-100 text-blue-800' :
+                  'bg-amber-100 text-amber-800'
+              ]">
+              {{ getRoundTypeDisplay(currentRound) }}
+          </span>
+        </div>
         <DetailedScoreTable 
-          :title="`Judge Scores - ${getCurrentRoundLabel()}`"
+          :title="`${getCurrentRoundLabel()}`"
           :contestants="contestants"
           :judges="judges"
           :scores="localScores"
@@ -341,6 +352,14 @@ onUnmounted(() => {
 const getCurrentRoundLabel = () => {
   const selectedRound = props.rounds.find(r => r.id.toString() === currentRoundId.value?.toString())
   return selectedRound ? selectedRound.name : 'Unknown Round'
+}
+
+const getRoundTypeDisplay = (round: any) => {
+  if (!round || !round.type) return ''
+  if (round.top_n_proceed) {
+    return `${round.type} (Top ${round.top_n_proceed})`
+  }
+  return round.type
 }
 
 const exportScores = () => {

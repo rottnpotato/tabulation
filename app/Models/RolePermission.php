@@ -45,7 +45,8 @@ class RolePermission extends Model
         } catch (\Exception $e) {
             // If permissions table doesn't exist or there's a DB error,
             // fail gracefully by denying permission
-            \Log::warning("Permission check failed for role {$role}, permission {$permissionKey}: " . $e->getMessage());
+            \Log::warning("Permission check failed for role {$role}, permission {$permissionKey}: ".$e->getMessage());
+
             return false;
         }
     }

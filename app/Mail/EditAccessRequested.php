@@ -15,8 +15,11 @@ class EditAccessRequested extends Mailable
     use Queueable, SerializesModels;
 
     public $organizer;
+
     public $pageant;
+
     public $reason;
+
     public $actionUrl;
 
     /**
@@ -36,7 +39,7 @@ class EditAccessRequested extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Edit Access Request: ' . $this->pageant->name,
+            subject: 'Edit Access Request: '.$this->pageant->name,
         );
     }
 

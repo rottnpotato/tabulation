@@ -1,6 +1,6 @@
 <template>
   <Modal :show="show" @close="$emit('close')">
-    <div class="p-6">
+    <div class="p-6 bg-white rounded-lg shadow-sm border border-gray-200">
       <div class="flex items-center justify-center w-12 h-12 mx-auto rounded-full mb-4" :class="iconBgClass">
         <component :is="icon" class="h-6 w-6" :class="iconClass" />
       </div>

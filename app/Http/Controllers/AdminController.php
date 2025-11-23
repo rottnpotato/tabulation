@@ -438,10 +438,12 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'status' => 'required|in:Draft,Setup,Active,Completed,Unlocked_For_Edit,Archived,Cancelled',
+            'reason' => 'nullable|string|max:500',
         ]);
 
         $pageant = Pageant::findOrFail($id);
         $oldStatus = $pageant->status;
+        $reason = $validated['reason'] ?? null;
 
         // Prevent direct status changes from Pending_Approval
         if ($pageant->isPendingApproval()) {
@@ -450,14 +452,21 @@ class AdminController extends Controller
 
         $pageant->update([
             'status' => $validated['status'],
+            'archive_reason' => $pageant->status === 'Archived' ? null : ($validated['status'] === 'Archived' ? $reason : null),
+            'archived_at' => $pageant->status === 'Archived' ? null : ($validated['status'] === 'Archived' ? now() : null),
         ]);
 
         // Log the action
+        $logMessage = "Changed pageant '{$pageant->name}' status from '{$oldStatus}' to '{$pageant->status}'";
+        if ($pageant->status === 'Archived' && $reason) {
+            $logMessage .= ". Reason: {$reason}";
+        }
+
         $this->auditLogService->log(
             'PAGEANT_STATUS_CHANGED',
             'Pageant',
             $pageant->id,
-            "Changed pageant '{$pageant->name}' status from '{$oldStatus}' to '{$pageant->status}'"
+            $logMessage
         );
 
         return back()->with('success', "Pageant status has been changed from '{$oldStatus}' to '{$pageant->status}'.");
@@ -660,6 +669,12 @@ class AdminController extends Controller
                     'start_date' => $pageant->start_date?->format('M d, Y'),
                     'end_date' => $pageant->end_date?->format('M d, Y'),
                     'location' => $pageant->location,
+                    'reason' => $pageant->archive_reason,
+                    'archived_at' => $pageant->archived_at?->format('Y-m-d'),
+                    'archive_note' => $pageant->description,
+                    'category' => $pageant->categories->first()?->name ?? 'General',
+                    'contestants' => $pageant->contestants()->count(),
+                    'venue' => $pageant->venue,
                     'organizers' => $pageant->organizers->map(function ($organizer) {
                         return [
                             'id' => $organizer->id,
@@ -685,15 +700,15 @@ class AdminController extends Controller
             'title' => $pageant->name,
             'date' => $pageant->start_date?->format('Y-m-d'),
             'venue' => $pageant->venue ?: $pageant->location,
-            'reason' => 'Cancelled', // This would be a real field in the database
-            'archived_at' => $pageant->updated_at->format('Y-m-d'),
+            'reason' => $pageant->archive_reason,
+            'archived_at' => $pageant->archived_at?->format('Y-m-d'),
             'archive_note' => $pageant->description ?: 'No notes provided about the archival reason.',
-            'category' => $pageant->category ?? 'General',
-            'budget' => $pageant->budget ?? 0,
+            'category' => $pageant->categories->first()?->name ?? 'General',
+            'budget' => 0, // Placeholder as budget is not in model
             'organizer' => $pageant->organizers->isNotEmpty() ? $pageant->organizers->first()->name : null,
-            'contestants' => $pageant->contestants_count ?? 0,
-            'replacement_pageant' => null, // This would be a real field in the database
-            'archived_by' => 'Admin', // This would be a real field linking to the user who archived
+            'contestants' => $pageant->contestants()->count(),
+            'replacement_pageant' => null,
+            'archived_by' => 'Admin',
         ];
 
         return Inertia::render('Admin/Pageants/ArchivedDetail', [
@@ -729,16 +744,16 @@ class AdminController extends Controller
         // Apply sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDirection = $request->input('sort_direction', 'desc');
-        
+
         // Validate sort column to prevent SQL injection
         $allowedSortColumns = ['created_at', 'user_id', 'action_type', 'target_entity', 'ip_address'];
-        if (!in_array($sortBy, $allowedSortColumns)) {
+        if (! in_array($sortBy, $allowedSortColumns)) {
             $sortBy = 'created_at';
         }
-        
+
         // Validate sort direction
         $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'desc';
-        
+
         $query->orderBy($sortBy, $sortDirection);
 
         $logs = $query->paginate(15);

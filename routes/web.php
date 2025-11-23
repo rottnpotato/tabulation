@@ -162,12 +162,14 @@ Route::middleware(['auth', 'verified', 'check_role:admin'])->prefix('admin')->gr
         Route::get('/tabulators/{id}', [UserManagementController::class, 'showTabulator'])->name('admin.users.tabulators.show');
         Route::get('/tabulators/{id}/edit', [UserManagementController::class, 'editTabulator'])->name('admin.users.tabulators.edit');
         Route::put('/tabulators/{id}', [UserManagementController::class, 'updateTabulator'])->name('admin.users.tabulators.update');
+        Route::delete('/tabulators/{id}', [UserManagementController::class, 'deleteTabulator'])->name('admin.users.tabulators.delete');
 
         // Judge management
         Route::get('/judges', [UserManagementController::class, 'judges'])->name('admin.users.judges');
         Route::get('/judges/{id}', [UserManagementController::class, 'showJudge'])->name('admin.users.judges.show');
         Route::get('/judges/{id}/edit', [UserManagementController::class, 'editJudge'])->name('admin.users.judges.edit');
         Route::put('/judges/{id}', [UserManagementController::class, 'updateJudge'])->name('admin.users.judges.update');
+        Route::delete('/judges/{id}', [UserManagementController::class, 'deleteJudge'])->name('admin.users.judges.delete');
 
         // User permissions
         Route::get('/permissions', [UserManagementController::class, 'permissions'])->name('admin.users.permissions');

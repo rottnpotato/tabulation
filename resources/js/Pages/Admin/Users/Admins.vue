@@ -31,7 +31,7 @@
       :has-pageants-column="false"
       :has-toggle-status="true"
       :has-edit="true"
-      :has-delete="true"
+      :has-delete="false"
       :show-unverified="false"
       :has-resend-verification="false"
       @confirm-delete="confirmDelete"

@@ -28,7 +28,7 @@ class UpdateRoundRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'type' => ['required', 'string', Rule::in(['semi-final', 'final'])],
+            'type' => ['required', 'string', 'max:100'],
             'identifier' => [
                 'nullable',
                 'string',
@@ -39,6 +39,7 @@ class UpdateRoundRequest extends FormRequest
             ],
             'weight' => ['required', 'integer', 'min:1', 'max:100'],
             'display_order' => ['required', 'integer', 'min:0'],
+            'top_n_proceed' => ['nullable', 'integer', 'min:1'],
         ];
     }
 
@@ -52,11 +53,12 @@ class UpdateRoundRequest extends FormRequest
         return [
             'name.required' => 'The round name is required.',
             'name.max' => 'The round name must not exceed 255 characters.',
-            'type.in' => 'The round type must be either semi-final or final.',
+            'type.max' => 'The round type must not exceed 100 characters.',
             'identifier.unique' => 'This identifier is already used for another round.',
             'weight.min' => 'The weight must be at least 1.',
             'weight.max' => 'The weight cannot exceed 100.',
             'display_order.min' => 'The display order cannot be negative.',
+            'top_n_proceed.min' => 'At least 1 contestant must proceed.',
         ];
     }
 }

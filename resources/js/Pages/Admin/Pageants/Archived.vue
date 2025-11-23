@@ -147,11 +147,11 @@
             
             <div class="flex items-start space-x-3">
               <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-gray-500 to-red-600 flex items-center justify-center text-white font-bold">
-                {{ pageant.title?.charAt(0) || 'A' }}
+                {{ pageant.name?.charAt(0) || 'A' }}
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
-                  <p class="text-sm font-medium text-gray-800 truncate">{{ pageant.title }}</p>
+                  <p class="text-sm font-medium text-gray-800 truncate">{{ pageant.name }}</p>
                   <span class="px-2 py-0.5 inline-flex text-2xs leading-5 font-semibold rounded-full" :class="getReasonClass(pageant.reason)">
                     {{ pageant.reason }}
                   </span>
@@ -161,7 +161,7 @@
                 <div class="mt-2 space-y-1.5">
                   <div class="flex items-center text-xs text-gray-500">
                     <Calendar class="h-3 w-3 mr-1.5 text-gray-400 flex-shrink-0" />
-                    <span>{{ formatDate(pageant.date) }}</span>
+                    <span>{{ formatDate(pageant.start_date) }}</span>
                   </div>
                   
                   <div class="flex items-center text-xs text-gray-500">
@@ -239,7 +239,7 @@
                   </div>
                   <div class="flex flex-col items-center text-white opacity-75">
                     <Calendar class="w-8 h-8 mb-1" />
-                    <span class="text-2xs text-center">{{ formatYear(pageant.date) }}</span>
+                    <span class="text-2xs text-center">{{ formatYear(pageant.start_date) }}</span>
                   </div>
                   <div class="flex flex-col items-center text-white opacity-75">
                     <MapPin class="w-8 h-8 mb-1" />
@@ -270,14 +270,14 @@
             
             <!-- Pageant card body -->
             <div class="p-4">
-              <h3 class="text-lg font-semibold text-gray-800 mb-1 truncate group-hover:text-teal-600 transition-colors">{{ pageant.title }}</h3>
+              <h3 class="text-lg font-semibold text-gray-800 mb-1 truncate group-hover:text-teal-600 transition-colors">{{ pageant.name }}</h3>
               <p v-if="pageant.venue" class="text-sm text-gray-500 mb-3">{{ pageant.venue }}</p>
               
               <div class="space-y-2">
                 <!-- Original date -->
                 <div class="flex items-center text-xs text-gray-600">
                   <Calendar class="h-3.5 w-3.5 mr-1.5 text-gray-500 flex-shrink-0" />
-                  <span>Originally planned for {{ formatDate(pageant.date) }}</span>
+                  <span>Originally planned for {{ formatDate(pageant.start_date) }}</span>
                 </div>
                 
                 <!-- Archive date -->
@@ -399,76 +399,14 @@ const itemsPerPage = 9;
 const emptyStateAnimation = emptyStateAnimationData;
 
 // Sample data - would be passed as props in real implementation
-const archivedPageants = ref([
-  {
-    id: 1,
-    title: 'Summer Queen 2024',
-    date: '2024-07-15',
-    venue: 'Sunset Beach Resort',
-    reason: 'Cancelled',
-    archived_at: '2024-02-10',
-    archive_note: 'Venue booking conflicts and insufficient sponsorship led to cancellation.',
-    category: 'Beauty',
-    budget: '25000',
-    organizer: 'Coastal Events Ltd.',
-    contestants: 15,
-    replacement_pageant: 'Winter Wonderland 2024'
-  },
-  {
-    id: 2,
-    title: 'Teen Model 2024',
-    date: '2024-08-20',
-    venue: 'Youth Center',
-    reason: 'Postponed',
-    archived_at: '2024-03-01',
-    archive_note: 'Postponed to next year due to renovations at the venue. Will be rescheduled.',
-    category: 'Modeling',
-    budget: '12000',
-    organizer: 'Youth Fashion Council',
-    contestants: 22
-  },
-  {
-    id: 3,
-    title: 'Mr. Fitness 2023',
-    date: '2023-11-05',
-    venue: 'Central Gym Arena',
-    reason: 'Merged',
-    archived_at: '2023-09-15',
-    archive_note: 'This event was merged with the National Bodybuilding Championship.',
-    category: 'Fitness',
-    budget: '18500',
-    organizer: 'PowerFit Promotions',
-    contestants: 28,
-    replacement_pageant: 'National Bodybuilding Championship 2023'
-  },
-  {
-    id: 4,
-    title: 'Miss Talent 2023',
-    date: '2023-06-30',
-    venue: 'Community Theater',
-    reason: 'Low Participation',
-    archived_at: '2023-05-25',
-    archive_note: 'Insufficient number of registrations. Only 7 participants registered out of minimum 15 required.',
-    category: 'Talent',
-    budget: '15000',
-    organizer: 'Arts Council',
-    contestants: 7
-  },
-  {
-    id: 5,
-    title: 'Eco Ambassador 2025',
-    date: '2025-04-22',
-    venue: 'Botanical Gardens',
-    reason: 'Other',
-    archived_at: '2024-02-29',
-    archive_note: 'Main sponsor withdrew and new concept being developed. Will be rebranded as "Green Earth Champions".',
-    category: 'Environmental',
-    budget: '30000',
-    organizer: 'EcoVision Foundation',
-    contestants: 0,
-    replacement_pageant: 'Green Earth Champions 2025'
+const props = defineProps({
+  pageants: {
+    type: Array,
+    required: true
   }
-]);
+});
+
+const archivedPageants = computed(() => props.pageants);
 
 // Filtered and sorted pageants
 const filteredPageants = computed(() => {
@@ -478,19 +416,19 @@ const filteredPageants = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(pageant => 
-      (pageant.title && pageant.title.toLowerCase().includes(query)) ||
+      (pageant.name && pageant.name.toLowerCase().includes(query)) ||
       (pageant.venue && pageant.venue.toLowerCase().includes(query)) ||
       (pageant.archive_note && pageant.archive_note.toLowerCase().includes(query)) ||
       (pageant.category && pageant.category.toLowerCase().includes(query)) ||
-      (pageant.organizer && pageant.organizer.toLowerCase().includes(query))
+      (pageant.organizers && pageant.organizers.some(o => o.name.toLowerCase().includes(query)))
     );
   }
   
   // Apply year filter
   if (yearFilter.value !== 'all') {
     filtered = filtered.filter(pageant => {
-      if (!pageant.date) return false;
-      const year = formatYear(pageant.date);
+      if (!pageant.start_date) return false;
+      const year = formatYear(pageant.start_date);
       return year === yearFilter.value;
     });
   }
@@ -505,11 +443,11 @@ const filteredPageants = computed(() => {
     let aValue, bValue;
     
     if (sortBy.value === 'title') {
-      aValue = a.title || '';
-      bValue = b.title || '';
+      aValue = a.name || '';
+      bValue = b.name || '';
     } else if (sortBy.value === 'date') {
-      aValue = a.date ? new Date(a.date) : new Date(0);
-      bValue = b.date ? new Date(b.date) : new Date(0);
+      aValue = a.start_date ? new Date(a.start_date) : new Date(0);
+      bValue = b.start_date ? new Date(b.start_date) : new Date(0);
     } else if (sortBy.value === 'venue') {
       aValue = a.venue || '';
       bValue = b.venue || '';
@@ -517,8 +455,8 @@ const filteredPageants = computed(() => {
       aValue = a.reason || '';
       bValue = b.reason || '';
     } else {
-      aValue = a.title || '';
-      bValue = b.title || '';
+      aValue = a.name || '';
+      bValue = b.name || '';
     }
     
     const compareResult = 

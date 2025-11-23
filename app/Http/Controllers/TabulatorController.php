@@ -239,7 +239,7 @@ class TabulatorController extends Controller
             'is_verified' => true,
             'email_verified_at' => now(),
         ]);
-        
+
         // Assign the judge to this pageant
         $pageant->judges()->attach($judge->id, [
             'role' => $validated['role_title'] ?? 'Judge',
@@ -304,6 +304,7 @@ class TabulatorController extends Controller
                 'name' => $round->name,
                 'type' => $round->type,
                 'weight' => $round->weight,
+                'top_n_proceed' => $round->top_n_proceed,
             ];
         });
 
@@ -413,6 +414,8 @@ class TabulatorController extends Controller
             'currentRound' => [
                 'id' => $currentRound->id,
                 'name' => $currentRound->name,
+                'type' => $currentRound->type,
+                'top_n_proceed' => $currentRound->top_n_proceed,
             ],
             'contestants' => $contestants,
             'judges' => $judges,
@@ -446,8 +449,8 @@ class TabulatorController extends Controller
         $semiFinalResults = $this->scoreCalculationService->calculatePageantStageScores($pageant, 'semi-final');
         $finalResults = $this->scoreCalculationService->calculatePageantStageScores($pageant, 'final');
 
-        // Convert to collection for consistency with frontend expectations
-        $contestants = collect($contestants)->map(function ($contestant) use ($pageant) {
+        // Helper function to format contestant data consistently
+        $formatContestantData = function ($contestant) use ($pageant) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
             $memberNames = [];
             $memberGenders = [];
@@ -467,13 +470,18 @@ class TabulatorController extends Controller
                 'is_pair' => $contestantModel->is_pair ?? false,
                 'member_names' => $memberNames,
                 'member_genders' => $memberGenders,
-                'region' => $contestant['region'],
-                'image' => $contestant['image'],
-                'scores' => $contestant['scores'],
-                'totalScore' => $contestant['finalScore'],
-                'rank' => $contestant['rank'],
+                'region' => $contestant['region'] ?? null,
+                'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                'scores' => $contestant['scores'] ?? [],
+                'totalScore' => $contestant['finalScore'] ?? 0,
+                'rank' => $contestant['rank'] ?? 0,
             ];
-        });
+        };
+
+        // Convert to collection for consistency with frontend expectations
+        $contestants = collect($contestants)->map($formatContestantData);
+        $semiFinalResults = collect($semiFinalResults)->map($formatContestantData);
+        $finalResults = collect($finalResults)->map($formatContestantData);
 
         return Inertia::render('Tabulator/Results', [
             'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
@@ -756,7 +764,9 @@ class TabulatorController extends Controller
                 'id' => $round->id,
                 'name' => $round->name,
                 'description' => $round->description,
+                'identifier' => $round->identifier,
                 'type' => $round->type,
+                'top_n_proceed' => $round->top_n_proceed,
                 'weight' => $round->weight,
                 'display_order' => $round->display_order,
                 'is_active' => $round->is_active,
@@ -767,6 +777,53 @@ class TabulatorController extends Controller
                     'name' => $round->lockedBy->name,
                 ] : null,
             ];
+        });
+
+        // Get all judges assigned to this pageant
+        $judges = $pageant->judges()->get()->map(function ($judge) use ($pageant, $rounds) {
+            $judgeData = [
+                'id' => $judge->id,
+                'name' => $judge->name,
+                'email' => $judge->email,
+                'rounds_progress' => [],
+            ];
+
+            // Calculate progress for each round
+            foreach ($rounds as $round) {
+                $roundId = $round['id'];
+
+                // Get total criteria count for this round
+                $totalCriteria = $pageant->rounds()
+                    ->where('id', $roundId)
+                    ->first()
+                    ->criteria()
+                    ->count();
+
+                // Get total contestants for this pageant
+                $totalContestants = $pageant->contestants()->count();
+
+                // Total scores needed = criteria count × contestant count
+                $totalScoresNeeded = $totalCriteria * $totalContestants;
+
+                // Get scores submitted by this judge for this round
+                $scoresSubmitted = Score::where('judge_id', $judge->id)
+                    ->where('round_id', $roundId)
+                    ->where('pageant_id', $pageant->id)
+                    ->count();
+
+                // Calculate percentage
+                $percentage = $totalScoresNeeded > 0
+                    ? round(($scoresSubmitted / $totalScoresNeeded) * 100, 1)
+                    : 0;
+
+                $judgeData['rounds_progress'][$roundId] = [
+                    'submitted' => $scoresSubmitted,
+                    'total' => $totalScoresNeeded,
+                    'percentage' => $percentage,
+                ];
+            }
+
+            return $judgeData;
         });
 
         return Inertia::render('Tabulator/RoundManagement', [
@@ -780,6 +837,7 @@ class TabulatorController extends Controller
                 ] : null,
             ],
             'rounds' => $rounds,
+            'judges' => $judges,
         ]);
     }
 

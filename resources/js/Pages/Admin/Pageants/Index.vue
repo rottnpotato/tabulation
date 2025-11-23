@@ -416,6 +416,14 @@
                     >
                       <Eye class="h-4 w-4" />
                     </Link>
+
+                    <button
+                      @click.stop="confirmArchive(pageant)"
+                      class="text-gray-500 hover:text-gray-700"
+                      title="Archive Pageant"
+                    >
+                      <Archive class="h-4 w-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -480,18 +488,19 @@
 
     <!-- Confirmation Modal -->
     <Modal :show="showConfirmModal" @close="closeConfirmModal">
-      <div class="p-6">
+      <div class="p-6 bg-white rounded-lg shadow-md">
         <div class="flex items-center space-x-3 mb-4">
           <div :class="[
             'w-12 h-12 rounded-full flex items-center justify-center',
-            confirmAction === 'approve' ? 'bg-green-100' : 'bg-red-100'
+            confirmAction === 'approve' ? 'bg-green-100' : (confirmAction === 'archive' ? 'bg-gray-100' : 'bg-red-100')
           ]">
             <CheckCircle v-if="confirmAction === 'approve'" class="h-6 w-6 text-green-600" />
+            <Archive v-else-if="confirmAction === 'archive'" class="h-6 w-6 text-gray-600" />
             <XCircle v-else class="h-6 w-6 text-red-600" />
           </div>
           <div>
             <h3 class="text-lg font-medium text-gray-900">
-              {{ confirmAction === 'approve' ? 'Approve Pageant' : 'Reject Pageant' }}
+              {{ confirmAction === 'approve' ? 'Approve Pageant' : (confirmAction === 'archive' ? 'Archive Pageant' : 'Reject Pageant') }}
             </h3>
             <p class="text-sm text-gray-500">{{ selectedPageant?.name }}</p>
           </div>
@@ -501,8 +510,25 @@
           <template v-if="confirmAction === 'approve'">
             Are you sure you want to approve this pageant? The organizer will be able to start managing contestants, criteria, and other pageant details.
           </template>
-          <template v-else>
+          <template v-else-if="confirmAction === 'reject'">
             Are you sure you want to reject this pageant? This action cannot be undone and the organizer will need to resubmit.
+          </template>
+          <template v-else-if="confirmAction === 'archive'">
+            Are you sure you want to archive this pageant? It will be moved to the archived list.
+            <div class="mt-4">
+              <label for="admin-archive-reason" class="block text-sm font-medium text-gray-700">
+                Reason (optional)
+              </label>
+              <div class="mt-1">
+                <textarea
+                  id="admin-archive-reason"
+                  v-model="archiveReason"
+                  rows="3"
+                  class="shadow-sm focus:ring-teal-500 focus:border-teal-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="Enter a reason..."
+                ></textarea>
+              </div>
+            </div>
           </template>
         </p>
         
@@ -520,7 +546,9 @@
               'px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed',
               confirmAction === 'approve' 
                 ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' 
-                : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                : (confirmAction === 'archive' 
+                    ? 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-500'
+                    : 'bg-red-600 hover:bg-red-700 focus:ring-red-500')
             ]"
           >
             <template v-if="isProcessing">
@@ -528,7 +556,7 @@
               Processing...
             </template>
             <template v-else>
-              {{ confirmAction === 'approve' ? 'Approve' : 'Reject' }}
+              {{ confirmAction === 'approve' ? 'Approve' : (confirmAction === 'archive' ? 'Archive' : 'Reject') }}
             </template>
           </button>
         </div>
@@ -616,6 +644,14 @@ const isProcessing = ref(false);
 const processingPageants = ref([]);
 const lastAction = ref('');
 const lastActionPageant = ref(null);
+const archiveReason = ref('');
+
+const confirmArchive = (pageant) => {
+  selectedPageant.value = pageant;
+  confirmAction.value = 'archive';
+  archiveReason.value = ''; // Reset reason
+  showConfirmModal.value = true;
+};
 
 // Filter options for CustomSelect components
 const dateFilterOptions = [
@@ -930,6 +966,34 @@ const confirmActionHandler = () => {
   processingPageants.value.push(selectedPageant.value.id);
   lastAction.value = confirmAction.value;
   lastActionPageant.value = selectedPageant.value.id;
+  
+  if (confirmAction.value === 'archive') {
+    router.patch(route('admin.pageants.update_status', selectedPageant.value.id), {
+      status: 'Archived',
+      reason: archiveReason.value
+    }, {
+      onSuccess: () => {
+        notify.success(`Pageant "${selectedPageant.value.name}" has been archived successfully!`);
+        closeConfirmModal();
+        refreshData();
+      },
+      onError: (errors) => {
+        console.error('Error archiving pageant:', errors);
+        notify.error('Failed to archive pageant. Please try again.');
+        closeConfirmModal();
+      },
+      onFinish: () => {
+        isProcessing.value = false;
+        const index = processingPageants.value.indexOf(selectedPageant.value.id);
+        if (index > -1) {
+          processingPageants.value.splice(index, 1);
+        }
+        lastAction.value = '';
+        lastActionPageant.value = null;
+      }
+    });
+    return;
+  }
   
   const action = confirmAction.value === 'approve' ? 'approve' : 'reject';
   const url = route(`admin.pageants.${action}`, selectedPageant.value.id);

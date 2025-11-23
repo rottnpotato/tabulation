@@ -18,6 +18,37 @@
       @confirm="removeTabulator"
       @cancel="showDeleteTabulatorConfirm = false"
     />
+
+    <!-- Archive Confirmation Modal -->
+    <ConfirmDeleteModal
+      :show="showArchiveConfirm"
+      :title="isCompleted ? 'Archive Pageant' : 'Archive & Cancel Pageant'"
+      :message="isCompleted 
+        ? 'this pageant? Archiving will move it to your archived list and it will no longer be editable' 
+        : 'this pageant? This will CANCEL the pageant and move it to your archived list. This action cannot be undone.'"
+      :confirmText="isCompleted ? 'Archive' : 'Cancel & Archive'"
+      confirmButtonClass="bg-gray-600 hover:bg-gray-700 focus:ring-gray-500"
+      :isLoading="archiveProcessing"
+      @confirm="archivePageant"
+      @cancel="showArchiveConfirm = false"
+    >
+      <template #content>
+        <div class="mt-4">
+          <label for="archive-reason" class="block text-sm font-medium text-gray-700">
+            Reason for {{ isCompleted ? 'archiving' : 'cancellation' }} (optional)
+          </label>
+          <div class="mt-1">
+            <textarea
+              id="archive-reason"
+              v-model="archiveReason"
+              rows="3"
+              class="shadow-sm focus:ring-teal-500 focus:border-teal-500 block w-full sm:text-sm border-gray-300 rounded-md"
+              placeholder="Enter a reason..."
+            ></textarea>
+          </div>
+        </div>
+      </template>
+    </ConfirmDeleteModal>
     
     <!-- Back Button and Page Header -->
     <!-- Back Button and Page Header (Removed as integrated into new header) -->
@@ -381,9 +412,18 @@
                     {{ pageant.status }}
                   </span>
                 </div>
-                <div class="text-sm text-gray-500">
-                  <CheckCircle class="h-4 w-4 inline mr-1" />
-                  Pageant completed
+                <div class="flex items-center gap-3">
+                  <div class="text-sm text-gray-500">
+                    <CheckCircle class="h-4 w-4 inline mr-1" />
+                    Pageant completed
+                  </div>
+                  <button 
+                    @click="showArchiveConfirm = true"
+                    class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+                  >
+                    <Archive class="h-4 w-4 mr-1.5 text-gray-500" />
+                    Archive Pageant
+                  </button>
                 </div>
               </div>
               <div class="mt-3 p-3 bg-teal-50 rounded-md">
@@ -392,12 +432,29 @@
                   <div>
                     <p class="text-sm text-teal-700">
                       <strong>This pageant has been completed.</strong> 
-                      Only administrators can unlock completed pageants for editing or make status changes.
+                      You can archive this pageant to remove it from your active list. Only administrators can unlock completed pageants for editing.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Archive/Cancel for Active Pageants -->
+          <div v-if="!isCompleted && !isAdmin && !isArchived" class="mt-6 border-t border-gray-200 pt-6">
+             <div class="flex justify-between items-center">
+                <div>
+                   <h4 class="text-sm font-medium text-gray-900">Danger Zone</h4>
+                   <p class="text-sm text-gray-500">Archive or cancel this pageant.</p>
+                </div>
+                <button 
+                  @click="showArchiveConfirm = true"
+                  class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  <Archive class="h-4 w-4 mr-1.5 text-red-500" />
+                  Archive / Cancel Pageant
+                </button>
+             </div>
           </div>
           
           <!-- Quick Settings Panel -->
@@ -638,13 +695,13 @@
                 <Plus class="h-4 w-4 mr-1.5" />
                 Add Round
               </button>
-              <Link 
+              <!-- <Link 
                 :href="route('organizer.pageant.rounds-management', pageant.id)"
                 class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 btn-transition"
               >
                 <Target class="h-4 w-4 mr-1.5" />
                 Manage All
-              </Link>
+              </Link> -->
             </div>
           </div>
           
@@ -686,8 +743,8 @@
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
                       {{ round.weight }}% Weight
                     </span>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {{ round.type }}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+                      {{ round.type }}{{ round.top_n_proceed ? ` (Top ${round.top_n_proceed})` : '' }}
                     </span>
                     <button 
                       @click="toggleRoundExpansion(round.id)"
@@ -746,14 +803,14 @@
                     class="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow"
                   >
                     <div class="flex items-center justify-between mb-2">
-                      <h6 class="font-medium text-gray-900">{{ criteria.name }}</h6>
+                      <h6 class="font-medium text-gray-900 capitalize">{{ criteria.name }}</h6>
                       <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-600">
                         {{ criteria.weight }}%
                       </span>
                     </div>
                     <p class="text-xs text-gray-500 mb-2">{{ criteria.description || 'No description' }}</p>
                     <div class="flex items-center justify-between text-xs text-gray-500">
-                      <span>Score: {{ criteria.min_score || 0 }} - {{ criteria.max_score || 10 }}</span>
+                      <span>Score: {{ formatScoreDisplay(criteria.min_score || 0, criteria.max_score || 10) }}</span>
                       <div v-if="canEdit" class="flex space-x-1">
                         <button 
                           @click="openEditCriteriaModal(round, criteria)"
@@ -1648,16 +1705,61 @@
                         <label for="roundType" class="block text-sm font-medium text-gray-700 mb-1">
                           Round Type <span class="text-red-500">*</span>
                         </label>
-                        <select
+                        <input
                           id="roundType"
                           v-model="roundForm.type"
+                          type="text"
+                          maxlength="100"
                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. Semi-Final, Final, Preliminary, Top 10"
                           required
-                        >
-                          <option value="semi-final">Semi-Final</option>
-                          <option value="final">Final</option>
-                        </select>
-                        <p class="mt-1 text-xs text-gray-500">Select the type of round</p>
+                        />
+                        <p class="mt-1 text-xs text-gray-500 mb-2">Enter any round type name</p>
+                        <div class="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            @click="roundForm.type = 'Semi-Final'"
+                            class="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+                          >
+                            Semi-Final
+                          </button>
+                          <button
+                            type="button"
+                            @click="roundForm.type = 'Final'"
+                            class="px-2 py-1 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100 transition-colors"
+                          >
+                            Final
+                          </button>
+                          <button
+                            type="button"
+                            @click="roundForm.type = 'Preliminary'"
+                            class="px-2 py-1 text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200 rounded hover:bg-teal-100 transition-colors"
+                          >
+                            Preliminary
+                          </button>
+                          <button
+                            type="button"
+                            @click="roundForm.type = 'Quarterfinals'"
+                            class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded hover:bg-amber-100 transition-colors"
+                          >
+                            Quarterfinals
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label for="topNProceed" class="block text-sm font-medium text-gray-700 mb-1">
+                          Top N to Proceed <span class="text-gray-400">(Optional)</span>
+                        </label>
+                        <input
+                          id="topNProceed"
+                          v-model.number="roundForm.top_n_proceed"
+                          type="number"
+                          min="1"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
+                          placeholder="e.g. 10 (leave empty if not applicable)"
+                        />
+                        <p class="mt-1 text-xs text-gray-500">Number of contestants who will proceed from this round (optional)</p>
                       </div>
 
                       <div>
@@ -1690,6 +1792,15 @@
                           required
                         />
                         <p class="mt-1 text-xs text-gray-500">Percentage weight of this round in overall scoring</p>
+                        <div v-if="roundForm.type" class="mt-2 p-2 bg-teal-50 rounded border border-teal-200">
+                          <p class="text-xs font-medium text-teal-900">
+                            Current Total for {{ roundForm.type }}: 
+                            <span :class="getCurrentRoundPercentageClass()">{{ getCurrentRoundPercentageTotal() }}%</span>
+                          </p>
+                          <p class="text-xs text-teal-700 mt-0.5">
+                            {{ getCurrentRoundPercentageMessage() }}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
@@ -1825,6 +1936,14 @@
                           required
                         />
                         <p class="mt-1 text-xs text-gray-500">Percentage weight within this round</p>
+                        <div v-if="selectedRound" class="mt-2 p-2 bg-teal-50 rounded border border-teal-200">
+                          <p class="text-xs font-medium text-teal-900">
+                            Current Total: <span :class="getCurrentPercentageClass()">{{ getCurrentPercentageTotal() }}%</span>
+                          </p>
+                          <p class="text-xs text-teal-700 mt-0.5">
+                            {{ getCurrentPercentageMessage() }}
+                          </p>
+                        </div>
                       </div>
 
                       <div class="grid grid-cols-2 gap-3">
@@ -2276,10 +2395,11 @@ const roundForm = ref({
   id: null,
   name: '',
   description: '',
-  type: 'semi-final',
+  type: '',
   identifier: '',
   weight: 100,
   display_order: 0,
+  top_n_proceed: null,
   processing: false
 })
 
@@ -2775,6 +2895,133 @@ const getScoringSystemDescription = (system) => {
   return systemInfo ? systemInfo.description : 'No description available'
 }
 
+// Get default min/max scores based on scoring system
+const getScoringSystemDefaults = (system) => {
+  const defaults = {
+    'percentage': { min: 0, max: 100 },
+    '1-10': { min: 1, max: 10 },
+    '0-5': { min: 0, max: 5 },
+    'ranks': { min: 1, max: 10 },
+  }
+  return defaults[system] || { min: 0, max: 100 }
+}
+
+// Format score display based on scoring system
+const formatScoreDisplay = (minScore, maxScore, scoringSystem = null) => {
+  const system = scoringSystem || props.pageant.scoring_system
+  
+  if (system === 'percentage') {
+    // For percentage, show whole numbers with % symbol
+    return `${Math.floor(minScore)}% - ${Math.floor(maxScore)}%`
+  } else {
+    // For other systems (1-10, 0-5, ranks), show decimal format
+    return `${minScore} - ${maxScore}`
+  }
+}
+
+// Validate criteria scores against scoring system
+const validateCriteriaScores = (scoringSystem, minScore, maxScore) => {
+  const defaults = getScoringSystemDefaults(scoringSystem)
+  
+  if (minScore < defaults.min || maxScore > defaults.max) {
+    const systemName = getScoringSystemName(scoringSystem)
+    return `Invalid score range for ${systemName}. Scores must be between ${defaults.min} and ${defaults.max}.`
+  }
+  
+  if (minScore >= maxScore) {
+    return 'Minimum score must be less than maximum score.'
+  }
+  
+  return null
+}
+
+// Validate that criteria percentages sum to 100% for the round
+// Allows adding criteria gradually within a round (10%, 20%, 30%, etc.)
+// This validation is now informational only - actual blocking happens when creating new rounds
+const validateCriteriaPercentage = (round, currentCriteria) => {
+  if (!round || !round.criteria) return null
+  
+  // Calculate total percentage including the current criteria being added/edited
+  let totalPercentage = 0
+  
+  round.criteria.forEach(criteria => {
+    // Skip the current criteria if editing (it will be replaced)
+    if (currentCriteria.id && criteria.id === currentCriteria.id) {
+      return
+    }
+    totalPercentage += parseFloat(criteria.weight) || 0
+  })
+  
+  // Add the current criteria weight
+  totalPercentage += parseFloat(currentCriteria.weight) || 0
+  
+  // Allow any percentage - users can add criteria gradually
+  // Validation only shows warning, doesn't block submission
+  
+  return null
+}
+
+// Validate that rounds percentages sum to 100% per round type
+// Only enforces validation when adding FINAL rounds (requires semi-finals to be 100%)
+// Allows gradual addition of semi-final rounds
+const validateRoundPercentage = (currentRound) => {
+  if (!props.pageant.rounds) return null
+  
+  // If adding/editing a FINAL round, check if semi-finals sum to 100%
+  if (currentRound.type === 'final') {
+    let semiFinalTotal = 0
+    
+    props.pageant.rounds.forEach(round => {
+      if (round.type === 'semi-final') {
+        semiFinalTotal += parseFloat(round.weight) || 0
+      }
+    })
+    
+    // Semi-finals must sum to 100% before adding finals
+    if (Math.abs(semiFinalTotal - 100) > 0.01) {
+      return `Semi-Final rounds must sum to exactly 100% before adding Final rounds. Current Semi-Final total: ${semiFinalTotal.toFixed(2)}%`
+    }
+  }
+  
+  // For semi-final rounds, allow any percentage (gradual addition)
+  // No validation needed - users can add 25%, 25%, 50%, etc.
+  
+  return null
+}
+
+// Validate that existing rounds have complete criteria (100%) before adding new rounds
+const validateExistingRoundsCriteria = (currentRound) => {
+  if (!props.pageant.rounds || props.pageant.rounds.length === 0) return null
+  
+  // Check all existing rounds of the same type (excluding the current one if editing)
+  const incompleteRounds = props.pageant.rounds.filter(round => {
+    // Skip if this is the round being edited
+    if (currentRound.id && round.id === currentRound.id) return false
+    
+    // Only check rounds of the same type
+    if (round.type !== currentRound.type) return false
+    
+    // Calculate total criteria percentage for this round
+    let total = 0
+    if (round.criteria && round.criteria.length > 0) {
+      round.criteria.forEach(criteria => {
+        total += parseFloat(criteria.weight) || 0
+      })
+    }
+    
+    // Round is incomplete if it has criteria but doesn't sum to 100%, or has no criteria at all
+    return Math.abs(total - 100) > 0.01
+  })
+  
+  if (incompleteRounds.length > 0) {
+    const roundType = currentRound.type === 'semi-final' ? 'Semi-Final' : 'Final'
+    const roundName = incompleteRounds[0].name
+    return `Cannot add new ${roundType} round. Complete criteria for "${roundName}" first (criteria must sum to 100%).`
+  }
+  
+  return null
+}
+
 // Helper function for status tooltips
 const getStatusTooltipText = (status) => {
   switch (status) {
@@ -2924,6 +3171,34 @@ const updateStatus = () => {
   })
 }
 
+// Archive functionality
+const showArchiveConfirm = ref(false)
+const archiveProcessing = ref(false)
+const archiveReason = ref('')
+
+const archivePageant = () => {
+  archiveProcessing.value = true
+  
+  router.put(route('organizer.pageant.status.update', props.pageant.id), {
+    status: 'Archived',
+    reason: archiveReason.value
+  }, {
+    onSuccess: () => {
+      archiveProcessing.value = false
+      showArchiveConfirm.value = false
+      archiveReason.value = ''
+      // Redirect to my pageants or show success message
+    },
+    onError: (errors) => {
+      archiveProcessing.value = false
+      console.error('Archive failed:', errors)
+    },
+    onFinish: () => {
+      archiveProcessing.value = false
+    }
+  })
+}
+
 // Auto-completion logic
 const checkForAutoCompletion = () => {
   if (isPageantDateElapsed.value && !isCompleted.value && !statusUpdateForm.value.processing) {
@@ -2959,6 +3234,7 @@ const openEditRoundModal = (round) => {
     identifier: round.identifier || '',
     weight: round.weight,
     display_order: round.display_order,
+    top_n_proceed: round.top_n_proceed || null,
     processing: false
   }
   showRoundModal.value = true
@@ -2975,15 +3251,32 @@ const resetRoundForm = () => {
     id: null,
     name: '',
     description: '',
-    type: 'semi-final',
+    type: '',
     identifier: '',
     weight: 100,
     display_order: 0,
+    top_n_proceed: null,
     processing: false
   }
 }
 
 const submitRoundForm = () => {
+  // First, validate that existing rounds of this type have complete criteria
+  const existingRoundsError = validateExistingRoundsCriteria(roundForm.value)
+  
+  if (existingRoundsError) {
+    alert(existingRoundsError)
+    return
+  }
+  
+  // Then validate round percentage totals per type
+  const percentageError = validateRoundPercentage(roundForm.value)
+  
+  if (percentageError) {
+    alert(percentageError)
+    return
+  }
+  
   roundForm.value.processing = true
   
   const url = editingRound.value 
@@ -3056,6 +3349,12 @@ const openAddCriteriaModal = (round) => {
   selectedRound.value = round
   resetCriteriaForm()
   criteriaForm.value.round_id = round.id
+  
+  // Auto-set min/max scores based on scoring system
+  const scoringSystemDefaults = getScoringSystemDefaults(props.pageant.scoring_system)
+  criteriaForm.value.min_score = scoringSystemDefaults.min
+  criteriaForm.value.max_score = scoringSystemDefaults.max
+  
   showCriteriaModal.value = true
 }
 
@@ -3086,14 +3385,15 @@ const closeCriteriaModal = () => {
 }
 
 const resetCriteriaForm = () => {
+  const scoringSystemDefaults = getScoringSystemDefaults(props.pageant.scoring_system)
   criteriaForm.value = {
     id: null,
     round_id: null,
     name: '',
     description: '',
     weight: 100,
-    min_score: 0,
-    max_score: 100,
+    min_score: scoringSystemDefaults.min,
+    max_score: scoringSystemDefaults.max,
     allow_decimals: true,
     decimal_places: 2,
     display_order: 0,
@@ -3102,6 +3402,23 @@ const resetCriteriaForm = () => {
 }
 
 const submitCriteriaForm = () => {
+  // Validate scoring system constraints
+  const scoringSystem = props.pageant.scoring_system
+  const validationError = validateCriteriaScores(scoringSystem, criteriaForm.value.min_score, criteriaForm.value.max_score)
+  
+  if (validationError) {
+    alert(validationError)
+    return
+  }
+  
+  // Validate criteria percentage totals for the round
+  const percentageError = validateCriteriaPercentage(selectedRound.value, criteriaForm.value)
+  
+  if (percentageError) {
+    alert(percentageError)
+    return
+  }
+  
   criteriaForm.value.processing = true
   
   const url = editingCriteria.value 
@@ -3177,12 +3494,109 @@ const deleteCriteria = () => {
   })
 }
 
+
+// Helper functions for percentage feedback in criteria modal
+const getCurrentPercentageTotal = () => {
+  if (!selectedRound.value || !selectedRound.value.criteria) return 0
+  
+  let total = 0
+  selectedRound.value.criteria.forEach(criteria => {
+    // Skip current criteria if editing (it will be replaced)
+    if (criteriaForm.value.id && criteria.id === criteriaForm.value.id) {
+      return
+    }
+    total += parseFloat(criteria.weight) || 0
+  })
+  
+  // Add current criteria weight
+  total += parseFloat(criteriaForm.value.weight) || 0
+  
+  return total.toFixed(2)
+}
+
+const getCurrentPercentageClass = () => {
+  const total = parseFloat(getCurrentPercentageTotal())
+  if (Math.abs(total - 100) < 0.01) {
+    return 'text-teal-600 font-bold'
+  } else if (total > 100) {
+    return 'text-red-600 font-bold'
+  } else {
+    return 'text-yellow-600 font-bold'
+  }
+}
+
+const getCurrentPercentageMessage = () => {
+  const total = parseFloat(getCurrentPercentageTotal())
+  const remaining = 100 - total
+  
+  if (Math.abs(total - 100) < 0.01) {
+    return '✓ Criteria percentages sum to 100%'
+  } else if (total > 100) {
+    return `⚠ Exceeds 100% by ${Math.abs(remaining).toFixed(2)}%`
+  } else {
+    return `${remaining.toFixed(2)}% remaining (you can add more criteria to this round)`
+  }
+}
+
 // Contestant management functions
 const openAddContestantModal = () => {
   editingContestant.value = null
   resetContestantForm()
   showContestantModal.value = true
 }
+
+// Helper functions for round percentage feedback in round modal
+const getCurrentRoundPercentageTotal = () => {
+  if (!props.pageant.rounds || !roundForm.value.type) return 0
+  
+  let total = 0
+  props.pageant.rounds.forEach(round => {
+    // Only count rounds of the same type
+    if (round.type !== roundForm.value.type) return
+    
+    // Skip current round if editing (it will be replaced)
+    if (roundForm.value.id && round.id === roundForm.value.id) {
+      return
+    }
+    total += parseFloat(round.weight) || 0
+  })
+  
+  // Add current round weight
+  total += parseFloat(roundForm.value.weight) || 0
+  
+  return total.toFixed(2)
+}
+
+const getCurrentRoundPercentageClass = () => {
+  const total = parseFloat(getCurrentRoundPercentageTotal())
+  if (Math.abs(total - 100) < 0.01) {
+    return 'text-teal-600 font-bold'
+  } else if (total > 100) {
+    return 'text-red-600 font-bold'
+  } else {
+    return 'text-yellow-600 font-bold'
+  }
+}
+
+const getCurrentRoundPercentageMessage = () => {
+  const total = parseFloat(getCurrentRoundPercentageTotal())
+  const remaining = 100 - total
+  const roundType = roundForm.value.type === 'semi-final' ? 'Semi-Final' : 'Final'
+  
+  if (Math.abs(total - 100) < 0.01) {
+    return `✓ ${roundType} rounds sum to 100%`
+  } else if (total > 100) {
+    return `⚠ Exceeds 100% by ${Math.abs(remaining).toFixed(2)}%`
+  } else {
+    // Different messages for semi-final vs final
+    if (roundForm.value.type === 'semi-final') {
+      return `${remaining.toFixed(2)}% remaining (you can add more semi-final rounds)`
+    } else {
+      return `${remaining.toFixed(2)}% remaining to allocate`
+    }
+  }
+}
+
 
 const openAddPairModal = () => {
   showPairModal.value = true

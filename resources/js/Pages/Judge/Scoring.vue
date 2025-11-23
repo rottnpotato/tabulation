@@ -35,7 +35,17 @@
                         <span class="w-1 h-1 rounded-full bg-teal-400 shrink-0"></span>
                         <span>Judge Panel</span>
                     </div>
-                    <h1 class="text-xl font-black text-slate-800 tracking-tight truncate">{{ currentRound?.name }}</h1>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-black text-slate-800 tracking-tight truncate">{{ currentRound?.name }}</h1>
+                        <span v-if="currentRound?.type" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+                            :class="[
+                                currentRound.type.toLowerCase().includes('final') && !currentRound.type.toLowerCase().includes('semi') ? 'bg-purple-100 text-purple-800' :
+                                currentRound.type.toLowerCase().includes('semi') ? 'bg-blue-100 text-blue-800' :
+                                'bg-teal-100 text-teal-800'
+                            ]">
+                            {{ getRoundTypeDisplay(currentRound) }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -59,7 +69,11 @@
                       <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
                     <Lock v-if="round.is_locked" class="w-3 h-3" />
+                    <CheckCircle v-else-if="round.is_complete" class="w-3 h-3 text-emerald-500" />
                     {{ round.name }}
+                    <span v-if="round.scoring_progress && !round.is_complete" class="text-[10px] opacity-70">
+                      ({{ Math.round(round.scoring_progress) }}%)
+                    </span>
                 </button>
             </div>
         </div>
@@ -67,6 +81,31 @@
 
     <!-- Main Content -->
     <main class="relative z-10 pt-32 md:pt-28 pb-24 min-h-screen flex flex-col lg:flex-row items-stretch justify-center gap-6 px-4 lg:px-8 max-w-[1920px] mx-auto">
+        
+        <!-- Scoring Progress Banner -->
+        <div v-if="activeContestant && criteria.length > 0" class="absolute top-24 md:top-20 left-4 right-4 lg:left-8 lg:right-8 z-20">
+            <div class="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-teal-100 p-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="text-sm font-medium text-slate-700">
+                            <span class="text-teal-600 font-bold">{{ activeContestant.name }}</span>
+                        </div>
+                        <div class="h-4 w-px bg-slate-300"></div>
+                        <div class="text-xs text-slate-600">
+                            <span class="font-semibold">{{ getCompletedCriteriaCount(activeContestant.id) }}</span> / {{ criteria.length }} criteria scored
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-teal-500 to-teal-600 rounded-full transition-all duration-500"
+                                :style="{ width: `${(getCompletedCriteriaCount(activeContestant.id) / criteria.length) * 100}%` }">
+                            </div>
+                        </div>
+                        <CheckCircle v-if="isContestantScoreComplete(activeContestant.id)" class="w-5 h-5 text-emerald-500" />
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Error State -->
         <div v-if="error" class="absolute inset-0 z-50 bg-slate-50 flex items-center justify-center p-8">
@@ -96,7 +135,7 @@
             <div class="hidden lg:flex w-1/4 flex-col gap-3 py-4 overflow-y-auto max-h-[calc(100vh-6rem)] scrollbar-hide pb-20">
                 <div v-for="criterion in leftCriteria" :key="criterion.id" class="bg-white/60 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-white/60 hover:shadow-md hover:bg-white/80 transition-all duration-300 group">
                     <div class="flex justify-between items-start mb-3">
-                        <label class="font-bold text-slate-700 group-hover:text-teal-700 transition-colors text-sm">{{ criterion.name }}</label>
+                        <label class="font-bold text-slate-700 group-hover:text-teal-700 transition-colors text-sm capitalize">{{ criterion.name }}</label>
                         <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">{{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }} / {{ criterion.max_score }}</span>
                     </div>
                     <ScoreInput
@@ -163,7 +202,7 @@
                         <div class="space-y-6">
                             <div v-for="criterion in criteria" :key="criterion.id" class="space-y-2">
                                 <div class="flex justify-between">
-                                    <label class="text-sm font-medium text-slate-700">{{ criterion.name }}</label>
+                                    <label class="text-sm font-medium text-slate-700 capitalize">{{ criterion.name }}</label>
                                     <span class="text-xs font-bold text-slate-500">{{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }} / {{ criterion.max_score }}</span>
                                 </div>
                                 <ScoreInput
@@ -214,7 +253,7 @@
                 <!-- Remaining Criteria -->
                 <div v-for="criterion in rightCriteria" :key="criterion.id" class="bg-white/60 backdrop-blur-md rounded-xl p-4 shadow-sm border border-white/60 hover:shadow-md hover:bg-white/80 transition-all duration-300 group">
                     <div class="flex justify-between items-start mb-3">
-                        <label class="font-bold text-slate-700 group-hover:text-teal-700 transition-colors text-sm">{{ criterion.name }}</label>
+                        <label class="font-bold text-slate-700 group-hover:text-teal-700 transition-colors text-sm capitalize">{{ criterion.name }}</label>
                         <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">{{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }} / {{ criterion.max_score }}</span>
                     </div>
                     <ScoreInput
@@ -387,6 +426,22 @@ const currentAverage = computed(() => {
 })
 
 // Methods
+const getRoundTypeDisplay = (round) => {
+  if (!round || !round.type) return ''
+  if (round.top_n_proceed) {
+    return `${round.type} (Top ${round.top_n_proceed})`
+  }
+  return round.type
+}
+
+const getCompletedCriteriaCount = (contestantId) => {
+  if (!contestantId) return 0
+  return props.criteria.filter(criterion => {
+    const score = scores.value[`${contestantId}-${criterion.id}`]
+    return score !== undefined && score !== null && score !== 0
+  }).length
+}
+
 const handleRoundChange = (roundId) => {
   if (roundId === props.currentRound.id) return
   router.visit(route('judge.scoring', [props.pageant.id, roundId]))

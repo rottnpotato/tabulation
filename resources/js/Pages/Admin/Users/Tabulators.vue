@@ -19,20 +19,35 @@
       user-type-singular="Tabulator"
       pageant-column-title="Assigned Pageants"
       :has-pageants-column="true"
-      :has-toggle-status="false"
+      :has-toggle-status="true"
       :has-edit="true"
-      :has-delete="false"
+      :has-delete="true"
       :show-unverified="false"
       :has-resend-verification="false"
+      @toggle-status="toggleStatus"
+      @confirm-delete="confirmDelete"
     />
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmationModal
+      :show="showDeleteModal"
+      title="Delete Tabulator Account"
+      confirm-text="Delete"
+      type="danger"
+      @close="showDeleteModal = false"
+      @confirm="deleteTabulator"
+    >
+      Are you sure you want to delete <span class="font-medium">{{ tabulatorToDelete?.name || 'this tabulator' }}</span>'s account? This action cannot be undone.
+    </ConfirmationModal>
   </div>
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3'
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import { Head, router } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import UsersList from '@/Components/users/UsersList.vue'
+import ConfirmationModal from '@/Components/users/ConfirmationModal.vue'
 
 // Layout configuration
 defineOptions({
@@ -48,12 +63,40 @@ const props = defineProps({
   }
 })
 
+// Local state
+const showDeleteModal = ref(false)
+const tabulatorToDelete = ref(null)
+
 // Safely handle the tabulators data
 const tabulatorsData = computed(() => {
-  console.log('Props received:', props)
-  console.log('Tabulators prop:', props.tabulators)
-  console.log('Is tabulators array?', Array.isArray(props.tabulators))
   return Array.isArray(props.tabulators) ? props.tabulators : []
 })
 
-</script> 
+// Methods
+const confirmDelete = (tabulator) => {
+  tabulatorToDelete.value = tabulator
+  showDeleteModal.value = true
+}
+
+const deleteTabulator = () => {
+  if (!tabulatorToDelete.value) return
+  
+  router.delete(route('admin.users.tabulators.delete', tabulatorToDelete.value.id), {
+    onSuccess: () => {
+      showDeleteModal.value = false
+      tabulatorToDelete.value = null
+    }
+  })
+}
+
+const toggleStatus = (tabulator) => {
+  const newStatus = !tabulator.is_active
+  
+  router.put(route('admin.users.tabulators.update', tabulator.id), {
+    name: tabulator.name,
+    email: tabulator.email,
+    username: tabulator.username,
+    is_active: newStatus
+  })
+}
+</script>

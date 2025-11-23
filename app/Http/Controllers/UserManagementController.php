@@ -42,6 +42,7 @@ class UserManagementController extends Controller
                     'email_verified' => $organizer->email_verified_at ? true : false,
                     'created_at' => $organizer->created_at->format('M d, Y'),
                     'pageants_count' => $organizer->pageants_count,
+                    'is_current_user' => $organizer->id === Auth::id(),
                 ];
             });
 
@@ -324,7 +325,9 @@ class UserManagementController extends Controller
                     'username' => $admin->username,
                     'email' => $admin->email,
                     'status' => $admin->is_active ? 'Active' : 'Inactive',
+                    'is_active' => $admin->is_active,
                     'created_at' => $admin->created_at->format('M d, Y'),
+                    'is_current_user' => $admin->id === Auth::id(),
                 ];
             });
 
@@ -450,6 +453,9 @@ class UserManagementController extends Controller
             return redirect()->route('admin.users.admins')->with('error', 'You cannot modify your own account through this interface.');
         }
 
+        // Check if this is a status-only update (toggle)
+        $isStatusToggle = $request->has('is_active') && count($request->only(['name', 'email', 'username', 'is_active'])) === 4;
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$id,
@@ -466,14 +472,25 @@ class UserManagementController extends Controller
         $admin->update($validated);
 
         // Log the action
-        $this->auditLogService->log(
-            'UPDATE_ADMIN',
-            'User',
-            $admin->id,
-            "Updated admin user: {$admin->name}"
-        );
+        if ($isStatusToggle) {
+            $this->auditLogService->log(
+                'UPDATE_ADMIN_STATUS',
+                'User',
+                $admin->id,
+                "Updated admin status: {$admin->name}. Status changed to: ".($admin->is_active ? 'Active' : 'Inactive')
+            );
 
-        return redirect()->route('admin.users.admins.show', $id)->with('success', "Administrator {$admin->name} updated successfully.");
+            return back()->with('success', "Administrator {$admin->name}'s status updated successfully.");
+        } else {
+            $this->auditLogService->log(
+                'UPDATE_ADMIN',
+                'User',
+                $admin->id,
+                "Updated admin user: {$admin->name}"
+            );
+
+            return redirect()->route('admin.users.admins.show', $id)->with('success', "Administrator {$admin->name} updated successfully.");
+        }
     }
 
     /**
@@ -532,8 +549,10 @@ class UserManagementController extends Controller
                         'username' => $tabulator->username,
                         'email' => $tabulator->email,
                         'status' => $tabulator->is_active ? 'Active' : 'Inactive',
+                        'is_active' => $tabulator->is_active,
                         'created_at' => $tabulator->created_at->format('M d, Y'),
                         'pageants_count' => $tabulator->pageants_count ?? 0,
+                        'is_current_user' => $tabulator->id === Auth::id(),
                     ];
                 });
 
@@ -688,6 +707,36 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Delete a tabulator
+     */
+    public function deleteTabulator($id)
+    {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
+        $tabulator = User::findOrFail($id);
+        $name = $tabulator->name;
+
+        // Check if tabulator has pageants
+        if ($tabulator->tabulatorPageants()->count() > 0) {
+            return back()->with('error', "Cannot delete tabulator {$name} because they are assigned to pageants.");
+        }
+
+        // Log the action before deletion
+        $this->auditLogService->log(
+            'DELETE_TABULATOR',
+            'User',
+            $tabulator->id,
+            "Deleted tabulator user: {$name}"
+        );
+
+        $tabulator->delete();
+
+        return back()->with('success', "Tabulator {$name} deleted successfully.");
+    }
+
+    /**
      * Display judges list (read-only)
      */
     public function judges()
@@ -712,8 +761,10 @@ class UserManagementController extends Controller
                         'username' => $judge->username,
                         'email' => $judge->email,
                         'status' => $judge->is_active ? 'Active' : 'Inactive',
+                        'is_active' => $judge->is_active,
                         'created_at' => $judge->created_at->format('M d, Y'),
                         'pageants_count' => $judge->pageants_count ?? 0,
+                        'is_current_user' => $judge->id === Auth::id(),
                     ];
                 });
 
@@ -865,6 +916,36 @@ class UserManagementController extends Controller
 
             return redirect()->route('admin.users.judges.show', $id)->with('success', "Judge {$judge->name} updated successfully.");
         }
+    }
+
+    /**
+     * Delete a judge
+     */
+    public function deleteJudge($id)
+    {
+        if (! Auth::user()->hasPermission('admin_manage_users')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage users.');
+        }
+
+        $judge = User::findOrFail($id);
+        $name = $judge->name;
+
+        // Check if judge has pageants
+        if ($judge->judgePageants()->count() > 0) {
+            return back()->with('error', "Cannot delete judge {$name} because they are assigned to pageants.");
+        }
+
+        // Log the action before deletion
+        $this->auditLogService->log(
+            'DELETE_JUDGE',
+            'User',
+            $judge->id,
+            "Deleted judge user: {$name}"
+        );
+
+        $judge->delete();
+
+        return back()->with('success', "Judge {$name} deleted successfully.");
     }
 
     /**

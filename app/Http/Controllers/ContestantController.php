@@ -579,7 +579,7 @@ class ContestantController extends Controller
             ->findOrFail($contestantId);
 
         $contestantName = $contestant->name;
-        $isPair = !empty($contestant->pair_id);
+        $isPair = ! empty($contestant->pair_id);
         $partnerContestant = null;
 
         // If this contestant is part of a pair, find the partner
@@ -601,12 +601,12 @@ class ContestantController extends Controller
         // If there's a partner, delete them too
         if ($partnerContestant) {
             $partnerName = $partnerContestant->name;
-            
+
             // Delete partner's associated images
             foreach ($partnerContestant->images as $image) {
                 Storage::disk('public')->delete($image->image_path);
             }
-            
+
             // Delete the partner contestant
             $partnerContestant->delete();
 

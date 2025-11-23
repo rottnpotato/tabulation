@@ -187,13 +187,17 @@ class JudgeController extends Controller
                 'current_round_id' => $pageant->current_round_id,
                 'has_current_round' => $pageant->hasCurrentRound(),
             ],
-            'rounds' => $rounds->map(function ($round) {
+            'rounds' => $rounds->map(function ($round) use ($judge) {
                 return [
                     'id' => $round->id,
                     'name' => $round->name,
                     'description' => $round->description,
+                    'type' => $round->type,
+                    'top_n_proceed' => $round->top_n_proceed,
                     'is_locked' => $round->is_locked,
                     'can_be_edited' => $round->canBeEdited(),
+                    'scoring_progress' => $round->getJudgeScoringProgress($judge->id),
+                    'is_complete' => $round->isJudgeScoringComplete($judge->id),
                     'locked_by' => $round->lockedBy ? [
                         'id' => $round->lockedBy->id,
                         'name' => $round->lockedBy->name,
@@ -204,6 +208,8 @@ class JudgeController extends Controller
                 'id' => $currentRound->id,
                 'name' => $currentRound->name,
                 'description' => $currentRound->description,
+                'type' => $currentRound->type,
+                'top_n_proceed' => $currentRound->top_n_proceed,
                 'is_locked' => $currentRound->is_locked,
                 'can_be_edited' => $canEditCurrentRound,
                 'locked_by' => $currentRound->lockedBy ? [

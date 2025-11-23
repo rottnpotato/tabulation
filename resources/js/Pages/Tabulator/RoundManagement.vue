@@ -65,7 +65,10 @@
               <h3 class="text-lg font-bold text-slate-900 mb-1">Round Status</h3>
               <p class="text-sm text-slate-500">Monitor round completion status</p>
             </div>
-            <button class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-teal-200">
+            <button 
+              @click="showProgressModal = true"
+              class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-teal-200"
+            >
               View Progress
             </button>
           </div>
@@ -113,8 +116,13 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="inline-flex items-center px-2.5 py-1 bg-teal-50 text-teal-700 text-xs font-medium rounded-lg border border-teal-100">
-                    {{ round.type || 'Standard' }}
+                  <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg border capitalize"
+                    :class="[
+                      round.type?.toLowerCase().includes('final') && !round.type?.toLowerCase().includes('semi') ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                      round.type?.toLowerCase().includes('semi') ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      'bg-teal-50 text-teal-700 border-teal-200'
+                    ]">
+                    {{ getRoundTypeDisplay(round) }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -212,6 +220,104 @@
       </div>
     </div>
 
+    <!-- Progress Modal -->
+    <div 
+      v-if="showProgressModal" 
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      @click.self="showProgressModal = false"
+    >
+      <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+        <!-- Modal Header -->
+        <div class="bg-gradient-to-br from-teal-50 via-teal-50/50 to-white border-b border-teal-100 p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Judge Scoring Progress</h2>
+              <p class="text-sm text-slate-500 mt-1">Real-time completion status per judge</p>
+            </div>
+            <button 
+              @click="showProgressModal = false"
+              class="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 overflow-y-auto max-h-[calc(80vh-100px)]">
+          <div v-if="judges.length === 0" class="text-center py-12">
+            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">No Judges Assigned</h3>
+            <p class="text-slate-500">There are no judges assigned to this pageant.</p>
+          </div>
+
+          <!-- Judges List with Progress -->
+          <div v-else class="space-y-6">
+            <div 
+              v-for="judge in judges" 
+              :key="judge.id"
+              class="bg-slate-50/50 rounded-2xl p-5 border border-slate-100"
+            >
+              <!-- Judge Info -->
+              <div class="flex items-center gap-3 mb-4">
+                <div class="h-12 w-12 bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl flex items-center justify-center text-teal-700 font-bold text-lg shadow-inner">
+                  {{ judge.name.charAt(0) }}
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-900">{{ judge.name }}</h4>
+                  <p class="text-sm text-slate-500">{{ judge.email }}</p>
+                </div>
+              </div>
+
+              <!-- Progress per Round -->
+              <div class="space-y-3">
+                <div 
+                  v-for="round in rounds" 
+                  :key="round.id"
+                  class="bg-white rounded-xl p-4 border border-slate-100"
+                >
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-medium text-slate-900">{{ round.name }}</span>
+                      <span 
+                        v-if="pageant.current_round_id === round.id" 
+                        class="inline-flex items-center px-2 py-0.5 bg-teal-100 text-teal-700 text-xs font-bold uppercase tracking-wide rounded-full border border-teal-200"
+                      >
+                        Current
+                      </span>
+                    </div>
+                    <span class="text-sm font-bold" :class="getProgressColor(judge.rounds_progress[round.id]?.percentage || 0)">
+                      {{ judge.rounds_progress[round.id]?.percentage || 0 }}%
+                    </span>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                    <div 
+                      class="h-full transition-all duration-500 ease-out rounded-full"
+                      :class="getProgressBarColor(judge.rounds_progress[round.id]?.percentage || 0)"
+                      :style="{ width: `${judge.rounds_progress[round.id]?.percentage || 0}%` }"
+                    ></div>
+                  </div>
+
+                  <!-- Score Details -->
+                  <div class="mt-2 text-xs text-slate-500">
+                    {{ judge.rounds_progress[round.id]?.submitted || 0 }} / {{ judge.rounds_progress[round.id]?.total || 0 }} scores submitted
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Notification System -->
     <NotificationSystem ref="notificationSystem" />
   </div>
@@ -238,6 +344,10 @@ const props = defineProps({
   rounds: {
     type: Array,
     default: () => []
+  },
+  judges: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -245,6 +355,7 @@ const selectedRoundId = ref(props.pageant.current_round_id?.toString() || '')
 const notificationSystem = ref(null)
 const actionLoading = ref(false)
 const isChannelReady = ref(false)
+const showProgressModal = ref(false)
 let pageantChannel = null
 
 const roundOptions = computed(() => {
@@ -261,6 +372,26 @@ const activeRoundsCount = computed(() => {
 const lockedRoundsCount = computed(() => {
   return props.rounds.filter(round => round.is_locked).length
 })
+
+const getRoundTypeDisplay = (round) => {
+  if (!round || !round.type) return 'Standard'
+  if (round.top_n_proceed) {
+    return `${round.type} (Top ${round.top_n_proceed})`
+  }
+  return round.type
+}
+
+const getProgressColor = (percentage) => {
+  if (percentage === 100) return 'text-green-600'
+  if (percentage >= 50) return 'text-teal-600'
+  return 'text-slate-600'
+}
+
+const getProgressBarColor = (percentage) => {
+  if (percentage === 100) return 'bg-green-500'
+  if (percentage >= 50) return 'bg-teal-500'
+  return 'bg-slate-400'
+}
 
 const setCurrentRound = (option) => {
   // Handle both direct roundId and option object from CustomSelect
@@ -334,6 +465,11 @@ onMounted(() => {
         console.log('RoundUpdated event received:', e)
         handleRoundUpdate(e)
       })
+      .listen('ScoreUpdated', (e) => {
+        console.log('ScoreUpdated event received:', e)
+        // Refresh judges progress when scores are updated
+        router.reload({ only: ['judges'] })
+      })
   }
 })
 
@@ -382,6 +518,11 @@ const handleRoundUpdate = (event) => {
         }, 1000)
         break
     }
+  }
+
+  // Refresh judges progress data when scores are updated
+  if (action === 'score_updated' || action === 'score_created') {
+    router.reload({ only: ['judges', 'rounds'] })
   }
 }
 </script>
