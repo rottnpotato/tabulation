@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PageantSeeder::class,
             DetailedPageantSeeder::class,
             CriteriaSeeder::class,
+            RolePermissionSeeder::class,
         ]);
     }
 }
