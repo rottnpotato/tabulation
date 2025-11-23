@@ -579,16 +579,49 @@ class ContestantController extends Controller
             ->findOrFail($contestantId);
 
         $contestantName = $contestant->name;
+        $isPair = !empty($contestant->pair_id);
+        $partnerContestant = null;
 
-        // Delete associated images
+        // If this contestant is part of a pair, find the partner
+        if ($isPair) {
+            $partnerContestant = Contestant::where('pageant_id', $pageantId)
+                ->where('pair_id', $contestant->pair_id)
+                ->where('id', '!=', $contestantId)
+                ->first();
+        }
+
+        // Delete associated images for the main contestant
         foreach ($contestant->images as $image) {
             Storage::disk('public')->delete($image->image_path);
         }
 
-        // Delete the contestant
+        // Delete the main contestant
         $contestant->delete();
 
-        // Log the action
+        // If there's a partner, delete them too
+        if ($partnerContestant) {
+            $partnerName = $partnerContestant->name;
+            
+            // Delete partner's associated images
+            foreach ($partnerContestant->images as $image) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+            
+            // Delete the partner contestant
+            $partnerContestant->delete();
+
+            // Log the pair deletion
+            $this->auditLogService->log(
+                'CONTESTANT_PAIR_DELETED',
+                'Contestant',
+                $contestantId,
+                "Deleted pair contestants '{$contestantName}' and '{$partnerName}' from pageant ID {$pageantId}"
+            );
+
+            return back()->with('success', 'Pair contestants deleted successfully');
+        }
+
+        // Log the single contestant deletion
         $this->auditLogService->log(
             'CONTESTANT_DELETED',
             'Contestant',

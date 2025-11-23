@@ -167,7 +167,7 @@
 
     <!-- Confirmation Modal -->
     <Modal :show="showConfirmModal" @close="closeConfirmModal">
-      <div class="p-6">
+      <div class="bg-white rounded-lg shadow-xl p-6">
         <div class="flex items-center space-x-3 mb-4">
           <div :class="[
             'w-12 h-12 rounded-full flex items-center justify-center',

@@ -1556,8 +1556,19 @@
             </div>
           </div>
           <div class="text-center">
-            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">Remove Contestant</h3>
-            <p class="text-sm text-gray-500 mb-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">{{ contestantToDelete?.partner ? 'Remove Pair Contestants' : 'Remove Contestant' }}</h3>
+            <p v-if="contestantToDelete?.partner" class="text-sm text-gray-500 mb-6">
+              Are you sure you want to remove this pair from the pageant? <strong>Both contestants will be deleted:</strong>
+              <br><br>
+              <span class="font-medium text-gray-900">"{{ contestantToDelete?.name }}"</span>
+              <br>
+              and
+              <br>
+              <span class="font-medium text-gray-900">"{{ contestantToDelete?.partner?.name }}"</span>
+              <br><br>
+              This action cannot be undone.
+            </p>
+            <p v-else class="text-sm text-gray-500 mb-6">
               Are you sure you want to remove "{{ contestantToDelete?.name }}" from this pageant? This action cannot be undone.
             </p>
           </div>
@@ -2901,7 +2912,13 @@ const canEdit = computed(() => {
   }
   
   // Fallback to frontend calculation
-  return isDraft.value && !hasStartDateReached.value
+  // Draft pageants can be edited regardless of start date
+  if (isDraft.value) {
+    return true
+  }
+  
+  // Non-draft pageants cannot be edited if start date has been reached
+  return !hasStartDateReached.value
 })
 
 // Get status styling
@@ -3563,6 +3580,15 @@ const submitContestantForm = async () => {
 
 const confirmDeleteContestant = (contestant) => {
   contestantToDelete.value = contestant
+  
+  // Check if this contestant is part of a pair and find the partner
+  if (contestant.pair_id) {
+    const partner = props.pageant.contestants.find(
+      c => c.pair_id === contestant.pair_id && c.id !== contestant.id
+    )
+    contestantToDelete.value.partner = partner
+  }
+  
   showDeleteContestantModal.value = true
 }
 

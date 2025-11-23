@@ -734,12 +734,32 @@ const EditContestant = (contestant) => {
 }
 
 const DeleteContestant = async (id) => {
-  if (!confirm('Are you sure you want to delete this contestant?')) {
+  const contestant = filteredContestants.value.find(c => c.id === id)
+  
+  if (!contestant) {
+    formErrors.value.general = 'Contestant not found'
+    return
+  }
+  
+  // Check if this contestant is part of a pair and find the partner
+  let confirmMessage = 'Are you sure you want to delete this contestant?'
+  let partner = null
+  
+  if (contestant.pair_id) {
+    partner = filteredContestants.value.find(
+      c => c.pair_id === contestant.pair_id && c.id !== contestant.id
+    )
+    
+    if (partner) {
+      confirmMessage = `This contestant is part of a pair. BOTH contestants will be deleted:\n\n"${contestant.name}"\nand\n"${partner.name}"\n\nAre you sure you want to continue?`
+    }
+  }
+  
+  if (!confirm(confirmMessage)) {
     return
   }
   
   try {
-    const contestant = filteredContestants.value.find(c => c.id === id)
     const pageantId = contestant?.pageant?.id
     
     if (!pageantId) {
@@ -756,9 +776,12 @@ const DeleteContestant = async (id) => {
     })
     
     if (response.ok) {
-      successMessage.value = 'Contestant deleted successfully!'
-      // Refresh data - in real app this would trigger a parent component refresh
-      // For now we'll just show success message
+      successMessage.value = partner 
+        ? 'Pair contestants deleted successfully!' 
+        : 'Contestant deleted successfully!'
+      
+      // Reload the page data
+      router.reload({ only: ['Contestants', 'PageantSummaries'] })
       
       // Clear success message after 5 seconds
       setTimeout(() => {

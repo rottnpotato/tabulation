@@ -564,8 +564,9 @@ class Pageant extends Model
             return false;
         }
 
-        // Check if start date has been reached (pageants cannot be edited on or after start date)
-        if ($this->hasStartDateReached()) {
+        // Draft pageants can be edited regardless of start date
+        // Only check start date for non-draft pageants
+        if ($this->status !== 'Draft' && $this->hasStartDateReached()) {
             return false;
         }
 
