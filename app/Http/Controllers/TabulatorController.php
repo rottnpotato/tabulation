@@ -239,7 +239,7 @@ class TabulatorController extends Controller
             'is_verified' => true,
             'email_verified_at' => now(),
         ]);
-
+        
         // Assign the judge to this pageant
         $pageant->judges()->attach($judge->id, [
             'role' => $validated['role_title'] ?? 'Judge',

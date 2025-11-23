@@ -25,7 +25,7 @@ class StoreJudgeRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'min:3', 'max:30', 'unique:users,username', 'alpha_dash'],
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8'],
             'role_title' => ['nullable', 'string', 'max:50'],
         ];
     }
@@ -49,7 +49,6 @@ class StoreJudgeRequest extends FormRequest
             'email.unique' => 'This email is already registered.',
             'password.required' => 'A password is required.',
             'password.min' => 'The password must be at least 8 characters.',
-            'password.confirmed' => 'The password confirmation does not match.',
             'role_title.max' => 'The role title must not exceed 50 characters.',
         ];
     }

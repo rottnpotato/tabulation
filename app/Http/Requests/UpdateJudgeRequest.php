@@ -49,7 +49,6 @@ class UpdateJudgeRequest extends FormRequest
             'email.email' => 'Please provide a valid email address.',
             'email.unique' => 'This email is already registered.',
             'password.min' => 'The password must be at least 8 characters.',
-            'password.confirmed' => 'The password confirmation does not match.',
         ];
     }
 }
