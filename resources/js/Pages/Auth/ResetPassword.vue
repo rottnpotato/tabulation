@@ -2,9 +2,9 @@
   <Head title="Reset Password">
     <meta name="page-transition" content="true" />
   </Head>
-  <div class="min-h-screen bg-gradient-to-br from-teal-900 via-emerald-900 to-teal-800 relative overflow-hidden flex items-center justify-center p-6 animate-fade-in">
-    <!-- Background Pattern -->
-    <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1571624436279-b272aff752b5?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10"></div>
+  <div class="min-h-screen relative overflow-hidden flex items-center justify-center p-6 animate-fade-in">
+    <!-- Animated Background -->
+    <AnimatedBackground />
     
     <div class="w-full max-w-md relative animate-float">
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/20">
@@ -84,7 +84,7 @@
           <button
             type="submit"
             :disabled="form.processing"
-            class="w-full py-3 px-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-lg font-medium hover:from-teal-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-teal-900 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95"
+            class="w-full py-3 px-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-lg font-medium hover:from-teal-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-teal-900 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 shadow-lg shadow-teal-500/20"
           >
             <span v-if="form.processing">Resetting...</span>
             <span v-else>Reset Password</span>
@@ -99,6 +99,7 @@
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { Lock, AlertCircle, Eye, EyeOff } from 'lucide-vue-next';
+import AnimatedBackground from '@/Components/AnimatedBackground.vue';
 
 const props = defineProps({
   token: String,

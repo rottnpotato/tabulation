@@ -2,9 +2,9 @@
   <Head title="Login">
     <meta name="page-transition" content="true" />
   </Head>
-  <div class="min-h-screen bg-gradient-to-br from-teal-900 via-emerald-900 to-teal-800 relative overflow-hidden flex items-center justify-center p-6 animate-fade-in">
-    <!-- Background Pattern -->
-    <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1571624436279-b272aff752b5?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10"></div>
+  <div class="min-h-screen relative overflow-hidden flex items-center justify-center p-6 animate-fade-in">
+    <!-- Animated Background -->
+    <AnimatedBackground />
     
     <div class="w-full max-w-md relative animate-float">
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/20">
@@ -67,12 +67,12 @@
               />
               <span class="ml-2 text-gray-300">Remember me</span>
             </label>
-            <a href="#" class="text-teal-400 hover:text-teal-300 transition-colors duration-300">Forgot password?</a>
+            <Link href="/forgot-password" class="text-teal-400 hover:text-teal-300 transition-colors duration-300">Forgot password?</Link>
           </div>
 
           <button 
             type="submit" 
-            class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white py-3 px-4 rounded-lg font-medium hover:from-teal-600 hover:to-emerald-600 transition-all duration-300 transform hover:scale-[1.05] focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-gray-900 flex items-center justify-center"
+            class="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white py-3 px-4 rounded-lg font-medium hover:from-teal-600 hover:to-emerald-600 transition-all duration-300 transform hover:scale-[1.05] focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-gray-900 flex items-center justify-center shadow-lg shadow-teal-500/20"
             :disabled="processing"
           >
             <Loader2 v-if="processing" class="h-5 w-5 animate-spin mr-2" />
@@ -98,6 +98,7 @@
 import { ref } from 'vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import { Crown, AlertCircle, Loader2, ChevronLeft, Eye, EyeOff } from 'lucide-vue-next';
+import AnimatedBackground from '@/Components/AnimatedBackground.vue';
 
 const processing = ref(false);
 const showPassword = ref(false);
