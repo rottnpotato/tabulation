@@ -387,7 +387,7 @@ const form = reactive({
   venue: '',
   location: '',
   scoring_system: '',
-  contestant_type: 'both'
+  contestant_type: 'solo'
 })
 
 const errors = ref({})
@@ -405,7 +405,7 @@ const scoringSystemOptions = [
 const contestantTypeOptions = [
   { value: 'solo', label: 'Solo Contestants Only' },
   { value: 'pairs', label: 'Pairs Only (Mr & Ms)' },
-  { value: 'both', label: 'Both Solo and Pairs' }
+
 ]
 
 // Submit form

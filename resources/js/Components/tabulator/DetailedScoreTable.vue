@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+  <div class="bg-white rounded-xl shadow-md border border-gray-100">
     <!-- Header -->
     <div class="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4">
       <div class="flex items-center justify-between">
@@ -31,7 +31,7 @@
 
     <!-- Summary View (Aggregated Scores) -->
     <div v-else-if="viewMode === 'summary'" class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
+      <table class="min-w-full divide-y divide-gray-200 overflow-x-auto">
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

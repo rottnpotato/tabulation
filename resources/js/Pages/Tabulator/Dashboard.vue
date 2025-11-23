@@ -30,7 +30,7 @@
               <div>
                 <div class="text-xs font-bold text-teal-400 uppercase tracking-wider mb-0.5">Active Pageant</div>
                 <div class="text-lg font-bold text-slate-900 leading-none">{{ pageant.name }}</div>
-                <div class="text-xs text-slate-500 mt-1">{{ pageant.date || 'No date set' }}</div>
+                <div class="text-xs text-slate-500 mt-1">{{ pageant.start_date || 'No date set' }}</div>
               </div>
             </div>
           </div>
@@ -367,6 +367,7 @@ interface Pageant {
   name: string
   status: string
   scoring_system: string
+  start_date: string | null
 }
 
 interface PageantListItem {

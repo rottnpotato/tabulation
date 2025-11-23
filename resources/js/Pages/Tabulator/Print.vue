@@ -176,7 +176,125 @@
             <div class="p-8 bg-slate-100/50 overflow-x-auto">
               <div class="bg-white shadow-lg mx-auto transition-all duration-300" :style="{ width: getPreviewWidth(), minHeight: '11in' }">
                 <div class="p-8" ref="printArea">
+                  <!-- For pair pageants, show side by side in single view -->
+                  <template v-if="isPairPageant && maleResults.length > 0 && femaleResults.length > 0">
+                    <!-- Unified Header for Pair Pageants -->
+                    <div class="text-center mb-8 pb-4 border-b-2 border-black">
+                      <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+                      <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Official Tabulation Report</div>
+                      
+                      <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+                        <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+                        <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+                      </div>
+                      
+                      <div class="mt-6">
+                        <h2 class="text-xl font-bold text-black">{{ reportTitle || 'Final Results' }}</h2>
+                      </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-8">
+                      <!-- Male Column -->
+                      <div class="border-r-2 border-slate-200 pr-4">
+                        <div class="mb-4 pb-2 border-b border-blue-200">
+                          <div class="flex items-center justify-center gap-2 text-sm font-semibold text-blue-900">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs">♂</span>
+                            Male
+                          </div>
+                        </div>
+                        <PrintableResults
+                          :pageant="pageant"
+                          :results="maleResults"
+                          :judges="judges"
+                          :report-title="reportTitle"
+                          :is-male-category="true"
+                        />
+                      </div>
+                      
+                      <!-- Female Column -->
+                      <div class="pl-4">
+                        <div class="mb-4 pb-2 border-b border-pink-200">
+                          <div class="flex items-center justify-center gap-2 text-sm font-semibold text-pink-900">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-pink-100 text-pink-700 text-xs">♀</span>
+                            Female
+                          </div>
+                        </div>
+                        <PrintableResults
+                          :pageant="pageant"
+                          :results="femaleResults"
+                          :judges="judges"
+                          :report-title="reportTitle"
+                          :is-female-category="true"
+                        />
+                      </div>
+                    </div>
+
+                    <!-- Single Signatures Section for both genders -->
+                    <div class="mt-12 page-break-inside-avoid">
+                      <div class="grid grid-cols-3 gap-8">
+                        <!-- Judges Signatures -->
+                        <div class="col-span-3 mb-8">
+                          <h3 class="text-xs font-bold uppercase border-b border-black mb-4 pb-1">Panel of Judges</h3>
+                          <div class="grid grid-cols-3 gap-x-8 gap-y-12">
+                            <div v-for="judge in judges" :key="judge.id" class="text-center">
+                              <div class="border-b border-gray-400 h-8"></div>
+                              <div class="text-xs font-bold mt-1">{{ capitalizeName(judge.name) }}</div>
+                              <div class="text-[10px] uppercase text-gray-500">{{ judge.role }}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Certification -->
+                        <div class="col-span-3">
+                          <div class="flex justify-end">
+                            <div class="w-64 text-center">
+                              <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
+                              <div class="border-b border-black h-8"></div>
+                              <div class="text-xs font-bold mt-1">Head Tabulator</div>
+                              <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  
+                  <!-- Single gender or standard pageant -->
+                  <template v-else-if="isPairPageant">
+                    <div v-if="maleResults.length > 0">
+                      <div class="text-center mb-6 pb-3 border-b-2 border-blue-300">
+                        <h3 class="text-xl font-bold text-blue-900 flex items-center justify-center gap-2">
+                          <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700">♂</span>
+                          Male Category
+                        </h3>
+                      </div>
+                      <PrintableResults
+                        :pageant="pageant"
+                        :results="maleResults"
+                        :judges="judges"
+                        :report-title="`${reportTitle} - Male`"
+                      />
+                    </div>
+                    
+                    <div v-if="femaleResults.length > 0" :class="{ 'page-break-before': maleResults.length > 0 }">
+                      <div class="text-center mb-6 pb-3 border-b-2 border-pink-300">
+                        <h3 class="text-xl font-bold text-pink-900 flex items-center justify-center gap-2">
+                          <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 text-pink-700">♀</span>
+                          Female Category
+                        </h3>
+                      </div>
+                      <PrintableResults
+                        :pageant="pageant"
+                        :results="femaleResults"
+                        :judges="judges"
+                        :report-title="`${reportTitle} - Female`"
+                      />
+                    </div>
+                  </template>
+                  
+                  <!-- Standard single ranking -->
                   <PrintableResults
+                    v-else
                     :pageant="pageant"
                     :results="resultsToShow"
                     :judges="judges"
@@ -192,7 +310,119 @@
 
     <!-- Print-Only Content -->
     <div v-if="pageant" class="print-only">
+      <!-- For pair pageants, show side by side in single view -->
+      <template v-if="isPairPageant && maleResults.length > 0 && femaleResults.length > 0">
+        <!-- Unified Header for Pair Pageants -->
+        <div class="text-center mb-8 pb-4 border-b-2 border-black">
+          <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+          <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Official Tabulation Report</div>
+          
+          <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+            <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+            <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+          </div>
+          
+          <div class="mt-6">
+            <h2 class="text-xl font-bold text-black">{{ reportTitle || 'Final Results' }}</h2>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-6">
+          <!-- Male Column -->
+          <div class="border-r-2 border-slate-200 pr-3">
+            <div class="mb-3 pb-1 border-b border-blue-200">
+              <div class="flex items-center justify-center gap-2 text-xs font-semibold text-blue-900">
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px]">♂</span>
+                Male
+              </div>
+            </div>
+            <PrintableResults
+              :pageant="pageant"
+              :results="maleResults"
+              :judges="judges"
+              :report-title="reportTitle"
+              :is-male-category="true"
+            />
+          </div>
+          
+          <!-- Female Column -->
+          <div class="pl-3">
+            <div class="mb-3 pb-1 border-b border-pink-200">
+              <div class="flex items-center justify-center gap-2 text-xs font-semibold text-pink-900">
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-pink-100 text-pink-700 text-[10px]">♀</span>
+                Female
+              </div>
+            </div>
+            <PrintableResults
+              :pageant="pageant"
+              :results="femaleResults"
+              :judges="judges"
+              :report-title="reportTitle"
+              :is-female-category="true"
+            />
+          </div>
+        </div>
+
+        <!-- Single Signatures Section for both genders -->
+        <div class="mt-12 page-break-inside-avoid">
+          <div class="grid grid-cols-3 gap-8">
+            <!-- Judges Signatures -->
+            <div class="col-span-3 mb-8">
+              <h3 class="text-xs font-bold uppercase border-b border-black mb-4 pb-1">Panel of Judges</h3>
+              <div class="grid grid-cols-3 gap-x-8 gap-y-12">
+                <div v-for="judge in judges" :key="judge.id" class="text-center">
+                  <div class="border-b border-gray-400 h-8"></div>
+                  <div class="text-xs font-bold mt-1">{{ capitalizeName(judge.name) }}</div>
+                  <div class="text-[10px] uppercase text-gray-500">{{ judge.role }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Certification -->
+            <div class="col-span-3">
+              <div class="flex justify-end">
+                <div class="w-64 text-center">
+                  <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
+                  <div class="border-b border-black h-8"></div>
+                  <div class="text-xs font-bold mt-1">Head Tabulator</div>
+                  <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      
+      <!-- Single gender or standard pageant -->
+      <template v-else-if="isPairPageant">
+        <div v-if="maleResults.length > 0">
+          <div class="text-center mb-6 pb-3 border-b-2 border-blue-300">
+            <h3 class="text-xl font-bold text-blue-900">Male Category</h3>
+          </div>
+          <PrintableResults
+            :pageant="pageant"
+            :results="maleResults"
+            :judges="judges"
+            :report-title="`${reportTitle} - Male`"
+          />
+        </div>
+        
+        <div v-if="femaleResults.length > 0" :class="{ 'page-break-before': maleResults.length > 0 }">
+          <div class="text-center mb-6 pb-3 border-b-2 border-pink-300">
+            <h3 class="text-xl font-bold text-pink-900">Female Category</h3>
+          </div>
+          <PrintableResults
+            :pageant="pageant"
+            :results="femaleResults"
+            :judges="judges"
+            :report-title="`${reportTitle} - Female`"
+          />
+        </div>
+      </template>
+      
+      <!-- Standard single ranking -->
       <PrintableResults
+        v-else
         :pageant="pageant"
         :results="resultsToShow"
         :judges="judges"
@@ -218,6 +448,7 @@ interface Result {
   id: number
   number: number
   name: string
+  gender?: string
   image: string
   scores: Record<string, number>
   final_score: number
@@ -226,6 +457,7 @@ interface Result {
 interface Pageant {
   id: number
   name: string
+  contestant_type?: string
   date?: string
   venue?: string
   location?: string
@@ -281,10 +513,32 @@ const resultsToShow = computed<Result[]>(() => {
   }
 })
 
+const isPairPageant = computed(() => {
+  return props.pageant?.contestant_type === 'pairs' || props.pageant?.contestant_type === 'both'
+})
+
+const maleResults = computed(() => {
+  if (!isPairPageant.value) return []
+  return resultsToShow.value.filter(r => r.gender === 'male')
+})
+
+const femaleResults = computed(() => {
+  if (!isPairPageant.value) return []
+  return resultsToShow.value.filter(r => r.gender === 'female')
+})
+
 const reportTitle = computed(() => stageLabels[selectedStage.value])
 
 const getPreviewWidth = () => {
   return paperSizes[selectedPaperSize.value].width
+}
+
+const capitalizeName = (name: string): string => {
+  if (!name) return ''
+  return name
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
 }
 
 const printResults = () => {

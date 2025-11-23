@@ -144,16 +144,60 @@
         </div>
 
         <!-- Results Display -->
-        <div v-if="displayedContestants && displayedContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-          <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-            <h2 class="text-lg font-bold text-slate-900">{{ getResultsTitle() }}</h2>
-          </div>
-          <div class="p-0">
-            <ResultsRanking
-              :title="getResultsTitle()"
-              :contestants="displayedContestants"
-              :rounds="displayedRounds"
-            />
+        <div v-if="displayedContestants && displayedContestants.length > 0" class="space-y-8">
+          <!-- For pair pageants, show separate rankings -->
+          <template v-if="isPairPageant">
+            <!-- Male Rankings -->
+            <div v-if="maleContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div class="px-6 py-5 border-b border-slate-100 bg-blue-50/30">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700">
+                    ♂
+                  </span>
+                  {{ getResultsTitle() }} - Male
+                </h2>
+              </div>
+              <div class="p-0">
+                <ResultsRanking
+                  :title="`${getResultsTitle()} - Male`"
+                  :contestants="maleContestants"
+                  :rounds="displayedRounds"
+                />
+              </div>
+            </div>
+
+            <!-- Female Rankings -->
+            <div v-if="femaleContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div class="px-6 py-5 border-b border-slate-100 bg-pink-50/30">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 text-pink-700">
+                    ♀
+                  </span>
+                  {{ getResultsTitle() }} - Female
+                </h2>
+              </div>
+              <div class="p-0">
+                <ResultsRanking
+                  :title="`${getResultsTitle()} - Female`"
+                  :contestants="femaleContestants"
+                  :rounds="displayedRounds"
+                />
+              </div>
+            </div>
+          </template>
+
+          <!-- Standard single ranking -->
+          <div v-else class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+              <h2 class="text-lg font-bold text-slate-900">{{ getResultsTitle() }}</h2>
+            </div>
+            <div class="p-0">
+              <ResultsRanking
+                :title="getResultsTitle()"
+                :contestants="displayedContestants"
+                :rounds="displayedRounds"
+              />
+            </div>
           </div>
         </div>
 
@@ -202,11 +246,13 @@ interface Contestant {
   totalScore: number
   finalScore?: number
   rank?: number
+  gender?: string
 }
 
 interface Pageant {
   id: number
   name: string
+  contestant_type?: string
 }
 
 interface Props {
@@ -271,6 +317,20 @@ const displayedContestants = computed(() => {
   }
 
   return baseList
+})
+
+const isPairPageant = computed(() => {
+  return props.pageant?.contestant_type === 'pairs' || props.pageant?.contestant_type === 'both'
+})
+
+const maleContestants = computed(() => {
+  if (!isPairPageant.value) return []
+  return displayedContestants.value.filter(c => c.gender === 'male')
+})
+
+const femaleContestants = computed(() => {
+  if (!isPairPageant.value) return []
+  return displayedContestants.value.filter(c => c.gender === 'female')
 })
 
 const displayedRounds = computed(() => {

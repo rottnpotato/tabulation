@@ -14,7 +14,7 @@
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div class="space-y-2">
               <h1 class="text-3xl sm:text-4xl font-bold tracking-tight font-display text-slate-900">
-                {{ pageant ? pageant.name : 'Minor Awards' }}
+                {{ pageant ? capitalize(pageant.name) : 'Minor Awards' }}
               </h1>
               <p class="text-slate-600 text-lg max-w-2xl font-light flex items-center gap-2">
                 <Award class="w-5 h-5 text-teal-500" />
@@ -57,53 +57,138 @@
           </div>
 
           <div class="p-8 sm:p-10 relative">
-            <!-- Centered winners with elegant spacing -->
-            <div class="flex flex-wrap justify-center gap-12">
-              <div v-for="winner in entry.winners" :key="winner.id" 
-                class="flex flex-col items-center text-center group/winner relative">
-                
-                <!-- Winner Image -->
-                <div class="relative mb-6">
-                  <div class="absolute inset-0 bg-gradient-to-br from-teal-200 to-teal-200 rounded-full blur-lg opacity-0 group-hover/winner:opacity-40 transition-opacity duration-500"></div>
-                  <div class="relative">
-                    <div class="p-1 rounded-full bg-gradient-to-br from-teal-100 to-teal-100 shadow-inner">
-                      <img :src="winner.image" :alt="winner.name" 
-                        class="h-28 w-28 rounded-full object-cover ring-4 ring-white shadow-md group-hover/winner:scale-105 transition-transform duration-500" />
+            <!-- For pair pageants, show separate male and female winners side by side -->
+            <template v-if="entry.is_pair_pageant || isPairPageant">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                <!-- Male Winners Section -->
+                <div v-if="entry.male_winners && entry.male_winners.length > 0" class="flex flex-col">
+                  <div class="text-center mb-6">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-bold border border-blue-200">
+                      <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100">♂</span>
+                      Male Category
                     </div>
-                    <div class="absolute -bottom-2 -right-2 bg-slate-900 text-white text-sm rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg border-2 border-white">
-                      {{ winner.number }}
+                  </div>
+                  <div class="flex flex-col items-center gap-8">
+                    <div v-for="winner in entry.male_winners" :key="winner.id" 
+                      class="flex flex-col items-center text-center group/winner relative w-full">
+                      
+                      <!-- Winner Image -->
+                      <div class="relative mb-6">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-200 to-blue-200 rounded-full blur-lg opacity-0 group-hover/winner:opacity-40 transition-opacity duration-500"></div>
+                        <div class="relative">
+                          <div class="p-1 rounded-full bg-gradient-to-br from-blue-100 to-blue-100 shadow-inner">
+                            <img :src="winner.image" :alt="winner.name" 
+                              class="h-28 w-28 rounded-full object-cover ring-4 ring-white shadow-md group-hover/winner:scale-105 transition-transform duration-500" />
+                          </div>
+                          <div class="absolute -bottom-2 -right-2 bg-slate-900 text-white text-sm rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg border-2 border-white">
+                            {{ winner.number }}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Winner Details -->
+                      <div class="space-y-2 min-w-[200px] relative z-10">
+                        <h3 class="text-xl font-bold text-slate-900 leading-tight font-display">
+                          <span class="text-blue-500 text-sm font-medium block mb-1 uppercase tracking-wider">{{ getTitle(winner) }}</span>
+                          {{ capitalize(winner.name) }}
+                        </h3>
+                        <p v-if="winner.is_pair && winner.member_names && winner.member_names.length > 0" class="text-sm text-slate-500 italic">
+                          {{ winner.member_names.map(name => capitalize(name)).join(' & ') }}
+                        </p>
+                        
+                        <div class="pt-3 mt-2 border-t border-slate-100 w-24 mx-auto">
+                          <div class="text-xs text-slate-400 uppercase tracking-widest font-medium mb-1">Score</div>
+                          <div class="text-2xl font-light text-slate-900 font-display">{{ formatScore(winner.score) }}</div>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+              </div>                <!-- Female Winners Section -->
+                <div v-if="entry.female_winners && entry.female_winners.length > 0" class="flex flex-col">
+                  <div class="text-center mb-6">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-700 rounded-full text-sm font-bold border border-pink-200">
+                      <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-pink-100">♀</span>
+                      Female Category
+                    </div>
+                  </div>
+                  <div class="flex flex-col items-center gap-8">
+                    <div v-for="winner in entry.female_winners" :key="winner.id" 
+                      class="flex flex-col items-center text-center group/winner relative w-full">
+                      
+                      <!-- Winner Image -->
+                      <div class="relative mb-6">
+                        <div class="absolute inset-0 bg-gradient-to-br from-pink-200 to-pink-200 rounded-full blur-lg opacity-0 group-hover/winner:opacity-40 transition-opacity duration-500"></div>
+                        <div class="relative">
+                          <div class="p-1 rounded-full bg-gradient-to-br from-pink-100 to-pink-100 shadow-inner">
+                            <img :src="winner.image" :alt="winner.name" 
+                              class="h-28 w-28 rounded-full object-cover ring-4 ring-white shadow-md group-hover/winner:scale-105 transition-transform duration-500" />
+                          </div>
+                          <div class="absolute -bottom-2 -right-2 bg-slate-900 text-white text-sm rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg border-2 border-white">
+                            {{ winner.number }}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Winner Details -->
+                      <div class="space-y-2 min-w-[200px] relative z-10">
+                        <h3 class="text-xl font-bold text-slate-900 leading-tight font-display">
+                          <span class="text-pink-500 text-sm font-medium block mb-1 uppercase tracking-wider">{{ getTitle(winner) }}</span>
+                          {{ capitalize(winner.name) }}
+                        </h3>
+                        <p v-if="winner.is_pair && winner.member_names && winner.member_names.length > 0" class="text-sm text-slate-500 italic">
+                          {{ winner.member_names.map(name => capitalize(name)).join(' & ') }}
+                        </p>
+                        
+                        <div class="pt-3 mt-2 border-t border-slate-100 w-24 mx-auto">
+                          <div class="text-xs text-slate-400 uppercase tracking-widest font-medium mb-1">Score</div>
+                          <div class="text-2xl font-light text-slate-900 font-display">{{ formatScore(winner.score) }}</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <!-- Winner Details -->
-                <div class="space-y-2 min-w-[200px] relative z-10">
-                  <h3 class="text-xl font-bold text-slate-900 leading-tight font-display">
-                    <span class="text-teal-500 text-sm font-medium block mb-1 uppercase tracking-wider">{{ getTitle(winner) }}</span>
-                    {{ winner.name }}
-                  </h3>
-                  <p v-if="winner.is_pair && winner.member_names && winner.member_names.length > 0" class="text-sm text-slate-500 italic">
-                    {{ winner.member_names.join(' & ') }}
-                  </p>
+              </div>
+            </template>
+
+            <!-- Standard single winner display (non-pair pageants) -->
+            <template v-else>
+              <!-- Centered winners with elegant spacing -->
+              <div class="flex flex-wrap justify-center gap-12">
+                <div v-for="winner in entry.winners" :key="winner.id" 
+                  class="flex flex-col items-center text-center group/winner relative">
                   
-                  <div class="pt-3 mt-2 border-t border-slate-100 w-24 mx-auto">
-                    <div class="text-xs text-slate-400 uppercase tracking-widest font-medium mb-1">Score</div>
-                    <div class="text-2xl font-light text-slate-900 font-display">{{ formatScore(winner.score) }}</div>
+                  <!-- Winner Image -->
+                  <div class="relative mb-6">
+                    <div class="absolute inset-0 bg-gradient-to-br from-teal-200 to-teal-200 rounded-full blur-lg opacity-0 group-hover/winner:opacity-40 transition-opacity duration-500"></div>
+                    <div class="relative">
+                      <div class="p-1 rounded-full bg-gradient-to-br from-teal-100 to-teal-100 shadow-inner">
+                        <img :src="winner.image" :alt="winner.name" 
+                          class="h-28 w-28 rounded-full object-cover ring-4 ring-white shadow-md group-hover/winner:scale-105 transition-transform duration-500" />
+                      </div>
+                      <div class="absolute -bottom-2 -right-2 bg-slate-900 text-white text-sm rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg border-2 border-white">
+                        {{ winner.number }}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Winner Details -->
+                  <div class="space-y-2 min-w-[200px] relative z-10">
+                    <h3 class="text-xl font-bold text-slate-900 leading-tight font-display">
+                      <span class="text-teal-500 text-sm font-medium block mb-1 uppercase tracking-wider">{{ getTitle(winner) }}</span>
+                      {{ capitalize(winner.name) }}
+                    </h3>
+                    <p v-if="winner.is_pair && winner.member_names && winner.member_names.length > 0" class="text-sm text-slate-500 italic">
+                      {{ winner.member_names.map(name => capitalize(name)).join(' & ') }}
+                    </p>
+                    
+                    <div class="pt-3 mt-2 border-t border-slate-100 w-24 mx-auto">
+                      <div class="text-xs text-slate-400 uppercase tracking-widest font-medium mb-1">Score</div>
+                      <div class="text-2xl font-light text-slate-900 font-display">{{ formatScore(winner.score) }}</div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <!-- Tie Notice -->
-            <div v-if="entry.winners.length > 1" class="mt-10 text-center">
-              <div class="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-medium border border-teal-100">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
-                </span>
-                Tie for highest score
-              </div>
-            </div>
+            </template>
           </div>
         </div>
 
@@ -137,6 +222,7 @@ defineOptions({
 interface PageantInfo {
   id: number
   name: string
+  contestant_type?: string
 }
 
 interface RoundInfo {
@@ -161,6 +247,9 @@ interface WinnerInfo {
 interface RoundEntry {
   round: RoundInfo
   winners: WinnerInfo[]
+  is_pair_pageant?: boolean
+  male_winners?: WinnerInfo[]
+  female_winners?: WinnerInfo[]
 }
 
 interface Props {
@@ -174,6 +263,17 @@ const roundEntries = computed(() => {
   if (!props.awardsByRound) return []
   return Object.values(props.awardsByRound)
 })
+
+const isPairPageant = computed(() => {
+  return props.pageant?.contestant_type === 'pairs' || props.pageant?.contestant_type === 'both'
+})
+
+const capitalize = (text: string): string => {
+  if (!text) return ''
+  return text.toLowerCase().split(' ').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ')
+}
 
 const formatScore = (score: number): string => {
   return score.toFixed(2)

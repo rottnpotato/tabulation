@@ -413,11 +413,11 @@ const contestantTypes = [
     name: 'Pairs Only',
     description: 'Only paired contestants (Mr & Ms) are allowed to participate'
   },
-  {
-    value: 'both',
-    name: 'Both Solo and Pairs',
-    description: 'Both individual contestants and pairs can participate'
-  }
+  // {
+  //   value: 'both',
+  //   name: 'Both Solo and Pairs',
+  //   description: 'Both individual contestants and pairs can participate'
+  // }
 ];
 
 // Bohol municipalities and cities
@@ -500,7 +500,7 @@ const form = reactive({
   status: 'Draft',
   organizer_ids: [],
   scoring_system: null,
-  contestant_type: 'both'
+  contestant_type: 'solo'
 });
 
 // State for validation errors
