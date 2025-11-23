@@ -192,11 +192,12 @@
                           id="contestNumber"
                           v-model="Form.contestNumber"
                           type="text"
+                          @input="validateContestantNumber"
                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 001"
                           required
                         />
-                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's competition number</p>
+                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's competition number (numbers only)</p>
                       </div>
 
                       <div>
@@ -207,11 +208,12 @@
                           id="name"
                           v-model="Form.name"
                           type="text"
+                          @input="validateContestantName"
                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. Jane Smith"
                           required
                         />
-                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's full name</p>
+                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's full name (letters only)</p>
                       </div>
 
                       <div>
@@ -221,12 +223,13 @@
                         <input
                           id="age"
                           v-model="Form.age"
-                          type="number"
+                          type="text"
+                          @input="validateAge"
                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. 24"
                           required
                         />
-                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's age</p>
+                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's age (numbers only)</p>
                       </div>
                     </div>
 
@@ -240,11 +243,12 @@
                           id="city"
                           v-model="Form.city"
                           type="text"
+                          @input="validateLocation"
                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
                           placeholder="e.g. New York, USA"
                           required
                         />
-                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's hometown or representation</p>
+                        <p class="mt-1 text-xs text-gray-500">Enter the contestant's hometown or representation (no numbers)</p>
                       </div>
 
                       <div>
@@ -897,6 +901,35 @@ const handleImageLoad = (event) => {
   if (contestantId) {
     imageLoadingStates.value[contestantId] = 'loaded'
   }
+}
+
+// Validation functions for form inputs
+const validateContestantNumber = (event) => {
+  // Only allow numbers
+  const value = event.target.value
+  const numbersOnly = value.replace(/[^0-9]/g, '')
+  Form.value.contestNumber = numbersOnly
+}
+
+const validateContestantName = (event) => {
+  // Only allow letters, spaces, hyphens, apostrophes, and periods (for names like Mary-Jane, O'Brien, Jr.)
+  const value = event.target.value
+  const lettersOnly = value.replace(/[^a-zA-Z\s\-'.]/g, '')
+  Form.value.name = lettersOnly
+}
+
+const validateAge = (event) => {
+  // Only allow numbers
+  const value = event.target.value
+  const numbersOnly = value.replace(/[^0-9]/g, '')
+  Form.value.age = numbersOnly
+}
+
+const validateLocation = (event) => {
+  // Allow letters, spaces, commas, hyphens, apostrophes, and periods (for places like St. Mary's, New York, etc.)
+  const value = event.target.value
+  const validChars = value.replace(/[^a-zA-Z\s,\-'.]/g, '')
+  Form.value.city = validChars
 }
 </script>
 

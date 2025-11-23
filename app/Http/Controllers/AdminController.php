@@ -703,8 +703,7 @@ class AdminController extends Controller
 
     public function auditLog(Request $request)
     {
-        $query = AuditLog::with('user')
-            ->orderBy('created_at', 'desc');
+        $query = AuditLog::with('user');
 
         // Apply filters
         if ($request->has('user_id') && $request->user_id) {
@@ -727,6 +726,21 @@ class AdminController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
+        // Apply sorting
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortDirection = $request->input('sort_direction', 'desc');
+        
+        // Validate sort column to prevent SQL injection
+        $allowedSortColumns = ['created_at', 'user_id', 'action_type', 'target_entity', 'ip_address'];
+        if (!in_array($sortBy, $allowedSortColumns)) {
+            $sortBy = 'created_at';
+        }
+        
+        // Validate sort direction
+        $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'desc';
+        
+        $query->orderBy($sortBy, $sortDirection);
+
         $logs = $query->paginate(15);
 
         // Get distinct action types for filter dropdown
@@ -746,6 +760,8 @@ class AdminController extends Controller
                 'target_entity' => $request->target_entity,
                 'date_from' => $request->date_from,
                 'date_to' => $request->date_to,
+                'sort_by' => $sortBy,
+                'sort_direction' => $sortDirection,
             ],
             'actionTypes' => $actionTypes,
             'targetEntities' => $targetEntities,

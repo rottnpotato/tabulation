@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-50/50">
+  <div class="min-h-screen bg-slate-200 overflow-auto">
     <Head title="Event Organizer Portal" />
     <SideNav>
       <div class="p-6">

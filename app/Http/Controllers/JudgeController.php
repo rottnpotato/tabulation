@@ -224,6 +224,13 @@ class JudgeController extends Controller
      */
     public function submitScores(Request $request, $pageantId, $roundId)
     {
+        if (! Auth::user()->hasPermission('judge_submit_scores')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to submit scores.',
+            ], 403);
+        }
+
         $judge = Auth::user();
 
         // Validate judge has access to this pageant

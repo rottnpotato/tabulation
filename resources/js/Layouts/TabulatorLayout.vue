@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 overflow-auto">
     <Head title="Tabulator Dashboard" />
     <SideNav>
       <div class="p-6">
@@ -32,6 +32,24 @@ import { useNotification } from '@/Composables/useNotification'
 const activeChannels = []
 const page = usePage()
 const notify = useNotification()
+
+// Watch for flash messages
+watch(() => page.props.flash, (flash) => {
+  if (!flash) return;
+  
+  if (flash.success) {
+    notify.success(flash.success);
+  }
+  if (flash.error) {
+    notify.error(flash.error);
+  }
+  if (flash.warning) {
+    notify.warning(flash.warning);
+  }
+  if (flash.info) {
+    notify.info(flash.info);
+  }
+}, { deep: true, immediate: true });
 
 function handleScoreUpdated(e) {
     try {

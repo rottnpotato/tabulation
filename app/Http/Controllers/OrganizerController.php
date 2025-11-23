@@ -858,6 +858,10 @@ class OrganizerController extends Controller
 
     public function updatePageant(UpdatePageantRequest $request, $id)
     {
+        if (! Auth::user()->hasPermission('organizer_edit_own_pageant')) {
+            return redirect()->back()->with('error', 'You do not have permission to edit pageants.');
+        }
+
         // Get the currently logged in organizer
         $organizer = Auth::user();
 
@@ -1651,15 +1655,21 @@ class OrganizerController extends Controller
      */
     public function storePageant(Request $request)
     {
+        if (! Auth::user()->hasPermission('organizer_edit_own_pageant')) {
+            abort(403, 'You do not have permission to create pageants.');
+        }
+
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'start_date' => 'nullable|date',
+                'start_date' => 'nullable|date|after_or_equal:today',
                 'end_date' => 'nullable|date|after_or_equal:start_date',
+                'pageant_date' => 'required|date|after_or_equal:today',
                 'venue' => 'nullable|string|max:255',
                 'location' => 'nullable|string|max:255',
                 'scoring_system' => 'required|string|in:percentage,1-10,1-5,points',
+                'contestant_type' => 'required|string|in:solo,pairs,both',
             ]);
 
             // Create pageant with Pending_Approval status
@@ -1668,11 +1678,13 @@ class OrganizerController extends Controller
                 'description' => $validated['description'],
                 'start_date' => $validated['start_date'],
                 'end_date' => $validated['end_date'],
+                'pageant_date' => $validated['pageant_date'],
                 'venue' => $validated['venue'],
                 'location' => $validated['location'],
                 'status' => 'Pending_Approval',
                 'created_by' => Auth::id(),
                 'scoring_system' => $validated['scoring_system'],
+                'contestant_type' => $validated['contestant_type'] ?? 'both',
             ]);
 
             // Attach the organizer who created it
@@ -1883,8 +1895,8 @@ class OrganizerController extends Controller
 
         // Check if the status transition is allowed
         // Allow Draft -> Completed OR Ongoing/Active -> Completed if date has elapsed
-        $allowDirectCompletion = $isDateElapsed && 
-            ($oldStatus === 'Draft' || $oldStatus === 'Ongoing' || $oldStatus === 'Active') && 
+        $allowDirectCompletion = $isDateElapsed &&
+            ($oldStatus === 'Draft' || $oldStatus === 'Ongoing' || $oldStatus === 'Active') &&
             $newStatus === 'Completed';
 
         if (! $allowDirectCompletion && ! $this->isValidStatusTransition($oldStatus, $newStatus)) {
@@ -1999,7 +2011,7 @@ class OrganizerController extends Controller
                 Mail::to($admin->email)->send(new \App\Mail\EditAccessRequested($organizer, $pageant, $validated['reason']));
             }
         } catch (\Exception $e) {
-            Log::error('Error sending edit access request email: ' . $e->getMessage());
+            Log::error('Error sending edit access request email: '.$e->getMessage());
             // Continue execution, don't fail the request just because email failed
         }
 
@@ -2062,6 +2074,13 @@ class OrganizerController extends Controller
      */
     public function storeContestant(Request $request, $pageantId)
     {
+        if (! Auth::user()->hasPermission('organizer_create_contestant')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to manage contestants.',
+            ], 403);
+        }
+
         $organizer = Auth::user();
 
         // Check if this organizer has access to this pageant
