@@ -60,6 +60,7 @@ class ScoreCalculationService
                     'id' => $contestant->id,
                     'number' => $contestant->number,
                     'name' => $contestant->name,
+                    'gender' => $contestant->gender,
                     'region' => $contestant->origin,
                     'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                     'scores' => $roundScores,
@@ -67,14 +68,35 @@ class ScoreCalculationService
                 ];
             }
 
-            // Sort by final score descending and add ranks
-            usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+            // For pair pageants, separate rankings by gender
+            if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+                $maleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'male');
+                $femaleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'female');
 
-            foreach ($contestants as $index => &$contestant) {
-                $contestant['rank'] = $index + 1;
+                // Sort male contestants
+                usort($maleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                foreach ($maleContestants as $index => &$contestant) {
+                    $contestant['rank'] = $index + 1;
+                    $contestant['genderRank'] = $index + 1;
+                }
+
+                // Sort female contestants
+                usort($femaleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                foreach ($femaleContestants as $index => &$contestant) {
+                    $contestant['rank'] = $index + 1;
+                    $contestant['genderRank'] = $index + 1;
+                }
+
+                // Combine and maintain separate rankings
+                $result = array_merge($maleContestants, $femaleContestants);
+            } else {
+                // Sort by final score descending and add ranks (standard ranking)
+                usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                foreach ($contestants as $index => &$contestant) {
+                    $contestant['rank'] = $index + 1;
+                }
+                $result = $contestants;
             }
-
-            $result = $contestants;
 
             // Cache for 30 minutes
             Cache::put($cacheKey, $result, now()->addMinutes(30));
@@ -94,6 +116,7 @@ class ScoreCalculationService
     /**
      * Compute per-round minor awards for a pageant's semi-final stage.
      * For each round in the given stage, find the contestant(s) with the highest average score.
+     * For pair pageants, separate winners by gender.
      *
      * @param  string  $stage  Typically 'semi-final'
      * @return array<string, array<int, array<string, mixed>>> keyed by round name
@@ -102,6 +125,7 @@ class ScoreCalculationService
     {
         try {
             $resultsByRound = [];
+            $isPairPageant = $pageant->isPairsOnly() || $pageant->allowsBothTypes();
 
             $stageRounds = $pageant->rounds->filter(function ($round) use ($stage) {
                 return ($round->type ?? null) === $stage;
@@ -139,26 +163,66 @@ class ScoreCalculationService
 
                 if (empty($contestantScores)) {
                     $resultsByRound[$round->name] = [];
-
                     continue;
                 }
 
-                // Determine the highest score and include ties
-                usort($contestantScores, fn ($a, $b) => $b['score'] <=> $a['score']);
-                $topScore = $contestantScores[0]['score'];
-                $topContestants = array_values(array_filter($contestantScores, function ($row) use ($topScore) {
-                    return abs($row['score'] - $topScore) < 0.00001;
-                }));
+                if ($isPairPageant) {
+                    // Separate by gender for pair pageants
+                    $maleScores = array_filter($contestantScores, fn ($c) => ($c['gender'] ?? '') === 'male');
+                    $femaleScores = array_filter($contestantScores, fn ($c) => ($c['gender'] ?? '') === 'female');
 
-                $resultsByRound[$round->name] = [
-                    'round' => [
-                        'id' => $round->id,
-                        'name' => $round->name,
-                        'type' => $round->type,
-                        'weight' => $round->weight,
-                    ],
-                    'winners' => $topContestants,
-                ];
+                    $maleWinners = [];
+                    $femaleWinners = [];
+
+                    // Get male winners
+                    if (!empty($maleScores)) {
+                        usort($maleScores, fn ($a, $b) => $b['score'] <=> $a['score']);
+                        $topMaleScore = $maleScores[0]['score'];
+                        $maleWinners = array_values(array_filter($maleScores, function ($row) use ($topMaleScore) {
+                            return abs($row['score'] - $topMaleScore) < 0.00001;
+                        }));
+                    }
+
+                    // Get female winners
+                    if (!empty($femaleScores)) {
+                        usort($femaleScores, fn ($a, $b) => $b['score'] <=> $a['score']);
+                        $topFemaleScore = $femaleScores[0]['score'];
+                        $femaleWinners = array_values(array_filter($femaleScores, function ($row) use ($topFemaleScore) {
+                            return abs($row['score'] - $topFemaleScore) < 0.00001;
+                        }));
+                    }
+
+                    $resultsByRound[$round->name] = [
+                        'round' => [
+                            'id' => $round->id,
+                            'name' => $round->name,
+                            'type' => $round->type,
+                            'weight' => $round->weight,
+                        ],
+                        'is_pair_pageant' => true,
+                        'male_winners' => $maleWinners,
+                        'female_winners' => $femaleWinners,
+                        'winners' => array_merge($maleWinners, $femaleWinners), // Combined for compatibility
+                    ];
+                } else {
+                    // Standard single winner logic
+                    usort($contestantScores, fn ($a, $b) => $b['score'] <=> $a['score']);
+                    $topScore = $contestantScores[0]['score'];
+                    $topContestants = array_values(array_filter($contestantScores, function ($row) use ($topScore) {
+                        return abs($row['score'] - $topScore) < 0.00001;
+                    }));
+
+                    $resultsByRound[$round->name] = [
+                        'round' => [
+                            'id' => $round->id,
+                            'name' => $round->name,
+                            'type' => $round->type,
+                            'weight' => $round->weight,
+                        ],
+                        'is_pair_pageant' => false,
+                        'winners' => $topContestants,
+                    ];
+                }
             }
 
             return $resultsByRound;
@@ -221,6 +285,7 @@ class ScoreCalculationService
                     'id' => $contestant->id,
                     'number' => $contestant->number,
                     'name' => $contestant->name,
+                    'gender' => $contestant->gender,
                     'region' => $contestant->origin,
                     'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                     'scores' => $roundScores,
@@ -228,14 +293,35 @@ class ScoreCalculationService
                 ];
             }
 
-            // Sort by final score descending and add ranks
-            usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+            // For pair pageants, separate rankings by gender
+            if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+                $maleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'male');
+                $femaleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'female');
 
-            foreach ($contestants as $index => &$contestant) {
-                $contestant['rank'] = $index + 1;
+                // Sort male contestants
+                usort($maleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                foreach ($maleContestants as $index => &$contestant) {
+                    $contestant['rank'] = $index + 1;
+                    $contestant['genderRank'] = $index + 1;
+                }
+
+                // Sort female contestants
+                usort($femaleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                foreach ($femaleContestants as $index => &$contestant) {
+                    $contestant['rank'] = $index + 1;
+                    $contestant['genderRank'] = $index + 1;
+                }
+
+                // Combine and maintain separate rankings
+                $result = array_merge($maleContestants, $femaleContestants);
+            } else {
+                // Sort by final score descending and add ranks (standard ranking)
+                usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                foreach ($contestants as $index => &$contestant) {
+                    $contestant['rank'] = $index + 1;
+                }
+                $result = $contestants;
             }
-
-            $result = $contestants;
 
             // Cache for 30 minutes
             Cache::put($cacheKey, $result, now()->addMinutes(30));

@@ -54,7 +54,7 @@
           'min-w-[100%]',
           dropdownPosition
         ]"
-        style="z-index: 9999;"
+        style="z-index: 99999;"
         role="listbox"
         aria-orientation="vertical"
       >

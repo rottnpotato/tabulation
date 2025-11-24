@@ -70,7 +70,7 @@
 
       <div v-else class="space-y-6 animate-fade-in">
         <!-- Toolbar -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative z-30">
           <div class="absolute inset-0 rounded-2xl pointer-events-none">
             <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
           </div>

@@ -41,12 +41,14 @@ class TabulatorController extends Controller
                 $query->where('user_id', $tabulator->id);
             })->with(['contestants', 'judges', 'rounds.criteria'])->get();
 
+            //parse pageant start_date to string format
             return Inertia::render('Tabulator/Dashboard', [
                 'pageants' => $pageants->map(function ($pageant) {
                     return [
                         'id' => $pageant->id,
                         'name' => $pageant->name,
                         'status' => $pageant->status,
+                        'start_date' => $pageant->start_date ? $pageant->start_date->toDateString() : null,
                         'contestants_count' => $pageant->contestants->count(),
                         'judges_count' => $pageant->judges->count(),
                         'rounds_count' => $pageant->rounds->count(),
@@ -78,6 +80,7 @@ class TabulatorController extends Controller
                 'name' => $pageant->name,
                 'status' => $pageant->status,
                 'scoring_system' => $pageant->scoring_system,
+                'start_date' => $pageant->start_date ? $pageant->start_date->toDateString() : null,
             ],
             'summary' => [
                 'contestants' => $totalContestants,
@@ -516,7 +519,11 @@ class TabulatorController extends Controller
         $finalResults = $markQualifiedContestants($finalResults, 'final');
 
         return Inertia::render('Tabulator/Results', [
-            'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
+            'pageant' => [
+                'id' => $pageant->id,
+                'name' => $pageant->name,
+                'contestant_type' => $pageant->contestant_type,
+            ],
             'contestants' => $contestants,
             'contestantsSemiFinal' => $semiFinalResults,
             'contestantsFinal' => $finalResults,
@@ -656,6 +663,7 @@ class TabulatorController extends Controller
             'pageant' => [
                 'id' => $pageant->id,
                 'name' => $pageant->name,
+                'contestant_type' => $pageant->contestant_type,
                 'date' => $pageant->pageant_date?->format('F j, Y'),
                 'venue' => $pageant->venue,
                 'location' => $pageant->location,
@@ -690,6 +698,7 @@ class TabulatorController extends Controller
             'pageant' => [
                 'id' => $pageant->id,
                 'name' => $pageant->name,
+                'contestant_type' => $pageant->contestant_type,
                 'logo' => $pageant->logo,
                 'date' => $pageant->pageant_date?->format('F j, Y'),
                 'venue' => $pageant->venue,
@@ -722,6 +731,7 @@ class TabulatorController extends Controller
             'pageant' => [
                 'id' => $pageant->id,
                 'name' => $pageant->name,
+                'contestant_type' => $pageant->contestant_type,
                 'logo' => $pageant->logo,
                 'date' => $pageant->pageant_date?->format('F j, Y'),
                 'venue' => $pageant->venue,
