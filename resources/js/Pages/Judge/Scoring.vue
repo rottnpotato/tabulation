@@ -34,6 +34,8 @@
                         <span>{{ pageant?.name }}</span>
                         <span class="w-1 h-1 rounded-full bg-teal-400 shrink-0"></span>
                         <span>Judge Panel</span>
+                        <span v-if="pageant?.scoring_system" class="w-1 h-1 rounded-full bg-purple-400 shrink-0"></span>
+                        <span v-if="pageant?.scoring_system" class="text-purple-600">{{ formatScoringSystem(pageant.scoring_system) }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <h1 class="text-xl font-black text-slate-800 tracking-tight truncate">{{ currentRound?.name }}</h1>
@@ -130,7 +132,7 @@
                 <div v-for="criterion in criteria" :key="criterion.id" class="bg-white/60 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-white/60 hover:shadow-md hover:bg-white/80 transition-all duration-300 group">
                     <div class="flex justify-between items-start mb-3">
                         <label class="font-bold text-slate-700 group-hover:text-teal-700 transition-colors text-sm capitalize">{{ criterion.name }}</label>
-                        <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">{{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }} / {{ criterion.max_score }}</span>
+                        <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">{{ formatScore(scores[`${activeContestant.id}-${criterion.id}`] || 0) }} / {{ formatScore(criterion.max_score) }}</span>
                     </div>
                     <ScoreInput
                         :min="Number(criterion.min_score)"
@@ -197,7 +199,7 @@
                             <div v-for="criterion in criteria" :key="criterion.id" class="space-y-2">
                                 <div class="flex justify-between">
                                     <label class="text-sm font-medium text-slate-700 capitalize">{{ criterion.name }}</label>
-                                    <span class="text-xs font-bold text-slate-500">{{ scores[`${activeContestant.id}-${criterion.id}`] || 0 }} / {{ criterion.max_score }}</span>
+                                    <span class="text-xs font-bold text-slate-500">{{ formatScore(scores[`${activeContestant.id}-${criterion.id}`] || 0) }} / {{ formatScore(criterion.max_score) }}</span>
                                 </div>
                                 <ScoreInput
                                     :min="Number(criterion.min_score)"
@@ -227,7 +229,7 @@
                         
                         <div class="flex items-center justify-between mb-4">
                             <span class="text-sm font-bold text-slate-500">Total Score</span>
-                            <span class="text-2xl font-black text-teal-600">{{ currentAverage }}</span>
+                            <span class="text-2xl font-black text-teal-600">{{ formatScore(currentAverage) }}</span>
                         </div>
 
                         <button 
@@ -256,7 +258,7 @@
                     
                     <div class="flex items-center justify-between mb-4">
                         <span class="text-sm font-bold text-slate-500">Total Score</span>
-                        <span class="text-3xl font-black text-teal-600">{{ currentAverage }}</span>
+                        <span class="text-3xl font-black text-teal-600">{{ formatScore(currentAverage) }}</span>
                     </div>
 
                     <button 
@@ -641,6 +643,27 @@ const handleRoundUpdate = (event) => {
       }
       break
   }
+}
+
+const isPercentageScoring = computed(() => {
+  return props.pageant?.scoring_system === 'percentage'
+})
+
+const formatScore = (value) => {
+  if (value === '-' || value === undefined || value === null) return '-'
+  const numValue = Number(value)
+  if (isNaN(numValue)) return '-'
+  return isPercentageScoring.value ? `${numValue}%` : numValue.toString()
+}
+
+const formatScoringSystem = (system) => {
+  const systemMap = {
+    'percentage': 'Percentage',
+    '1-10': 'Scale 1-10',
+    '1-5': 'Scale 1-5',
+    'points': 'Points'
+  }
+  return systemMap[system] || system
 }
 </script>
 

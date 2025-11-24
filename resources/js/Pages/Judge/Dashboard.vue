@@ -200,6 +200,10 @@
                  <MapPin class="w-3.5 h-3.5 text-teal-400" />
                  {{ pageant.venue }}
               </div>
+              <div v-if="pageant.scoring_system" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-900/50 text-purple-100 text-xs font-medium border border-purple-800/50">
+                 <Target class="w-3.5 h-3.5 text-purple-400" />
+                 {{ formatScoringSystem(pageant.scoring_system) }}
+              </div>
             </div>
 
             <!-- Action Button -->
@@ -253,7 +257,8 @@ import {
   Search,
   Filter,
   ArrowUpDown,
-  Layers
+  Layers,
+  Target
 } from 'lucide-vue-next'
 import JudgeLayout from '../../Layouts/JudgeLayout.vue'
 
@@ -389,6 +394,16 @@ const displayedPageants = computed(() => {
 
 const toggleSortDir = () => {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+}
+
+const formatScoringSystem = (system) => {
+  const systemMap = {
+    'percentage': 'Percentage (0-100%)',
+    '1-10': 'Scale 1-10',
+    '1-5': 'Scale 1-5',
+    'points': 'Points-based'
+  }
+  return systemMap[system] || system
 }
 </script>
 
