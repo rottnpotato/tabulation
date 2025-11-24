@@ -101,22 +101,31 @@ class JudgeController extends Controller
         // Validate judge has access to this pageant
         $pageant = $this->getPageantForJudge($pageantId, $judge->id);
 
-        // Check if pageant can be scored (must be on or after start date in Philippine time)
+        // Check if pageant can be scored (must be within start and end date in Philippine time)
         if (! $pageant->canBeScored()) {
             $startDateFormatted = $pageant->start_date
                 ? $pageant->start_date->setTimezone('Asia/Manila')->format('F j, Y g:i A')
                 : 'not set';
 
+            $endDateFormatted = $pageant->end_date
+                ? $pageant->end_date->setTimezone('Asia/Manila')->format('F j, Y g:i A')
+                : 'not set';
+
             $currentPHTime = now()->setTimezone('Asia/Manila')->format('F j, Y g:i A');
+
+            $dateRange = $pageant->end_date
+                ? "between {$startDateFormatted} and {$endDateFormatted}"
+                : "starting from {$startDateFormatted}";
 
             return Inertia::render('Judge/Scoring', [
                 'pageant' => [
                     'id' => $pageant->id,
                     'name' => $pageant->name,
                     'start_date' => $startDateFormatted,
+                    'end_date' => $endDateFormatted,
                     'current_time' => $currentPHTime,
                 ],
-                'error' => "Scoring is only allowed starting from {$startDateFormatted} (Philippine Time).\n\nCurrent Time: {$currentPHTime}\n\nPlease return after the pageant has started.",
+                'error' => "Scoring is only allowed {$dateRange} (Philippine Time).\n\nCurrent Time: {$currentPHTime}\n\nPlease return during the pageant period.",
             ]);
         }
 
@@ -263,15 +272,23 @@ class JudgeController extends Controller
         $pageant = $this->getPageantForJudge($pageantId, $judge->id);
         $round = $pageant->rounds()->findOrFail($roundId);
 
-        // Check if pageant can be scored (must be on or after start date in Philippine time)
+        // Check if pageant can be scored (must be within start and end date in Philippine time)
         if (! $pageant->canBeScored()) {
             $startDateFormatted = $pageant->start_date
                 ? $pageant->start_date->setTimezone('Asia/Manila')->format('F j, Y g:i A')
                 : 'not set';
 
+            $endDateFormatted = $pageant->end_date
+                ? $pageant->end_date->setTimezone('Asia/Manila')->format('F j, Y g:i A')
+                : 'not set';
+
+            $dateRange = $pageant->end_date
+                ? "between {$startDateFormatted} and {$endDateFormatted}"
+                : "starting from {$startDateFormatted}";
+
             return response()->json([
                 'success' => false,
-                'message' => "Scoring is only allowed starting from {$startDateFormatted} (Philippine Time). Please try again after the pageant has started.",
+                'message' => "Scoring is only allowed {$dateRange} (Philippine Time). Please try again during the pageant period.",
             ], 403);
         }
 
