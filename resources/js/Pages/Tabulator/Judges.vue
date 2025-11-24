@@ -23,6 +23,14 @@
             </div>
             <div v-if="pageant" class="flex flex-wrap gap-2">
               <button 
+                v-if="availableJudges && availableJudges.length > 0"
+                @click="showAddJudgeModal = true"
+                class="bg-teal-600 text-white rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-700 flex items-center shadow-sm transition-all"
+              >
+                <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span>Add Judge</span>
+              </button>
+              <button 
                 @click="refreshData"
                 class="bg-white text-teal-700 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-50 flex items-center shadow-sm transition-all"
               >
@@ -213,6 +221,81 @@
       </div>
     </div>
 
+    <!-- Add Judge Modal -->
+    <Teleport to="body">
+      <div 
+        v-if="showAddJudgeModal" 
+        class="fixed inset-0 z-50 overflow-y-auto"
+        @click.self="showAddJudgeModal = false"
+      >
+        <div class="flex min-h-screen items-center justify-center p-4">
+          <!-- Backdrop -->
+          <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" @click="showAddJudgeModal = false"></div>
+          
+          <!-- Modal -->
+          <div class="relative bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <!-- Header -->
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 class="text-xl font-bold text-slate-900">Add Judge to Pageant</h3>
+              <button 
+                @click="showAddJudgeModal = false"
+                class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+              >
+                <X class="w-5 h-5" />
+              </button>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+              <div v-if="availableJudges && availableJudges.length > 0" class="space-y-3">
+                <div 
+                  v-for="judge in availableJudges" 
+                  :key="judge.id"
+                  class="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-teal-300 hover:bg-teal-50/50 transition-all group cursor-pointer"
+                  @click="selectJudge(judge.id)"
+                >
+                  <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center text-slate-500 font-bold text-lg shadow-inner group-hover:from-teal-100 group-hover:to-teal-200 transition-all">
+                      {{ judge.name.charAt(0) }}
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-slate-900 group-hover:text-teal-600 transition-colors">{{ judge.name }}</h4>
+                      <p class="text-sm text-slate-500">{{ judge.email }}</p>
+                      <p class="text-xs text-slate-400 mt-0.5">@{{ judge.username }}</p>
+                    </div>
+                  </div>
+                  <button
+                    @click.stop="assignJudge(judge.id)"
+                    :disabled="assignForm.processing"
+                    class="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white rounded-lg text-sm font-medium transition-all shadow-sm hover:shadow-md disabled:cursor-not-allowed"
+                  >
+                    <span v-if="assignForm.processing && assignForm.judge_id === judge.id">Adding...</span>
+                    <span v-else>Add</span>
+                  </button>
+                </div>
+              </div>
+              <div v-else class="text-center py-12">
+                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users class="h-8 w-8 text-slate-400" />
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">No Available Judges</h3>
+                <p class="text-slate-500">All judges have been assigned to this pageant.</p>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+              <button 
+                @click="showAddJudgeModal = false"
+                class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-sm font-medium transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
   </div>
 </template>
@@ -230,7 +313,9 @@ import {
   Power,
   LayoutDashboard,
   Target,
-  Trash2
+  Trash2,
+  UserPlus,
+  X
 } from 'lucide-vue-next'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 
@@ -269,7 +354,11 @@ interface Props {
 
 const props = defineProps<Props>()
 
-
+const showAddJudgeModal = ref(false)
+const assignForm = useForm({
+  judge_id: null as number | null,
+  role: 'Judge'
+})
 
 const activeJudgesCount = computed(() => {
   return props.judges.filter(judge => judge.isActive).length
@@ -301,6 +390,24 @@ const resetPassword = (judgeId: number) => {
 
 const toggleStatus = (judgeId: number) => {
   router.post(route('tabulator.judges.toggle-status', [props.pageant?.id, judgeId]))
+}
+
+const selectJudge = (judgeId: number) => {
+  assignForm.judge_id = judgeId
+}
+
+const assignJudge = (judgeId: number) => {
+  assignForm.judge_id = judgeId
+  assignForm.post(route('tabulator.judges.assign', props.pageant?.id), {
+    preserveScroll: true,
+    onSuccess: () => {
+      showAddJudgeModal.value = false
+      assignForm.reset()
+    },
+    onError: () => {
+      // Error handling is automatic via Inertia
+    }
+  })
 }
 </script>
 
