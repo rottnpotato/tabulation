@@ -314,10 +314,10 @@ const displayedContestants = computed(() => {
   }
 
   // Sort by total score to determine current rankings
-  const sorted = [...baseList].sort((contestantA, contestantB) => {
-    const aScore = contestantA.totalScore ?? contestantA.finalScore ?? 0
-    const bScore = contestantB.totalScore ?? contestantB.finalScore ?? 0
-    return bScore - aScore
+  const sorted = [...baseList].sort((a, b) => {
+    const scoreA = a.totalScore ?? a.finalScore ?? 0
+    const scoreB = b.totalScore ?? b.finalScore ?? 0
+    return scoreB - scoreA
   })
 
   // Track ranking changes
