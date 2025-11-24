@@ -101,15 +101,22 @@ class JudgeController extends Controller
         // Validate judge has access to this pageant
         $pageant = $this->getPageantForJudge($pageantId, $judge->id);
 
-        // Check if pageant can be scored (only on pageant date)
+        // Check if pageant can be scored (must be on or after start date in Philippine time)
         if (! $pageant->canBeScored()) {
+            $startDateFormatted = $pageant->start_date
+                ? $pageant->start_date->setTimezone('Asia/Manila')->format('F j, Y g:i A')
+                : 'not set';
+
+            $currentPHTime = now()->setTimezone('Asia/Manila')->format('F j, Y g:i A');
+
             return Inertia::render('Judge/Scoring', [
                 'pageant' => [
                     'id' => $pageant->id,
                     'name' => $pageant->name,
-                    'pageant_date' => $pageant->pageant_date?->format('F j, Y'),
+                    'start_date' => $startDateFormatted,
+                    'current_time' => $currentPHTime,
                 ],
-                'error' => 'Scoring is only allowed on the pageant date ('.$pageant->pageant_date?->format('F j, Y').'). Please return on that date to submit scores.',
+                'error' => "Scoring is only allowed starting from {$startDateFormatted} (Philippine Time).\n\nCurrent Time: {$currentPHTime}\n\nPlease return after the pageant has started.",
             ]);
         }
 
@@ -256,11 +263,15 @@ class JudgeController extends Controller
         $pageant = $this->getPageantForJudge($pageantId, $judge->id);
         $round = $pageant->rounds()->findOrFail($roundId);
 
-        // Check if pageant can be scored (only on pageant date)
+        // Check if pageant can be scored (must be on or after start date in Philippine time)
         if (! $pageant->canBeScored()) {
+            $startDateFormatted = $pageant->start_date
+                ? $pageant->start_date->setTimezone('Asia/Manila')->format('F j, Y g:i A')
+                : 'not set';
+
             return response()->json([
                 'success' => false,
-                'message' => 'Scoring is only allowed on the pageant date ('.$pageant->pageant_date?->format('F j, Y').').',
+                'message' => "Scoring is only allowed starting from {$startDateFormatted} (Philippine Time). Please try again after the pageant has started.",
             ], 403);
         }
 

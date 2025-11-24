@@ -610,11 +610,24 @@ class Pageant extends Model
     }
 
     /**
-     * Check if pageant can be scored (only on pageant date)
+     * Check if pageant can be scored (based on start date in Philippine Standard Time)
+     * Scoring is allowed once the pageant start date has arrived
      */
     public function canBeScored(): bool
     {
-        return $this->isPageantDateToday();
+        // If no start date is set, cannot be scored
+        if (! $this->start_date) {
+            return false;
+        }
+
+        // Get current time in Philippine Standard Time (Asia/Manila)
+        $nowInPH = now()->setTimezone('Asia/Manila');
+
+        // Get start date in Philippine Standard Time
+        $startDateInPH = $this->start_date->setTimezone('Asia/Manila')->startOfDay();
+
+        // Can be scored if current PH time is on or after the start date
+        return $nowInPH->greaterThanOrEqualTo($startDateInPH);
     }
 
     /**
