@@ -67,7 +67,14 @@ class EditAccessRequestController extends Controller
         }
 
         $requests = EditAccessRequest::with(['pageant', 'organizer', 'reviewer'])
-            ->orderByRaw("FIELD(status, 'pending', 'approved', 'rejected')")
+            ->orderByRaw("
+                CASE 
+                    WHEN status = 'pending' THEN 1 
+                    WHEN status = 'approved' THEN 2 
+                    WHEN status = 'rejected' THEN 3 
+                    ELSE 4 
+                END
+            ")
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
