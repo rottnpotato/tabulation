@@ -87,6 +87,8 @@
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.name }"
                         placeholder="e.g. Jane Smith"
                         required
+                        @keypress="validateTextInput"
+                        @paste="handleTextPaste"
                       />
                       <p v-if="errors.name" class="mt-1 text-sm text-red-500">{{ errors.name }}</p>
                       <p v-else class="mt-1 text-xs text-gray-500">Enter the contestant's full name</p>
@@ -108,6 +110,8 @@
                         class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors hover:border-gray-400"
                         :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-200': errors.age }"
                         placeholder="e.g. 24"
+                        @keypress="validateNumberInput"
+                        @paste="handleNumberPaste"
                       />
                       <p v-if="errors.age" class="mt-1 text-sm text-red-500">{{ errors.age }}</p>
                       <p v-else class="mt-1 text-xs text-gray-500">Optional. Enter the contestant's age</p>
@@ -308,6 +312,8 @@
                           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member1.name'] }"
                           placeholder="Enter full name"
                           required
+                          @keypress="validateTextInput"
+                          @paste="handleTextPaste"
                         />
                         <p v-if="errors['member1.name']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member1.name'] }}</p>
                       </div>
@@ -325,6 +331,8 @@
                           min="16"
                           max="35"
                           required
+                          @keypress="validateNumberInput"
+                          @paste="handleNumberPaste"
                         />
                         <p v-if="errors['member1.age']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member1.age'] }}</p>
                       </div>
@@ -377,6 +385,8 @@
                           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-100': errors['member2.name'] }"
                           placeholder="Enter full name"
                           required
+                          @keypress="validateTextInput"
+                          @paste="handleTextPaste"
                         />
                         <p v-if="errors['member2.name']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member2.name'] }}</p>
                       </div>
@@ -394,6 +404,8 @@
                           min="16"
                           max="35"
                           required
+                          @keypress="validateNumberInput"
+                          @paste="handleNumberPaste"
                         />
                         <p v-if="errors['member2.age']" class="mt-1.5 text-xs text-red-600 font-medium">{{ errors['member2.age'] }}</p>
                       </div>
@@ -826,6 +838,40 @@ const getPageantTypeDescription = () => {
       return 'This contestant can compete individually or be part of a pair in this mixed pageant.'
     default:
       return ''
+  }
+}
+
+// Validate number input to prevent non-numeric characters including 'e'
+const validateNumberInput = (event) => {
+  const char = String.fromCharCode(event.keyCode || event.which)
+  if (!/^[0-9]$/.test(char)) {
+    event.preventDefault()
+  }
+}
+
+// Handle paste events to prevent non-numeric content
+const handleNumberPaste = (event) => {
+  const pastedData = event.clipboardData.getData('text')
+  if (!/^[0-9]+$/.test(pastedData)) {
+    event.preventDefault()
+  }
+}
+
+// Validate text input to prevent numeric characters
+const validateTextInput = (event) => {
+  const char = String.fromCharCode(event.keyCode || event.which)
+  // Allow letters, spaces, hyphens, apostrophes, and periods for names
+  if (!/^[a-zA-Z\s\-'.\u00C0-\u017F]$/.test(char)) {
+    event.preventDefault()
+  }
+}
+
+// Handle paste events for text to prevent numeric content
+const handleTextPaste = (event) => {
+  const pastedData = event.clipboardData.getData('text')
+  // Allow letters, spaces, hyphens, apostrophes, periods, and accented characters
+  if (!/^[a-zA-Z\s\-'.\u00C0-\u017F]+$/.test(pastedData)) {
+    event.preventDefault()
   }
 }
 </script>
