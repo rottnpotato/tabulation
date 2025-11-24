@@ -314,9 +314,9 @@ const displayedContestants = computed(() => {
   }
 
   // Sort by total score to determine current rankings
-  const sorted = [...baseList].sort((a, b) => {
-    const aScore = a.totalScore ?? a.finalScore ?? 0
-    const bScore = b.totalScore ?? b.finalScore ?? 0
+  const sorted = [...baseList].sort((contestantA, contestantB) => {
+    const aScore = contestantA.totalScore ?? contestantA.finalScore ?? 0
+    const bScore = contestantB.totalScore ?? contestantB.finalScore ?? 0
     return bScore - aScore
   })
 
