@@ -343,7 +343,7 @@ defineOptions({
 
 const props = defineProps({
   requests: {
-    type: Array,
+    type: Object,
     required: true
   }
 })
@@ -374,18 +374,20 @@ const filters = [
 
 // Computed
 const filteredRequests = computed(() => {
+  const requestsData = props.requests.data || []
   if (activeFilter.value === 'all') {
-    return props.requests
+    return requestsData
   }
-  return props.requests.filter(request => request.status === activeFilter.value)
+  return requestsData.filter(request => request.status === activeFilter.value)
 })
 
 // Methods
 const getFilterCount = (filterValue) => {
+  const requestsData = props.requests.data || []
   if (filterValue === 'all') {
-    return props.requests.length
+    return requestsData.length
   }
-  return props.requests.filter(request => request.status === filterValue).length
+  return requestsData.filter(request => request.status === filterValue).length
 }
 
 const getStatusLabel = (status) => {
