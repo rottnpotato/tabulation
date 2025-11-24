@@ -94,6 +94,28 @@ class PageantPolicy
             return $pageant->canBeEdited();
         }
 
+        // Tabulators can update pageants they're assigned to
+        if ($user->role === 'tabulator') {
+            $hasAccess = DB::table('pageant_tabulators')
+                ->where('user_id', $user->id)
+                ->where('pageant_id', $pageant->id)
+                ->where('active', true)
+                ->exists();
+
+            if (! $hasAccess) {
+                return false;
+            }
+
+            // Check if the pageant is editable
+            // If ongoing, can only edit with temporary access granted by admin
+            if ($pageant->isOngoing()) {
+                return $pageant->is_temporarily_editable === true;
+            }
+
+            // Check if pageant can be edited based on status
+            return $pageant->canBeEdited();
+        }
+
         return false;
     }
 

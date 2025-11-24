@@ -168,7 +168,13 @@
           <div class="p-6 flex flex-col flex-grow gap-4">
             <!-- Title & Meta -->
             <div class="flex justify-between items-start gap-2">
-              <h3 class="text-2xl font-bold text-white leading-tight">{{ pageant.name }}</h3>
+              <div class="flex-1">
+                <h3 class="text-2xl font-bold text-white leading-tight">{{ pageant.name }}</h3>
+                <p v-if="pageant.start_date" class="text-teal-200/60 text-xs mt-1.5 flex items-center gap-1.5">
+                  <Calendar class="w-3 h-3" />
+                  Start Date: {{ formatDate(pageant.start_date) }}
+                </p>
+              </div>
               <!-- Date Pill -->
               <div v-if="pageant.pageant_date" class="shrink-0 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-white text-xs font-bold backdrop-blur-sm">
                  {{ formatDateShort(pageant.pageant_date) }}

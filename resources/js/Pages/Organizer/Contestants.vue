@@ -117,7 +117,8 @@
         <!-- Contestants Grid -->
         <ContestantsGrid
           v-else
-          :contestants="filteredContestants"
+          :contestants="sortedContestants"
+          :is-pair-competition="isPairCompetition"
           @view="ViewContestantDetails"
           @edit="EditContestant"
           @delete="(c) => DeleteContestant(c.id)"
@@ -610,6 +611,49 @@ const filteredContestants = computed(() => {
   return (props.Contestants || []).filter(contestant => 
     contestant.pageant.id == selectedPageant.value
   )
+})
+
+// Get pageant info for selected pageant
+const selectedPageantInfo = computed(() => {
+  if (!selectedPageant.value) return null
+  return props.PageantSummaries?.find(p => p.id == selectedPageant.value)
+})
+
+// Check if current pageant is pair type
+const isPairCompetition = computed(() => {
+  return selectedPageantInfo.value?.contestant_type === 'pairs' || selectedPageantInfo.value?.contestant_type === 'both'
+})
+
+// Sort contestants with gender grouping for pair competitions
+const sortedContestants = computed(() => {
+  const contestants = [...filteredContestants.value]
+  
+  if (isPairCompetition.value) {
+    // For pair competitions: group by gender (males first, then females)
+    const males = contestants.filter(c => c.gender === 'male').sort((a, b) => {
+      const numA = parseInt(a.number || a.contestNumber || 0)
+      const numB = parseInt(b.number || b.contestNumber || 0)
+      return numA - numB
+    })
+    const females = contestants.filter(c => c.gender === 'female').sort((a, b) => {
+      const numA = parseInt(a.number || a.contestNumber || 0)
+      const numB = parseInt(b.number || b.contestNumber || 0)
+      return numA - numB
+    })
+    const others = contestants.filter(c => !c.gender || (c.gender !== 'male' && c.gender !== 'female')).sort((a, b) => {
+      const numA = parseInt(a.number || a.contestNumber || 0)
+      const numB = parseInt(b.number || b.contestNumber || 0)
+      return numA - numB
+    })
+    return [...males, ...females, ...others]
+  }
+  
+  // Default sorting by number
+  return contestants.sort((a, b) => {
+    const numA = parseInt(a.number || a.contestNumber || 0)
+    const numB = parseInt(b.number || b.contestNumber || 0)
+    return numA - numB
+  })
 })
 
 const Form = ref({

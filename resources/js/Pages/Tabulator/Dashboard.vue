@@ -80,6 +80,10 @@
                     <h3 class="text-xl font-bold text-slate-900 group-hover:text-teal-600 transition-colors truncate">
                       {{ pageantItem.name }}
                     </h3>
+                    <p v-if="pageantItem.start_date" class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                      <Calendar class="w-3 h-3" />
+                      {{ pageantItem.start_date }}
+                    </p>
                   </div>
                   <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
                     <ChevronRight class="w-5 h-5 text-slate-400 group-hover:text-teal-600" />
@@ -354,7 +358,8 @@ import {
   ChevronRight,
   Activity,
   Calculator,
-  Crown
+  Crown,
+  Calendar
 } from 'lucide-vue-next'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 

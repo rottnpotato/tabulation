@@ -38,8 +38,8 @@ class ContestantController extends Controller
                         ->orderBy('display_order');
                 },
             ])
+            ->orderByRaw("CASE WHEN gender = 'male' THEN 1 WHEN gender = 'female' THEN 2 ELSE 3 END")
             ->orderBy('number')
-            ->orderBy('gender')
             ->get()
             ->map(function ($contestant) {
                 $primaryImage = $contestant->images->firstWhere('is_primary', true);

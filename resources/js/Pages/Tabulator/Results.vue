@@ -76,8 +76,8 @@
         <!-- Controls & Statistics Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Controls Card -->
-          <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50"></div>
+          <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 opacity-50 -z-10"></div>
             <div class="relative z-10">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>

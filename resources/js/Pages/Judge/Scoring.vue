@@ -160,7 +160,7 @@
                 <button @click="prevContestant" :disabled="currentIndex === 0" class="absolute left-0 lg:-left-4 top-1/2 -translate-y-1/2 z-20 p-3 lg:p-4 rounded-full bg-white/80 backdrop-blur shadow-lg text-slate-600 hover:text-teal-600 hover:scale-110 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-white/50">
                     <ChevronLeft class="w-6 h-6 lg:w-8 lg:h-8" />
                 </button>
-                <button @click="nextContestant" :disabled="currentIndex === contestants.length - 1" class="absolute right-0 lg:-right-4 top-1/2 -translate-y-1/2 z-20 p-3 lg:p-4 rounded-full bg-white/80 backdrop-blur shadow-lg text-slate-600 hover:text-teal-600 hover:scale-110 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-white/50">
+                <button @click="nextContestant" :disabled="currentIndex === sortedContestants.length - 1" class="absolute right-0 lg:-right-4 top-1/2 -translate-y-1/2 z-20 p-3 lg:p-4 rounded-full bg-white/80 backdrop-blur shadow-lg text-slate-600 hover:text-teal-600 hover:scale-110 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-white/50">
                     <ChevronRight class="w-6 h-6 lg:w-8 lg:h-8" />
                 </button>
 
@@ -380,8 +380,45 @@ let pageantChannel = null
 const scores = ref({ ...props.existingScores })
 const notes = ref({ ...props.existingNotes })
 
+// Check if pageant is pair competition
+const isPairCompetition = computed(() => {
+  return props.pageant?.contestant_type === 'pairs' || props.pageant?.contestant_type === 'both'
+})
+
+// Sort contestants with gender grouping for pair competitions  
+const sortedContestants = computed(() => {
+  const contestants = [...props.contestants]
+  
+  if (isPairCompetition.value) {
+    // For pair competitions: group by gender (males first, then females)
+    const males = contestants.filter(c => c.gender === 'male').sort((a, b) => {
+      const numA = parseInt(a.number || 0)
+      const numB = parseInt(b.number || 0)
+      return numA - numB
+    })
+    const females = contestants.filter(c => c.gender === 'female').sort((a, b) => {
+      const numA = parseInt(a.number || 0)
+      const numB = parseInt(b.number || 0)
+      return numA - numB
+    })
+    const others = contestants.filter(c => !c.gender || (c.gender !== 'male' && c.gender !== 'female')).sort((a, b) => {
+      const numA = parseInt(a.number || 0)
+      const numB = parseInt(b.number || 0)
+      return numA - numB
+    })
+    return [...males, ...females, ...others]
+  }
+  
+  // Default sorting by number
+  return contestants.sort((a, b) => {
+    const numA = parseInt(a.number || 0)
+    const numB = parseInt(b.number || 0)
+    return numA - numB
+  })
+})
+
 // Computed
-const activeContestant = computed(() => props.contestants[currentIndex.value] || {})
+const activeContestant = computed(() => sortedContestants.value[currentIndex.value] || {})
 
 
 const currentAverage = computed(() => {
@@ -412,7 +449,7 @@ const handleRoundChange = (roundId) => {
 }
 
 const nextContestant = () => {
-  if (currentIndex.value < props.contestants.length - 1) {
+  if (currentIndex.value < sortedContestants.value.length - 1) {
     currentIndex.value++
   }
 }
@@ -522,7 +559,7 @@ const submitScores = async (contestantId, autoAdvance = true) => {
         })
       }
       
-      if (autoAdvance && currentIndex.value < props.contestants.length - 1) {
+      if (autoAdvance && currentIndex.value < sortedContestants.value.length - 1) {
         setTimeout(() => {
           nextContestant()
         }, 500)
