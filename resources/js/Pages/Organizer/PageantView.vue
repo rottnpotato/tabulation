@@ -24,13 +24,13 @@
       :show="showArchiveConfirm"
       :title="isCompleted ? 'Archive Pageant' : 'Archive & Cancel Pageant'"
       :message="isCompleted 
-        ? 'this pageant? Archiving will move it to your archived list and it will no longer be editable' 
-        : 'this pageant? This will CANCEL the pageant and move it to your archived list. This action cannot be undone.'"
+        ? 'Archive this pageant? Archiving will move it to your archived list and it will no longer be editable' 
+        : 'Archive & Cancel this pageant? This will CANCEL the pageant and move it to your archived list. This action cannot be undone.'"
       :confirmText="isCompleted ? 'Archive' : 'Cancel & Archive'"
       confirmButtonClass="bg-gray-600 hover:bg-gray-700 focus:ring-gray-500"
       :isLoading="archiveProcessing"
       @confirm="archivePageant"
-      @cancel="showArchiveConfirm = false"
+      @cancel="closeArchiveModal"
     >
       <template #content>
         <div class="mt-4">
@@ -441,6 +441,7 @@
                     Pageant completed
                   </div>
                   <button 
+                    v-if="!isArchived"
                     @click="showArchiveConfirm = true"
                     class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
                   >
@@ -2321,8 +2322,10 @@ import {
   Flag,
   Tag,
   XCircle,
-  Camera
-, Target} from 'lucide-vue-next'
+  Camera,
+  Archive,
+  Target
+} from 'lucide-vue-next'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 
 import { useNotification } from '@/Composables/useNotification'
@@ -2878,6 +2881,7 @@ const removeTabulator = () => {
 const isDraft = computed(() => props.pageant.status === 'Draft')
 const isOngoing = computed(() => props.pageant.status === 'Active')
 const isCompleted = computed(() => props.pageant.status === 'Completed')
+const isArchived = computed(() => props.pageant.status === 'Archived')
 
 // Check if user is admin
 const isAdmin = computed(() => props.auth?.user?.role === 'admin')
@@ -3211,7 +3215,7 @@ const availableStatusTransitions = computed(() => {
   const baseTransitions = {
     'Draft': ['Active'],
     'Active': ['Completed'],
-    'Completed': [], // Completed pageants cannot be reverted
+    'Completed': ['Archived'], // Completed pageants can be archived
   }
   
   let transitions = baseTransitions[currentStatus] || []
@@ -3226,6 +3230,7 @@ const getStatusTransitionHelp = (fromStatus, toStatus) => {
   const transitions = {
     'Draft->Active': 'Start the pageant competition and begin scoring.',
     'Active->Completed': 'End the pageant and finalize results.',
+    'Completed->Archived': 'Archive this completed pageant and move it to your archived list.',
   }
   
   // Special case for auto-completion
@@ -3264,6 +3269,11 @@ const showArchiveConfirm = ref(false)
 const archiveProcessing = ref(false)
 const archiveReason = ref('')
 
+const closeArchiveModal = () => {
+  showArchiveConfirm.value = false
+  archiveReason.value = ''
+}
+
 const archivePageant = () => {
   archiveProcessing.value = true
   
@@ -3273,8 +3283,7 @@ const archivePageant = () => {
   }, {
     onSuccess: () => {
       archiveProcessing.value = false
-      showArchiveConfirm.value = false
-      archiveReason.value = ''
+      closeArchiveModal()
       // Redirect to my pageants or show success message
     },
     onError: (errors) => {

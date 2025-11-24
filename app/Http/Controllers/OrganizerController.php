@@ -1954,7 +1954,16 @@ class OrganizerController extends Controller
         }
 
         // Update the status
-        $pageant->update(['status' => $newStatus]);
+        if ($newStatus === 'Archived') {
+            $pageant->update([
+                'status' => $newStatus,
+                'archive_reason' => $reason,
+                'archived_at' => now(),
+            ]);
+        } else {
+            $pageant->update(['status' => $newStatus]);
+        }
+
 
         // Log the action
         $logMessage = "Organizer {$organizer->name} changed pageant '{$pageant->name}' status from '{$oldStatus}' to '{$newStatus}'";
@@ -2367,7 +2376,7 @@ class OrganizerController extends Controller
         $allowedTransitions = [
             'Draft' => ['Active'],
             'Active' => ['Completed'],
-            'Completed' => [], // Completed pageants cannot be reverted
+            'Completed' => ['Archived'], // Completed pageants can be archived
         ];
 
         return isset($allowedTransitions[$fromStatus]) &&

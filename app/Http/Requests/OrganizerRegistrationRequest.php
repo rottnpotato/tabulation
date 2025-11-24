@@ -25,7 +25,7 @@ class OrganizerRegistrationRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'username' => ['required', 'string', 'min:3', 'max:30', 'unique:users', 'alpha_dash'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8'],
         ];
     }
 
@@ -49,7 +49,7 @@ class OrganizerRegistrationRequest extends FormRequest
             'username.alpha_dash' => 'Your username may only contain letters, numbers, dashes, and underscores.',
             'password.required' => 'A password is required.',
             'password.min' => 'Your password must be at least 8 characters for security.',
-            'password.confirmed' => 'The password confirmation does not match. Please try again.',
+            // 'password.confirmed' => 'The password confirmation does not match. Please try again.',
         ];
     }
 }

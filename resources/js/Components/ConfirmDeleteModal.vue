@@ -49,7 +49,7 @@
                       Processing...
                     </span>
                     <span v-else>
-                      Delete
+                      {{ message.includes('Archive') ? 'Archive' : 'Delete' }}
                     </span>
                   </button>
                 </div>
