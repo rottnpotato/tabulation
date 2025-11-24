@@ -162,6 +162,7 @@
                   :title="`${getResultsTitle()} - Male`"
                   :contestants="maleContestants"
                   :rounds="displayedRounds"
+                  :is-updating="isUpdating"
                 />
               </div>
             </div>
@@ -181,6 +182,7 @@
                   :title="`${getResultsTitle()} - Female`"
                   :contestants="femaleContestants"
                   :rounds="displayedRounds"
+                  :is-updating="isUpdating"
                 />
               </div>
             </div>
@@ -196,6 +198,7 @@
                 :title="getResultsTitle()"
                 :contestants="displayedContestants"
                 :rounds="displayedRounds"
+                :is-updating="isUpdating"
               />
             </div>
           </div>
@@ -217,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { RefreshCw, Printer, Trophy, BarChart3, Users, LayoutDashboard, Target, Award } from 'lucide-vue-next'
@@ -270,6 +273,10 @@ const props = withDefaults(defineProps<Props>(), {
   rounds: () => []
 })
 
+// Track previous rankings for animation
+const previousRankings = ref<Map<number, number>>(new Map())
+const isUpdating = ref(false)
+
 const activeRound = ref('overall')
 const stage = ref<'overall' | 'semi-final' | 'final' | 'final-top3'>('overall')
 
@@ -306,17 +313,23 @@ const displayedContestants = computed(() => {
       baseList = props.contestants || []
   }
 
-  // Debug logging
-  if (stage.value !== 'overall') {
-    console.log(`Stage: ${stage.value}, Contestants:`, baseList.length, baseList.map(c => ({
-      id: c.id,
-      name: c.name,
-      totalScore: c.totalScore,
-      finalScore: c.finalScore
-    })))
-  }
+  // Sort by total score to determine current rankings
+  const sorted = [...baseList].sort((a, b) => {
+    const aScore = a.totalScore ?? a.finalScore ?? 0
+    const bScore = b.totalScore ?? b.finalScore ?? 0
+    return bScore - aScore
+  })
 
-  return baseList
+  // Track ranking changes
+  const newRankings = new Map<number, number>()
+  sorted.forEach((contestant, index) => {
+    newRankings.set(contestant.id, index + 1)
+  })
+
+  // Store new rankings for next comparison
+  previousRankings.value = newRankings
+
+  return sorted
 })
 
 const isPairPageant = computed(() => {
@@ -325,12 +338,16 @@ const isPairPageant = computed(() => {
 
 const maleContestants = computed(() => {
   if (!isPairPageant.value) return []
-  return displayedContestants.value.filter(c => c.gender === 'male')
+  const males = displayedContestants.value.filter(c => c.gender === 'male')
+  // For final-top3 stage, limit to top 3
+  return stage.value === 'final-top3' ? males.slice(0, 3) : males
 })
 
 const femaleContestants = computed(() => {
   if (!isPairPageant.value) return []
-  return displayedContestants.value.filter(c => c.gender === 'female')
+  const females = displayedContestants.value.filter(c => c.gender === 'female')
+  // For final-top3 stage, limit to top 3
+  return stage.value === 'final-top3' ? females.slice(0, 3) : females
 })
 
 const displayedRounds = computed(() => {
@@ -400,10 +417,15 @@ const handleScoreUpdate = (e: any) => {
     clearTimeout(refreshTimeout)
   }
   
-  // Debounce full page refresh to avoid multiple rapid reloads
+  // Set updating flag and debounce refresh
+  isUpdating.value = true
   refreshTimeout = setTimeout(() => {
     console.log('🔄 Refreshing results data after score update')
     refreshData()
+    // Reset flag after a delay to allow transition to complete
+    setTimeout(() => {
+      isUpdating.value = false
+    }, 1000)
     refreshTimeout = null
   }, REFRESH_DEBOUNCE_MS)
 }
@@ -416,10 +438,15 @@ const handleRankingsUpdate = (e: any) => {
     clearTimeout(refreshTimeout)
   }
   
-  // Refresh immediately for ranking updates
+  // Set updating flag and refresh immediately for ranking updates
+  isUpdating.value = true
   refreshTimeout = setTimeout(() => {
     console.log('🔄 Refreshing results due to rankings update')
     refreshData()
+    // Reset flag after transition
+    setTimeout(() => {
+      isUpdating.value = false
+    }, 1000)
     refreshTimeout = null
   }, 500)
 }

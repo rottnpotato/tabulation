@@ -45,22 +45,44 @@
           <tr
             v-for="(contestant, index) in rankedContestants"
             :key="contestant.id"
-            class="hover:bg-gray-50/80 transition-colors"
-            :class="{
-              'bg-emerald-50/30': contestant.qualified && contestant.qualification_cutoff,
-              'opacity-60': !contestant.qualified && contestant.qualification_cutoff !== null && contestant.qualification_cutoff !== undefined
-            }"
+            class="hover:bg-gray-50/80 transition-all duration-500 ease-out"
+            :class="[
+              {
+                'bg-emerald-50/30': contestant.qualified && contestant.qualification_cutoff,
+                'opacity-60': !contestant.qualified && contestant.qualification_cutoff !== null && contestant.qualification_cutoff !== undefined,
+                'animate-rank-up': getRankChange(contestant.id, index + 1) === 'up',
+                'animate-rank-down': getRankChange(contestant.id, index + 1) === 'down',
+                'animate-pulse-subtle': isUpdating && getRankChange(contestant.id, index + 1) === 'same'
+              }
+            ]"
           >
             <!-- Rank -->
             <td class="whitespace-nowrap px-4 py-3 text-center">
               <div class="flex items-center justify-center gap-2">
-                <span
-                  class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
-                  :class="getRankBadgeClass(index + 1, contestant.qualified)"
-                >
-                  <span class="mr-1 tabular-nums">{{ index + 1 }}</span>
-                  <span v-if="index < 3">{{ getRankDisplay(index + 1) }}</span>
-                </span>
+                <div class="relative">
+                  <span
+                    class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-all duration-300"
+                    :class="getRankBadgeClass(index + 1, contestant.qualified)"
+                  >
+                    <span class="mr-1 tabular-nums">{{ index + 1 }}</span>
+                    <span v-if="index < 3">{{ getRankDisplay(index + 1) }}</span>
+                  </span>
+                  <!-- Rank change indicator -->
+                  <transition name="rank-indicator">
+                    <span
+                      v-if="isUpdating && getRankChange(contestant.id, index + 1) === 'up'"
+                      class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white text-[10px] font-bold shadow-lg"
+                    >
+                      ↑
+                    </span>
+                    <span
+                      v-else-if="isUpdating && getRankChange(contestant.id, index + 1) === 'down'"
+                      class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold shadow-lg"
+                    >
+                      ↓
+                    </span>
+                  </transition>
+                </div>
                 <span
                   v-if="contestant.qualified && contestant.qualification_cutoff"
                   class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200"
@@ -129,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots } from 'vue'
+import { computed, useSlots, ref, watch } from 'vue'
 import { Trophy } from 'lucide-vue-next'
 
 const slots = useSlots()
@@ -160,9 +182,15 @@ interface Props {
   title: string
   contestants: Contestant[]
   rounds: Round[]
+  isUpdating?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  isUpdating: false
+})
+
+// Track previous rankings for animation
+const previousRankMap = ref<Map<number, number>>(new Map())
 
 const rankedContestants = computed(() => {
   return [...props.contestants].sort((a, b) => {
@@ -171,6 +199,38 @@ const rankedContestants = computed(() => {
     return bTotal - aTotal
   })
 })
+
+// Watch for ranking changes and update previous map
+watch(
+  () => rankedContestants.value,
+  (newRanked, oldRanked) => {
+    if (oldRanked && oldRanked.length > 0) {
+      // Store old rankings before update
+      const oldMap = new Map<number, number>()
+      oldRanked.forEach((c, idx) => {
+        oldMap.set(c.id, idx + 1)
+      })
+      previousRankMap.value = oldMap
+    }
+  },
+  { deep: true }
+)
+
+const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down' | 'same' | 'new' => {
+  const prevRank = previousRankMap.value.get(contestantId)
+  
+  if (prevRank === undefined) {
+    return 'new'
+  }
+  
+  if (prevRank > currentRank) {
+    return 'up' // Moved to a better rank (lower number)
+  } else if (prevRank < currentRank) {
+    return 'down' // Moved to a worse rank (higher number)
+  }
+  
+  return 'same'
+}
 
 const getRankDisplay = (rank: number): string => {
   if (rank <= 3) {
@@ -237,3 +297,70 @@ const formatScore = (score: unknown, decimals = 2, empty = '-'): string => {
   return n.toFixed(decimals)
 }
 </script>
+
+<style scoped>
+@keyframes rank-up {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+    background-color: rgba(34, 197, 94, 0.1);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes rank-down {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+    background-color: rgba(20, 184, 166, 0.05);
+  }
+}
+
+.animate-rank-up {
+  animation: rank-up 0.6s ease-out;
+}
+
+.animate-rank-down {
+  animation: rank-down 0.6s ease-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 1s ease-in-out;
+}
+
+.rank-indicator-enter-active,
+.rank-indicator-leave-active {
+  transition: all 0.3s ease;
+}
+
+.rank-indicator-enter-from {
+  opacity: 0;
+  transform: scale(0) rotate(-180deg);
+}
+
+.rank-indicator-leave-to {
+  opacity: 0;
+  transform: scale(0) rotate(180deg);
+}
+</style>
+
+```
