@@ -59,10 +59,10 @@
       </div>
     </div>
 
-    <div v-else class="space-y-4">
+    <div v-if="filteredPageants.length > 0" class="space-y-4">
       <div
         v-for="pageant in filteredPageants"
-        :key="pageant.id"
+        :key="`pageant-${pageant.id}`"
         class="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all"
       >
         <div class="p-6">
