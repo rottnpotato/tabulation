@@ -192,6 +192,25 @@ const props = withDefaults(defineProps<Props>(), {
 // Track previous rankings for animation
 const previousRankMap = ref<Map<number, number>>(new Map())
 
+// Helper function to safely convert values to numbers
+const toNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined) {
+    return null
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.length === 0) {
+      return null
+    }
+    const parsed = Number(trimmed)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
 const rankedContestants = computed(() => {
   return [...props.contestants].sort((a, b) => {
     const aTotal = toNumber(a.totalScore) ?? 0
@@ -271,26 +290,8 @@ const getScoreClass = (score: number | null | undefined): string => {
   return 'text-slate-700'
 }
 
-const toNumber = (value: unknown): number | null => {
-  if (value === null || value === undefined) {
-    return null
-  }
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
-    if (trimmed.length === 0) {
-      return null
-    }
-    const parsed = Number(trimmed)
-    return Number.isFinite(parsed) ? parsed : null
-  }
-  return null
-}
-
-const formatScore = (score: unknown, decimals = 2, empty = '-'): string => {
-  const n = toNumber(score)
+const formatScore = (value: unknown, decimals = 2, empty = '-'): string => {
+  const n = toNumber(value)
   if (n === null) {
     return empty
   }
