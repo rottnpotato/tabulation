@@ -127,7 +127,7 @@
 
     <!-- Add/Edit Modal -->
     <TransitionRoot appear :show="ShowAddModal" as="template">
-      <Dialog as="div" @close="ShowAddModal = false" class="relative z-30">
+      <Dialog as="div" @close="closeAddModal" class="relative z-30">
         <TransitionChild
           enter="ease-out duration-300"
           enter-from="opacity-0"
@@ -158,7 +158,7 @@
                     {{ EditingContestant ? 'Update contestant information' : 'Add a new contestant to your pageant' }}
                   </p>
                   <button 
-                    @click="ShowAddModal = false" 
+                    @click="closeAddModal" 
                     class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <XCircle class="h-6 w-6" />
@@ -339,7 +339,7 @@
                   <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end space-x-3">
                     <button
                       type="button"
-                      @click="ShowAddModal = false"
+                      @click="closeAddModal"
                       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
                     >
                       Cancel
@@ -667,6 +667,17 @@ const HandleSubmit = async () => {
       
       const result = await response.json()
       if (result.success) {
+        // Close modal and reset form
+        ShowAddModal.value = false
+        EditingContestant.value = null
+        resetForm()
+        
+        // Show success message
+        successMessage.value = EditingContestant.value ? 'Contestant updated successfully!' : 'Contestant added successfully!'
+        setTimeout(() => {
+          successMessage.value = ''
+        }, 5000)
+        
         // Reload page to get updated data
         router.reload({ only: ['Contestants', 'PageantSummaries'] })
       }
@@ -694,6 +705,17 @@ const HandleSubmit = async () => {
       
       const result = await response.json()
       if (result.success) {
+        // Close modal and reset form
+        ShowAddModal.value = false
+        EditingContestant.value = null
+        resetForm()
+        
+        // Show success message
+        successMessage.value = 'Contestant added successfully!'
+        setTimeout(() => {
+          successMessage.value = ''
+        }, 5000)
+        
         // Reload page to get updated data
         router.reload({ only: ['Contestants', 'PageantSummaries'] })
       }
@@ -842,6 +864,10 @@ const setActivePhoto = (photo, index) => {
 }
 
 const openAddContestantModal = () => {
+  // Reset editing state and form
+  EditingContestant.value = null
+  resetForm()
+  
   // If no pageant is selected and there are pageants available, pre-select the first one
   if (!selectedPageant.value && props.PageantSummaries && props.PageantSummaries.length > 0) {
     selectedPageant.value = props.PageantSummaries[0].id
@@ -854,6 +880,15 @@ const openAddContestantModal = () => {
   }
   
   ShowAddModal.value = true
+}
+
+const closeAddModal = () => {
+  ShowAddModal.value = false
+  // Reset form state after modal closes
+  setTimeout(() => {
+    EditingContestant.value = null
+    resetForm()
+  }, 300) // Wait for transition to complete
 }
 
 const resetForm = () => {
