@@ -183,10 +183,14 @@ interface Props {
   contestants: Contestant[]
   rounds: Round[]
   isUpdating?: boolean
+  numberOfWinners?: number
+  showWinners?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isUpdating: false
+  isUpdating: false,
+  numberOfWinners: 3,
+  showWinners: false
 })
 
 // Track previous rankings for animation
@@ -252,6 +256,10 @@ const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down'
 }
 
 const getRankDisplay = (rank: number): string => {
+  if (props.showWinners && rank <= props.numberOfWinners) {
+    const winnerIcons = ['👑', '🥈', '🥉']
+    return winnerIcons[rank - 1] || '🏆'
+  }
   if (rank <= 3) {
     return ['👑', '🥈', '🥉'][rank - 1]
   }
@@ -260,6 +268,20 @@ const getRankDisplay = (rank: number): string => {
 
 const getRankBadgeClass = (rank: number, qualified?: boolean): string => {
   const isQualified = qualified !== false
+  const isWinner = props.showWinners && rank <= props.numberOfWinners
+  
+  if (isWinner) {
+    switch (rank) {
+      case 1:
+        return 'bg-yellow-100 text-yellow-900 border-2 border-yellow-400 shadow-lg ring-2 ring-yellow-200'
+      case 2:
+        return 'bg-gray-100 text-gray-800 border-2 border-gray-400 shadow-lg ring-2 ring-gray-200'
+      case 3:
+        return 'bg-orange-100 text-orange-800 border-2 border-orange-400 shadow-lg ring-2 ring-orange-200'
+      default:
+        return 'bg-teal-100 text-teal-800 border-2 border-teal-400 shadow-md ring-2 ring-teal-200'
+    }
+  }
   
   switch (rank) {
     case 1:

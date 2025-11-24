@@ -792,6 +792,78 @@ class Pageant extends Model
     }
 
     /**
+     * Check if the pageant has the required round structure (at least 1 semi-final and 1 final)
+     */
+    public function hasRequiredRounds(): bool
+    {
+        $hasSemiFinal = $this->rounds()->where('type', 'semi-final')->exists();
+        $hasFinal = $this->rounds()->where('type', 'final')->exists();
+
+        return $hasSemiFinal && $hasFinal;
+    }
+
+    /**
+     * Get validation errors for round structure
+     */
+    public function getRoundStructureErrors(): array
+    {
+        $errors = [];
+
+        $semiFinalCount = $this->rounds()->where('type', 'semi-final')->count();
+        $finalCount = $this->rounds()->where('type', 'final')->count();
+
+        if ($semiFinalCount === 0) {
+            $errors[] = 'At least one semi-final round is required.';
+        }
+
+        if ($finalCount === 0) {
+            $errors[] = 'At least one final round is required.';
+        }
+
+        // Check if semi-finals have top_n_proceed set
+        $semiFinalWithoutTopN = $this->rounds()
+            ->where('type', 'semi-final')
+            ->where(function ($query) {
+                $query->whereNull('top_n_proceed')
+                    ->orWhere('top_n_proceed', '<=', 0);
+            })
+            ->get();
+
+        foreach ($semiFinalWithoutTopN as $round) {
+            $errors[] = "Semi-final round '{$round->name}' must specify how many contestants advance (Top N).";
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Get the last final round (by display order) to determine winners
+     */
+    public function getLastFinalRound()
+    {
+        return $this->rounds()
+            ->where('type', 'final')
+            ->orderBy('display_order', 'desc')
+            ->first();
+    }
+
+    /**
+     * Get the number of winners based on the last final round's top_n_proceed
+     * Defaults to 3 if not specified
+     */
+    public function getNumberOfWinners(): int
+    {
+        $lastFinalRound = $this->getLastFinalRound();
+
+        if ($lastFinalRound && $lastFinalRound->top_n_proceed) {
+            return $lastFinalRound->top_n_proceed;
+        }
+
+        // Default to top 3 if not specified
+        return 3;
+    }
+
+    /**
      * Check if an organizer has conflicting pageants for a given date range
      *
      * @param  int  $organizerId  The organizer's user ID

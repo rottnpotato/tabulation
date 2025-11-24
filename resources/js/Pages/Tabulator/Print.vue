@@ -208,6 +208,7 @@
                           :judges="judges"
                           :report-title="reportTitle"
                           :is-male-category="true"
+                          :is-last-final-round="isLastFinalRound"
                         />
                       </div>
                       
@@ -225,6 +226,7 @@
                           :judges="judges"
                           :report-title="reportTitle"
                           :is-female-category="true"
+                          :is-last-final-round="isLastFinalRound"
                         />
                       </div>
                     </div>
@@ -273,6 +275,7 @@
                         :results="maleResults"
                         :judges="judges"
                         :report-title="`${reportTitle} - Male`"
+                        :is-last-final-round="isLastFinalRound"
                       />
                     </div>
                     
@@ -288,6 +291,7 @@
                         :results="femaleResults"
                         :judges="judges"
                         :report-title="`${reportTitle} - Female`"
+                        :is-last-final-round="isLastFinalRound"
                       />
                     </div>
                   </template>
@@ -299,6 +303,7 @@
                     :results="resultsToShow"
                     :judges="judges"
                     :report-title="reportTitle"
+                    :is-last-final-round="isLastFinalRound"
                   />
                 </div>
               </div>
@@ -342,6 +347,7 @@
               :judges="judges"
               :report-title="reportTitle"
               :is-male-category="true"
+              :is-last-final-round="isLastFinalRound"
             />
           </div>
           
@@ -359,6 +365,7 @@
               :judges="judges"
               :report-title="reportTitle"
               :is-female-category="true"
+              :is-last-final-round="isLastFinalRound"
             />
           </div>
         </div>
@@ -404,6 +411,7 @@
             :results="maleResults"
             :judges="judges"
             :report-title="`${reportTitle} - Male`"
+            :is-last-final-round="isLastFinalRound"
           />
         </div>
         
@@ -416,6 +424,7 @@
             :results="femaleResults"
             :judges="judges"
             :report-title="`${reportTitle} - Female`"
+            :is-last-final-round="isLastFinalRound"
           />
         </div>
       </template>
@@ -427,6 +436,7 @@
         :results="resultsToShow"
         :judges="judges"
         :report-title="reportTitle"
+        :is-last-final-round="isLastFinalRound"
       />
     </div>
   </div>
@@ -528,6 +538,10 @@ const femaleResults = computed(() => {
 })
 
 const reportTitle = computed(() => stageLabels[selectedStage.value])
+
+const isLastFinalRound = computed(() => {
+  return selectedStage.value === 'final' || selectedStage.value === 'final-top3'
+})
 
 const getPreviewWidth = () => {
   return paperSizes[selectedPaperSize.value].width

@@ -6,6 +6,9 @@
         <div class="flex items-center space-x-3">
           <History class="h-6 w-6 text-white" />
           <h3 class="text-lg font-semibold text-white">Score Edit History</h3>
+          <span v-if="pagination.total" class="text-sm text-teal-100">
+            ({{ pagination.total }} {{ pagination.total === 1 ? 'entry' : 'entries' }})
+          </span>
         </div>
         <button
           @click="refreshLogs"
@@ -15,6 +18,88 @@
           <RefreshCw :class="['h-4 w-4 mr-1.5', { 'animate-spin': loading }]" />
           Refresh
         </button>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <div class="flex items-center gap-2 mb-3">
+        <Filter class="h-4 w-4 text-gray-600" />
+        <span class="text-sm font-medium text-gray-700">Filters</span>
+        <button
+          v-if="hasActiveFilters"
+          @click="clearFilters"
+          class="ml-auto text-xs text-teal-600 hover:text-teal-700 font-medium"
+        >
+          Clear All
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Search -->
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Search</label>
+          <div class="relative">
+            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              v-model="filters.search"
+              type="text"
+              placeholder="Search in details..."
+              class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              @input="debouncedFetch"
+            />
+          </div>
+        </div>
+
+        <!-- Action Type -->
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Action Type</label>
+          <select
+            v-model="filters.action_type"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            @change="fetchLogs"
+          >
+            <option value="">All Actions</option>
+            <option value="SCORE_CREATED">Created</option>
+            <option value="SCORE_UPDATED">Updated</option>
+          </select>
+        </div>
+
+        <!-- User Filter -->
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">User</label>
+          <select
+            v-model="filters.user_id"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            @change="fetchLogs"
+          >
+            <option value="">All Users</option>
+            <option v-for="user in availableUsers" :key="user.id" :value="user.id">
+              {{ user.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Date Range -->
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Date From</label>
+          <input
+            v-model="filters.date_from"
+            type="date"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            @change="fetchLogs"
+          />
+        </div>
+
+        <div class="md:col-start-4">
+          <label class="block text-xs font-medium text-gray-700 mb-1">Date To</label>
+          <input
+            v-model="filters.date_to"
+            type="date"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            @change="fetchLogs"
+          />
+        </div>
       </div>
     </div>
 
@@ -94,19 +179,77 @@
       </div>
     </div>
 
-    <!-- Show More Button -->
-    <div v-if="logs.length >= 50" class="px-6 py-4 bg-gray-50 border-t border-gray-100 text-center">
-      <p class="text-sm text-gray-600">
-        Showing most recent 50 entries. 
-        <span class="text-teal-600 font-medium">Older entries are archived.</span>
-      </p>
+    <!-- Pagination -->
+    <div v-if="pagination.last_page > 1" class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+      <div class="flex items-center justify-between">
+        <div class="text-sm text-gray-700">
+          Showing 
+          <span class="font-medium">{{ pagination.from }}</span>
+          to 
+          <span class="font-medium">{{ pagination.to }}</span>
+          of 
+          <span class="font-medium">{{ pagination.total }}</span>
+          results
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <!-- Per Page Selector -->
+          <select
+            v-model="filters.per_page"
+            class="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            @change="fetchLogs"
+          >
+            <option :value="10">10 per page</option>
+            <option :value="20">20 per page</option>
+            <option :value="50">50 per page</option>
+            <option :value="100">100 per page</option>
+          </select>
+
+          <!-- Pagination Buttons -->
+          <div class="flex items-center gap-1">
+            <button
+              @click="goToPage(1)"
+              :disabled="pagination.current_page === 1"
+              class="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronsLeft class="h-4 w-4" />
+            </button>
+            <button
+              @click="goToPage(pagination.current_page - 1)"
+              :disabled="pagination.current_page === 1"
+              class="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft class="h-4 w-4" />
+            </button>
+            
+            <span class="px-4 py-1 text-sm font-medium text-gray-700">
+              Page {{ pagination.current_page }} of {{ pagination.last_page }}
+            </span>
+            
+            <button
+              @click="goToPage(pagination.current_page + 1)"
+              :disabled="pagination.current_page === pagination.last_page"
+              class="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight class="h-4 w-4" />
+            </button>
+            <button
+              @click="goToPage(pagination.last_page)"
+              :disabled="pagination.current_page === pagination.last_page"
+              class="px-3 py-1 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronsRight class="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { History, RefreshCw, FileText, Edit2, Plus, User, Clock } from 'lucide-vue-next'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { History, RefreshCw, FileText, Edit2, Plus, User, Clock, Filter, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 import { route } from 'ziggy-js'
 
 interface AuditLog {
@@ -132,6 +275,44 @@ const props = defineProps<Props>()
 const logs = ref<AuditLog[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+const availableUsers = ref<Array<{ id: number; name: string }>>([])
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  per_page: 20,
+  total: 0,
+  from: 0,
+  to: 0
+})
+
+const filters = ref({
+  search: '',
+  action_type: '',
+  user_id: '',
+  date_from: '',
+  date_to: '',
+  per_page: 20,
+  page: 1
+})
+
+const hasActiveFilters = computed(() => {
+  return filters.value.search !== '' ||
+    filters.value.action_type !== '' ||
+    filters.value.user_id !== '' ||
+    filters.value.date_from !== '' ||
+    filters.value.date_to !== ''
+})
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+const debouncedFetch = () => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+  debounceTimer = setTimeout(() => {
+    fetchLogs()
+  }, 500)
+}
 
 const fetchLogs = async () => {
   if (!props.pageantId || !props.roundId) {
@@ -142,18 +323,27 @@ const fetchLogs = async () => {
   error.value = null
 
   try {
-    const response = await fetch(
-      route('tabulator.scores.audit-logs', {
-        pageantId: props.pageantId,
-        roundId: props.roundId
-      }),
-      {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
-        }
+    // Build query parameters
+    const params = new URLSearchParams()
+    if (filters.value.search) params.append('search', filters.value.search)
+    if (filters.value.action_type) params.append('action_type', filters.value.action_type)
+    if (filters.value.user_id) params.append('user_id', filters.value.user_id.toString())
+    if (filters.value.date_from) params.append('date_from', filters.value.date_from)
+    if (filters.value.date_to) params.append('date_to', filters.value.date_to)
+    params.append('per_page', filters.value.per_page.toString())
+    params.append('page', filters.value.page.toString())
+
+    const url = route('tabulator.scores.audit-logs', {
+      pageantId: props.pageantId,
+      roundId: props.roundId
+    }) + '?' + params.toString()
+
+    const response = await fetch(url, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
       }
-    )
+    })
 
     if (!response.ok) {
       throw new Error('Failed to fetch audit logs')
@@ -161,6 +351,12 @@ const fetchLogs = async () => {
 
     const data = await response.json()
     logs.value = data.audit_logs || []
+    pagination.value = data.pagination || pagination.value
+    
+    // Update available users for filter (only on first load or when filters are cleared)
+    if (data.filters?.users) {
+      availableUsers.value = data.filters.users
+    }
   } catch (err) {
     console.error('Error fetching audit logs:', err)
     error.value = 'Failed to load audit logs'
@@ -170,7 +366,28 @@ const fetchLogs = async () => {
 }
 
 const refreshLogs = () => {
+  filters.value.page = 1
   fetchLogs()
+}
+
+const clearFilters = () => {
+  filters.value = {
+    search: '',
+    action_type: '',
+    user_id: '',
+    date_from: '',
+    date_to: '',
+    per_page: 20,
+    page: 1
+  }
+  fetchLogs()
+}
+
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= pagination.value.last_page) {
+    filters.value.page = page
+    fetchLogs()
+  }
 }
 
 // Watch for prop changes

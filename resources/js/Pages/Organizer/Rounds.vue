@@ -201,6 +201,26 @@
           />
         </div>
 
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Top N to Advance
+            <span v-if="roundForm.type === 'semi-final'" class="text-red-500">*</span>
+            <span v-if="roundForm.type === 'final'" class="text-xs text-gray-500">(defines winners)</span>
+          </label>
+          <input
+            v-model.number="roundForm.top_n_proceed"
+            type="number"
+            min="1"
+            placeholder="e.g., 10 for Top 10"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            :required="roundForm.type === 'semi-final'"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            <span v-if="roundForm.type === 'semi-final'">Required: Number of contestants advancing to the next round</span>
+            <span v-else-if="roundForm.type === 'final'">Optional: If set, defines official winners (e.g., Top 3). Leave empty to show all finalists.</span>
+          </p>
+        </div>
+
         <div class="flex justify-end space-x-3 pt-4">
           <button
             type="button"
@@ -372,6 +392,7 @@ interface Round {
   is_active: boolean
   criteria: Criteria[]
   criteria_count: number
+  top_n_proceed?: number
 }
 
 interface Pageant {
@@ -402,6 +423,7 @@ const roundForm = reactive({
   type: 'semi-final',
   weight: 100,
   display_order: 0,
+  top_n_proceed: null as number | null,
 })
 
 const criteriaForm = reactive({
@@ -433,6 +455,7 @@ const editRound = (round: Round) => {
   roundForm.type = round.type
   roundForm.weight = round.weight
   roundForm.display_order = round.display_order
+  roundForm.top_n_proceed = round.top_n_proceed || null
   showAddRoundModal.value = true
 }
 
@@ -479,6 +502,7 @@ const submitRound = async () => {
     type: roundForm.type,
     weight: roundForm.weight,
     display_order: roundForm.display_order,
+    top_n_proceed: roundForm.top_n_proceed,
   }, {
     onSuccess: () => {
       showAddRoundModal.value = false
@@ -564,6 +588,7 @@ const resetRoundForm = () => {
   roundForm.type = 'semi-final'
   roundForm.weight = 100
   roundForm.display_order = 0
+  roundForm.top_n_proceed = null
 }
 
 const resetCriteriaForm = () => {

@@ -252,4 +252,5 @@ Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulat
     Route::post('/{pageantId}/set-current-round', [TabulatorController::class, 'setCurrentRound'])->name('tabulator.set-current-round');
     Route::post('/{pageantId}/rounds/{roundId}/lock', [TabulatorController::class, 'lockRound'])->name('tabulator.rounds.lock');
     Route::post('/{pageantId}/rounds/{roundId}/unlock', [TabulatorController::class, 'unlockRound'])->name('tabulator.rounds.unlock');
+    Route::post('/{pageantId}/notify-judges', [TabulatorController::class, 'notifyJudges'])->name('tabulator.notify-judges');
 });

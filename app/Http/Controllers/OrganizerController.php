@@ -1964,7 +1964,6 @@ class OrganizerController extends Controller
             $pageant->update(['status' => $newStatus]);
         }
 
-
         // Log the action
         $logMessage = "Organizer {$organizer->name} changed pageant '{$pageant->name}' status from '{$oldStatus}' to '{$newStatus}'";
         if ($isDateElapsed && $newStatus === 'Completed') {
@@ -2080,12 +2079,22 @@ class OrganizerController extends Controller
                 $meetsJudgeRequirement = ! $pageant->required_judges ||
                     $pageant->judges()->count() >= $pageant->required_judges;
 
+                // Check round structure requirements
+                $hasRequiredRounds = $pageant->hasRequiredRounds();
+                $roundErrors = $pageant->getRoundStructureErrors();
+
                 if (! $hasContestants) {
                     $result['passed'] = false;
                     $result['message'] = 'Pageant must have at least one contestant';
                 } elseif (! $hasRounds) {
                     $result['passed'] = false;
                     $result['message'] = 'Pageant must have at least one round';
+                } elseif (! $hasRequiredRounds) {
+                    $result['passed'] = false;
+                    $result['message'] = 'Pageant must have at least one semi-final round and one final round. '.implode(' ', $roundErrors);
+                } elseif (! empty($roundErrors)) {
+                    $result['passed'] = false;
+                    $result['message'] = implode(' ', $roundErrors);
                 } elseif (! $hasCriteria) {
                     $result['passed'] = false;
                     $result['message'] = 'Rounds must have scoring criteria';

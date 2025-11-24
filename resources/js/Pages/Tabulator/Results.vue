@@ -82,7 +82,7 @@
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h3 class="text-lg font-bold text-slate-900">Results View</h3>
-                  <p class="text-sm text-slate-500">Filter results by round or stage</p>
+                  <p class="text-sm text-slate-500">Select a round or view overall results</p>
                 </div>
                 <div class="w-full sm:w-64">
                   <CustomSelect
@@ -93,18 +93,13 @@
                 </div>
               </div>
 
-              <div class="flex flex-wrap gap-2">
-                <button
-                  v-for="s in ['overall', 'semi-final', 'final', 'final-top3']"
-                  :key="s"
-                  @click="stage = s as typeof stage"
-                  class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border"
-                  :class="stage === s 
-                    ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-sm' 
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'"
-                >
-                  {{ s === 'final-top3' ? 'Top 3' : s.charAt(0).toUpperCase() + s.slice(1).replace('-', ' ') }}
-                </button>
+              <div v-if="currentRoundInfo" class="flex items-center gap-2 p-3 bg-teal-50 border border-teal-100 rounded-xl">
+                <div class="text-sm text-teal-700">
+                  <span class="font-semibold">{{ currentRoundInfo.name }}</span>
+                  <span v-if="currentRoundInfo.top_n_proceed" class="ml-2">
+                    • Top {{ currentRoundInfo.top_n_proceed }} advance
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -163,6 +158,8 @@
                   :contestants="maleContestants"
                   :rounds="displayedRounds"
                   :is-updating="isUpdating"
+                  :number-of-winners="pageant?.number_of_winners || 3"
+                  :show-winners="shouldShowWinners"
                 />
               </div>
             </div>
@@ -183,6 +180,8 @@
                   :contestants="femaleContestants"
                   :rounds="displayedRounds"
                   :is-updating="isUpdating"
+                  :number-of-winners="pageant?.number_of_winners || 3"
+                  :show-winners="shouldShowWinners"
                 />
               </div>
             </div>
@@ -199,6 +198,8 @@
                 :contestants="displayedContestants"
                 :rounds="displayedRounds"
                 :is-updating="isUpdating"
+                :number-of-winners="pageant?.number_of_winners || 3"
+                :show-winners="shouldShowWinners"
               />
             </div>
           </div>
@@ -237,6 +238,8 @@ interface Round {
   name: string
   type?: string
   weight: number
+  top_n_proceed?: number
+  display_order?: number
 }
 
 interface Contestant {
@@ -252,25 +255,29 @@ interface Contestant {
   gender?: string
 }
 
+interface RoundResult {
+  contestants: Contestant[]
+  top_n_proceed?: number
+}
+
 interface Pageant {
   id: number
   name: string
   contestant_type?: string
+  number_of_winners?: number
 }
 
 interface Props {
   pageant?: Pageant
   contestants: Contestant[]
-  contestantsSemiFinal: Contestant[]
-  contestantsFinal: Contestant[]
   rounds: Round[]
+  roundResults: Record<string, RoundResult>
 }
 
 const props = withDefaults(defineProps<Props>(), {
   contestants: () => [],
-  contestantsSemiFinal: () => [],
-  contestantsFinal: () => [],
-  rounds: () => []
+  rounds: () => [],
+  roundResults: () => ({})
 })
 
 // Track previous rankings for animation
@@ -278,7 +285,7 @@ const previousRankings = ref<Map<number, number>>(new Map())
 const isUpdating = ref(false)
 
 const activeRound = ref('overall')
-const stage = ref<'overall' | 'semi-final' | 'final' | 'final-top3'>('overall')
+const selectedRoundId = ref<number | null>(null)
 
 const roundOptions = computed(() => {
   const options = [
@@ -286,10 +293,13 @@ const roundOptions = computed(() => {
   ]
   
   if (props.rounds) {
-    props.rounds.forEach(round => {
+    props.rounds.forEach((round, index) => {
+      const label = round.top_n_proceed 
+        ? `${round.name} (Top ${round.top_n_proceed})` 
+        : round.name
       options.push({
         value: round.id.toString(),
-        label: round.name
+        label: label
       })
     })
   }
@@ -299,18 +309,16 @@ const roundOptions = computed(() => {
 
 const displayedContestants = computed(() => {
   let baseList: Contestant[] = []
-  switch (stage.value) {
-    case 'semi-final':
-      baseList = props.contestantsSemiFinal || []
-      break
-    case 'final':
-      baseList = props.contestantsFinal || []
-      break
-    case 'final-top3':
-      baseList = (props.contestantsFinal || []).slice(0, 3)
-      break
-    default:
-      baseList = props.contestants || []
+  
+  if (activeRound.value === 'overall') {
+    baseList = props.contestants || []
+  } else {
+    // Get contestants for the selected round
+    const roundKey = `round_${activeRound.value}`
+    const roundResult = props.roundResults[roundKey]
+    if (roundResult && roundResult.contestants) {
+      baseList = roundResult.contestants
+    }
   }
 
   // Sort by total score to determine current rankings
@@ -338,29 +346,29 @@ const isPairPageant = computed(() => {
 
 const maleContestants = computed(() => {
   if (!isPairPageant.value) return []
-  const males = displayedContestants.value.filter(c => c.gender === 'male')
-  // For final-top3 stage, limit to top 3
-  return stage.value === 'final-top3' ? males.slice(0, 3) : males
+  return displayedContestants.value.filter(c => c.gender === 'male')
 })
 
 const femaleContestants = computed(() => {
   if (!isPairPageant.value) return []
-  const females = displayedContestants.value.filter(c => c.gender === 'female')
-  // For final-top3 stage, limit to top 3
-  return stage.value === 'final-top3' ? females.slice(0, 3) : females
+  return displayedContestants.value.filter(c => c.gender === 'female')
+})
+
+const currentRoundInfo = computed(() => {
+  if (activeRound.value === 'overall') return null
+  const round = props.rounds.find(r => r.id.toString() === activeRound.value)
+  return round || null
 })
 
 const displayedRounds = computed(() => {
-  const rounds = props.rounds || []
-  switch (stage.value) {
-    case 'semi-final':
-      return rounds.filter(r => r.type === 'semi-final')
-    case 'final':
-    case 'final-top3':
-      return rounds.filter(r => r.type === 'final')
-    default:
-      return rounds
+  if (activeRound.value === 'overall') {
+    return props.rounds
   }
+  // Show only rounds up to and including the selected round
+  const selectedRound = props.rounds.find(r => r.id.toString() === activeRound.value)
+  if (!selectedRound) return props.rounds
+  
+  return props.rounds.filter(r => (r.display_order || 0) <= (selectedRound.display_order || 0))
 })
 
 const highestScore = computed(() => {
@@ -394,11 +402,41 @@ const averageScore = computed(() => {
 })
 
 const getResultsTitle = () => {
-  if (stage.value === 'semi-final') return 'Semi-Final Rankings'
-  if (stage.value === 'final') return 'Final Rankings'
-  if (stage.value === 'final-top3') return 'Top 3 (Final)'
-  return 'Overall Rankings'
+  if (activeRound.value === 'overall') return 'Overall Rankings'
+  const round = props.rounds.find(r => r.id.toString() === activeRound.value)
+  return round ? `${round.name} Rankings` : 'Rankings'
 }
+
+const isWinner = (contestant: Contestant) => {
+  // Only show winner status for final round or overall view
+  if (activeRound.value !== 'overall') {
+    const round = props.rounds.find(r => r.id.toString() === activeRound.value)
+    if (!round || round.type !== 'final') return false
+  }
+  
+  const numberOfWinners = props.pageant?.number_of_winners || 3
+  return contestant.rank && contestant.rank <= numberOfWinners
+}
+
+const getWinnerPosition = (rank: number) => {
+  const positions = ['1st', '2nd', '3rd']
+  return positions[rank - 1] || `${rank}th`
+}
+
+const shouldShowWinners = computed(() => {
+  // Show winners for overall view or when viewing the last final round
+  if (activeRound.value === 'overall') return true
+  
+  const selectedRound = props.rounds.find(r => r.id.toString() === activeRound.value)
+  if (!selectedRound) return false
+  
+  // Check if this is the last final round
+  const finalRounds = props.rounds.filter(r => r.type === 'final')
+  if (finalRounds.length === 0) return false
+  
+  const lastFinalRound = finalRounds.sort((a, b) => (b.display_order || 0) - (a.display_order || 0))[0]
+  return selectedRound.id === lastFinalRound.id
+})
 
 const refreshData = () => {
   router.reload()

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Round;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreRoundRequest extends FormRequest
 {
@@ -45,7 +47,11 @@ class StoreRoundRequest extends FormRequest
                     return $query->where('pageant_id', $pageantId);
                 }),
             ],
-            'top_n_proceed' => ['nullable', 'integer', 'min:1'],
+            'top_n_proceed' => [
+                $this->input('type') === 'semi-final' ? 'required' : 'nullable',
+                'integer',
+                'min:1',
+            ],
         ];
     }
 
@@ -70,7 +76,40 @@ class StoreRoundRequest extends FormRequest
             'display_order.required' => 'The display order is required.',
             'display_order.min' => 'The display order cannot be negative.',
             'display_order.unique' => 'This display order is already in use by another round in this pageant.',
+            'top_n_proceed.required' => 'Semi-final rounds must specify how many contestants advance to the next round.',
             'top_n_proceed.min' => 'At least 1 contestant must proceed.',
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $pageantId = $this->route('pageantId');
+
+            // Get existing rounds for this pageant
+            $existingRounds = Round::where('pageant_id', $pageantId)->pluck('type');
+
+            // Add the new round type to simulate the state after creation
+            $allRoundTypes = $existingRounds->push($this->input('type'));
+
+            // Check for at least one semi-final
+            if (! $allRoundTypes->contains('semi-final')) {
+                $validator->errors()->add(
+                    'type',
+                    'The pageant must have at least one semi-final round.'
+                );
+            }
+
+            // Check for at least one final
+            if (! $allRoundTypes->contains('final')) {
+                $validator->errors()->add(
+                    'type',
+                    'The pageant must have at least one final round.'
+                );
+            }
+        });
     }
 }

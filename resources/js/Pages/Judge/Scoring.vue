@@ -595,17 +595,47 @@ const submitScores = async (contestantId, autoAdvance = true) => {
 // Real-time updates
 onMounted(() => {
   if (props.pageant) {
+    const judgeId = props.pageant.judge_id || window.Laravel?.user?.id
+    
     pageantChannel = window.Echo.private(`pageant.${props.pageant.id}`)
       .subscribed(() => { isChannelReady.value = true })
       .listen('RoundUpdated', (e) => { handleRoundUpdate(e) })
+    
+    // Listen for judge-specific notifications
+    if (judgeId) {
+      window.Echo.private(`judge.${judgeId}`)
+        .listen('JudgeNotified', (e) => { handleJudgeNotification(e) })
+    }
   }
 })
 
 onUnmounted(() => {
   if (props.pageant) {
     window.Echo.leave(`pageant.${props.pageant.id}`)
+    const judgeId = props.pageant.judge_id || window.Laravel?.user?.id
+    if (judgeId) {
+      window.Echo.leave(`judge.${judgeId}`)
+    }
   }
 })
+
+const handleJudgeNotification = (event) => {
+  const { title, message, round_name, action } = event
+  if (!notificationSystem.value) return
+
+  // Show notification with appropriate styling
+  if (action === 'score_request') {
+    notificationSystem.value.info(message, {
+      title: title || 'Notification',
+      timeout: 8000
+    })
+  } else {
+    notificationSystem.value.success(message, {
+      title: title || 'Notification',
+      timeout: 8000
+    })
+  }
+}
 
 const handleRoundUpdate = (event) => {
   const { action, round_name, is_current } = event

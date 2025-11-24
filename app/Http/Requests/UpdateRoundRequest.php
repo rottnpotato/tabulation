@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Round;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateRoundRequest extends FormRequest
 {
@@ -46,7 +48,11 @@ class UpdateRoundRequest extends FormRequest
                     return $query->where('pageant_id', $pageantId);
                 })->ignore($roundId),
             ],
-            'top_n_proceed' => ['nullable', 'integer', 'min:1'],
+            'top_n_proceed' => [
+                $this->input('type') === 'semi-final' ? 'required' : 'nullable',
+                'integer',
+                'min:1',
+            ],
         ];
     }
 
@@ -60,13 +66,52 @@ class UpdateRoundRequest extends FormRequest
         return [
             'name.required' => 'The round name is required.',
             'name.max' => 'The round name must not exceed 255 characters.',
+            'type.required' => 'The round type is required.',
             'type.max' => 'The round type must not exceed 100 characters.',
             'identifier.unique' => 'This identifier is already used for another round.',
+            'weight.required' => 'The weight is required.',
             'weight.min' => 'The weight must be at least 1.',
             'weight.max' => 'The weight cannot exceed 100.',
+            'display_order.required' => 'The display order is required.',
             'display_order.min' => 'The display order cannot be negative.',
             'display_order.unique' => 'This display order is already in use by another round in this pageant.',
+            'top_n_proceed.required' => 'Semi-final rounds must specify how many contestants advance to the next round.',
             'top_n_proceed.min' => 'At least 1 contestant must proceed.',
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $pageantId = $this->route('pageantId');
+            $roundId = $this->route('roundId');
+
+            // Get existing rounds for this pageant excluding the one being updated
+            $existingRounds = Round::where('pageant_id', $pageantId)
+                ->where('id', '!=', $roundId)
+                ->pluck('type');
+
+            // Add the updated round type to simulate the state after update
+            $allRoundTypes = $existingRounds->push($this->input('type'));
+
+            // Check for at least one semi-final
+            if (! $allRoundTypes->contains('semi-final')) {
+                $validator->errors()->add(
+                    'type',
+                    'The pageant must have at least one semi-final round.'
+                );
+            }
+
+            // Check for at least one final
+            if (! $allRoundTypes->contains('final')) {
+                $validator->errors()->add(
+                    'type',
+                    'The pageant must have at least one final round.'
+                );
+            }
+        });
     }
 }

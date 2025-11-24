@@ -245,7 +245,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { 
   Calendar, 
@@ -261,6 +261,7 @@ import {
   Target
 } from 'lucide-vue-next'
 import JudgeLayout from '../../Layouts/JudgeLayout.vue'
+import NotificationSystem from '../../Components/NotificationSystem.vue'
 
 defineOptions({
   layout: JudgeLayout
@@ -282,6 +283,38 @@ const searchQuery = ref('')
 const statusFilter = ref('all')
 const sortKey = ref('date') // 'date' | 'progress' | 'name'
 const sortDir = ref('desc') // 'asc' | 'desc'
+const notificationSystem = ref(null)
+
+// Listen for judge notifications
+onMounted(() => {
+  const judgeId = props.judge?.id || window.Laravel?.user?.id
+  if (judgeId) {
+    window.Echo.private(`judge.${judgeId}`)
+      .listen('JudgeNotified', (e) => {
+        if (notificationSystem.value) {
+          const { title, message, action } = e
+          if (action === 'score_request') {
+            notificationSystem.value.info(message, {
+              title: title || 'Notification',
+              timeout: 8000
+            })
+          } else {
+            notificationSystem.value.success(message, {
+              title: title || 'Notification',
+              timeout: 8000
+            })
+          }
+        }
+      })
+  }
+})
+
+onUnmounted(() => {
+  const judgeId = props.judge?.id || window.Laravel?.user?.id
+  if (judgeId) {
+    window.Echo.leave(`judge.${judgeId}`)
+  }
+})
 
 const refreshData = () => {
   router.reload()
@@ -436,3 +469,6 @@ const formatScoringSystem = (system) => {
   overflow: hidden;
 }
 </style>
+
+<!-- Notification System -->
+<NotificationSystem ref="notificationSystem" />

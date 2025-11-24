@@ -16,7 +16,7 @@
     </div>
 
     <!-- Top Winners Summary - Side by Side for Gender Split (Vertical stacked) -->
-    <div v-if="isMaleCategory || isFemaleCategory" class="mb-6">
+    <div v-if="(isMaleCategory || isFemaleCategory) && shouldShowPodium" class="mb-6">
       <div v-if="topThree.length > 0" class="space-y-2">
         <!-- First Place -->
         <div v-if="topThree[0]" class="text-center">
@@ -58,7 +58,7 @@
     </div>
 
     <!-- Top Winners Summary - Traditional Layout for Non-Split -->
-    <div v-else-if="topThree.length > 0" class="mb-8">
+    <div v-else-if="shouldShowPodium && topThree.length > 0" class="mb-8">
       <div class="grid grid-cols-3 gap-4 items-end">
         <!-- Second Place -->
         <div v-if="topThree[1]" class="text-center pb-4">
@@ -213,12 +213,23 @@ interface Props {
   reportTitle?: string
   isMaleCategory?: boolean
   isFemaleCategory?: boolean
+  isLastFinalRound?: boolean
 }
 
 const props = defineProps<Props>()
 
 const topThree = computed(() => {
+  // For last final round, only show top 3 in the summary podium
+  if (props.isLastFinalRound) {
+    return props.results.slice(0, 3)
+  }
+  // For other rounds, show all results (no special podium display)
   return props.results.slice(0, 3)
+})
+
+const shouldShowPodium = computed(() => {
+  // Only show the podium display for last final round with results
+  return props.isLastFinalRound && props.results.length > 0
 })
 
 const isPairCategory = computed(() => {
@@ -226,12 +237,47 @@ const isPairCategory = computed(() => {
 })
 
 const getTitle = (result: Result): string => {
-  if (result.is_pair && result.member_genders && result.member_genders.length > 0) {
-    return result.member_genders.map(g => g === 'male' ? 'Mr' : 'Miss').join(' & ')
+  // For last final round, show special titles
+  if (props.isLastFinalRound) {
+    const resultIndex = props.results.findIndex(r => r.id === result.id)
+    
+    if (resultIndex === 0) {
+      // Winner - show Mr/Miss [Pageant Name]
+      if (result.is_pair && result.member_genders && result.member_genders.length > 0) {
+        return result.member_genders.map(g => (g === 'male' ? 'Mr' : 'Miss') + ' ' + props.pageant.name).join(' & ')
+      }
+      if (result.gender === 'male') return `Mr ${props.pageant.name}`
+      if (result.gender === 'female') return `Miss ${props.pageant.name}`
+      return `Winner ${props.pageant.name}`
+    } else {
+      // Runner-ups with proper ordinal suffixes
+      const position = resultIndex
+      const ordinal = getOrdinalSuffix(position)
+      return `${ordinal} Runner-up`
+    }
   }
-  if (result.gender === 'male') return 'Mr'
-  if (result.gender === 'female') return 'Miss'
-  return ''
+  
+  // For other rounds, show Top X
+  const resultIndex = props.results.findIndex(r => r.id === result.id)
+  if (result.is_pair && result.member_genders && result.member_genders.length > 0) {
+    return `Top ${resultIndex + 1}`
+  }
+  return `Top ${resultIndex + 1}`
+}
+
+const getOrdinalSuffix = (num: number): string => {
+  const j = num % 10
+  const k = num % 100
+  if (j === 1 && k !== 11) {
+    return num + 'st'
+  }
+  if (j === 2 && k !== 12) {
+    return num + 'nd'
+  }
+  if (j === 3 && k !== 13) {
+    return num + 'rd'
+  }
+  return num + 'th'
 }
 
 const getScoreHeaders = () => {
