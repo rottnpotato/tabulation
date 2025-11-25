@@ -246,8 +246,9 @@ class AdminController extends Controller
     // Pageant methods
     public function createPageant()
     {
-        // Get all organizers for assigning to the pageant with their pageants
+        // Get only verified organizers for assigning to the pageant with their pageants
         $organizers = User::where('role', 'organizer')
+            ->where('is_verified', true)
             ->with(['pageants' => function ($query) {
                 $query->whereNotNull('start_date')
                     ->whereNotNull('end_date')
@@ -299,13 +300,20 @@ class AdminController extends Controller
             if (isset($validated['organizer_ids']) && $validated['start_date'] && $validated['end_date']) {
                 $conflicts = [];
                 foreach ($validated['organizer_ids'] as $organizerId) {
+                    // First check if organizer is verified
+                    $organizer = User::find($organizerId);
+                    if ($organizer && ! $organizer->is_verified) {
+                        return back()
+                            ->withInput()
+                            ->withErrors(['organizer_ids' => "Organizer '{$organizer->name}' has not verified their email yet and cannot be assigned to pageants."]);
+                    }
+
                     $conflict = Pageant::getOrganizerConflict(
                         $organizerId,
                         $validated['start_date'],
                         $validated['end_date']
                     );
                     if ($conflict) {
-                        $organizer = User::find($organizerId);
                         $conflicts[] = "{$organizer->name} is already assigned to '{$conflict['pageant_name']}' ({$conflict['start_date']} - {$conflict['end_date']})";
                     }
                 }
@@ -412,8 +420,10 @@ class AdminController extends Controller
             },
         ])->findOrFail($id);
 
-        // Get all organizers for reassignment
-        $allOrganizers = User::where('role', 'organizer')->get();
+        // Get only verified organizers for reassignment
+        $allOrganizers = User::where('role', 'organizer')
+            ->where('is_verified', true)
+            ->get();
 
         // Get pageant details data from the model
         $pageantData = $pageant->getPageantDetailsData();
@@ -491,6 +501,18 @@ class AdminController extends Controller
         // Only allow editing of setup/draft pageants
         if (! $pageant->isDraft() && ! $pageant->isSetup()) {
             return back()->with('error', 'Only pageants in Draft or Setup status can be edited.');
+        }
+
+        // Validate that organizers are verified if provided
+        if (isset($validated['organizer_ids'])) {
+            foreach ($validated['organizer_ids'] as $organizerId) {
+                $organizer = User::find($organizerId);
+                if ($organizer && ! $organizer->is_verified) {
+                    return back()
+                        ->withInput()
+                        ->withErrors(['organizer_ids' => "Organizer '{$organizer->name}' has not verified their email yet and cannot be assigned to pageants."]);
+                }
+            }
         }
 
         $pageant->update([
@@ -632,8 +654,10 @@ class AdminController extends Controller
             },
         ])->findOrFail($id);
 
-        // Get all organizers for reassignment
-        $allOrganizers = User::where('role', 'organizer')->get();
+        // Get only verified organizers for reassignment
+        $allOrganizers = User::where('role', 'organizer')
+            ->where('is_verified', true)
+            ->get();
 
         // Get pageant details data from the model
         $pageantData = $pageant->getPageantDetailsData();

@@ -85,33 +85,8 @@ class UpdateRoundRequest extends FormRequest
      */
     public function withValidator(Validator $validator): void
     {
-        $validator->after(function (Validator $validator) {
-            $pageantId = $this->route('pageantId');
-            $roundId = $this->route('roundId');
-
-            // Get existing rounds for this pageant excluding the one being updated
-            $existingRounds = Round::where('pageant_id', $pageantId)
-                ->where('id', '!=', $roundId)
-                ->pluck('type');
-
-            // Add the updated round type to simulate the state after update
-            $allRoundTypes = $existingRounds->push($this->input('type'));
-
-            // Check for at least one semi-final
-            if (! $allRoundTypes->contains('semi-final')) {
-                $validator->errors()->add(
-                    'type',
-                    'The pageant must have at least one semi-final round.'
-                );
-            }
-
-            // Check for at least one final
-            if (! $allRoundTypes->contains('final')) {
-                $validator->errors()->add(
-                    'type',
-                    'The pageant must have at least one final round.'
-                );
-            }
-        });
+        // No strict validation for round types
+        // The application should allow flexible round creation
+        // Organizers can create rounds in any order they prefer
     }
 }

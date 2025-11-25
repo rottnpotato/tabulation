@@ -704,13 +704,8 @@ const getConflictDetails = (organizerId) => {
 
 // Handle newly created organizer
 const handleOrganizerCreated = (organizer) => {
-  // Add the new organizer to the list
-  if (!props.organizers) {
-    props.organizers = [];
-  }
-  props.organizers.push(organizer);
-  
-  // Select the newly created organizer
-  form.organizer_ids.push(organizer.id);
+  // Don't add the new organizer to the list since they need to verify their email first
+  // Show a message to the admin explaining this
+  notify.success(`Organizer "${organizer.name}" created successfully! They will appear in the list once they verify their email and set their password.`);
 };
 </script> 

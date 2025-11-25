@@ -1385,7 +1385,24 @@ class OrganizerController extends Controller
             "Created round: {$round->name}"
         );
 
-        return back()->with('success', 'Round created successfully');
+        // Check for missing round types and add warnings
+        $allRoundTypes = Round::where('pageant_id', $pageantId)->pluck('type');
+        $warnings = [];
+
+        if (! $allRoundTypes->contains('semi-final')) {
+            $warnings[] = 'Remember to add a semi-final round to your pageant.';
+        }
+
+        if (! $allRoundTypes->contains('final')) {
+            $warnings[] = 'Remember to add a final round to your pageant.';
+        }
+
+        $message = 'Round created successfully';
+        if (! empty($warnings)) {
+            $message .= ' '.implode(' ', $warnings);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -1429,7 +1446,24 @@ class OrganizerController extends Controller
             "Updated round: {$round->name}"
         );
 
-        return back()->with('success', 'Round updated successfully');
+        // Check for missing round types and add warnings
+        $allRoundTypes = Round::where('pageant_id', $pageantId)->pluck('type');
+        $warnings = [];
+
+        if (! $allRoundTypes->contains('semi-final')) {
+            $warnings[] = 'Remember to add a semi-final round to your pageant.';
+        }
+
+        if (! $allRoundTypes->contains('final')) {
+            $warnings[] = 'Remember to add a final round to your pageant.';
+        }
+
+        $message = 'Round updated successfully';
+        if (! empty($warnings)) {
+            $message .= ' '.implode(' ', $warnings);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -1463,7 +1497,24 @@ class OrganizerController extends Controller
             "Deleted round: {$roundName}"
         );
 
-        return back()->with('success', 'Round deleted successfully');
+        // Check for missing round types and add warnings after deletion
+        $allRoundTypes = Round::where('pageant_id', $pageantId)->pluck('type');
+        $warnings = [];
+
+        if (! $allRoundTypes->contains('semi-final')) {
+            $warnings[] = 'Remember to add a semi-final round to your pageant.';
+        }
+
+        if (! $allRoundTypes->contains('final')) {
+            $warnings[] = 'Remember to add a final round to your pageant.';
+        }
+
+        $message = 'Round deleted successfully';
+        if (! empty($warnings)) {
+            $message .= ' '.implode(' ', $warnings);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
