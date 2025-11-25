@@ -209,8 +209,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { Printer, Trophy, Award } from 'lucide-vue-next'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
@@ -287,6 +287,48 @@ const getTitle = (winner: WinnerInfo): string => {
   if (winner.gender === 'female') return 'Miss'
   return ''
 }
+
+// WebSocket handling for real-time updates
+let echoChannel: any = null
+
+onMounted(() => {
+  if (!props.pageant) {
+    console.log('⚠️ No pageant selected, skipping WebSocket subscription')
+    return
+  }
+
+  if (typeof window === 'undefined' || !window.Echo) {
+    console.error('❌ Laravel Echo not available')
+    return
+  }
+
+  const channelName = `pageant.${props.pageant.id}`
+  console.log('🔌 MinorAwards page subscribing to channel:', channelName)
+
+  // Subscribe to the pageant channel for real-time updates
+  echoChannel = window.Echo.private(channelName)
+    .listen('ScoreUpdated', (e: any) => {
+      console.log('🔔 ScoreUpdated event received on MinorAwards:', e)
+      // Refresh awards when scores are updated
+      router.reload({ only: ['awardsByRound'] })
+    })
+    .listen('RankingsUpdated', (e: any) => {
+      console.log('🏆 RankingsUpdated event received on MinorAwards:', e)
+      // Refresh awards when rankings change
+      router.reload({ only: ['awardsByRound'] })
+    })
+  
+  console.log('✅ Successfully subscribed to minor awards updates')
+})
+
+onUnmounted(() => {
+  if (echoChannel && props.pageant) {
+    const channelName = `pageant.${props.pageant.id}`
+    console.log('🔌 Unsubscribing from channel:', channelName)
+    window.Echo.leave(channelName)
+    echoChannel = null
+  }
+})
 </script>
 
 <style scoped>

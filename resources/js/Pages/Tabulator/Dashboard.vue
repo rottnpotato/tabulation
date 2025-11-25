@@ -345,7 +345,8 @@
 </template>
 
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
+import { onMounted, onUnmounted } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { 
   Users, 
@@ -404,7 +405,49 @@ interface Props {
   recentActivity?: RecentActivity[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
+// WebSocket handling for real-time updates
+let echoChannel: any = null
+
+onMounted(() => {
+  if (!props.pageant) {
+    console.log('⚠️ No specific pageant selected, skipping WebSocket subscription')
+    return
+  }
+
+  if (typeof window === 'undefined' || !window.Echo) {
+    console.error('❌ Laravel Echo not available')
+    return
+  }
+
+  const channelName = `pageant.${props.pageant.id}`
+  console.log('🔌 Tabulator Dashboard subscribing to channel:', channelName)
+
+  // Subscribe to the pageant channel for real-time updates
+  echoChannel = window.Echo.private(channelName)
+    .listen('ScoreUpdated', (e: any) => {
+      console.log('🔔 ScoreUpdated event received on Dashboard:', e)
+      // Refresh summary statistics and recent activity
+      router.reload({ only: ['summary', 'recentActivity'] })
+    })
+    .listen('RoundUpdated', (e: any) => {
+      console.log('🔔 RoundUpdated event received on Dashboard:', e)
+      // Refresh pageant info if current round changed
+      router.reload({ only: ['pageant', 'summary'] })
+    })
+  
+  console.log('✅ Successfully subscribed to dashboard updates')
+})
+
+onUnmounted(() => {
+  if (echoChannel && props.pageant) {
+    const channelName = `pageant.${props.pageant.id}`
+    console.log('🔌 Unsubscribing from channel:', channelName)
+    window.Echo.leave(channelName)
+    echoChannel = null
+  }
+})
 </script>
 
 <style scoped>

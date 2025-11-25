@@ -452,7 +452,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { router, Link, useForm } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { 
@@ -584,6 +584,43 @@ const createJudge = () => {
     }
   })
 }
+
+// WebSocket handling for real-time updates
+let echoChannel: any = null
+
+onMounted(() => {
+  if (!props.pageant) {
+    console.log('⚠️ No pageant selected, skipping WebSocket subscription')
+    return
+  }
+
+  if (typeof window === 'undefined' || !window.Echo) {
+    console.error('❌ Laravel Echo not available')
+    return
+  }
+
+  const channelName = `pageant.${props.pageant.id}`
+  console.log('🔌 Judges page subscribing to channel:', channelName)
+
+  // Subscribe to the pageant channel for real-time updates
+  echoChannel = window.Echo.private(channelName)
+    .listen('ScoreUpdated', (e: any) => {
+      console.log('🔔 ScoreUpdated event received on Judges page:', e)
+      // Refresh judges list to update score counts
+      router.reload({ only: ['judges'] })
+    })
+  
+  console.log('✅ Successfully subscribed to judge updates')
+})
+
+onUnmounted(() => {
+  if (echoChannel && props.pageant) {
+    const channelName = `pageant.${props.pageant.id}`
+    console.log('🔌 Unsubscribing from channel:', channelName)
+    window.Echo.leave(channelName)
+    echoChannel = null
+  }
+})
 </script>
 
 <style scoped>
