@@ -531,6 +531,11 @@ const stageLabels = computed<Record<string, string>>(() => {
     labels[roundType.key] = roundType.label
   })
   
+  // If there's a 'final' type, also add a 'final-top3' option
+  if (labels['final']) {
+    labels['final-top3'] = 'Final - Top ' + (props.pageant?.number_of_winners || 3)
+  }
+  
   return labels
 })
 

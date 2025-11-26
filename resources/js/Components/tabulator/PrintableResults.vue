@@ -15,8 +15,8 @@
       </div>
     </div>
 
-    <!-- Top Winners Summary - Side by Side for Gender Split (Vertical stacked) -->
-    <div v-if="(isMaleCategory || isFemaleCategory) && shouldShowPodium" class="mb-6">
+    <!-- Top Winners Summary - Side by Side for Gender Split (Vertical stacked) - HIDE PODIUM FOR GENDER SPLITS -->
+    <div v-if="false" class="mb-6">
       <div v-if="topThree.length > 0" class="space-y-2">
         <!-- First Place -->
         <div v-if="topThree[0]" class="text-center">
@@ -24,8 +24,8 @@
           <div class="border-3 border-yellow-600 p-3 rounded bg-yellow-50">
             <div class="text-xl font-bold">#{{ topThree[0].number }}</div>
             <div class="text-sm font-bold">{{ getTitle(topThree[0]) }} {{ capitalizeName(topThree[0].name) }}</div>
-            <div v-if="topThree[0].is_pair && topThree[0].member_names" class="text-[10px] text-gray-700 italic mt-0.5">
-              {{ topThree[0].member_names.map(n => capitalizeName(n)).join(' & ') }}
+            <div v-if="topThree[0]?.is_pair && topThree[0]?.member_names && topThree[0]?.member_names!.length > 0" class="text-[10px] text-gray-700 italic mt-0.5">
+              {{ topThree[0].member_names?.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-xs font-bold text-yellow-800 mt-1">{{ formatScore(topThree[0].final_score) }} pts</div>
           </div>
@@ -36,8 +36,8 @@
           <div class="border-2 border-gray-400 p-2 rounded bg-gray-50">
             <div class="text-base font-bold">#{{ topThree[1].number }}</div>
             <div class="text-xs font-bold">{{ getTitle(topThree[1]) }} {{ capitalizeName(topThree[1].name) }}</div>
-            <div v-if="topThree[1].is_pair && topThree[1].member_names" class="text-[9px] text-gray-600 italic">
-              {{ topThree[1].member_names.map(n => capitalizeName(n)).join(' & ') }}
+            <div v-if="topThree[1]?.is_pair && topThree[1]?.member_names && topThree[1].member_names!.length > 0" class="text-[9px] text-gray-600 italic">
+              {{ topThree[1].member_names?.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-[10px] text-gray-700">{{ formatScore(topThree[1].final_score) }} pts</div>
           </div>
@@ -48,8 +48,8 @@
           <div class="border-2 border-gray-400 p-2 rounded bg-gray-50">
             <div class="text-base font-bold">#{{ topThree[2].number }}</div>
             <div class="text-xs font-bold">{{ getTitle(topThree[2]) }} {{ capitalizeName(topThree[2].name) }}</div>
-            <div v-if="topThree[2].is_pair && topThree[2].member_names" class="text-[9px] text-gray-600 italic">
-              {{ topThree[2].member_names.map(n => capitalizeName(n)).join(' & ') }}
+            <div v-if="topThree[2]?.is_pair && topThree[2]?.member_names && topThree[2]?.member_names!.length > 0" class="text-[9px] text-gray-600 italic">
+              {{ topThree[2].member_names?.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-[10px] text-gray-700">{{ formatScore(topThree[2].final_score) }} pts</div>
           </div>
@@ -57,8 +57,8 @@
       </div>
     </div>
 
-    <!-- Top Winners Summary - Traditional Layout for Non-Split -->
-    <div v-else-if="shouldShowPodium && topThree.length > 0" class="mb-8">
+    <!-- Top Winners Summary - Traditional Layout for Non-Split (Solo Pageants Only) -->
+    <div v-if="shouldShowPodium && !isMaleCategory && !isFemaleCategory && topThree.length > 0" class="mb-8">
       <div class="grid grid-cols-3 gap-4 items-end">
         <!-- Second Place -->
         <div v-if="topThree[1]" class="text-center pb-4">
@@ -78,7 +78,8 @@
           <div class="text-base font-bold uppercase text-black mb-2">🏆 Winner</div>
           <div class="border-4 border-yellow-600 p-5 rounded bg-yellow-50 shadow-lg">
             <div class="text-3xl font-bold mb-2">#{{ topThree[0].number }}</div>
-            <div class="text-lg font-bold mb-1">{{ getTitle(topThree[0]) }} {{ capitalizeName(topThree[0].name) }}</div>
+            <div class="text-lg font-bold mb-1">{{ getTitle(topThree[0]) }}</div>
+            <div class="text-sm text-gray-600 mb-1">{{ capitalizeName(topThree[0].name) }}</div>
             <div v-if="topThree[0].is_pair && topThree[0].member_names && topThree[0].member_names.length > 0" class="text-sm text-gray-700 italic mb-2">
               {{ topThree[0].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
@@ -126,8 +127,8 @@
               {{ result.number }}
             </td>
             <td class="py-1 px-2">
-              <div class="font-semibold">{{ getTitle(result) }} {{ capitalizeName(result.name) }}</div>
-              <div v-if="result.is_pair && result.member_names" class="text-[8px] text-gray-500">
+              <div class="font-semibold">{{ capitalizeName(result.name) }}</div>
+              <div v-if="result.is_pair && result.member_names && result.member_names.length > 0" class="text-[8px] text-gray-500">
                 {{ result.member_names.map(n => capitalizeName(n)).join(' & ') }}
               </div>
             </td>
