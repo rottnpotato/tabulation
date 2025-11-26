@@ -755,6 +755,19 @@ class TabulatorController extends Controller
             ];
         });
 
+        // Get unique round types from pageant
+        $roundTypes = $pageant->rounds
+            ->sortBy('display_order')
+            ->map(function ($round) {
+                return [
+                    'key' => $round->type,
+                    'label' => $round->name,
+                    'display_order' => $round->display_order,
+                ];
+            })
+            ->unique('key')
+            ->values();
+
         return Inertia::render('Tabulator/Print', [
             'pageant' => [
                 'id' => $pageant->id,
@@ -764,6 +777,7 @@ class TabulatorController extends Controller
                 'venue' => $pageant->venue,
                 'location' => $pageant->location,
             ],
+            'roundTypes' => $roundTypes,
             'resultsOverall' => $overallResults,
             'resultsSemiFinal' => $semiResults,
             'resultsFinal' => $finalResults,

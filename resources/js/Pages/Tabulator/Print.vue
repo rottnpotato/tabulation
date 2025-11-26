@@ -108,14 +108,14 @@
                     >
                       <div class="p-1">
                         <button
-                          v-for="(label, key) in stageLabels"
+                          v-for="[key, label] in Object.entries(stageLabels)"
                           :key="key"
-                          @click="selectedStage = key as StageKey; showStageDropdown = false"
-                          class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm rounded-lg transition-colors"
+                          @click="selectedStage = key; showStageDropdown = false"
+                          class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all cursor-pointer"
                           :class="selectedStage === key ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'"
                         >
                           <span class="w-1.5 h-1.5 rounded-full" :class="selectedStage === key ? 'bg-teal-500' : 'bg-slate-300'"></span>
-                          {{ label }}
+                          <span>{{ label }}</span>
                         </button>
                       </div>
                     </div>
@@ -209,6 +209,7 @@
                           :report-title="reportTitle"
                           :is-male-category="true"
                           :is-last-final-round="isLastFinalRound"
+                          :number-of-winners="pageant?.number_of_winners || 3"
                         />
                       </div>
                       
@@ -227,6 +228,7 @@
                           :report-title="reportTitle"
                           :is-female-category="true"
                           :is-last-final-round="isLastFinalRound"
+                          :number-of-winners="pageant?.number_of_winners || 3"
                         />
                       </div>
                     </div>
@@ -276,6 +278,7 @@
                         :judges="judges"
                         :report-title="`${reportTitle} - Male`"
                         :is-last-final-round="isLastFinalRound"
+                        :number-of-winners="pageant?.number_of_winners || 3"
                       />
                     </div>
                     
@@ -292,6 +295,7 @@
                         :judges="judges"
                         :report-title="`${reportTitle} - Female`"
                         :is-last-final-round="isLastFinalRound"
+                        :number-of-winners="pageant?.number_of_winners || 3"
                       />
                     </div>
                   </template>
@@ -304,6 +308,7 @@
                     :judges="judges"
                     :report-title="reportTitle"
                     :is-last-final-round="isLastFinalRound"
+                    :number-of-winners="pageant?.number_of_winners || 3"
                   />
                 </div>
               </div>
@@ -348,6 +353,7 @@
               :report-title="reportTitle"
               :is-male-category="true"
               :is-last-final-round="isLastFinalRound"
+              :number-of-winners="pageant?.number_of_winners || 3"
             />
           </div>
           
@@ -366,6 +372,7 @@
               :report-title="reportTitle"
               :is-female-category="true"
               :is-last-final-round="isLastFinalRound"
+              :number-of-winners="pageant?.number_of_winners || 3"
             />
           </div>
         </div>
@@ -412,6 +419,7 @@
             :judges="judges"
             :report-title="`${reportTitle} - Male`"
             :is-last-final-round="isLastFinalRound"
+            :number-of-winners="pageant?.number_of_winners || 3"
           />
         </div>
         
@@ -425,6 +433,7 @@
             :judges="judges"
             :report-title="`${reportTitle} - Female`"
             :is-last-final-round="isLastFinalRound"
+            :number-of-winners="pageant?.number_of_winners || 3"
           />
         </div>
       </template>
@@ -437,6 +446,7 @@
         :judges="judges"
         :report-title="reportTitle"
         :is-last-final-round="isLastFinalRound"
+        :number-of-winners="pageant?.number_of_winners || 3"
       />
     </div>
   </div>
@@ -471,6 +481,7 @@ interface Pageant {
   date?: string
   venue?: string
   location?: string
+  number_of_winners?: number
 }
 
 interface Judge {
@@ -479,8 +490,15 @@ interface Judge {
   role: string
 }
 
+interface RoundType {
+  key: string
+  label: string
+  display_order: number
+}
+
 interface Props {
   pageant?: Pageant
+  roundTypes: RoundType[]
   resultsOverall: Result[]
   resultsSemiFinal: Result[]
   resultsFinal: Result[]
@@ -493,8 +511,7 @@ const printArea = ref<HTMLElement | null>(null)
 const showStageDropdown = ref(false)
 const showPaperSizeDropdown = ref(false)
 const selectedPaperSize = ref<keyof typeof paperSizes>('letter')
-type StageKey = 'overall' | 'semi-final' | 'final' | 'final-top3'
-const selectedStage = ref<StageKey>('overall')
+const selectedStage = ref<string>('overall')
 
 const paperSizes = {
   letter: { name: 'Letter (8.5" × 11")', size: 'letter', margin: '0.5in', width: '8.5in' },
@@ -503,12 +520,19 @@ const paperSizes = {
   oficio: { name: 'Oficio (8.5" × 13")', size: '8.5in 13in', margin: '0.5in', width: '8.5in' }
 } as const
 
-const stageLabels: Record<StageKey, string> = {
-  overall: 'Overall Results',
-  'semi-final': 'Semi-Final Results',
-  final: 'Final Results',
-  'final-top3': 'Final - Top 3 Only',
-}
+// Build dynamic stage labels from round types
+const stageLabels = computed<Record<string, string>>(() => {
+  const labels: Record<string, string> = {
+    overall: 'Overall Results',
+  }
+  
+  // Add labels for each round type from the pageant
+  props.roundTypes.forEach((roundType) => {
+    labels[roundType.key] = roundType.label
+  })
+  
+  return labels
+})
 
 const resultsToShow = computed<Result[]>(() => {
   switch (selectedStage.value) {
@@ -537,7 +561,7 @@ const femaleResults = computed(() => {
   return resultsToShow.value.filter(r => r.gender === 'female')
 })
 
-const reportTitle = computed(() => stageLabels[selectedStage.value])
+const reportTitle = computed(() => stageLabels.value[selectedStage.value])
 
 const isLastFinalRound = computed(() => {
   return selectedStage.value === 'final' || selectedStage.value === 'final-top3'

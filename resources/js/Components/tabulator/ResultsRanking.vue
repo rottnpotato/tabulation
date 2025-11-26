@@ -257,9 +257,14 @@ const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down'
 
 const getRankDisplay = (rank: number): string => {
   if (props.showWinners && rank <= props.numberOfWinners) {
-    const winnerIcons = ['👑', '🥈', '🥉']
-    return winnerIcons[rank - 1] || '🏆'
+    // Show appropriate icon for winners
+    if (rank === 1) return '👑'
+    if (rank === 2) return '🥈'
+    if (rank === 3) return '🥉'
+    // For 4th place and beyond, show trophy
+    return '🏆'
   }
+  // For non-winner view, show default icons for top 3
   if (rank <= 3) {
     return ['👑', '🥈', '🥉'][rank - 1]
   }
@@ -279,6 +284,7 @@ const getRankBadgeClass = (rank: number, qualified?: boolean): string => {
       case 3:
         return 'bg-orange-100 text-orange-800 border-2 border-orange-400 shadow-lg ring-2 ring-orange-200'
       default:
+        // For 4th, 5th, etc. when numberOfWinners > 3
         return 'bg-teal-100 text-teal-800 border-2 border-teal-400 shadow-md ring-2 ring-teal-200'
     }
   }

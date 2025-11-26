@@ -214,17 +214,20 @@ interface Props {
   isMaleCategory?: boolean
   isFemaleCategory?: boolean
   isLastFinalRound?: boolean
+  numberOfWinners?: number
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  numberOfWinners: 3
+})
 
 const topThree = computed(() => {
-  // For last final round, only show top 3 in the summary podium
+  // For last final round, show top N winners based on numberOfWinners
   if (props.isLastFinalRound) {
-    return props.results.slice(0, 3)
+    return props.results.slice(0, props.numberOfWinners)
   }
   // For other rounds, show all results (no special podium display)
-  return props.results.slice(0, 3)
+  return props.results.slice(0, props.numberOfWinners)
 })
 
 const shouldShowPodium = computed(() => {
@@ -249,15 +252,15 @@ const getTitle = (result: Result): string => {
       if (result.gender === 'male') return `Mr ${props.pageant.name}`
       if (result.gender === 'female') return `Miss ${props.pageant.name}`
       return `Winner ${props.pageant.name}`
-    } else {
-      // Runner-ups with proper ordinal suffixes
+    } else if (resultIndex < props.numberOfWinners) {
+      // Runner-ups with proper ordinal suffixes (only for results within numberOfWinners)
       const position = resultIndex
       const ordinal = getOrdinalSuffix(position)
       return `${ordinal} Runner-up`
     }
   }
   
-  // For other rounds, show Top X
+  // For other rounds or results beyond numberOfWinners, show Top X
   const resultIndex = props.results.findIndex(r => r.id === result.id)
   if (result.is_pair && result.member_genders && result.member_genders.length > 0) {
     return `Top ${resultIndex + 1}`
