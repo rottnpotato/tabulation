@@ -21,8 +21,22 @@
       </div>
     </div>
 
+    <!-- Completed Pageant Banner -->
+    <div v-if="pageant?.is_completed" class="fixed top-0 inset-x-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-center gap-3">
+        <div class="flex items-center gap-2 text-amber-800">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+          <span class="font-semibold">This pageant has been completed.</span>
+        </div>
+        <span class="text-amber-700 text-sm">You can view your submitted scores but cannot make changes.</span>
+      </div>
+    </div>
+
     <!-- Header (Glassmorphism) -->
-    <header class="fixed top-0 inset-x-0 z-40 h-auto min-h-[5rem] pt-2 pb-2 px-4 lg:px-8 flex flex-col md:flex-row items-center justify-between bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-sm transition-all duration-300 supports-[backdrop-filter]:bg-white/60 gap-4">
+    <header class="fixed inset-x-0 z-40 h-auto min-h-[5rem] pt-2 pb-2 px-4 lg:px-8 flex flex-col md:flex-row items-center justify-between bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-sm transition-all duration-300 supports-[backdrop-filter]:bg-white/60 gap-4"
+        :class="pageant?.is_completed ? 'top-12' : 'top-0'">
         <!-- Left: Back & Title -->
         <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
             <div class="flex items-center gap-4">
@@ -113,7 +127,8 @@
     </header>
 
     <!-- Main Content -->
-    <main class="relative z-10 pt-32 md:pt-28 pb-24 min-h-screen flex flex-col lg:flex-row items-stretch justify-center gap-6 px-4 lg:px-8 max-w-[1920px] mx-auto">
+    <main class="relative z-10 pb-24 min-h-screen flex flex-col lg:flex-row items-stretch justify-center gap-6 px-4 lg:px-8 max-w-[1920px] mx-auto"
+        :class="pageant?.is_completed ? 'pt-44 md:pt-40' : 'pt-32 md:pt-28'">
         
 
         

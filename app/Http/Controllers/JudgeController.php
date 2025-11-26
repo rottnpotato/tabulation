@@ -154,8 +154,8 @@ class JudgeController extends Controller
             return redirect()->route('judge.scoring', ['pageantId' => $pageantId, 'roundId' => $fallbackRoundId]);
         }
 
-        // Check if current round can be edited
-        $canEditCurrentRound = $currentRound->canBeEdited();
+        // Check if current round can be edited (also considers pageant completion status)
+        $canEditCurrentRound = $currentRound->canBeEdited() && ! $pageant->isCompleted() && ! $pageant->isArchived();
 
         // Get criteria for this round
         $criteria = $currentRound->criteria()->orderBy('display_order')->get();
@@ -258,6 +258,8 @@ class JudgeController extends Controller
                 'scoring_system' => $pageant->scoring_system,
                 'current_round_id' => $pageant->current_round_id,
                 'has_current_round' => $pageant->hasCurrentRound(),
+                'status' => $pageant->status,
+                'is_completed' => $pageant->isCompleted(),
             ],
             'rounds' => $rounds->map(function ($round) use ($judge) {
                 return [

@@ -1,6 +1,19 @@
 <template>
   <div class="min-h-screen bg-slate-50/50 pb-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Completed Pageant Banner -->
+      <div v-if="pageant?.is_completed" class="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+        <div class="flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-semibold text-amber-800">This pageant has been completed</h3>
+          <p class="text-sm text-amber-700">Judge management is disabled for completed pageants. You can only view the assigned judges.</p>
+        </div>
+      </div>
+
       <!-- Header Section -->
       <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
         <!-- Abstract Background Pattern -->
@@ -21,7 +34,7 @@
                 Manage Panel & Access
               </p>
             </div>
-            <div v-if="pageant" class="flex flex-wrap gap-2">
+            <div v-if="pageant && !pageant.is_completed" class="flex flex-wrap gap-2">
               <button 
                 @click="showCreateJudgeModal = true"
                 class="bg-teal-600 text-white rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-700 flex items-center shadow-sm transition-all"
@@ -489,6 +502,8 @@ interface Pageant {
   name: string
   required_judges?: number
   current_judges_count: number
+  status?: string
+  is_completed?: boolean
 }
 
 interface AvailableJudge {

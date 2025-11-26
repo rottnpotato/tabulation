@@ -1,5 +1,27 @@
 <template>
-    <div v-if="pageant.status === 'Ongoing' && !pageant.is_temporarily_editable" class="mb-6">
+    <!-- Completed/Archived Pageant Banner - Cannot request edit access -->
+    <div v-if="pageant.status === 'Completed' || pageant.status === 'Archived'" class="mb-6">
+        <div class="rounded-lg bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-700 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <LockClosedIcon class="h-5 w-5 text-slate-400" aria-hidden="true" />
+                </div>
+                <div class="ml-3 flex-1">
+                    <h3 class="text-sm font-medium text-slate-800 dark:text-slate-200">
+                        Pageant {{ pageant.status }} - Editing Disabled
+                    </h3>
+                    <div class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                        <p>
+                            This pageant has been {{ pageant.status.toLowerCase() }}. All editing features are permanently disabled to preserve the integrity of the final results.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ongoing Pageant Banner - Locked -->
+    <div v-else-if="pageant.status === 'Ongoing' && !pageant.is_temporarily_editable" class="mb-6">
         <div class="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4">
             <div class="flex">
                 <div class="flex-shrink-0">

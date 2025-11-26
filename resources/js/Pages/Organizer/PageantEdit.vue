@@ -291,6 +291,11 @@ const showEditAccessDialog = ref(false)
 
 // Check if editing is locked
 const isEditingLocked = computed(() => {
+  // Completed or Archived pageants cannot be edited
+  if (props.pageant.status === 'Completed' || props.pageant.status === 'Archived') {
+    return true
+  }
+  // Ongoing pageants can only be edited if temporarily enabled
   return props.pageant.status === 'Ongoing' && !props.pageant.is_temporarily_editable
 })
 

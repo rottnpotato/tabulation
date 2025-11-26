@@ -558,8 +558,8 @@ class Pageant extends Model
             return false;
         }
 
-        // Completed pageants cannot be edited, even with temporary edit access
-        if ($this->isCompleted()) {
+        // Completed or Archived pageants cannot be edited, even with temporary edit access
+        if ($this->isCompleted() || $this->isArchived()) {
             return false;
         }
 
@@ -614,9 +614,15 @@ class Pageant extends Model
     /**
      * Check if pageant can be scored (based on start date/time and end date/time in Philippine Standard Time)
      * Scoring is allowed when current datetime is on or between start_date/time and end_date/time
+     * Completed or Archived pageants cannot be scored
      */
     public function canBeScored(): bool
     {
+        // Completed or Archived pageants cannot be scored
+        if ($this->isCompleted() || $this->isArchived()) {
+            return false;
+        }
+
         // If no start date is set, cannot be scored
         if (! $this->start_date) {
             return false;

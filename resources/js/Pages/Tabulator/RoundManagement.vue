@@ -1,6 +1,15 @@
 <template>
   <div class="min-h-screen bg-slate-50/50 pb-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Completed Pageant Banner -->
+    <div v-if="pageant?.is_completed" class="fixed top-0 left-0 right-0 z-50 bg-amber-100 border-b border-amber-200 px-4 py-2">
+      <div class="max-w-7xl mx-auto flex items-center justify-center gap-2 text-amber-800 text-sm font-medium">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        This pageant has been completed. Round settings are view-only.
+      </div>
+    </div>
+    <div :class="pageant?.is_completed ? 'pt-12' : ''" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header Section -->
       <div class="relative overflow-hidden rounded-3xl bg-white shadow-xl mb-8 border border-teal-100">
         <!-- Abstract Background Pattern -->
@@ -38,7 +47,7 @@
       </div>
 
       <!-- Quick Actions -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade-in relative z-20">
+      <div v-if="pageant && !pageant.is_completed" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade-in relative z-20">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative z-30 group hover:shadow-md transition-all">
           <div class="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
             <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
@@ -169,7 +178,7 @@
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div class="flex items-center gap-2">
+                  <div v-if="pageant && !pageant.is_completed" class="flex items-center gap-2">
                     <button
                       v-if="pageant.current_round_id !== round.id"
                       @click="setCurrentRoundDirect(round.id)"
@@ -196,6 +205,7 @@
                       {{ actionLoading ? 'Unlocking...' : 'Unlock' }}
                     </button>
                   </div>
+                  <span v-else class="text-xs text-slate-400 italic">View only</span>
                 </td>
               </tr>
             </tbody>
