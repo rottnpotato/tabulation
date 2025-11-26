@@ -260,6 +260,9 @@ class JudgeController extends Controller
                 'has_current_round' => $pageant->hasCurrentRound(),
                 'status' => $pageant->status,
                 'is_completed' => $pageant->isCompleted(),
+                'can_be_scored' => $pageant->canBeScored(),
+                'start_date' => $pageant->start_date?->format('F j, Y'),
+                'start_time' => $pageant->start_time,
             ],
             'rounds' => $rounds->map(function ($round) use ($judge) {
                 return [

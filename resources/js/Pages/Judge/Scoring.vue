@@ -34,9 +34,20 @@
       </div>
     </div>
 
+    <!-- Scoring Not Yet Open Banner -->
+    <div v-else-if="!pageant?.can_be_scored && pageant?.start_date" class="fixed top-0 inset-x-0 z-50 bg-sky-50 border-b border-sky-200 px-4 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-center gap-3">
+        <div class="flex items-center gap-2 text-sky-800">
+          <Calendar class="h-5 w-5" />
+          <span class="font-semibold">Scoring opens on {{ pageant.start_date }}{{ pageant.start_time ? ` at ${formatTime(pageant.start_time)}` : '' }}</span>
+        </div>
+        <span class="text-sky-700 text-sm">You can review contestants but scoring is not yet available.</span>
+      </div>
+    </div>
+
     <!-- Header (Glassmorphism) -->
     <header class="fixed inset-x-0 z-40 h-auto min-h-[5rem] pt-2 pb-2 px-4 lg:px-8 flex flex-col md:flex-row items-center justify-between bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-sm transition-all duration-300 supports-[backdrop-filter]:bg-white/60 gap-4"
-        :class="pageant?.is_completed ? 'top-12' : 'top-0'">
+        :class="hasBanner ? 'top-12' : 'top-0'">
         <!-- Left: Back & Title -->
         <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
             <div class="flex items-center gap-4">
@@ -128,7 +139,7 @@
 
     <!-- Main Content -->
     <main class="relative z-10 pb-24 min-h-screen flex flex-col lg:flex-row items-stretch justify-center gap-6 px-4 lg:px-8 max-w-[1920px] mx-auto"
-        :class="pageant?.is_completed ? 'pt-44 md:pt-40' : 'pt-32 md:pt-28'">
+        :class="hasBanner ? 'pt-44 md:pt-40' : 'pt-32 md:pt-28'">>
         
 
         
@@ -533,7 +544,21 @@ const currentAverage = computed(() => {
   return calculateAverage(activeContestant.value.id)
 })
 
+// Check if a banner should be displayed (completed or scoring not yet open)
+const hasBanner = computed(() => {
+  return props.pageant?.is_completed || (!props.pageant?.can_be_scored && props.pageant?.start_date)
+})
+
 // Methods
+const formatTime = (time) => {
+  if (!time) return ''
+  const [hours, minutes] = time.split(':')
+  const hour = parseInt(hours)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const displayHour = hour % 12 || 12
+  return `${displayHour}:${minutes} ${ampm}`
+}
+
 const getRoundTypeDisplay = (round) => {
   if (!round || !round.type) return ''
   if (round.top_n_proceed) {
