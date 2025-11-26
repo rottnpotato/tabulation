@@ -295,11 +295,19 @@ const shouldShowDateRange = (pageant) => {
 
 const formatDateRange = (pageant) => {
   if (pageant.start_date && pageant.end_date) {
-    return `${pageant.start_date} - ${pageant.end_date}`
+    let range = `${pageant.start_date}`
+    if (pageant.start_time) range += ` @ ${pageant.start_time}`
+    range += ` - ${pageant.end_date}`
+    if (pageant.end_time) range += ` @ ${pageant.end_time}`
+    return range
   } else if (pageant.start_date) {
-    return `Starts: ${pageant.start_date}`
+    let start = `Starts: ${pageant.start_date}`
+    if (pageant.start_time) start += ` @ ${pageant.start_time}`
+    return start
   } else if (pageant.end_date) {
-    return `Ends: ${pageant.end_date}`
+    let end = `Ends: ${pageant.end_date}`
+    if (pageant.end_time) end += ` @ ${pageant.end_time}`
+    return end
   }
   return ''
 }

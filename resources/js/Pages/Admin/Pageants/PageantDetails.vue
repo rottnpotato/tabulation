@@ -54,7 +54,15 @@
           <div class="mt-3 sm:mt-4 flex flex-wrap gap-2 sm:gap-4">
             <div class="flex items-center text-white/90 text-xs sm:text-sm">
               <Calendar class="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-teal-300" />
-              {{ FormatDate(pageant.start_date) || 'Date not set' }}
+              <span v-if="pageant.start_date">
+                {{ FormatDate(pageant.start_date) }}
+                <span v-if="pageant.start_time" class="text-teal-200"> @ {{ pageant.start_time }}</span>
+                <span v-if="pageant.end_date">
+                  - {{ FormatDate(pageant.end_date) }}
+                  <span v-if="pageant.end_time" class="text-teal-200"> @ {{ pageant.end_time }}</span>
+                </span>
+              </span>
+              <span v-else>Date not set</span>
             </div>
             <div class="flex items-center text-white/90 text-xs sm:text-sm">
               <MapPin class="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-teal-300" />

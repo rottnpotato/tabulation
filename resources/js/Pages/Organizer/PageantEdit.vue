@@ -152,6 +152,32 @@
                 <p v-if="!form.start_date" class="mt-1 text-sm text-gray-500">Please select a start date first</p>
               </div>
             </div>
+
+            <!-- Time Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="start_time" class="block text-sm font-medium text-gray-700">Start Time (Optional)</label>
+                <input 
+                  id="start_time" 
+                  v-model="form.start_time" 
+                  type="time" 
+                  :disabled="!form.start_date || isEditingLocked"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+                <p class="mt-1 text-sm text-gray-500">Scoring starts at this time</p>
+              </div>
+              <div>
+                <label for="end_time" class="block text-sm font-medium text-gray-700">End Time (Optional)</label>
+                <input 
+                  id="end_time" 
+                  v-model="form.end_time" 
+                  type="time"
+                  :disabled="!form.end_date || isEditingLocked"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+                <p class="mt-1 text-sm text-gray-500">Scoring ends at this time</p>
+              </div>
+            </div>
             
             <!-- Location -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -406,7 +432,9 @@ const form = useForm({
   name: props.pageant.name,
   description: props.pageant.description || '',
   start_date: props.pageant.start_date ? new Date(props.pageant.start_date).toISOString().substr(0, 10) : '',
+  start_time: props.pageant.start_time || '',
   end_date: props.pageant.end_date ? new Date(props.pageant.end_date).toISOString().substr(0, 10) : '',
+  end_time: props.pageant.end_time || '',
   venue: props.pageant.venue || '',
   location: props.pageant.location || '',
   cover_image: null,

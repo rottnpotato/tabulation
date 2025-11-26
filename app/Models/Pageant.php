@@ -21,7 +21,9 @@ class Pageant extends Model
         'name',
         'description',
         'start_date',
+        'start_time',
         'end_date',
+        'end_time',
         'pageant_date',
         'venue',
         'location',
@@ -610,8 +612,8 @@ class Pageant extends Model
     }
 
     /**
-     * Check if pageant can be scored (based on start and end date in Philippine Standard Time)
-     * Scoring is allowed when current date is on or between start_date and end_date
+     * Check if pageant can be scored (based on start date/time and end date/time in Philippine Standard Time)
+     * Scoring is allowed when current datetime is on or between start_date/time and end_date/time
      */
     public function canBeScored(): bool
     {
@@ -623,23 +625,40 @@ class Pageant extends Model
         // Get current time in Philippine Standard Time (Asia/Manila)
         $nowInPH = now()->setTimezone('Asia/Manila');
 
-        // Get start date in Philippine Standard Time
-        $startDateInPH = $this->start_date->setTimezone('Asia/Manila')->startOfDay();
+        // Build start datetime with time if available
+        $startDateTimeInPH = $this->start_date->copy()->setTimezone('Asia/Manila');
+        if ($this->start_time) {
+            // Parse time and set hours and minutes
+            $timeParts = explode(':', $this->start_time);
+            $startDateTimeInPH->setTime((int) $timeParts[0], (int) $timeParts[1], 0);
+        } else {
+            // Default to start of day if no time specified
+            $startDateTimeInPH->startOfDay();
+        }
 
-        // Check if current time is before start date
-        if ($nowInPH->lessThan($startDateInPH)) {
+        // Check if current time is before start datetime
+        if ($nowInPH->lessThan($startDateTimeInPH)) {
             return false;
         }
 
-        // If end date is set, check if current time is after end date
+        // If end date is set, check if current time is after end datetime
         if ($this->end_date) {
-            $endDateInPH = $this->end_date->setTimezone('Asia/Manila')->endOfDay();
-            if ($nowInPH->greaterThan($endDateInPH)) {
+            $endDateTimeInPH = $this->end_date->copy()->setTimezone('Asia/Manila');
+            if ($this->end_time) {
+                // Parse time and set hours and minutes
+                $timeParts = explode(':', $this->end_time);
+                $endDateTimeInPH->setTime((int) $timeParts[0], (int) $timeParts[1], 59);
+            } else {
+                // Default to end of day if no time specified
+                $endDateTimeInPH->endOfDay();
+            }
+
+            if ($nowInPH->greaterThan($endDateTimeInPH)) {
                 return false;
             }
         }
 
-        // Current time is on or between start_date and end_date
+        // Current time is on or between start_date/time and end_date/time
         return true;
     }
 

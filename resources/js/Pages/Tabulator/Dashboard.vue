@@ -30,7 +30,13 @@
               <div>
                 <div class="text-xs font-bold text-teal-400 uppercase tracking-wider mb-0.5">Active Pageant</div>
                 <div class="text-lg font-bold text-slate-900 leading-none">{{ pageant.name }}</div>
-                <div class="text-xs text-slate-500 mt-1">{{ pageant.start_date || 'No date set' }}</div>
+                <div class="text-xs text-slate-500 mt-1">
+                  <span v-if="pageant.start_date">
+                    {{ pageant.start_date }}
+                    <span v-if="pageant.start_time" class="text-teal-600"> @ {{ pageant.start_time }}</span>
+                  </span>
+                  <span v-else>No date set</span>
+                </div>
               </div>
             </div>
           </div>

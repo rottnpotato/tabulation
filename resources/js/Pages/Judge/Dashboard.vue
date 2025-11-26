@@ -173,6 +173,7 @@
                 <p v-if="pageant.start_date" class="text-teal-200/60 text-xs mt-1.5 flex items-center gap-1.5">
                   <Calendar class="w-3 h-3" />
                   Start Date: {{ formatDate(pageant.start_date) }}
+                  <span v-if="pageant.start_time" class="text-teal-300">@ {{ pageant.start_time }}</span>
                 </p>
               </div>
               <!-- Date Pill -->

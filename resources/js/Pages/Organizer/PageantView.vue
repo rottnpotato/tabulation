@@ -240,7 +240,15 @@
                 <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-teal-100/80">
                   <div class="flex items-center">
                     <Calendar class="h-4 w-4 mr-2 text-teal-300" />
-                    {{ pageant.start_date || 'Date not set' }}
+                    <span v-if="pageant.start_date">
+                      {{ pageant.start_date }}
+                      <span v-if="pageant.start_time" class="text-teal-200"> @ {{ pageant.start_time }}</span>
+                      <span v-if="pageant.end_date">
+                        - {{ pageant.end_date }}
+                        <span v-if="pageant.end_time" class="text-teal-200"> @ {{ pageant.end_time }}</span>
+                      </span>
+                    </span>
+                    <span v-else>Date not set</span>
                   </div>
                   <div class="flex items-center">
                     <MapPin class="h-4 w-4 mr-2 text-teal-300" />

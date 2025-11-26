@@ -163,6 +163,7 @@ class ScoreCalculationService
 
                 if (empty($contestantScores)) {
                     $resultsByRound[$round->name] = [];
+
                     continue;
                 }
 
@@ -175,7 +176,7 @@ class ScoreCalculationService
                     $femaleWinners = [];
 
                     // Get male winners
-                    if (!empty($maleScores)) {
+                    if (! empty($maleScores)) {
                         usort($maleScores, fn ($a, $b) => $b['score'] <=> $a['score']);
                         $topMaleScore = $maleScores[0]['score'];
                         $maleWinners = array_values(array_filter($maleScores, function ($row) use ($topMaleScore) {
@@ -184,7 +185,7 @@ class ScoreCalculationService
                     }
 
                     // Get female winners
-                    if (!empty($femaleScores)) {
+                    if (! empty($femaleScores)) {
                         usort($femaleScores, fn ($a, $b) => $b['score'] <=> $a['score']);
                         $topFemaleScore = $femaleScores[0]['score'];
                         $femaleWinners = array_values(array_filter($femaleScores, function ($row) use ($topFemaleScore) {
