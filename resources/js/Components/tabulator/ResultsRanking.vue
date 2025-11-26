@@ -65,7 +65,8 @@
                     :class="getRankBadgeClass(index + 1, contestant.qualified)"
                   >
                     <span class="mr-1 tabular-nums">{{ index + 1 }}</span>
-                    <span v-if="index < 3">{{ getRankDisplay(index + 1) }}</span>
+                    <span v-if="showWinners && index < numberOfWinners">{{ getRankDisplay(index + 1) }}</span>
+                    <span v-else-if="!showWinners && index < 3">{{ getRankDisplay(index + 1) }}</span>
                   </span>
                   <!-- Rank change indicator -->
                   <transition name="rank-indicator">
@@ -257,16 +258,16 @@ const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down'
 
 const getRankDisplay = (rank: number): string => {
   if (props.showWinners && rank <= props.numberOfWinners) {
-    // Show appropriate icon for winners
+    // Show winning medals for final rounds
     if (rank === 1) return '👑'
     if (rank === 2) return '🥈'
     if (rank === 3) return '🥉'
     // For 4th place and beyond, show trophy
     return '🏆'
   }
-  // For non-winner view, show default icons for top 3
+  // For non-final rounds (advancing), show checkmark/advancing indicator
   if (rank <= 3) {
-    return ['👑', '🥈', '🥉'][rank - 1]
+    return '✓'
   }
   return rank.toString()
 }
@@ -276,6 +277,7 @@ const getRankBadgeClass = (rank: number, qualified?: boolean): string => {
   const isWinner = props.showWinners && rank <= props.numberOfWinners
   
   if (isWinner) {
+    // Final round - show winning badges with gold/silver/bronze
     switch (rank) {
       case 1:
         return 'bg-yellow-100 text-yellow-900 border-2 border-yellow-400 shadow-lg ring-2 ring-yellow-200'
@@ -285,22 +287,23 @@ const getRankBadgeClass = (rank: number, qualified?: boolean): string => {
         return 'bg-orange-100 text-orange-800 border-2 border-orange-400 shadow-lg ring-2 ring-orange-200'
       default:
         // For 4th, 5th, etc. when numberOfWinners > 3
-        return 'bg-teal-100 text-teal-800 border-2 border-teal-400 shadow-md ring-2 ring-teal-200'
+        return 'bg-purple-100 text-purple-800 border-2 border-purple-400 shadow-md ring-2 ring-purple-200'
     }
   }
   
+  // Non-final rounds - show advancing badges with green/emerald for qualifiers
   switch (rank) {
     case 1:
-      return 'bg-teal-100 text-teal-800 border-2 border-teal-300'
+      return 'bg-emerald-100 text-emerald-900 border-2 border-emerald-400 shadow-md ring-2 ring-emerald-200'
     case 2:
-      return 'bg-teal-50 text-teal-700 border-2 border-teal-200'
+      return 'bg-emerald-50 text-emerald-800 border-2 border-emerald-300 shadow-sm ring-2 ring-emerald-100'
     case 3:
-      return 'bg-slate-100 text-slate-700 border-2 border-slate-300'
+      return 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200 shadow-sm ring-2 ring-emerald-100'
     default:
       if (!isQualified) {
         return 'bg-slate-50 text-slate-400 border-2 border-slate-100'
       }
-      return 'bg-slate-50 text-slate-600 border-2 border-slate-100'
+      return 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200 shadow-sm ring-1 ring-emerald-100'
   }
 }
 

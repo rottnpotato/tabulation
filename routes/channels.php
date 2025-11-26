@@ -71,3 +71,9 @@ Broadcast::channel('organizer.pageant.{id}', function ($user, $id) {
 
     return $pageant->organizers()->where('users.id', $user->id)->exists();
 });
+
+// Judge-specific notification channel
+Broadcast::channel('judge.{id}', function ($user, $id) {
+    // Only the judge themselves or admins can listen to judge notifications
+    return $user->role === 'admin' || ((int) $user->id === (int) $id && $user->role === 'judge');
+});

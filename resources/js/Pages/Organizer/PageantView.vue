@@ -768,7 +768,11 @@
                       {{ round.weight }}% Weight
                     </span>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
-                      {{ round.type }}{{ round.top_n_proceed ? ` (Top ${round.top_n_proceed})` : '' }}
+                      {{ round.type }}
+                    </span>
+                    <span v-if="round.top_n_proceed" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                      <Flag class="h-3 w-3 mr-1" />
+                      Top {{ round.top_n_proceed }} Proceed
                     </span>
                     <button 
                       @click="toggleRoundExpansion(round.id)"

@@ -776,6 +776,7 @@ class TabulatorController extends Controller
                 'date' => $pageant->pageant_date?->format('F j, Y'),
                 'venue' => $pageant->venue,
                 'location' => $pageant->location,
+                'number_of_winners' => $pageant->getNumberOfWinners(),
             ],
             'roundTypes' => $roundTypes,
             'resultsOverall' => $overallResults,
