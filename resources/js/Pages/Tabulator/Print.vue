@@ -86,13 +86,13 @@
             <div class="relative z-10">
               <h3 class="text-lg font-bold text-slate-900 mb-4">Print Settings</h3>
               
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Stage Selector -->
                 <div class="space-y-1.5">
                   <label class="text-sm font-medium text-slate-700">Result Stage</label>
                   <div class="relative">
                     <button
-                      @click="showStageDropdown = !showStageDropdown"
+                      @click="showStageDropdown = !showStageDropdown; showPaperSizeDropdown = false; showMinorAwardDropdown = false"
                       class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-teal-300 hover:ring-2 hover:ring-teal-50 transition-all focus:outline-none"
                     >
                       <div class="flex items-center gap-2">
@@ -104,13 +104,13 @@
                     
                     <div
                       v-if="showStageDropdown"
-                      class="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl ring-1 ring-black/5"
+                      class="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl ring-1 ring-black/5 max-h-64 overflow-y-auto"
                     >
                       <div class="p-1">
                         <button
                           v-for="[key, label] in Object.entries(stageLabels)"
                           :key="key"
-                          @click="selectedStage = key; showStageDropdown = false"
+                          @click="selectedStage = key; showStageDropdown = false; selectedMinorAward = ''"
                           class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all cursor-pointer"
                           :class="selectedStage === key ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'"
                         >
@@ -122,12 +122,61 @@
                   </div>
                 </div>
 
+                <!-- Minor Awards Selector -->
+                <div class="space-y-1.5">
+                  <label class="text-sm font-medium text-slate-700">Minor Awards</label>
+                  <div class="relative">
+                    <button
+                      @click="showMinorAwardDropdown = !showMinorAwardDropdown; showStageDropdown = false; showPaperSizeDropdown = false"
+                      class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-amber-300 hover:ring-2 hover:ring-amber-50 transition-all focus:outline-none"
+                      :class="{ 'border-amber-400 ring-2 ring-amber-100': selectedMinorAward }"
+                    >
+                      <div class="flex items-center gap-2">
+                        <Award class="h-4 w-4" :class="selectedMinorAward ? 'text-amber-500' : 'text-slate-400'" />
+                        <span :class="selectedMinorAward ? 'text-amber-700' : 'text-slate-500'">
+                          {{ selectedMinorAward ? `Best in ${selectedMinorAward}` : 'Select Minor Award' }}
+                        </span>
+                      </div>
+                      <ChevronDown class="h-4 w-4 text-slate-400" />
+                    </button>
+                    
+                    <div
+                      v-if="showMinorAwardDropdown"
+                      class="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl ring-1 ring-black/5 max-h-64 overflow-y-auto"
+                    >
+                      <div class="p-1">
+                        <button
+                          @click="selectedMinorAward = ''; showMinorAwardDropdown = false"
+                          class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all cursor-pointer"
+                          :class="!selectedMinorAward ? 'bg-slate-50 text-slate-700' : 'text-slate-600 hover:bg-slate-50'"
+                        >
+                          <span class="w-1.5 h-1.5 rounded-full" :class="!selectedMinorAward ? 'bg-slate-500' : 'bg-slate-300'"></span>
+                          <span>None (Show Results)</span>
+                        </button>
+                        <div v-if="minorAwardOptions.length === 0" class="px-3 py-2 text-sm text-slate-400 italic">
+                          No minor awards available
+                        </div>
+                        <button
+                          v-for="award in minorAwardOptions"
+                          :key="award.key"
+                          @click="selectedMinorAward = award.key; showMinorAwardDropdown = false"
+                          class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all cursor-pointer"
+                          :class="selectedMinorAward === award.key ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50'"
+                        >
+                          <Award class="h-3.5 w-3.5" :class="selectedMinorAward === award.key ? 'text-amber-500' : 'text-slate-400'" />
+                          <span>{{ award.label }}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Paper Size Selector -->
                 <div class="space-y-1.5">
                   <label class="text-sm font-medium text-slate-700">Paper Size</label>
                   <div class="relative">
                     <button
-                      @click="showPaperSizeDropdown = !showPaperSizeDropdown"
+                      @click="showPaperSizeDropdown = !showPaperSizeDropdown; showStageDropdown = false; showMinorAwardDropdown = false"
                       class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 hover:border-teal-300 hover:ring-2 hover:ring-teal-50 transition-all focus:outline-none"
                     >
                       <div class="flex items-center gap-2">
@@ -169,13 +218,116 @@
               </div>
               <div class="text-right hidden sm:block">
                 <div class="text-sm font-medium text-slate-900">{{ pageant.name }}</div>
-                <div class="text-xs text-slate-500">{{ reportTitle }}</div>
+                <div class="text-xs text-slate-500">{{ selectedMinorAward ? `Best in ${selectedMinorAward}` : reportTitle }}</div>
               </div>
             </div>
             
             <div class="p-8 bg-slate-100/50 overflow-x-auto">
               <div class="bg-white shadow-lg mx-auto transition-all duration-300" :style="{ width: getPreviewWidth(), minHeight: '11in' }">
                 <div class="p-8" ref="printArea">
+                  <!-- Minor Award Display -->
+                  <template v-if="selectedMinorAward && selectedMinorAwardData">
+                    <div class="text-center mb-8 pb-4 border-b-2 border-amber-400">
+                      <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+                      <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Minor Awards Report</div>
+                      
+                      <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+                        <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+                        <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+                      </div>
+                      
+                      <div class="mt-6">
+                        <h2 class="text-xl font-bold text-amber-700 flex items-center justify-center gap-2">
+                          <Award class="h-6 w-6" />
+                          Best in {{ selectedMinorAward }}
+                        </h2>
+                      </div>
+                    </div>
+                    
+                    <!-- Minor Award Winners -->
+                    <div class="space-y-6">
+                      <!-- For pair pageants with gender-specific winners -->
+                      <template v-if="isPairPageant && ((selectedMinorAwardData.male_winners && selectedMinorAwardData.male_winners.length > 0) || (selectedMinorAwardData.female_winners && selectedMinorAwardData.female_winners.length > 0))">
+                        <div class="grid grid-cols-2 gap-8">
+                          <!-- Male Winners -->
+                          <div v-if="selectedMinorAwardData.male_winners && selectedMinorAwardData.male_winners.length > 0" class="border-r border-slate-200 pr-4">
+                            <div class="mb-4 pb-2 border-b border-blue-200">
+                              <div class="flex items-center justify-center gap-2 text-sm font-semibold text-blue-900">
+                                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs">♂</span>
+                                Male Winner
+                              </div>
+                            </div>
+                            <div v-for="winner in selectedMinorAwardData.male_winners" :key="winner.id" class="text-center py-4">
+                              <div class="text-3xl font-bold text-amber-500 mb-2">🏆</div>
+                              <div class="text-lg font-bold text-gray-900">#{{ winner.number }} - {{ winner.name }}</div>
+                              <div class="text-sm text-gray-600 mt-1">Score: {{ winner.score?.toFixed(2) }}</div>
+                            </div>
+                          </div>
+                          
+                          <!-- Female Winners -->
+                          <div v-if="selectedMinorAwardData.female_winners && selectedMinorAwardData.female_winners.length > 0" class="pl-4">
+                            <div class="mb-4 pb-2 border-b border-pink-200">
+                              <div class="flex items-center justify-center gap-2 text-sm font-semibold text-pink-900">
+                                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-pink-100 text-pink-700 text-xs">♀</span>
+                                Female Winner
+                              </div>
+                            </div>
+                            <div v-for="winner in selectedMinorAwardData.female_winners" :key="winner.id" class="text-center py-4">
+                              <div class="text-3xl font-bold text-amber-500 mb-2">🏆</div>
+                              <div class="text-lg font-bold text-gray-900">#{{ winner.number }} - {{ winner.name }}</div>
+                              <div class="text-sm text-gray-600 mt-1">Score: {{ winner.score?.toFixed(2) }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                      
+                      <!-- Standard winners (non-pair pageant) -->
+                      <template v-else-if="selectedMinorAwardData.winners && selectedMinorAwardData.winners.length > 0">
+                        <div class="text-center py-6">
+                          <div v-for="winner in selectedMinorAwardData.winners" :key="winner.id" class="py-4">
+                            <div class="text-4xl font-bold text-amber-500 mb-3">🏆</div>
+                            <div class="text-xl font-bold text-gray-900">#{{ winner.number }} - {{ winner.name }}</div>
+                            <div class="text-sm text-gray-600 mt-2">Score: {{ winner.score?.toFixed(2) }}</div>
+                          </div>
+                        </div>
+                      </template>
+                      
+                      <!-- No winners message -->
+                      <div v-else class="text-center py-12 text-gray-500">
+                        <Award class="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No winners found for this award</p>
+                      </div>
+                    </div>
+                    
+                    <!-- Signatures for Minor Award -->
+                    <div class="mt-12 page-break-inside-avoid">
+                      <div class="grid grid-cols-3 gap-8">
+                        <div class="col-span-3 mb-8">
+                          <h3 class="text-xs font-bold uppercase border-b border-black mb-4 pb-1">Panel of Judges</h3>
+                          <div class="grid grid-cols-3 gap-x-8 gap-y-12">
+                            <div v-for="judge in judges" :key="judge.id" class="text-center">
+                              <div class="border-b border-gray-400 h-8"></div>
+                              <div class="text-xs font-bold mt-1">{{ capitalizeName(judge.name) }}</div>
+                              <div class="text-[10px] uppercase text-gray-500">{{ judge.role }}</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-span-3">
+                          <div class="flex justify-end">
+                            <div class="w-64 text-center">
+                              <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
+                              <div class="border-b border-black h-8"></div>
+                              <div class="text-xs font-bold mt-1">Head Tabulator</div>
+                              <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  
+                  <!-- Normal Results Display (when no minor award selected) -->
+                  <template v-else>
                   <!-- For pair pageants, show side by side in single view -->
                   <template v-if="isPairPageant && maleResults.length > 0 && femaleResults.length > 0">
                     <!-- Unified Header for Pair Pageants -->
@@ -310,6 +462,7 @@
                     :is-last-final-round="isLastFinalRound"
                     :number-of-winners="pageant?.number_of_winners || 3"
                   />
+                  </template>
                 </div>
               </div>
             </div>
@@ -320,6 +473,105 @@
 
     <!-- Print-Only Content -->
     <div v-if="pageant" class="print-only">
+      <!-- Minor Award Print -->
+      <template v-if="selectedMinorAward && selectedMinorAwardData">
+        <div class="text-center mb-8 pb-4 border-b-2 border-amber-400">
+          <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+          <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Minor Awards Report</div>
+          
+          <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+            <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+            <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+          </div>
+          
+          <div class="mt-6">
+            <h2 class="text-xl font-bold text-amber-700">Best in {{ selectedMinorAward }}</h2>
+          </div>
+        </div>
+        
+        <!-- Minor Award Winners for Print -->
+        <div class="space-y-6">
+          <!-- For pair pageants with gender-specific winners -->
+          <template v-if="isPairPageant && ((selectedMinorAwardData.male_winners && selectedMinorAwardData.male_winners.length > 0) || (selectedMinorAwardData.female_winners && selectedMinorAwardData.female_winners.length > 0))">
+            <div class="grid grid-cols-2 gap-8">
+              <!-- Male Winners -->
+              <div v-if="selectedMinorAwardData.male_winners && selectedMinorAwardData.male_winners.length > 0" class="border-r border-slate-200 pr-4">
+                <div class="mb-4 pb-2 border-b border-blue-200">
+                  <div class="flex items-center justify-center gap-2 text-sm font-semibold text-blue-900">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs">♂</span>
+                    Male Winner
+                  </div>
+                </div>
+                <div v-for="winner in selectedMinorAwardData.male_winners" :key="winner.id" class="text-center py-4">
+                  <div class="text-3xl font-bold text-amber-500 mb-2">🏆</div>
+                  <div class="text-lg font-bold text-gray-900">#{{ winner.number }} - {{ winner.name }}</div>
+                  <div class="text-sm text-gray-600 mt-1">Score: {{ winner.score?.toFixed(2) }}</div>
+                </div>
+              </div>
+              
+              <!-- Female Winners -->
+              <div v-if="selectedMinorAwardData.female_winners && selectedMinorAwardData.female_winners.length > 0" class="pl-4">
+                <div class="mb-4 pb-2 border-b border-pink-200">
+                  <div class="flex items-center justify-center gap-2 text-sm font-semibold text-pink-900">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-pink-100 text-pink-700 text-xs">♀</span>
+                    Female Winner
+                  </div>
+                </div>
+                <div v-for="winner in selectedMinorAwardData.female_winners" :key="winner.id" class="text-center py-4">
+                  <div class="text-3xl font-bold text-amber-500 mb-2">🏆</div>
+                  <div class="text-lg font-bold text-gray-900">#{{ winner.number }} - {{ winner.name }}</div>
+                  <div class="text-sm text-gray-600 mt-1">Score: {{ winner.score?.toFixed(2) }}</div>
+                </div>
+              </div>
+            </div>
+          </template>
+          
+          <!-- Standard winners (non-pair pageant) -->
+          <template v-else-if="selectedMinorAwardData.winners && selectedMinorAwardData.winners.length > 0">
+            <div class="text-center py-6">
+              <div v-for="winner in selectedMinorAwardData.winners" :key="winner.id" class="py-4">
+                <div class="text-4xl font-bold text-amber-500 mb-3">🏆</div>
+                <div class="text-xl font-bold text-gray-900">#{{ winner.number }} - {{ winner.name }}</div>
+                <div class="text-sm text-gray-600 mt-2">Score: {{ winner.score?.toFixed(2) }}</div>
+              </div>
+            </div>
+          </template>
+          
+          <!-- No winners message -->
+          <div v-else class="text-center py-12 text-gray-500">
+            <p>No winners found for this award</p>
+          </div>
+        </div>
+        
+        <!-- Signatures for Minor Award Print -->
+        <div class="mt-12 page-break-inside-avoid">
+          <div class="grid grid-cols-3 gap-8">
+            <div class="col-span-3 mb-8">
+              <h3 class="text-xs font-bold uppercase border-b border-black mb-4 pb-1">Panel of Judges</h3>
+              <div class="grid grid-cols-3 gap-x-8 gap-y-12">
+                <div v-for="judge in judges" :key="judge.id" class="text-center">
+                  <div class="border-b border-gray-400 h-8"></div>
+                  <div class="text-xs font-bold mt-1">{{ capitalizeName(judge.name) }}</div>
+                  <div class="text-[10px] uppercase text-gray-500">{{ judge.role }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-span-3">
+              <div class="flex justify-end">
+                <div class="w-64 text-center">
+                  <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
+                  <div class="border-b border-black h-8"></div>
+                  <div class="text-xs font-bold mt-1">Head Tabulator</div>
+                  <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      
+      <!-- Normal Results Print (when no minor award selected) -->
+      <template v-else>
       <!-- For pair pageants, show side by side in single view -->
       <template v-if="isPairPageant && maleResults.length > 0 && femaleResults.length > 0">
         <!-- Unified Header for Pair Pageants -->
@@ -448,13 +700,14 @@
         :is-last-final-round="isLastFinalRound"
         :number-of-winners="pageant?.number_of_winners || 3"
       />
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Printer, LayoutDashboard, ChevronDown, FileText, Layers, Maximize } from 'lucide-vue-next'
+import { Printer, LayoutDashboard, ChevronDown, FileText, Layers, Maximize, Award } from 'lucide-vue-next'
 import { Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import PrintableResults from '../../Components/tabulator/PrintableResults.vue'
@@ -496,12 +749,37 @@ interface RoundType {
   display_order: number
 }
 
+interface MinorAwardWinner {
+  id: number
+  number: number
+  name: string
+  gender?: string
+  score: number
+  is_pair?: boolean
+  member_names?: string[]
+  member_genders?: string[]
+  image?: string
+}
+
+interface MinorAwardRound {
+  round: {
+    id: number
+    name: string
+    type: string
+  }
+  male_winners?: MinorAwardWinner[]
+  female_winners?: MinorAwardWinner[]
+  winners?: MinorAwardWinner[]
+}
+
 interface Props {
   pageant?: Pageant
   roundTypes: RoundType[]
+  resultsByRoundType?: Record<string, Result[]>
   resultsOverall: Result[]
   resultsSemiFinal: Result[]
   resultsFinal: Result[]
+  minorAwards?: Record<string, MinorAwardRound>
   judges: Judge[]
 }
 
@@ -510,8 +788,10 @@ const props = defineProps<Props>()
 const printArea = ref<HTMLElement | null>(null)
 const showStageDropdown = ref(false)
 const showPaperSizeDropdown = ref(false)
+const showMinorAwardDropdown = ref(false)
 const selectedPaperSize = ref<keyof typeof paperSizes>('letter')
 const selectedStage = ref<string>('overall')
+const selectedMinorAward = ref<string>('')
 
 const paperSizes = {
   letter: { name: 'Letter (8.5" × 11")', size: 'letter', margin: '0.5in', width: '8.5in' },
@@ -520,10 +800,33 @@ const paperSizes = {
   oficio: { name: 'Oficio (8.5" × 13")', size: '8.5in 13in', margin: '0.5in', width: '8.5in' }
 } as const
 
+// Get available minor awards from props
+const minorAwardOptions = computed(() => {
+  if (!props.minorAwards) return []
+  return Object.entries(props.minorAwards)
+    .filter(([_, data]) => {
+      // Only include awards that have winners
+      return (data.winners && data.winners.length > 0) ||
+             (data.male_winners && data.male_winners.length > 0) ||
+             (data.female_winners && data.female_winners.length > 0)
+    })
+    .map(([roundName, data]) => ({
+      key: roundName,
+      label: `Best in ${roundName}`,
+      roundName: data.round?.name || roundName
+    }))
+})
+
+// Get selected minor award data
+const selectedMinorAwardData = computed(() => {
+  if (!selectedMinorAward.value || !props.minorAwards) return null
+  return props.minorAwards[selectedMinorAward.value]
+})
+
 // Build dynamic stage labels from round types
 const stageLabels = computed<Record<string, string>>(() => {
   const labels: Record<string, string> = {
-    overall: 'Overall Results',
+    overall: 'Overall Results (Final Round)',
   }
   
   // Add labels for each round type from the pageant
@@ -532,7 +835,8 @@ const stageLabels = computed<Record<string, string>>(() => {
   })
   
   // If there's a 'final' type, also add a 'final-top3' option
-  if (labels['final']) {
+  const hasFinal = props.roundTypes.some(rt => rt.key.toLowerCase() === 'final')
+  if (hasFinal) {
     labels['final-top3'] = 'Final - Top ' + (props.pageant?.number_of_winners || 3)
   }
   
@@ -540,15 +844,26 @@ const stageLabels = computed<Record<string, string>>(() => {
 })
 
 const resultsToShow = computed<Result[]>(() => {
+  // Handle 'final-top3' special case
+  if (selectedStage.value === 'final-top3') {
+    const finalResults = props.resultsByRoundType?.['final'] || props.resultsFinal || []
+    return finalResults.slice(0, props.pageant?.number_of_winners || 3)
+  }
+  
+  // Try to get results from the new dynamic resultsByRoundType
+  if (props.resultsByRoundType && selectedStage.value in props.resultsByRoundType) {
+    return props.resultsByRoundType[selectedStage.value] || []
+  }
+  
+  // Fallback to legacy props for backward compatibility
   switch (selectedStage.value) {
     case 'semi-final':
-      return props.resultsSemiFinal
+      return props.resultsSemiFinal || []
     case 'final':
-      return props.resultsFinal
-    case 'final-top3':
-      return props.resultsFinal.slice(0, 3)
+      return props.resultsFinal || []
+    case 'overall':
     default:
-      return props.resultsOverall
+      return props.resultsOverall || []
   }
 })
 

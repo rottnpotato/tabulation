@@ -755,18 +755,84 @@ class TabulatorController extends Controller
             ];
         });
 
-        // Get unique round types from pageant
-        $roundTypes = $pageant->rounds
+        // Get unique round types from pageant with labels
+        $uniqueRoundTypes = $pageant->rounds
             ->sortBy('display_order')
-            ->map(function ($round) {
+            ->groupBy('type')
+            ->map(function ($roundsOfType) {
+                $firstRound = $roundsOfType->first();
+                $lastRound = $roundsOfType->sortByDesc('display_order')->first();
+
                 return [
-                    'key' => $round->type,
-                    'label' => $round->name,
-                    'display_order' => $round->display_order,
+                    'key' => $firstRound->type,
+                    'label' => ucwords(str_replace(['-', '_'], ' ', $firstRound->type)),
+                    'display_order' => $firstRound->display_order,
+                    'last_display_order' => $lastRound->display_order,
                 ];
             })
-            ->unique('key')
             ->values();
+
+        // Calculate results for each unique round type dynamically
+        $resultsByRoundType = [];
+        foreach ($uniqueRoundTypes as $roundTypeInfo) {
+            $roundType = $roundTypeInfo['key'];
+            $stageResults = collect($this->scoreCalculationService->calculatePageantStageScores($pageant, $roundType))->map(function ($contestant) use ($pageant) {
+                $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
+                $memberNames = [];
+                $memberGenders = [];
+
+                if ($contestantModel && $contestantModel->is_pair && $contestantModel->members->isNotEmpty()) {
+                    foreach ($contestantModel->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
+
+                return [
+                    'id' => $contestant['id'],
+                    'number' => $contestant['number'],
+                    'name' => $contestant['name'],
+                    'gender' => $contestantModel->gender ?? null,
+                    'is_pair' => $contestantModel->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
+                    'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                    'scores' => $contestant['scores'] ?? [],
+                    'final_score' => $contestant['finalScore'] ?? 0,
+                    'rank' => $contestant['rank'] ?? 0,
+                ];
+            });
+
+            $stageResults = $markQualifiedContestants($stageResults, $roundType)->values();
+            $resultsByRoundType[$roundType] = $stageResults;
+        }
+
+        // Get the last final round and use it for "overall" if it exists
+        $lastFinalRound = $pageant->rounds
+            ->filter(fn ($round) => strtolower($round->type) === 'final')
+            ->sortByDesc('display_order')
+            ->first();
+
+        // Overall results should be the last final round if it exists, otherwise use full calculation
+        if ($lastFinalRound && isset($resultsByRoundType['final'])) {
+            $overallResults = $resultsByRoundType['final'];
+
+            // Apply top_n_proceed filter from last final round
+            if ($lastFinalRound->top_n_proceed !== null && $lastFinalRound->top_n_proceed > 0) {
+                $topN = $lastFinalRound->top_n_proceed;
+
+                if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+                    $maleFinalists = $overallResults->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                    $femaleFinalists = $overallResults->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                    $overallResults = $maleFinalists->merge($femaleFinalists)->values();
+                } else {
+                    $overallResults = $overallResults->take($topN);
+                }
+            }
+        }
+
+        // Compute Minor Awards data
+        $minorAwards = $this->scoreCalculationService->calculateMinorAwardsByStage($pageant, 'semi-final');
 
         return Inertia::render('Tabulator/Print', [
             'pageant' => [
@@ -778,10 +844,12 @@ class TabulatorController extends Controller
                 'location' => $pageant->location,
                 'number_of_winners' => $pageant->getNumberOfWinners(),
             ],
-            'roundTypes' => $roundTypes,
+            'roundTypes' => $uniqueRoundTypes,
+            'resultsByRoundType' => $resultsByRoundType,
             'resultsOverall' => $overallResults,
             'resultsSemiFinal' => $semiResults,
             'resultsFinal' => $finalResults,
+            'minorAwards' => $minorAwards,
             'judges' => $judges,
         ]);
     }
