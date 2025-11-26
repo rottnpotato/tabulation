@@ -80,8 +80,23 @@
             </div>
         </div>
 
-        <!-- Right: Active Contestant Progress -->
-        <div v-if="activeContestant && criteria.length > 0" class="w-full md:w-auto flex items-center justify-center md:justify-end gap-3 bg-white/50 md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none border md:border-none border-white/50">
+        <!-- Right: Active Contestant Progress & Score Reference -->
+        <div class="w-full md:w-auto flex items-center justify-center md:justify-end gap-3">
+            <!-- Score Reference Toggle -->
+            <button
+                v-if="otherContestantsScores.length > 0"
+                @click="showScoreReference = !showScoreReference"
+                class="px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2"
+                :class="showScoreReference ? 'bg-teal-600 text-white' : 'bg-white/70 text-teal-700 hover:bg-white'"
+                title="View my scores for other contestants"
+            >
+                <Eye v-if="!showScoreReference" class="w-4 h-4" />
+                <EyeOff v-if="showScoreReference" class="w-4 h-4" />
+                <span class="hidden sm:inline">My Scores</span>
+            </button>
+            
+            <!-- Active Contestant Progress -->
+            <div v-if="activeContestant && criteria.length > 0" class="flex items-center gap-3 bg-white/50 md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none border md:border-none border-white/50">
              <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-teal-700 hidden sm:inline">{{ activeContestant.name }}</span>
                 <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{{ getCompletedCriteriaCount(activeContestant.id) }}/{{ criteria.length }}</span>
@@ -93,6 +108,7 @@
                 </div>
             </div>
              <CheckCircle v-if="isContestantScoreComplete(activeContestant.id)" class="w-4 h-4 text-emerald-500" />
+            </div>
         </div>
     </header>
 
@@ -338,6 +354,72 @@
         </Dialog>
     </TransitionRoot>
 
+    <!-- Score Reference Panel (Sliding from Right) -->
+    <Transition
+        enter-active-class="transition-all duration-300 ease-out"
+        enter-from-class="translate-x-full opacity-0"
+        enter-to-class="translate-x-0 opacity-100"
+        leave-active-class="transition-all duration-300 ease-in"
+        leave-from-class="translate-x-0 opacity-100"
+        leave-to-class="translate-x-full opacity-0"
+    >
+        <div v-if="showScoreReference" class="fixed right-0 top-32 md:top-28 bottom-0 w-full sm:w-96 bg-white/95 backdrop-blur-xl shadow-2xl border-l border-teal-100 z-50 overflow-y-auto">
+            <div class="sticky top-0 bg-white/95 backdrop-blur-xl border-b border-teal-100 px-4 py-4 flex items-center justify-between z-10">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-lg">My Scores Reference</h3>
+                    <p class="text-xs text-slate-500">{{ otherContestantsScores.length }} contestant(s) scored</p>
+                </div>
+                <button @click="showScoreReference = false" class="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+                    <X class="w-5 h-5" />
+                </button>
+            </div>
+            
+            <div class="p-4 space-y-3">
+                <div v-if="otherContestantsScores.length === 0" class="text-center py-12 text-slate-400">
+                    <Users class="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p class="text-sm">No other contestants scored yet</p>
+                </div>
+                
+                <div 
+                    v-for="contestantScore in otherContestantsScores" 
+                    :key="contestantScore.contestant_id"
+                    class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all"
+                >
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm">
+                                {{ contestantScore.contestant_number }}
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-900 text-sm">{{ contestantScore.contestant_name }}</p>
+                                <p class="text-xs text-slate-500">{{ contestantScore.is_complete ? 'Complete' : 'In Progress' }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-slate-500 font-medium">Total</p>
+                            <p class="text-xl font-black" :class="contestantScore.average ? 'text-teal-600' : 'text-slate-400'">
+                                {{ contestantScore.average ? formatScore(contestantScore.average) : '-' }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div 
+                            v-for="criterion in criteria" 
+                            :key="criterion.id"
+                            class="flex items-center justify-between text-xs"
+                        >
+                            <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
+                            <span class="font-bold" :class="getScoreForCriterion(contestantScore.scores, criterion.id) ? 'text-slate-900' : 'text-slate-300'">
+                                {{ formatScore(getScoreForCriterion(contestantScore.scores, criterion.id) || '-') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Transition>
+
     <!-- Notification System -->
     <NotificationSystem ref="notificationSystem" />
   </div>
@@ -345,7 +427,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Star, Save, CheckCircle, AlertCircle, Lock, MapPin, Target, Users, Calendar, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
+import { Star, Save, CheckCircle, AlertCircle, Lock, MapPin, Target, Users, Calendar, ChevronLeft, ChevronRight, X, Eye, EyeOff } from 'lucide-vue-next'
 import { Link, router } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { Dialog, DialogPanel, TransitionRoot, TransitionChild } from '@headlessui/vue'
@@ -366,7 +448,8 @@ const props = defineProps({
   existingScores: { type: Object, default: () => ({}) },
   existingNotes: { type: Object, default: () => ({}) },
   canEditScores: { type: Boolean, default: true },
-  error: { type: String, default: null }
+  error: { type: String, default: null },
+  allContestantScores: { type: Array, default: () => [] }
 })
 
 // State
@@ -377,6 +460,7 @@ const notificationSystem = ref(null)
 const realtimeLoading = ref(false)
 const isChannelReady = ref(false)
 const showDetails = ref(false)
+const showScoreReference = ref(false)
 let pageantChannel = null
 
 const scores = ref({ ...props.existingScores })
@@ -422,6 +506,9 @@ const sortedContestants = computed(() => {
 // Computed
 const activeContestant = computed(() => sortedContestants.value[currentIndex.value] || {})
 
+const otherContestantsScores = computed(() => {
+  return props.allContestantScores.filter(cs => cs.contestant_id !== activeContestant.value.id)
+})
 
 const currentAverage = computed(() => {
   if (!activeContestant.value.id) return '-'
@@ -600,6 +687,7 @@ onMounted(() => {
     pageantChannel = window.Echo.private(`pageant.${props.pageant.id}`)
       .subscribed(() => { isChannelReady.value = true })
       .listen('RoundUpdated', (e) => { handleRoundUpdate(e) })
+      .listen('ScoreUpdated', (e) => { handleScoreUpdate(e) })
     
     // Listen for judge-specific notifications
     if (judgeId) {
@@ -633,6 +721,19 @@ const handleJudgeNotification = (event) => {
     notificationSystem.value.success(message, {
       title: title || 'Notification',
       timeout: 8000
+    })
+  }
+}
+
+const handleScoreUpdate = async (event) => {
+  // Only refresh if the score is from the current judge and current round
+  const judgeId = props.pageant.judge_id || window.Laravel?.user?.id
+  if (event.score?.judge_id === judgeId && event.score?.round_id === props.currentRound?.id) {
+    // Refresh the page data to get updated scores
+    router.reload({
+      only: ['allContestantScores', 'existingScores'],
+      preserveState: true,
+      preserveScroll: true
     })
   }
 }
@@ -694,6 +795,11 @@ const formatScoringSystem = (system) => {
     'points': 'Points'
   }
   return systemMap[system] || system
+}
+
+const getScoreForCriterion = (scores, criteriaId) => {
+  const scoreObj = scores.find(s => s.criteria_id === criteriaId)
+  return scoreObj ? scoreObj.score : null
 }
 </script>
 

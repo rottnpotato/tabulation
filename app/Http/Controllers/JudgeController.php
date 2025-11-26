@@ -208,6 +208,49 @@ class JudgeController extends Controller
             }
         }
 
+        // Get all scores for all contestants in this round for reference
+        $allContestantScores = [];
+        foreach ($contestants as $contestant) {
+            $contestantScores = Score::where('judge_id', $judge->id)
+                ->where('pageant_id', $pageantId)
+                ->where('round_id', $roundId)
+                ->where('contestant_id', $contestant->id)
+                ->get()
+                ->keyBy('criteria_id');
+
+            if ($contestantScores->isNotEmpty()) {
+                // Calculate weighted average
+                $weightedSum = 0;
+                $weightTotal = 0;
+                $hasAllScores = true;
+
+                foreach ($criteria as $criterion) {
+                    $score = $contestantScores->get($criterion->id);
+                    if ($score) {
+                        $weight = $criterion->weight ?? 1;
+                        $weightedSum += $score->score * $weight;
+                        $weightTotal += $weight;
+                    } else {
+                        $hasAllScores = false;
+                    }
+                }
+
+                $average = $weightTotal > 0 ? round($weightedSum / $weightTotal, 2) : null;
+
+                $allContestantScores[$contestant->id] = [
+                    'contestant_id' => $contestant->id,
+                    'contestant_name' => $contestant->is_pair ? ($contestant->display_name ?? $contestant->name) : $contestant->name,
+                    'contestant_number' => $contestant->number,
+                    'scores' => $contestantScores->map(fn ($s) => [
+                        'criteria_id' => $s->criteria_id,
+                        'score' => $s->score,
+                    ])->values(),
+                    'average' => $average,
+                    'is_complete' => $hasAllScores,
+                ];
+            }
+        }
+
         return Inertia::render('Judge/Scoring', [
             'pageant' => [
                 'id' => $pageant->id,
@@ -251,6 +294,7 @@ class JudgeController extends Controller
             'existingScores' => $formattedScores,
             'existingNotes' => $formattedNotes,
             'canEditScores' => $canEditCurrentRound,
+            'allContestantScores' => array_values($allContestantScores),
         ]);
     }
 
