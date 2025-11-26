@@ -1798,6 +1798,19 @@
                         <p class="mt-1 text-xs text-gray-500">Number of contestants who will proceed from this round (optional)</p>
                       </div>
 
+                      <div class="flex items-start space-x-2">
+                        <input
+                          id="useForMinorAwards"
+                          v-model="roundForm.use_for_minor_awards"
+                          type="checkbox"
+                          class="mt-1 h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                        />
+                        <label for="useForMinorAwards" class="text-sm">
+                          <span class="font-medium text-gray-700">Use for Minor Awards</span>
+                          <p class="text-xs text-gray-500 mt-0.5">Check this if you want to display winners from this round in the Minor Awards section</p>
+                        </label>
+                      </div>
+
                       <div>
                         <label for="roundIdentifier" class="block text-sm font-medium text-gray-700 mb-1">
                           Identifier
@@ -2458,6 +2471,7 @@ const roundForm = ref({
   weight: 100,
   display_order: 0,
   top_n_proceed: null,
+  use_for_minor_awards: false,
   processing: false
 })
 
@@ -3344,6 +3358,7 @@ const openEditRoundModal = (round) => {
     weight: round.weight,
     display_order: round.display_order,
     top_n_proceed: round.top_n_proceed || null,
+    use_for_minor_awards: round.use_for_minor_awards || false,
     processing: false
   }
   showRoundModal.value = true
@@ -3365,6 +3380,7 @@ const resetRoundForm = () => {
     weight: 100,
     display_order: suggestedRoundDisplayOrder.value,
     top_n_proceed: null,
+    use_for_minor_awards: false,
     processing: false
   }
 }
@@ -3403,7 +3419,8 @@ const submitRoundForm = () => {
     type: roundForm.value.type,
     identifier: roundForm.value.identifier,
     weight: roundForm.value.weight,
-    display_order: roundForm.value.display_order
+    display_order: roundForm.value.display_order,
+    use_for_minor_awards: roundForm.value.use_for_minor_awards
   }, {
     onSuccess: () => {
       closeRoundModal()

@@ -53,6 +53,7 @@ class UpdateRoundRequest extends FormRequest
                 'integer',
                 'min:1',
             ],
+            'use_for_minor_awards' => ['nullable', 'boolean'],
         ];
     }
 

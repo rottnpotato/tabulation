@@ -127,8 +127,9 @@ class ScoreCalculationService
             $resultsByRound = [];
             $isPairPageant = $pageant->isPairsOnly() || $pageant->allowsBothTypes();
 
-            $stageRounds = $pageant->rounds->filter(function ($round) use ($stage) {
-                return ($round->type ?? null) === $stage;
+            // Filter rounds by use_for_minor_awards flag instead of stage type
+            $stageRounds = $pageant->rounds->filter(function ($round) {
+                return ($round->use_for_minor_awards ?? false) === true;
             });
 
             foreach ($stageRounds as $round) {

@@ -1369,6 +1369,7 @@ class OrganizerController extends Controller
             'weight' => $validated['weight'],
             'display_order' => $validated['display_order'],
             'top_n_proceed' => $validated['top_n_proceed'] ?? null,
+            'use_for_minor_awards' => $validated['use_for_minor_awards'] ?? false,
             'is_active' => true,
         ]);
 
@@ -1435,6 +1436,7 @@ class OrganizerController extends Controller
             'weight' => $validated['weight'],
             'display_order' => $validated['display_order'],
             'top_n_proceed' => $validated['top_n_proceed'] ?? null,
+            'use_for_minor_awards' => $validated['use_for_minor_awards'] ?? false,
             'is_active' => $validated['is_active'] ?? $round->is_active,
         ]);
 

@@ -221,6 +221,20 @@
           </p>
         </div>
 
+        <div>
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              v-model="roundForm.use_for_minor_awards"
+              type="checkbox"
+              class="form-checkbox h-4 w-4 text-teal-600 rounded focus:ring-teal-500"
+            />
+            <span class="text-sm font-medium text-gray-700">Use for Minor Awards</span>
+          </label>
+          <p class="mt-1 ml-6 text-xs text-gray-500">
+            Check this if you want to display winners from this round in the Minor Awards section
+          </p>
+        </div>
+
         <div class="flex justify-end space-x-3 pt-4">
           <button
             type="button"
@@ -393,6 +407,7 @@ interface Round {
   criteria: Criteria[]
   criteria_count: number
   top_n_proceed?: number
+  use_for_minor_awards?: boolean
 }
 
 interface Pageant {
@@ -424,6 +439,7 @@ const roundForm = reactive({
   weight: 100,
   display_order: 0,
   top_n_proceed: null as number | null,
+  use_for_minor_awards: false,
 })
 
 const criteriaForm = reactive({
@@ -456,6 +472,7 @@ const editRound = (round: Round) => {
   roundForm.weight = round.weight
   roundForm.display_order = round.display_order
   roundForm.top_n_proceed = round.top_n_proceed || null
+  roundForm.use_for_minor_awards = round.use_for_minor_awards || false
   showAddRoundModal.value = true
 }
 
@@ -503,6 +520,7 @@ const submitRound = async () => {
     weight: roundForm.weight,
     display_order: roundForm.display_order,
     top_n_proceed: roundForm.top_n_proceed,
+    use_for_minor_awards: roundForm.use_for_minor_awards,
   }, {
     onSuccess: () => {
       showAddRoundModal.value = false
@@ -589,6 +607,7 @@ const resetRoundForm = () => {
   roundForm.weight = 100
   roundForm.display_order = 0
   roundForm.top_n_proceed = null
+  roundForm.use_for_minor_awards = false
 }
 
 const resetCriteriaForm = () => {

@@ -30,6 +30,7 @@ class Round extends Model
         'locked_at',
         'locked_by',
         'top_n_proceed',
+        'use_for_minor_awards',
     ];
 
     /**
@@ -45,6 +46,7 @@ class Round extends Model
         'is_locked' => 'boolean',
         'locked_at' => 'datetime',
         'top_n_proceed' => 'integer',
+        'use_for_minor_awards' => 'boolean',
     ];
 
     /**
