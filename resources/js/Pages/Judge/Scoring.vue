@@ -443,11 +443,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Star, Save, CheckCircle, AlertCircle, Lock, MapPin, Target, Users, Calendar, ChevronLeft, ChevronRight, X, Eye, EyeOff } from 'lucide-vue-next'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { Dialog, DialogPanel, TransitionRoot, TransitionChild } from '@headlessui/vue'
 import ScoreInput from '../../Components/ScoreInput.vue'
 import NotificationSystem from '../../Components/NotificationSystem.vue'
+
+// Get the page props for auth user
+const page = usePage()
 
 // No layout used for full-screen immersive experience
 defineOptions({
@@ -697,25 +700,37 @@ const submitScores = async (contestantId, autoAdvance = true) => {
 // Real-time updates
 onMounted(() => {
   if (props.pageant) {
-    const judgeId = props.pageant.judge_id || window.Laravel?.user?.id
+    const judgeId = page.props.auth?.user?.id
+    console.log('🔔 Scoring: Setting up notification listeners for judge:', judgeId)
     
     pageantChannel = window.Echo.private(`pageant.${props.pageant.id}`)
-      .subscribed(() => { isChannelReady.value = true })
+      .subscribed(() => { 
+        console.log('✅ Scoring: Subscribed to pageant channel')
+        isChannelReady.value = true 
+      })
       .listen('RoundUpdated', (e) => { handleRoundUpdate(e) })
       .listen('ScoreUpdated', (e) => { handleScoreUpdate(e) })
     
     // Listen for judge-specific notifications
     if (judgeId) {
+      console.log('🔔 Scoring: Subscribing to judge channel:', `judge.${judgeId}`)
       window.Echo.private(`judge.${judgeId}`)
+        .subscribed(() => {
+          console.log('✅ Scoring: Successfully subscribed to judge channel')
+        })
         .listen('JudgeNotified', (e) => { handleJudgeNotification(e) })
+        .error((error) => {
+          console.error('❌ Scoring: Error subscribing to judge channel:', error)
+        })
     }
   }
 })
 
 onUnmounted(() => {
   if (props.pageant) {
+    console.log('🔌 Scoring: Leaving channels')
     window.Echo.leave(`pageant.${props.pageant.id}`)
-    const judgeId = props.pageant.judge_id || window.Laravel?.user?.id
+    const judgeId = page.props.auth?.user?.id
     if (judgeId) {
       window.Echo.leave(`judge.${judgeId}`)
     }
@@ -723,26 +738,60 @@ onUnmounted(() => {
 })
 
 const handleJudgeNotification = (event) => {
+  console.log('🔔 Scoring: JudgeNotified event received:', event)
   const { title, message, round_name, action } = event
-  if (!notificationSystem.value) return
+  
+  // Play notification sound
+  playNotificationSound()
 
   // Show notification with appropriate styling
-  if (action === 'score_request') {
-    notificationSystem.value.info(message, {
-      title: title || 'Notification',
-      timeout: 8000
-    })
+  if (notificationSystem.value) {
+    const displayMessage = round_name ? `${message} (${round_name})` : message
+    
+    if (action === 'score_request') {
+      notificationSystem.value.info(displayMessage, {
+        title: title || 'Scoring Alert',
+        timeout: 10000
+      })
+    } else {
+      notificationSystem.value.success(displayMessage, {
+        title: title || 'Notification',
+        timeout: 10000
+      })
+    }
   } else {
-    notificationSystem.value.success(message, {
-      title: title || 'Notification',
-      timeout: 8000
-    })
+    // Fallback to browser alert if notification system not available
+    console.warn('⚠️ NotificationSystem ref not available, using browser alert')
+    alert(`${title || 'Notification'}: ${message}`)
+  }
+}
+
+// Play notification sound
+const playNotificationSound = () => {
+  try {
+    // Create a simple beep sound using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+    
+    oscillator.connect(gainNode)
+    gainNode.connect(audioContext.destination)
+    
+    oscillator.frequency.value = 880 // A5 note
+    oscillator.type = 'sine'
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5)
+    
+    oscillator.start(audioContext.currentTime)
+    oscillator.stop(audioContext.currentTime + 0.5)
+  } catch (e) {
+    console.log('Could not play notification sound:', e)
   }
 }
 
 const handleScoreUpdate = async (event) => {
   // Only refresh if the score is from the current judge and current round
-  const judgeId = props.pageant.judge_id || window.Laravel?.user?.id
+  const judgeId = page.props.auth?.user?.id
   if (event.score?.judge_id === judgeId && event.score?.round_id === props.currentRound?.id) {
     // Refresh the page data to get updated scores
     router.reload({

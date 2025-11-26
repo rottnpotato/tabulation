@@ -242,12 +242,14 @@
         </div>
       </div>
     </div>
+    <!-- Notification System -->
+    <NotificationSystem ref="notificationSystem" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { 
   Calendar, 
   User, 
@@ -259,10 +261,14 @@ import {
   Filter,
   ArrowUpDown,
   Layers,
-  Target
+  Target,
+  Bell
 } from 'lucide-vue-next'
 import JudgeLayout from '../../Layouts/JudgeLayout.vue'
 import NotificationSystem from '../../Components/NotificationSystem.vue'
+
+// Get the page props for auth user
+const page = usePage()
 
 defineOptions({
   layout: JudgeLayout
@@ -285,34 +291,83 @@ const statusFilter = ref('all')
 const sortKey = ref('date') // 'date' | 'progress' | 'name'
 const sortDir = ref('desc') // 'asc' | 'desc'
 const notificationSystem = ref(null)
+const isConnected = ref(false)
+
+// Play notification sound
+const playNotificationSound = () => {
+  try {
+    // Create a simple beep sound using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+    
+    oscillator.connect(gainNode)
+    gainNode.connect(audioContext.destination)
+    
+    oscillator.frequency.value = 880 // A5 note
+    oscillator.type = 'sine'
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5)
+    
+    oscillator.start(audioContext.currentTime)
+    oscillator.stop(audioContext.currentTime + 0.5)
+  } catch (e) {
+    console.log('Could not play notification sound:', e)
+  }
+}
 
 // Listen for judge notifications
 onMounted(() => {
-  const judgeId = props.judge?.id || window.Laravel?.user?.id
-  if (judgeId) {
+  const judgeId = props.judge?.id || page.props.auth?.user?.id
+  console.log('🔔 Dashboard: Setting up notification listener for judge:', judgeId)
+  
+  if (judgeId && window.Echo) {
     window.Echo.private(`judge.${judgeId}`)
+      .subscribed(() => {
+        console.log('✅ Dashboard: Successfully subscribed to judge channel')
+        isConnected.value = true
+      })
       .listen('JudgeNotified', (e) => {
+        console.log('🔔 Dashboard: JudgeNotified event received:', e)
+        
+        // Play notification sound
+        playNotificationSound()
+        
         if (notificationSystem.value) {
-          const { title, message, action } = e
+          const { title, message, action, round_name } = e
+          const displayTitle = title || 'Notification'
+          const displayMessage = round_name ? `${message} (${round_name})` : message
+          
           if (action === 'score_request') {
-            notificationSystem.value.info(message, {
-              title: title || 'Notification',
-              timeout: 8000
+            notificationSystem.value.info(displayMessage, {
+              title: displayTitle,
+              timeout: 10000
             })
           } else {
-            notificationSystem.value.success(message, {
-              title: title || 'Notification',
-              timeout: 8000
+            notificationSystem.value.success(displayMessage, {
+              title: displayTitle,
+              timeout: 10000
             })
           }
+        } else {
+          // Fallback to browser alert if notification system not available
+          console.warn('⚠️ NotificationSystem ref not available, using browser alert')
+          alert(`${e.title || 'Notification'}: ${e.message}`)
         }
       })
+      .error((error) => {
+        console.error('❌ Dashboard: Error subscribing to judge channel:', error)
+        isConnected.value = false
+      })
+  } else {
+    console.warn('⚠️ Dashboard: Echo not available or no judge ID')
   }
 })
 
 onUnmounted(() => {
-  const judgeId = props.judge?.id || window.Laravel?.user?.id
-  if (judgeId) {
+  const judgeId = props.judge?.id || page.props.auth?.user?.id
+  if (judgeId && window.Echo) {
+    console.log('🔌 Dashboard: Leaving judge channel')
     window.Echo.leave(`judge.${judgeId}`)
   }
 })
@@ -470,6 +525,3 @@ const formatScoringSystem = (system) => {
   overflow: hidden;
 }
 </style>
-
-<!-- Notification System -->
-<NotificationSystem ref="notificationSystem" />
