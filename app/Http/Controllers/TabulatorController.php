@@ -618,6 +618,16 @@ class TabulatorController extends Controller
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
+        // Check if all rounds are locked
+        $allRoundsLocked = $pageant->rounds->count() > 0 && $pageant->rounds->every(fn ($round) => $round->is_locked);
+
+        // Get list of unlocked rounds for the warning message
+        $unlockedRounds = $pageant->rounds->filter(fn ($round) => ! $round->is_locked)->map(fn ($round) => [
+            'id' => $round->id,
+            'name' => $round->name,
+            'type' => $round->type,
+        ])->values();
+
         // Helper function to mark qualified contestants based on top_n_proceed from previous round
         $markQualifiedContestants = function ($results, $stageType) use ($pageant) {
             // Find the last round before this stage that has top_n_proceed set
@@ -853,6 +863,12 @@ class TabulatorController extends Controller
             'resultsFinal' => $finalResults,
             'minorAwards' => $minorAwards,
             'judges' => $judges,
+            'tabulator' => [
+                'id' => $tabulator->id,
+                'name' => $tabulator->name,
+            ],
+            'allRoundsLocked' => $allRoundsLocked,
+            'unlockedRounds' => $unlockedRounds,
         ]);
     }
 

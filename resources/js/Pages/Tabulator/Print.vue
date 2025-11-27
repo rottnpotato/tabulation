@@ -47,11 +47,41 @@
               <div v-if="pageant" class="flex items-center">
                 <button
                   @click="printResults"
-                  class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-teal-600 text-white font-medium hover:bg-teal-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
+                  :disabled="!canPrint"
+                  class="inline-flex items-center justify-center px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group"
+                  :class="canPrint 
+                    ? 'bg-teal-600 text-white hover:bg-teal-700' 
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed hover:shadow-lg hover:translate-y-0'"
                 >
                   <Printer class="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                   <span>Print Report</span>
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Warning: Not All Rounds Locked -->
+        <div v-if="pageant && !canPrint" class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-8">
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0">
+              <AlertCircle class="h-6 w-6 text-amber-500" />
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-bold text-amber-800 mb-2">Cannot Print - Rounds Not Locked</h3>
+              <p class="text-amber-700 mb-4">
+                All rounds must be locked before you can print the final results. Please lock the following rounds:
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <span 
+                  v-for="round in unlockedRounds" 
+                  :key="round.id"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-800 text-sm font-medium rounded-lg border border-amber-200"
+                >
+                  <Lock class="h-3.5 w-3.5" />
+                  {{ round.name }}
+                  <span class="text-amber-600 text-xs">({{ round.type }})</span>
+                </span>
               </div>
             </div>
           </div>
@@ -317,7 +347,8 @@
                             <div class="w-64 text-center">
                               <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
                               <div class="border-b border-black h-8"></div>
-                              <div class="text-xs font-bold mt-1">Head Tabulator</div>
+                              <div class="text-xs font-bold mt-1">{{ tabulatorName }}</div>
+                              <div class="text-[10px] uppercase text-gray-500">Head Tabulator</div>
                               <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
                             </div>
                           </div>
@@ -406,7 +437,8 @@
                             <div class="w-64 text-center">
                               <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
                               <div class="border-b border-black h-8"></div>
-                              <div class="text-xs font-bold mt-1">Head Tabulator</div>
+                              <div class="text-xs font-bold mt-1">{{ tabulatorName }}</div>
+                              <div class="text-[10px] uppercase text-gray-500">Head Tabulator</div>
                               <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
                             </div>
                           </div>
@@ -561,7 +593,8 @@
                 <div class="w-64 text-center">
                   <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
                   <div class="border-b border-black h-8"></div>
-                  <div class="text-xs font-bold mt-1">Head Tabulator</div>
+                  <div class="text-xs font-bold mt-1">{{ tabulatorName }}</div>
+                  <div class="text-[10px] uppercase text-gray-500">Head Tabulator</div>
                   <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
                 </div>
               </div>
@@ -650,7 +683,8 @@
                 <div class="w-64 text-center">
                   <div class="text-[10px] uppercase text-gray-500 mb-8 text-left">Certified Correct:</div>
                   <div class="border-b border-black h-8"></div>
-                  <div class="text-xs font-bold mt-1">Head Tabulator</div>
+                  <div class="text-xs font-bold mt-1">{{ tabulatorName }}</div>
+                  <div class="text-[10px] uppercase text-gray-500">Head Tabulator</div>
                   <div class="text-[10px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
                 </div>
               </div>
@@ -707,7 +741,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Printer, LayoutDashboard, ChevronDown, FileText, Layers, Maximize, Award } from 'lucide-vue-next'
+import { Printer, LayoutDashboard, ChevronDown, FileText, Layers, Maximize, Award, AlertCircle, Lock } from 'lucide-vue-next'
 import { Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import PrintableResults from '../../Components/tabulator/PrintableResults.vue'
@@ -772,6 +806,17 @@ interface MinorAwardRound {
   winners?: MinorAwardWinner[]
 }
 
+interface Tabulator {
+  id: number
+  name: string
+}
+
+interface UnlockedRound {
+  id: number
+  name: string
+  type: string
+}
+
 interface Props {
   pageant?: Pageant
   roundTypes: RoundType[]
@@ -781,6 +826,9 @@ interface Props {
   resultsFinal: Result[]
   minorAwards?: Record<string, MinorAwardRound>
   judges: Judge[]
+  tabulator?: Tabulator
+  allRoundsLocked?: boolean
+  unlockedRounds?: UnlockedRound[]
 }
 
 const props = defineProps<Props>()
@@ -885,6 +933,16 @@ const reportTitle = computed(() => stageLabels.value[selectedStage.value])
 
 const isLastFinalRound = computed(() => {
   return selectedStage.value === 'final' || selectedStage.value === 'final-top3'
+})
+
+// Tabulator name for signatures
+const tabulatorName = computed(() => {
+  return props.tabulator?.name ? capitalizeName(props.tabulator.name) : 'Head Tabulator'
+})
+
+// Check if printing is allowed (all rounds must be locked)
+const canPrint = computed(() => {
+  return props.allRoundsLocked === true
 })
 
 const getPreviewWidth = () => {

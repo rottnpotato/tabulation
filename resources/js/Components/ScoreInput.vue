@@ -36,6 +36,7 @@
           :value="currentValue"
           @input="onNumberInput"
           @change="onNumberChange"
+          @blur="onNumberBlur"
           @keypress="validateNumberInput"
         />
       </div>
@@ -55,6 +56,7 @@
           :value="currentValue"
           @input="onNumberInput"
           @change="onNumberChange"
+          @blur="onNumberBlur"
           @keypress="validateNumberInput"
         />
         <div class="absolute bottom-0 left-0 h-1 bg-teal-500 transition-all duration-300 rounded-b-md opacity-20 group-focus-within:opacity-100"
@@ -175,6 +177,18 @@ function onNumberInput(e) {
   }
   
   e.target.value = value
+  
+  // Immediately clamp the value if it's a valid number
+  const numValue = Number(value)
+  if (!Number.isNaN(numValue) && value !== '' && value !== '-') {
+    // If value exceeds max, immediately set to max
+    if (numValue > props.max) {
+      currentValue.value = props.max
+      e.target.value = props.max
+    }
+    // If value is below min, we'll let it be for now (user might be typing)
+    // but it will be clamped on blur/change
+  }
 }
 
 function onNumberChange(e) {
@@ -187,7 +201,49 @@ function onNumberChange(e) {
     return
   }
   
-  currentValue.value = Number(value)
+  const numValue = Number(value)
+  
+  // Clamp the value to min/max range
+  if (numValue < props.min) {
+    currentValue.value = props.min
+    e.target.value = props.min
+    return
+  }
+  
+  if (numValue > props.max) {
+    currentValue.value = props.max
+    e.target.value = props.max
+    return
+  }
+  
+  currentValue.value = numValue
+}
+
+function onNumberBlur(e) {
+  const value = e.target.value
+  
+  // If empty, set to min value
+  if (value === '' || value === null || value === undefined) {
+    currentValue.value = props.min
+    e.target.value = props.min
+    return
+  }
+  
+  const numValue = Number(value)
+  
+  // Ensure value is within bounds on blur
+  if (Number.isNaN(numValue)) {
+    currentValue.value = props.min
+    e.target.value = props.min
+    return
+  }
+  
+  // Clamp and update if out of bounds
+  const clampedValue = clamp(roundTo(numValue))
+  if (clampedValue !== numValue) {
+    currentValue.value = clampedValue
+    e.target.value = clampedValue
+  }
 }
 
 function validateNumberInput(e) {
