@@ -1520,6 +1520,67 @@ class OrganizerController extends Controller
     }
 
     /**
+     * Update top_n_proceed for all rounds of a specific stage type
+     * This sets the advancement rule at the stage level (e.g., all semi-final rounds)
+     */
+    public function updateStageTopN(Request $request, $pageantId, $stageType)
+    {
+        // Get the currently logged in organizer
+        $organizer = Auth::user() ?? abort(401, 'Unauthenticated');
+
+        // Check if this organizer has access to this pageant
+        $hasAccess = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->where('pageant_id', $pageantId)
+            ->exists();
+
+        if (! $hasAccess) {
+            return response()->json(['error' => 'You do not have access to this pageant'], 403);
+        }
+
+        $validated = $request->validate([
+            'top_n_proceed' => 'nullable|integer|min:1',
+        ]);
+
+        // Get the last round of this stage type (by display_order)
+        // We store top_n_proceed on the last round of each stage
+        $lastRound = Round::where('pageant_id', $pageantId)
+            ->where('type', $stageType)
+            ->orderBy('display_order', 'desc')
+            ->first();
+
+        if (! $lastRound) {
+            return back()->with('error', "No rounds found for stage type: {$stageType}");
+        }
+
+        // Update the last round's top_n_proceed
+        $lastRound->update([
+            'top_n_proceed' => $validated['top_n_proceed'],
+        ]);
+
+        // Clear top_n_proceed from other rounds of the same type (keep it only on the last one)
+        Round::where('pageant_id', $pageantId)
+            ->where('type', $stageType)
+            ->where('id', '!=', $lastRound->id)
+            ->update(['top_n_proceed' => null]);
+
+        // Log activity
+        $this->auditLogService->log(
+            'STAGE_TOP_N_UPDATED',
+            'Pageant',
+            $pageantId,
+            "Updated {$stageType} stage: Top {$validated['top_n_proceed']} proceed"
+        );
+
+        $stageLabel = ucwords(str_replace('-', ' ', $stageType));
+        $message = $validated['top_n_proceed']
+            ? "{$stageLabel} stage updated: Top {$validated['top_n_proceed']} will advance"
+            : "{$stageLabel} stage advancement limit removed";
+
+        return back()->with('success', $message);
+    }
+
+    /**
      * Store a new criteria for a round
      */
     public function storeRoundCriteria(Request $request, $pageantId, $roundId)

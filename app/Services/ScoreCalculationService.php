@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Events\RankingsUpdated;
 use App\Models\Contestant;
 use App\Models\Pageant;
+use App\Models\Round;
 use App\Models\Score;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -111,6 +112,106 @@ class ScoreCalculationService
 
             return [];
         }
+    }
+
+    /**
+     * Get the IDs of contestants who advance from a given stage based on top_n_proceed.
+     * For pair pageants, returns top N from each gender separately.
+     *
+     * @param  string  $stage  The stage type to get results from (e.g., 'semi-final', 'preliminary')
+     * @return array<int> Array of contestant IDs that advance, empty if no top_n_proceed is set
+     */
+    public function getAdvancingContestantIds(Pageant $pageant, string $stage): array
+    {
+        try {
+            // Find the last round of this stage type to get top_n_proceed value
+            $stageRounds = $pageant->rounds->filter(fn ($round) => ($round->type ?? null) === $stage);
+
+            if ($stageRounds->isEmpty()) {
+                return [];
+            }
+
+            $lastRound = $stageRounds->sortByDesc('display_order')->first();
+            $topN = $lastRound->top_n_proceed;
+
+            // If no top_n_proceed is set, return empty (all contestants advance)
+            if ($topN === null || $topN <= 0) {
+                return [];
+            }
+
+            // Get stage results
+            $stageResults = $this->calculatePageantStageScores($pageant, $stage, false);
+
+            if (empty($stageResults)) {
+                return [];
+            }
+
+            $advancingIds = [];
+
+            // For pair pageants, apply top N separately per gender
+            if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+                $maleContestants = array_filter($stageResults, fn ($c) => ($c['gender'] ?? '') === 'male');
+                $femaleContestants = array_filter($stageResults, fn ($c) => ($c['gender'] ?? '') === 'female');
+
+                // Sort and take top N males
+                usort($maleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                $topMales = array_slice($maleContestants, 0, $topN);
+
+                // Sort and take top N females
+                usort($femaleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                $topFemales = array_slice($femaleContestants, 0, $topN);
+
+                $advancingIds = array_merge(
+                    array_column($topMales, 'id'),
+                    array_column($topFemales, 'id')
+                );
+            } else {
+                // For solo pageants, just take top N overall
+                usort($stageResults, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                $topContestants = array_slice($stageResults, 0, $topN);
+                $advancingIds = array_column($topContestants, 'id');
+            }
+
+            return $advancingIds;
+        } catch (\Exception $e) {
+            Log::error('Error getting advancing contestant IDs: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'stage' => $stage,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Get the previous stage type for a given round.
+     * Returns null if this is the first stage or no previous stage exists.
+     *
+     * @return string|null The previous stage type, or null if none
+     */
+    public function getPreviousStageType(Pageant $pageant, Round $round): ?string
+    {
+        // Get all unique stage types ordered by their first round's display_order
+        $stageTypes = $pageant->rounds
+            ->groupBy('type')
+            ->map(function ($rounds) {
+                return $rounds->min('display_order');
+            })
+            ->sortBy(fn ($order) => $order)
+            ->keys()
+            ->values()
+            ->toArray();
+
+        $currentStageType = $round->type;
+        $currentIndex = array_search($currentStageType, $stageTypes);
+
+        // If this is the first stage or stage not found, return null
+        if ($currentIndex === false || $currentIndex === 0) {
+            return null;
+        }
+
+        return $stageTypes[$currentIndex - 1];
     }
 
     /**

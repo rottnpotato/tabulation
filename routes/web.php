@@ -119,6 +119,7 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     Route::post('/pageant/{pageantId}/rounds', [OrganizerController::class, 'storeRound'])->name('organizer.pageant.rounds.store');
     Route::put('/pageant/{pageantId}/rounds/{roundId}', [OrganizerController::class, 'updateRound'])->name('organizer.pageant.rounds.update');
     Route::delete('/pageant/{pageantId}/rounds/{roundId}', [OrganizerController::class, 'destroyRound'])->name('organizer.pageant.rounds.destroy');
+    Route::put('/pageant/{pageantId}/stage/{stageType}/top-n', [OrganizerController::class, 'updateStageTopN'])->name('organizer.pageant.stage.top-n.update');
 
     // Round criteria management routes
     Route::post('/pageant/{pageantId}/rounds/{roundId}/criteria', [OrganizerController::class, 'storeRoundCriteria'])->name('organizer.pageant.rounds.criteria.store');

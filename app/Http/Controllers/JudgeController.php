@@ -9,6 +9,7 @@ use App\Models\Pageant;
 use App\Models\Round;
 use App\Models\Score;
 use App\Services\AuditLogService;
+use App\Services\ScoreCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,9 +20,12 @@ class JudgeController extends Controller
 {
     protected AuditLogService $auditLogService;
 
-    public function __construct(AuditLogService $auditLogService)
+    protected ScoreCalculationService $scoreCalculationService;
+
+    public function __construct(AuditLogService $auditLogService, ScoreCalculationService $scoreCalculationService)
     {
         $this->auditLogService = $auditLogService;
+        $this->scoreCalculationService = $scoreCalculationService;
     }
 
     /**
@@ -160,8 +164,8 @@ class JudgeController extends Controller
         // Get criteria for this round
         $criteria = $currentRound->criteria()->orderBy('display_order')->get();
 
-        // Get contestants for this pageant
-        $contestants = $pageant->contestants()->with('members:id,name')->orderBy('number')->get();
+        // Get contestants for this pageant, filtered by stage advancement
+        $contestants = $this->getEligibleContestants($pageant, $currentRound);
 
         // Get existing scores for this judge in this round
         $existingScores = Score::where('judge_id', $judge->id)
@@ -676,6 +680,40 @@ class JudgeController extends Controller
             'current' => $buildComparison($round, $currentScores),
             'previous' => $previousRound ? $buildComparison($previousRound, $previousScores) : null,
         ]);
+    }
+
+    /**
+     * Get eligible contestants for a round based on previous stage advancement.
+     * If a previous stage has top_n_proceed set, only contestants who advanced are returned.
+     * For pair pageants, advancement is applied separately per gender.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    private function getEligibleContestants(Pageant $pageant, Round $round)
+    {
+        // Get all contestants first
+        $contestants = $pageant->contestants()->with('members:id,name')->orderBy('number')->get();
+
+        // Check if there's a previous stage
+        $previousStageType = $this->scoreCalculationService->getPreviousStageType($pageant, $round);
+
+        if (! $previousStageType) {
+            // This is the first stage, all contestants are eligible
+            return $contestants;
+        }
+
+        // Get the IDs of contestants who advanced from the previous stage
+        $advancingIds = $this->scoreCalculationService->getAdvancingContestantIds($pageant, $previousStageType);
+
+        if (empty($advancingIds)) {
+            // No top_n_proceed set on previous stage, all contestants are eligible
+            return $contestants;
+        }
+
+        // Filter contestants to only those who advanced
+        return $contestants->filter(function ($contestant) use ($advancingIds) {
+            return in_array($contestant->id, $advancingIds);
+        })->values();
     }
 
     /**

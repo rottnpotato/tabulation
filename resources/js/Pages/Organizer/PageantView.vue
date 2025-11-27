@@ -749,121 +749,202 @@
             </p>
           </div>
           
-          <!-- Rounds List -->
-          <div v-else class="space-y-4">
-            <div 
-              v-for="round in pageant.rounds" 
-              :key="round.id"
-              class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <!-- Round Header -->
-              <div class="p-4 border-b border-gray-100">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-3">
-                    <div class="p-2 bg-teal-100 rounded-lg">
-                      <Target class="h-5 w-5 text-teal-600" />
-                    </div>
-                    <div>
-                      <h4 class="font-semibold text-gray-900">
-                        {{ round.name }}
-                        <span v-if="round.identifier" class="ml-2 text-sm font-mono text-gray-500">[{{ round.identifier }}]</span>
-                      </h4>
-                      <p class="text-sm text-gray-500">{{ round.description || 'No description provided' }}</p>
+          <!-- Rounds List - Grouped by Stage Type -->
+          <div v-else class="space-y-8">
+            <!-- Iterate through each stage type -->
+            <div v-for="stageType in orderedStageTypes" :key="stageType" class="space-y-4">
+              <!-- Stage Type Header -->
+              <div class="flex items-center gap-3">
+                <h4 class="text-md font-semibold text-gray-700 uppercase tracking-wide">
+                  {{ roundsByType[stageType].label }} Stage
+                </h4>
+                <div class="flex-1 h-px bg-gray-200"></div>
+                <span class="text-sm text-gray-500">
+                  {{ roundsByType[stageType].rounds.length }} round{{ roundsByType[stageType].rounds.length !== 1 ? 's' : '' }}
+                </span>
+              </div>
+              
+              <!-- Rounds in this stage -->
+              <div class="space-y-3">
+                <div 
+                  v-for="round in roundsByType[stageType].rounds" 
+                  :key="round.id"
+                  class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                >
+                  <!-- Round Header -->
+                  <div class="p-4 border-b border-gray-100">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-teal-100 rounded-lg">
+                          <Target class="h-5 w-5 text-teal-600" />
+                        </div>
+                        <div>
+                          <h4 class="font-semibold text-gray-900">
+                            {{ round.name }}
+                            <span v-if="round.identifier" class="ml-2 text-sm font-mono text-gray-500">[{{ round.identifier }}]</span>
+                          </h4>
+                          <p class="text-sm text-gray-500">{{ round.description || 'No description provided' }}</p>
+                        </div>
+                      </div>
+                      <div class="flex items-center space-x-3">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                          {{ round.weight }}% Weight
+                        </span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+                          {{ round.type }}
+                        </span>
+                        <button 
+                          @click="toggleRoundExpansion(round.id)"
+                          class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all"
+                        >
+                          <ChevronDown v-if="expandedRounds.includes(round.id)" class="h-5 w-5" />
+                          <ChevronRight v-else class="h-5 w-5" />
+                        </button>
+                        <div v-if="canEdit" class="flex space-x-1">
+                          <Tooltip text="Edit round" position="top">
+                            <button 
+                              @click="openEditRoundModal(round)"
+                              class="p-1 rounded-md text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-all transform hover:scale-110"
+                            >
+                              <Edit class="h-4 w-4" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip text="Delete round" position="top">
+                            <button 
+                              @click="confirmDeleteRound(round)"
+                              class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110"
+                            >
+                              <Trash class="h-4 w-4" />
+                            </button>
+                          </Tooltip>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div class="flex items-center space-x-3">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                      {{ round.weight }}% Weight
-                    </span>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">
-                      {{ round.type }}
-                    </span>
-                    <span v-if="round.top_n_proceed" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                      <Flag class="h-3 w-3 mr-1" />
-                      Top {{ round.top_n_proceed }} Proceed
-                    </span>
-                    <button 
-                      @click="toggleRoundExpansion(round.id)"
-                      class="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all"
-                    >
-                      <ChevronDown v-if="expandedRounds.includes(round.id)" class="h-5 w-5" />
-                      <ChevronRight v-else class="h-5 w-5" />
-                    </button>
-                    <div v-if="canEdit" class="flex space-x-1">
-                      <Tooltip text="Edit round" position="top">
-                        <button 
-                          @click="openEditRoundModal(round)"
-                          class="p-1 rounded-md text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-all transform hover:scale-110"
-                        >
-                          <Edit class="h-4 w-4" />
-                        </button>
-                      </Tooltip>
-                      <Tooltip text="Delete round" position="top">
-                        <button 
-                          @click="confirmDeleteRound(round)"
-                          class="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all transform hover:scale-110"
-                        >
-                          <Trash class="h-4 w-4" />
-                        </button>
-                      </Tooltip>
+                  
+                  <!-- Round Criteria (Expanded) -->
+                  <div v-if="expandedRounds.includes(round.id)" class="p-4 bg-gray-50">
+                    <div class="flex justify-between items-center mb-4">
+                      <h5 class="text-sm font-medium text-gray-900">Scoring Criteria</h5>
+                      <button
+                        v-if="canEdit"
+                        @click="openAddCriteriaModal(round)"
+                        class="inline-flex items-center px-2 py-1 bg-teal-600 border border-transparent rounded text-xs font-medium text-white hover:bg-teal-700 transition-colors"
+                      >
+                        <Plus class="h-3 w-3 mr-1" />
+                        Add Criteria
+                      </button>
+                    </div>
+                    
+                    <!-- Criteria Empty State -->
+                    <div v-if="!round.criteria || round.criteria.length === 0" class="text-center py-6">
+                      <ListChecks class="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p class="text-sm text-gray-500">No criteria defined for this round</p>
+                    </div>
+                    
+                    <!-- Criteria List -->
+                    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div 
+                        v-for="criteria in round.criteria" 
+                        :key="criteria.id"
+                        class="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow"
+                      >
+                        <div class="flex items-center justify-between mb-2">
+                          <h6 class="font-medium text-gray-900 capitalize">{{ criteria.name }}</h6>
+                          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-600">
+                            {{ criteria.weight }}%
+                          </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">{{ criteria.description || 'No description' }}</p>
+                        <div class="flex items-center justify-between text-xs text-gray-500">
+                          <span>Score: {{ formatScoreDisplay(criteria.min_score || 0, criteria.max_score || 10) }}</span>
+                          <div v-if="canEdit" class="flex space-x-1">
+                            <button 
+                              @click="openEditCriteriaModal(round, criteria)"
+                              class="p-1 rounded text-gray-400 hover:text-teal-600 transition-colors"
+                            >
+                              <Edit class="h-3 w-3" />
+                            </button>
+                            <button 
+                              @click="confirmDeleteCriteria(round, criteria)"
+                              class="p-1 rounded text-gray-400 hover:text-red-600 transition-colors"
+                            >
+                              <Trash class="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <!-- Round Criteria (Expanded) -->
-              <div v-if="expandedRounds.includes(round.id)" class="p-4 bg-gray-50">
-                <div class="flex justify-between items-center mb-4">
-                  <h5 class="text-sm font-medium text-gray-900">Scoring Criteria</h5>
-                  <button
-                    v-if="canEdit"
-                    @click="openAddCriteriaModal(round)"
-                    class="inline-flex items-center px-2 py-1 bg-teal-600 border border-transparent rounded text-xs font-medium text-white hover:bg-teal-700 transition-colors"
-                  >
-                    <Plus class="h-3 w-3 mr-1" />
-                    Add Criteria
-                  </button>
-                </div>
-                
-                <!-- Criteria Empty State -->
-                <div v-if="!round.criteria || round.criteria.length === 0" class="text-center py-6">
-                  <ListChecks class="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p class="text-sm text-gray-500">No criteria defined for this round</p>
-                </div>
-                
-                <!-- Criteria List -->
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div 
-                    v-for="criteria in round.criteria" 
-                    :key="criteria.id"
-                    class="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow"
-                  >
-                    <div class="flex items-center justify-between mb-2">
-                      <h6 class="font-medium text-gray-900 capitalize">{{ criteria.name }}</h6>
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-600">
-                        {{ criteria.weight }}%
-                      </span>
+              <!-- Stage Summary Card -->
+              <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200 p-4 mt-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                      <Flag class="h-5 w-5 text-purple-600" />
                     </div>
-                    <p class="text-xs text-gray-500 mb-2">{{ criteria.description || 'No description' }}</p>
-                    <div class="flex items-center justify-between text-xs text-gray-500">
-                      <span>Score: {{ formatScoreDisplay(criteria.min_score || 0, criteria.max_score || 10) }}</span>
-                      <div v-if="canEdit" class="flex space-x-1">
-                        <button 
-                          @click="openEditCriteriaModal(round, criteria)"
-                          class="p-1 rounded text-gray-400 hover:text-teal-600 transition-colors"
+                    <div>
+                      <h5 class="font-semibold text-purple-900">{{ roundsByType[stageType].label }} Stage Summary</h5>
+                      <p class="text-sm text-purple-700">
+                        Total Weight: {{ roundsByType[stageType].totalWeight }}% across {{ roundsByType[stageType].rounds.length }} round{{ roundsByType[stageType].rounds.length !== 1 ? 's' : '' }}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <!-- Top N Configuration -->
+                  <div class="flex items-center gap-3">
+                    <div class="text-right">
+                      <label class="block text-xs font-medium text-purple-700 mb-1">
+                        {{ stageType === 'final' ? 'Number of Winners' : 'Top N to Advance' }}
+                      </label>
+                      <div class="flex items-center gap-2">
+                        <input
+                          v-model.number="stageTopNForm[stageType]"
+                          type="number"
+                          min="1"
+                          :placeholder="stageType === 'final' ? 'e.g., 3' : 'e.g., 10'"
+                          class="w-24 px-3 py-1.5 text-sm border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                          :disabled="!canEdit"
+                        />
+                        <button
+                          v-if="canEdit && hasStageTopNChanged(stageType)"
+                          @click="updateStageTopN(stageType)"
+                          :disabled="stageTopNProcessing[stageType]"
+                          class="inline-flex items-center px-3 py-1.5 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
                         >
-                          <Edit class="h-3 w-3" />
+                          <span v-if="stageTopNProcessing[stageType]" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Saving
+                          </span>
+                          <span v-else>Save</span>
                         </button>
-                        <button 
-                          @click="confirmDeleteCriteria(round, criteria)"
-                          class="p-1 rounded text-gray-400 hover:text-red-600 transition-colors"
+                        <span 
+                          v-else-if="roundsByType[stageType].topNProceed" 
+                          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300"
                         >
-                          <Trash class="h-3 w-3" />
-                        </button>
+                          ✓ Top {{ roundsByType[stageType].topNProceed }}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
+                <p class="text-xs text-purple-600 mt-2">
+                  <template v-if="stageType === 'final'">
+                    Set the number of winners (e.g., Top 3 for 1st, 2nd, 3rd place). Leave empty to show all finalists.
+                  </template>
+                  <template v-else>
+                    Set how many contestants advance after all rounds in this stage are scored. Scores are accumulated across all rounds before determining Top N.
+                    <span v-if="allowsPairContestants" class="block mt-1 font-medium text-purple-700">
+                      📌 For pair pageants: Top {{ stageTopNForm[stageType] || 'N' }} male and Top {{ stageTopNForm[stageType] || 'N' }} female will advance (same number for both).
+                    </span>
+                  </template>
+                </p>
               </div>
             </div>
           </div>
@@ -1783,21 +1864,6 @@
                         </div>
                       </div>
 
-                      <div>
-                        <label for="topNProceed" class="block text-sm font-medium text-gray-700 mb-1">
-                          Top N to Proceed <span class="text-gray-400">(Optional)</span>
-                        </label>
-                        <input
-                          id="topNProceed"
-                          v-model.number="roundForm.top_n_proceed"
-                          type="number"
-                          min="1"
-                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
-                          placeholder="e.g. 10 (leave empty if not applicable)"
-                        />
-                        <p class="mt-1 text-xs text-gray-500">Number of contestants who will proceed from this round (optional)</p>
-                      </div>
-
                       <div class="flex items-start space-x-2">
                         <input
                           id="useForMinorAwards"
@@ -2682,6 +2748,94 @@ const allowsPairContestants = computed(() => {
 const allowsSoloContestants = computed(() => {
   return !['pairs'].includes(props.pageant.contestant_type) && props.pageant.contestant_type !== 'both'
 })
+
+// Group rounds by type for stage-level display
+const roundsByType = computed(() => {
+  if (!props.pageant.rounds || props.pageant.rounds.length === 0) {
+    return {}
+  }
+  
+  // Group rounds by type
+  const grouped = {}
+  const sortedRounds = [...props.pageant.rounds].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+  
+  sortedRounds.forEach(round => {
+    const type = round.type || 'other'
+    if (!grouped[type]) {
+      grouped[type] = {
+        type: type,
+        label: type.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+        rounds: [],
+        totalWeight: 0,
+        topNProceed: null
+      }
+    }
+    grouped[type].rounds.push(round)
+    grouped[type].totalWeight += round.weight || 0
+    // Get top_n_proceed from the last round of this type (where it should be stored)
+    if (round.top_n_proceed) {
+      grouped[type].topNProceed = round.top_n_proceed
+    }
+  })
+  
+  return grouped
+})
+
+// Get ordered stage types for display
+const orderedStageTypes = computed(() => {
+  const types = Object.keys(roundsByType.value)
+  // Sort by the first round's display_order in each group
+  return types.sort((a, b) => {
+    const aFirst = roundsByType.value[a]?.rounds[0]?.display_order || 0
+    const bFirst = roundsByType.value[b]?.rounds[0]?.display_order || 0
+    return aFirst - bFirst
+  })
+})
+
+// Stage Top N form state
+const stageTopNForm = ref({})
+const stageTopNProcessing = ref({})
+
+// Initialize stage form values from current data
+const initializeStageTopNForm = () => {
+  Object.keys(roundsByType.value).forEach(type => {
+    stageTopNForm.value[type] = roundsByType.value[type].topNProceed || null
+  })
+}
+
+// Watch for changes in rounds and reinitialize
+watch(() => props.pageant.rounds, () => {
+  initializeStageTopNForm()
+}, { immediate: true, deep: true })
+
+// Update stage Top N
+const updateStageTopN = (stageType) => {
+  stageTopNProcessing.value[stageType] = true
+  
+  router.put(route('organizer.pageant.stage.top-n.update', { 
+    pageantId: props.pageant.id, 
+    stageType: stageType 
+  }), {
+    top_n_proceed: stageTopNForm.value[stageType] || null
+  }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      stageTopNProcessing.value[stageType] = false
+    },
+    onError: () => {
+      stageTopNProcessing.value[stageType] = false
+      // Reset to original value on error
+      stageTopNForm.value[stageType] = roundsByType.value[stageType]?.topNProceed || null
+    }
+  })
+}
+
+// Check if stage Top N has changed
+const hasStageTopNChanged = (stageType) => {
+  const current = stageTopNForm.value[stageType] || null
+  const original = roundsByType.value[stageType]?.topNProceed || null
+  return current !== original
+}
 
 
 // Get the correct display image for a contestant with validation
