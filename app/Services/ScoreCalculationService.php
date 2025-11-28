@@ -646,6 +646,11 @@ class ScoreCalculationService
         if ($pageant) {
             foreach ($pageant->rounds as $round) {
                 Cache::forget("contestant_round_score_{$contestantId}_{$round->id}");
+
+                // Invalidate stage-level caches for each round type
+                if ($round->type) {
+                    Cache::forget("pageant_stage_scores_{$pageantId}_{$round->type}");
+                }
             }
         }
     }
@@ -660,6 +665,12 @@ class ScoreCalculationService
         // Get all contestants and invalidate their caches
         $pageant = Pageant::with(['contestants', 'rounds'])->find($pageantId);
         if ($pageant) {
+            // Invalidate all stage-level caches
+            $stageTypes = $pageant->rounds->pluck('type')->unique()->filter();
+            foreach ($stageTypes as $stageType) {
+                Cache::forget("pageant_stage_scores_{$pageantId}_{$stageType}");
+            }
+
             foreach ($pageant->contestants as $contestant) {
                 $this->invalidateContestantCache($pageantId, $contestant->id);
             }

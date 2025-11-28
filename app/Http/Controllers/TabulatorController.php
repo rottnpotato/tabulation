@@ -504,49 +504,28 @@ class TabulatorController extends Controller
             foreach ($roundContestants as $rankIndex => &$contestant) {
                 $contestant['rank'] = $rankIndex + 1;
             }
+            unset($contestant); // Break the reference
 
-            // Apply top_n_proceed filtering from PREVIOUS round
-            if ($index > 0) {
-                $previousRound = $orderedRounds->values()[$index - 1];
-                if ($previousRound->top_n_proceed !== null && $previousRound->top_n_proceed > 0) {
-                    // Get the IDs of contestants who advanced
-                    $previousRoundKey = 'round_'.$previousRound->id;
-                    $advancedContestants = [];
+            // Apply filtering based on previous STAGE's top_n_proceed (not previous round)
+            // Get the previous stage type for this round
+            $previousStageType = $this->scoreCalculationService->getPreviousStageType($pageant, $currentRound);
 
-                    if (isset($roundResults[$previousRoundKey])) {
-                        $prevResults = $roundResults[$previousRoundKey]['contestants'];
+            if ($previousStageType !== null) {
+                // Get advancing contestant IDs from the previous stage
+                $advancedContestants = $this->scoreCalculationService->getAdvancingContestantIds($pageant, $previousStageType);
 
-                        // For pair pageants, take top N from each gender
-                        if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                            $maleResults = array_filter($prevResults, fn ($c) => ($c['gender'] ?? '') === 'male');
-                            $femaleResults = array_filter($prevResults, fn ($c) => ($c['gender'] ?? '') === 'female');
+                // If there are advancement rules, filter contestants
+                if (! empty($advancedContestants)) {
+                    $roundContestants = array_filter($roundContestants, function ($c) use ($advancedContestants) {
+                        return in_array($c['id'], $advancedContestants);
+                    });
+                    $roundContestants = array_values($roundContestants);
 
-                            $maleResults = array_slice($maleResults, 0, $previousRound->top_n_proceed);
-                            $femaleResults = array_slice($femaleResults, 0, $previousRound->top_n_proceed);
-
-                            $advancedContestants = array_merge(
-                                array_column($maleResults, 'id'),
-                                array_column($femaleResults, 'id')
-                            );
-                        } else {
-                            // Take top N overall
-                            $topN = array_slice($prevResults, 0, $previousRound->top_n_proceed);
-                            $advancedContestants = array_column($topN, 'id');
-                        }
+                    // Re-rank after filtering
+                    foreach ($roundContestants as $rankIndex => &$contestant) {
+                        $contestant['rank'] = $rankIndex + 1;
                     }
-
-                    // Filter contestants to only those who advanced
-                    if (! empty($advancedContestants)) {
-                        $roundContestants = array_filter($roundContestants, function ($c) use ($advancedContestants) {
-                            return in_array($c['id'], $advancedContestants);
-                        });
-                        $roundContestants = array_values($roundContestants);
-
-                        // Re-rank after filtering
-                        foreach ($roundContestants as $rankIndex => &$contestant) {
-                            $contestant['rank'] = $rankIndex + 1;
-                        }
-                    }
+                    unset($contestant); // Break the reference
                 }
             }
 
