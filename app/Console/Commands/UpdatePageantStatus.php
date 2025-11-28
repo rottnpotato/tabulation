@@ -20,7 +20,7 @@ class UpdatePageantStatus extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically update pageant status to Ongoing when start date is reached';
+    protected $description = 'Automatically update pageant status based on start and end dates';
 
     /**
      * Execute the console command.
@@ -28,30 +28,50 @@ class UpdatePageantStatus extends Command
     public function handle(): int
     {
         $today = now()->startOfDay();
+        $activatedCount = 0;
+        $completedCount = 0;
 
-        // Find pageants that should be set to Active (when start date is reached)
-        $pageants = Pageant::where('status', 'Draft')
+        // Find pageants that should be set to Active (when start date is reached and end date not passed)
+        $pageantsToActivate = Pageant::where('status', 'Draft')
             ->whereDate('start_date', '<=', $today)
-            ->whereDate('end_date', '>=', $today)
+            ->where(function ($query) use ($today) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $today);
+            })
             ->get();
 
-        if ($pageants->isEmpty()) {
-            $this->info('No pageants need status update.');
-
-            return self::SUCCESS;
-        }
-
-        $updatedCount = 0;
-
-        foreach ($pageants as $pageant) {
+        foreach ($pageantsToActivate as $pageant) {
             $pageant->update(['status' => 'Active']);
-            $updatedCount++;
+            $activatedCount++;
 
             Log::info("Pageant '{$pageant->name}' (ID: {$pageant->id}) status automatically updated to Active.");
-            $this->info("Updated: {$pageant->name}");
+            $this->info("Activated: {$pageant->name}");
         }
 
-        $this->info("Successfully updated {$updatedCount} pageant(s) to Active status.");
+        // Find pageants that should be set to Completed (when end date has passed)
+        $pageantsToComplete = Pageant::whereIn('status', ['Active', 'Draft'])
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', $today)
+            ->get();
+
+        foreach ($pageantsToComplete as $pageant) {
+            $pageant->update(['status' => 'Completed']);
+            $completedCount++;
+
+            Log::info("Pageant '{$pageant->name}' (ID: {$pageant->id}) status automatically updated to Completed.");
+            $this->info("Completed: {$pageant->name}");
+        }
+
+        if ($activatedCount === 0 && $completedCount === 0) {
+            $this->info('No pageants need status update.');
+        } else {
+            if ($activatedCount > 0) {
+                $this->info("Successfully activated {$activatedCount} pageant(s).");
+            }
+            if ($completedCount > 0) {
+                $this->info("Successfully completed {$completedCount} pageant(s).");
+            }
+        }
 
         return self::SUCCESS;
     }
