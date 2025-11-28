@@ -309,49 +309,124 @@ const roundOptions = computed(() => {
 
 const displayedContestants = computed(() => {
   let baseList: Contestant[] = []
+  let topNProceed: number | null = null
   
   if (activeRound.value === 'overall') {
     baseList = props.contestants || []
+    // For overall, use number of winners as the cutoff
+    topNProceed = props.pageant?.number_of_winners || null
   } else {
     // Get contestants for the selected round
     const roundKey = `round_${activeRound.value}`
     const roundResult = props.roundResults[roundKey]
     if (roundResult && roundResult.contestants) {
       baseList = roundResult.contestants
+      topNProceed = roundResult.top_n_proceed || null
     }
   }
 
+  // Deduplicate by contestant ID (keep first occurrence)
+  const seenIds = new Set<number>()
+  const deduplicated = baseList.filter(contestant => {
+    if (seenIds.has(contestant.id)) {
+      return false
+    }
+    seenIds.add(contestant.id)
+    return true
+  })
+
   // Sort by total score to determine current rankings
-  const sorted = [...baseList].sort((a, b) => {
+  const sorted = [...deduplicated].sort((a, b) => {
     const scoreA = a.totalScore ?? a.finalScore ?? 0
     const scoreB = b.totalScore ?? b.finalScore ?? 0
     return scoreB - scoreA
   })
 
-  // Track ranking changes
+  // Track ranking changes and recompute qualified status based on current rank
   const newRankings = new Map<number, number>()
-  sorted.forEach((contestant, index) => {
-    newRankings.set(contestant.id, index + 1)
+  const result = sorted.map((contestant, index) => {
+    const currentRank = index + 1
+    newRankings.set(contestant.id, currentRank)
+    
+    // Recompute qualified status based on current position
+    const qualified = topNProceed === null || currentRank <= topNProceed
+    
+    return {
+      ...contestant,
+      rank: currentRank,
+      qualified,
+      qualification_cutoff: topNProceed
+    }
   })
 
   // Store new rankings for next comparison
   previousRankings.value = newRankings
 
-  return sorted
+  return result
 })
 
 const isPairPageant = computed(() => {
   return props.pageant?.contestant_type === 'pairs' || props.pageant?.contestant_type === 'both'
 })
 
+// Get the current qualification cutoff for the active round
+const currentQualificationCutoff = computed(() => {
+  if (activeRound.value === 'overall') {
+    return props.pageant?.number_of_winners || null
+  }
+  const roundKey = `round_${activeRound.value}`
+  const roundResult = props.roundResults[roundKey]
+  return roundResult?.top_n_proceed || null
+})
+
 const maleContestants = computed(() => {
   if (!isPairPageant.value) return []
-  return displayedContestants.value.filter(c => c.gender === 'male')
+  
+  // Filter and sort males by score
+  const males = displayedContestants.value
+    .filter(c => c.gender === 'male')
+    .sort((a, b) => {
+      const scoreA = a.totalScore ?? a.finalScore ?? 0
+      const scoreB = b.totalScore ?? b.finalScore ?? 0
+      return scoreB - scoreA
+    })
+  
+  // Recompute rank and qualified status within male group
+  const topN = currentQualificationCutoff.value
+  return males.map((contestant, index) => {
+    const genderRank = index + 1
+    return {
+      ...contestant,
+      rank: genderRank,
+      qualified: topN === null || genderRank <= topN,
+      qualification_cutoff: topN
+    }
+  })
 })
 
 const femaleContestants = computed(() => {
   if (!isPairPageant.value) return []
-  return displayedContestants.value.filter(c => c.gender === 'female')
+  
+  // Filter and sort females by score
+  const females = displayedContestants.value
+    .filter(c => c.gender === 'female')
+    .sort((a, b) => {
+      const scoreA = a.totalScore ?? a.finalScore ?? 0
+      const scoreB = b.totalScore ?? b.finalScore ?? 0
+      return scoreB - scoreA
+    })
+  
+  // Recompute rank and qualified status within female group
+  const topN = currentQualificationCutoff.value
+  return females.map((contestant, index) => {
+    const genderRank = index + 1
+    return {
+      ...contestant,
+      rank: genderRank,
+      qualified: topN === null || genderRank <= topN,
+      qualification_cutoff: topN
+    }
+  })
 })
 
 const currentRoundInfo = computed(() => {

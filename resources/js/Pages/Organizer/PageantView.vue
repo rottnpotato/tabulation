@@ -924,11 +924,19 @@
                           </span>
                           <span v-else>Save</span>
                         </button>
+                        <!-- Show saved value badge when there are no pending changes -->
                         <span 
-                          v-else-if="roundsByType[stageType].topNProceed" 
+                          v-else-if="roundsByType[stageType].topNProceed !== null && roundsByType[stageType].topNProceed !== undefined" 
                           class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300"
                         >
                           ✓ Top {{ roundsByType[stageType].topNProceed }}
+                        </span>
+                        <!-- Show not configured indicator when no value is set -->
+                        <span 
+                          v-else
+                          class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200"
+                        >
+                          Not set
                         </span>
                       </div>
                     </div>
@@ -2773,7 +2781,8 @@ const roundsByType = computed(() => {
     grouped[type].rounds.push(round)
     grouped[type].totalWeight += round.weight || 0
     // Get top_n_proceed from the last round of this type (where it should be stored)
-    if (round.top_n_proceed) {
+    // Use explicit null check to handle 0 as a valid value (though typically top_n_proceed should be >= 1)
+    if (round.top_n_proceed !== null && round.top_n_proceed !== undefined) {
       grouped[type].topNProceed = round.top_n_proceed
     }
   })

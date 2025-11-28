@@ -557,7 +557,7 @@ class TabulatorController extends Controller
         }
 
         // Helper function to format contestant data consistently
-        $formatContestantData = function ($contestant) use ($pageant) {
+        $formatContestantData = function ($contestant, $topNProceed = null) use ($pageant) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
             $memberNames = [];
             $memberGenders = [];
@@ -567,6 +567,16 @@ class TabulatorController extends Controller
                     $memberNames[] = $member->name;
                     $memberGenders[] = $member->gender;
                 }
+            }
+
+            // Determine qualified status based on rank and top_n_proceed
+            $rank = $contestant['rank'] ?? 0;
+            $qualified = true; // Default to qualified if no cutoff
+            $qualificationCutoff = null;
+
+            if ($topNProceed !== null && $topNProceed > 0) {
+                $qualificationCutoff = $topNProceed;
+                $qualified = $rank > 0 && $rank <= $topNProceed;
             }
 
             return [
@@ -581,19 +591,29 @@ class TabulatorController extends Controller
                 'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
                 'scores' => $contestant['scores'] ?? [],
                 'totalScore' => $contestant['finalScore'] ?? $contestant['totalScore'] ?? 0,
-                'rank' => $contestant['rank'] ?? 0,
+                'rank' => $rank,
+                'qualified' => $qualified,
+                'qualification_cutoff' => $qualificationCutoff,
             ];
         };
 
-        // Format overall contestants
-        $contestants = collect($contestants)->map($formatContestantData);
+        // Get the number of winners for overall results
+        $numberOfWinners = $pageant->getNumberOfWinners();
 
-        // Format round-specific results
+        // Format overall contestants with qualification based on number of winners
+        $contestants = collect($contestants)->map(function ($contestant) use ($formatContestantData, $numberOfWinners) {
+            return $formatContestantData($contestant, $numberOfWinners);
+        });
+
+        // Format round-specific results with their respective top_n_proceed
         $formattedRoundResults = [];
         foreach ($roundResults as $key => $result) {
+            $topN = $result['top_n_proceed'];
             $formattedRoundResults[$key] = [
-                'contestants' => collect($result['contestants'])->map($formatContestantData)->values()->all(),
-                'top_n_proceed' => $result['top_n_proceed'],
+                'contestants' => collect($result['contestants'])->map(function ($contestant) use ($formatContestantData, $topN) {
+                    return $formatContestantData($contestant, $topN);
+                })->values()->all(),
+                'top_n_proceed' => $topN,
             ];
         }
 
