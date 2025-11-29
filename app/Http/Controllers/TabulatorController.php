@@ -331,6 +331,8 @@ class TabulatorController extends Controller
                     'id' => $pageant->id,
                     'name' => $pageant->name,
                     'contestant_type' => $pageant->contestant_type ?? 'solo',
+                    'ranking_method' => $pageant->ranking_method ?? 'score_average',
+                    'tie_handling' => $pageant->tie_handling ?? 'average',
                 ],
                 'rounds' => $rounds,
                 'contestants' => [],
@@ -435,6 +437,8 @@ class TabulatorController extends Controller
                 'id' => $pageant->id,
                 'name' => $pageant->name,
                 'contestant_type' => $pageant->contestant_type ?? 'solo',
+                'ranking_method' => $pageant->ranking_method ?? 'score_average',
+                'tie_handling' => $pageant->tie_handling ?? 'average',
             ],
             'rounds' => $rounds,
             'currentRound' => [
@@ -579,6 +583,9 @@ class TabulatorController extends Controller
                 $qualified = $rank > 0 && $rank <= $topNProceed;
             }
 
+            // Unified score: use finalScore if available, fallback to totalScore
+            $totalScore = $contestant['finalScore'] ?? $contestant['totalScore'] ?? 0;
+
             return [
                 'id' => $contestant['id'],
                 'number' => $contestant['number'],
@@ -590,7 +597,10 @@ class TabulatorController extends Controller
                 'region' => $contestant['region'] ?? null,
                 'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
                 'scores' => $contestant['scores'] ?? [],
-                'totalScore' => $contestant['finalScore'] ?? $contestant['totalScore'] ?? 0,
+                'totalScore' => $totalScore,
+                'finalScore' => $totalScore,
+                'totalRankSum' => $contestant['totalRankSum'] ?? 0,
+                'judgeRanks' => $contestant['judgeRanks'] ?? [],
                 'rank' => $rank,
                 'qualified' => $qualified,
                 'qualification_cutoff' => $qualificationCutoff,
@@ -623,6 +633,8 @@ class TabulatorController extends Controller
                 'name' => $pageant->name,
                 'contestant_type' => $pageant->contestant_type,
                 'number_of_winners' => $pageant->getNumberOfWinners(),
+                'ranking_method' => $pageant->ranking_method ?? 'score_average',
+                'tie_handling' => $pageant->tie_handling ?? 'average',
             ],
             'contestants' => $contestants,
             'rounds' => $rounds,

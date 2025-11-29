@@ -93,6 +93,23 @@
                 </div>
               </div>
 
+              <!-- Ranking Method Indicator -->
+              <div v-if="pageant" class="flex items-center gap-3 mb-4">
+                <div 
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium"
+                  :class="isRankSumMethod ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
+                >
+                  <BarChart3 class="w-4 h-4" />
+                  <span>{{ isRankSumMethod ? 'Rank Sum Method' : 'Score Average Method' }}</span>
+                </div>
+                <div 
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 text-slate-600 border border-slate-200"
+                  :title="`Tie handling: ${pageant.tie_handling || 'average'}`"
+                >
+                  <span>{{ getTieHandlingLabel() }}</span>
+                </div>
+              </div>
+
               <div v-if="currentRoundInfo" class="flex items-center gap-2 p-3 bg-teal-50 border border-teal-100 rounded-xl">
                 <div class="text-sm text-teal-700">
                   <span class="font-semibold">{{ currentRoundInfo.name }}</span>
@@ -160,6 +177,7 @@
                   :is-updating="isUpdating"
                   :number-of-winners="pageant?.number_of_winners || 3"
                   :show-winners="shouldShowWinners"
+                  :ranking-method="pageant?.ranking_method || 'score_average'"
                 />
               </div>
             </div>
@@ -182,6 +200,7 @@
                   :is-updating="isUpdating"
                   :number-of-winners="pageant?.number_of_winners || 3"
                   :show-winners="shouldShowWinners"
+                  :ranking-method="pageant?.ranking_method || 'score_average'"
                 />
               </div>
             </div>
@@ -200,6 +219,7 @@
                 :is-updating="isUpdating"
                 :number-of-winners="pageant?.number_of_winners || 3"
                 :show-winners="shouldShowWinners"
+                :ranking-method="pageant?.ranking_method || 'score_average'"
               />
             </div>
           </div>
@@ -251,6 +271,8 @@ interface Contestant {
   scores: Record<string, number>
   totalScore: number
   finalScore?: number
+  totalRankSum?: number
+  judgeRanks?: Record<string, { scores: number[], ranks: number[], details: Array<{ judge_id: number, judge_name: string, score: number, rank: number }> }>
   rank?: number
   gender?: string
 }
@@ -265,6 +287,8 @@ interface Pageant {
   name: string
   contestant_type?: string
   number_of_winners?: number
+  ranking_method?: 'score_average' | 'rank_sum'
+  tie_handling?: 'sequential' | 'average' | 'minimum'
 }
 
 interface Props {
@@ -286,6 +310,20 @@ const isUpdating = ref(false)
 
 const activeRound = ref('overall')
 const selectedRoundId = ref<number | null>(null)
+
+const isRankSumMethod = computed(() => {
+  return props.pageant?.ranking_method === 'rank_sum'
+})
+
+const getTieHandlingLabel = () => {
+  const method = props.pageant?.tie_handling || 'average'
+  switch (method) {
+    case 'average': return 'Avg Rank Ties'
+    case 'sequential': return 'Sequential Ties'
+    case 'minimum': return 'Min Rank Ties'
+    default: return 'Standard Ties'
+  }
+}
 
 const roundOptions = computed(() => {
   const options = [

@@ -13,13 +13,304 @@ use Illuminate\Support\Facades\Log;
 class ScoreCalculationService
 {
     /**
-     * Calculate stage-specific final scores (e.g., only semi-final or only final rounds)
+     * Calculate RANK.AVG equivalent - handles ties by averaging ranks.
+     * This mimics Excel's RANK.AVG function.
+     *
+     * @param  float  $value  The value to rank
+     * @param  array  $allValues  All values to rank against
+     * @param  string  $direction  'desc' for highest=1, 'asc' for lowest=1
+     * @return float The rank (may be decimal for ties, e.g., 2.5)
+     */
+    public function calculateRankAvg(float $value, array $allValues, string $direction = 'desc'): float
+    {
+        $betterCount = 0;
+        $tieCount = 0;
+
+        foreach ($allValues as $otherValue) {
+            if ($direction === 'desc') {
+                // Higher is better
+                if ($otherValue > $value) {
+                    $betterCount++;
+                } elseif (abs($otherValue - $value) < 0.00001) {
+                    $tieCount++;
+                }
+            } else {
+                // Lower is better (for rank sums)
+                if ($otherValue < $value) {
+                    $betterCount++;
+                } elseif (abs($otherValue - $value) < 0.00001) {
+                    $tieCount++;
+                }
+            }
+        }
+
+        // RANK.AVG: start rank + (number of ties - 1) / 2
+        $startRank = $betterCount + 1;
+
+        return $startRank + ($tieCount - 1) / 2;
+    }
+
+    /**
+     * Apply ranking with proper tie handling to an array of contestants.
+     *
+     * @param  array  $contestants  Array of contestant data with score/rankSum field
+     * @param  string  $scoreField  The field to rank by ('finalScore' or 'totalRankSum')
+     * @param  string  $direction  'desc' for score_average, 'asc' for rank_sum
+     * @param  string  $tieHandling  'sequential', 'average', or 'minimum'
+     * @return array Contestants with 'rank' field added
+     */
+    public function applyRanking(array $contestants, string $scoreField, string $direction, string $tieHandling): array
+    {
+        if (empty($contestants)) {
+            return $contestants;
+        }
+
+        // Sort contestants
+        usort($contestants, function ($a, $b) use ($scoreField, $direction) {
+            $aVal = $a[$scoreField] ?? 0;
+            $bVal = $b[$scoreField] ?? 0;
+
+            return $direction === 'desc'
+                ? $bVal <=> $aVal
+                : $aVal <=> $bVal;
+        });
+
+        // Extract values for RANK.AVG calculation
+        $allValues = array_column($contestants, $scoreField);
+
+        foreach ($contestants as $index => &$contestant) {
+            $value = $contestant[$scoreField] ?? 0;
+
+            switch ($tieHandling) {
+                case 'average':
+                    $contestant['rank'] = $this->calculateRankAvg($value, $allValues, $direction);
+                    break;
+
+                case 'minimum':
+                    $rank = 1;
+                    foreach ($allValues as $otherValue) {
+                        if ($direction === 'desc' && $otherValue > $value) {
+                            $rank++;
+                        } elseif ($direction === 'asc' && $otherValue < $value) {
+                            $rank++;
+                        }
+                    }
+                    $contestant['rank'] = $rank;
+                    break;
+
+                case 'sequential':
+                default:
+                    $contestant['rank'] = $index + 1;
+                    break;
+            }
+        }
+
+        return $contestants;
+    }
+
+    /**
+     * Apply ranking with gender separation for pair pageants.
+     */
+    private function applyGenderSeparatedRanking(
+        array $contestants,
+        Pageant $pageant,
+        string $scoreField,
+        string $direction,
+        string $tieHandling
+    ): array {
+        if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+            $maleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'male');
+            $femaleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'female');
+
+            $maleContestants = $this->applyRanking($maleContestants, $scoreField, $direction, $tieHandling);
+            $femaleContestants = $this->applyRanking($femaleContestants, $scoreField, $direction, $tieHandling);
+
+            foreach ($maleContestants as &$c) {
+                $c['genderRank'] = $c['rank'];
+            }
+            foreach ($femaleContestants as &$c) {
+                $c['genderRank'] = $c['rank'];
+            }
+
+            return array_merge(array_values($maleContestants), array_values($femaleContestants));
+        }
+
+        return $this->applyRanking($contestants, $scoreField, $direction, $tieHandling);
+    }
+
+    /**
+     * Get all scores from a specific judge for all contestants in a round.
+     */
+    private function getAllJudgeScoresForRound(int $judgeId, int $roundId, Pageant $pageant): array
+    {
+        $scores = [];
+
+        foreach ($pageant->contestants as $contestant) {
+            $score = $this->calculateJudgeContestantScore($judgeId, $contestant->id, $roundId, $pageant->id);
+            if ($score !== null) {
+                $scores[$contestant->id] = $score;
+            }
+        }
+
+        return $scores;
+    }
+
+    /**
+     * Get judge ranks for a contestant in a specific round.
+     */
+    private function getJudgeRanksForRound(Contestant $contestant, Round $round, Pageant $pageant, string $tieHandling): array
+    {
+        $scores = [];
+        $ranks = [];
+        $judgeDetails = [];
+
+        foreach ($pageant->judges as $judge) {
+            $judgeScore = $this->calculateJudgeContestantScore($judge->id, $contestant->id, $round->id, $pageant->id);
+
+            if ($judgeScore !== null) {
+                $allJudgeScores = $this->getAllJudgeScoresForRound($judge->id, $round->id, $pageant);
+                $rank = $this->calculateRankAvg($judgeScore, $allJudgeScores, 'desc');
+
+                $scores[] = $judgeScore;
+                $ranks[] = $rank;
+
+                $judgeDetails[] = [
+                    'judge_id' => $judge->id,
+                    'judge_name' => $judge->name ?? "Judge {$judge->id}",
+                    'score' => round($judgeScore, 2),
+                    'rank' => $rank,
+                ];
+            }
+        }
+
+        return [
+            'scores' => $scores,
+            'ranks' => $ranks,
+            'details' => $judgeDetails,
+        ];
+    }
+
+    /**
+     * Calculate comprehensive scores using rank-sum method (Excel-style).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function calculateWithRankSum(Pageant $pageant, ?string $stage = null, bool $useCache = true): array
+    {
+        try {
+            $cacheKey = $stage
+                ? "pageant_ranksum_scores_{$pageant->id}_{$stage}"
+                : "pageant_ranksum_scores_{$pageant->id}_all";
+
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            $rounds = $stage
+                ? $pageant->rounds->filter(fn ($r) => ($r->type ?? null) === $stage)
+                : $pageant->rounds;
+
+            if ($rounds->isEmpty()) {
+                return [];
+            }
+
+            $contestants = [];
+            $tieHandling = $pageant->tie_handling ?? 'average';
+
+            foreach ($pageant->contestants as $contestant) {
+                $roundScores = [];
+                $judgeRanks = [];
+                $totalRankSum = 0;
+                $totalWeightedScore = 0;
+                $totalRoundWeight = 0;
+
+                foreach ($rounds as $round) {
+                    $roundWeight = $round->weight ?? 1;
+                    if ($roundWeight <= 0) {
+                        $roundWeight = 1;
+                    }
+
+                    $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
+
+                    if (! empty($roundJudgeData['scores'])) {
+                        $roundAvgScore = array_sum($roundJudgeData['scores']) / count($roundJudgeData['scores']);
+                        $roundScores[$round->name] = round($roundAvgScore, 2);
+
+                        $roundRankSum = array_sum($roundJudgeData['ranks']);
+                        $totalRankSum += $roundRankSum;
+
+                        $totalWeightedScore += $roundAvgScore * $roundWeight;
+                        $totalRoundWeight += $roundWeight;
+
+                        $judgeRanks[$round->name] = $roundJudgeData;
+                    }
+                }
+
+                $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+
+                $memberNames = [];
+                $memberGenders = [];
+                if ($contestant->is_pair && $contestant->members && $contestant->members->isNotEmpty()) {
+                    foreach ($contestant->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
+
+                $contestants[] = [
+                    'id' => $contestant->id,
+                    'number' => $contestant->number,
+                    'name' => $contestant->name,
+                    'gender' => $contestant->gender,
+                    'region' => $contestant->origin,
+                    'is_pair' => $contestant->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
+                    'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                    'scores' => $roundScores,
+                    'judgeRanks' => $judgeRanks,
+                    'totalRankSum' => round($totalRankSum, 2),
+                    'finalScore' => round($finalScore, 2),
+                    'totalScore' => round($finalScore, 2),
+                ];
+            }
+
+            $result = $this->applyGenderSeparatedRanking(
+                $contestants,
+                $pageant,
+                'totalRankSum',
+                'asc',
+                $tieHandling
+            );
+
+            Cache::put($cacheKey, $result, now()->addMinutes(30));
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating rank-sum scores: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'stage' => $stage,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Calculate stage-specific final scores.
+     * Uses the pageant's ranking_method setting.
      *
      * @param  string  $stage  Accepts 'semi-final' or 'final'
      * @return array<int, array<string, mixed>>
      */
     public function calculatePageantStageScores(Pageant $pageant, string $stage, bool $useCache = true): array
     {
+        if (($pageant->ranking_method ?? 'score_average') === 'rank_sum') {
+            return $this->calculateWithRankSum($pageant, $stage, $useCache);
+        }
+
         try {
             $cacheKey = "pageant_stage_scores_{$pageant->id}_{$stage}";
 
@@ -28,14 +319,15 @@ class ScoreCalculationService
             }
 
             $contestants = [];
+            $tieHandling = $pageant->tie_handling ?? 'average';
 
-            // Filter rounds by stage/type
             $stageRounds = $pageant->rounds->filter(function ($round) use ($stage) {
                 return ($round->type ?? null) === $stage;
             });
 
             foreach ($pageant->contestants as $contestant) {
                 $roundScores = [];
+                $judgeRanks = [];
                 $totalWeightedScore = 0;
                 $totalRoundWeight = 0;
 
@@ -43,7 +335,7 @@ class ScoreCalculationService
                     $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
 
                     if ($roundScore !== null) {
-                        $roundScores[$round->name] = $roundScore;
+                        $roundScores[$round->name] = round($roundScore, 2);
 
                         $roundWeight = $round->weight ?? 1;
                         if ($roundWeight <= 0) {
@@ -52,10 +344,22 @@ class ScoreCalculationService
 
                         $totalWeightedScore += $roundScore * $roundWeight;
                         $totalRoundWeight += $roundWeight;
+
+                        $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
+                        $judgeRanks[$round->name] = $roundJudgeData;
                     }
                 }
 
                 $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+
+                $memberNames = [];
+                $memberGenders = [];
+                if ($contestant->is_pair && $contestant->members && $contestant->members->isNotEmpty()) {
+                    foreach ($contestant->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
 
                 $contestants[] = [
                     'id' => $contestant->id,
@@ -63,46 +367,30 @@ class ScoreCalculationService
                     'name' => $contestant->name,
                     'gender' => $contestant->gender,
                     'region' => $contestant->origin,
+                    'is_pair' => $contestant->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
                     'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                     'scores' => $roundScores,
+                    'judgeRanks' => $judgeRanks,
                     'finalScore' => round($finalScore, 2),
+                    'totalScore' => round($finalScore, 2),
+                    'totalRankSum' => 0,
                 ];
             }
 
-            // For pair pageants, separate rankings by gender
-            if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                $maleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'male');
-                $femaleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'female');
+            $result = $this->applyGenderSeparatedRanking(
+                $contestants,
+                $pageant,
+                'finalScore',
+                'desc',
+                $tieHandling
+            );
 
-                // Sort male contestants
-                usort($maleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                foreach ($maleContestants as $index => &$contestant) {
-                    $contestant['rank'] = $index + 1;
-                    $contestant['genderRank'] = $index + 1;
-                }
-
-                // Sort female contestants
-                usort($femaleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                foreach ($femaleContestants as $index => &$contestant) {
-                    $contestant['rank'] = $index + 1;
-                    $contestant['genderRank'] = $index + 1;
-                }
-
-                // Combine and maintain separate rankings
-                $result = array_merge($maleContestants, $femaleContestants);
-            } else {
-                // Sort by final score descending and add ranks (standard ranking)
-                usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                foreach ($contestants as $index => &$contestant) {
-                    $contestant['rank'] = $index + 1;
-                }
-                $result = $contestants;
-            }
-
-            // Cache for 30 minutes
             Cache::put($cacheKey, $result, now()->addMinutes(30));
 
             return $result;
+
         } catch (\Exception $e) {
             Log::error('Error calculating pageant stage scores: '.$e->getMessage(), [
                 'pageant_id' => $pageant->id,
@@ -115,17 +403,41 @@ class ScoreCalculationService
     }
 
     /**
-     * Get the IDs of contestants who advance from a given stage based on top_n_proceed.
-     * For pair pageants, returns top N from each gender separately.
-     * Only considers contestants who have been scored (finalScore > 0).
+     * Get Top N contestants, including all ties at the cutoff.
      *
-     * @param  string  $stage  The stage type to get results from (e.g., 'semi-final', 'preliminary')
-     * @return array<int> Array of contestant IDs that advance, empty if no top_n_proceed is set
+     * @param  array  $contestants  Already ranked contestants
+     * @param  int  $topN  Number of positions to include
+     * @return array<int> Contestant IDs
+     */
+    private function getTopNWithTies(array $contestants, int $topN): array
+    {
+        if (empty($contestants)) {
+            return [];
+        }
+
+        $advancingIds = [];
+
+        foreach ($contestants as $contestant) {
+            $rank = $contestant['rank'] ?? PHP_INT_MAX;
+
+            if ($rank <= $topN) {
+                $advancingIds[] = $contestant['id'];
+            }
+        }
+
+        return $advancingIds;
+    }
+
+    /**
+     * Get the IDs of contestants who advance from a given stage based on top_n_proceed.
+     * IMPROVED: Uses proper ranking with tie handling and includes all tied contestants at cutoff.
+     *
+     * @param  string  $stage  The stage type to get results from
+     * @return array<int> Array of contestant IDs that advance
      */
     public function getAdvancingContestantIds(Pageant $pageant, string $stage): array
     {
         try {
-            // Find the last round of this stage type to get top_n_proceed value
             $stageRounds = $pageant->rounds->filter(fn ($round) => ($round->type ?? null) === $stage);
 
             if ($stageRounds->isEmpty()) {
@@ -135,53 +447,47 @@ class ScoreCalculationService
             $lastRound = $stageRounds->sortByDesc('display_order')->first();
             $topN = $lastRound->top_n_proceed;
 
-            // If no top_n_proceed is set, return empty (all contestants advance)
             if ($topN === null || $topN <= 0) {
                 return [];
             }
 
-            // Get stage results
             $stageResults = $this->calculatePageantStageScores($pageant, $stage, false);
 
             if (empty($stageResults)) {
                 return [];
             }
 
-            // Filter out contestants who have not been scored (finalScore <= 0)
-            $scoredContestants = array_filter($stageResults, fn ($c) => ($c['finalScore'] ?? 0) > 0);
+            $rankingMethod = $pageant->ranking_method ?? 'score_average';
+            $scoreField = $rankingMethod === 'rank_sum' ? 'totalRankSum' : 'finalScore';
+
+            $scoredContestants = array_filter($stageResults, function ($c) use ($scoreField, $rankingMethod) {
+                if ($rankingMethod === 'rank_sum') {
+                    return ($c[$scoreField] ?? 0) > 0;
+                }
+
+                return ($c['finalScore'] ?? 0) > 0;
+            });
 
             if (empty($scoredContestants)) {
-                // No contestants have been scored yet, return empty to allow all
                 return [];
             }
 
             $advancingIds = [];
 
-            // For pair pageants, apply top N separately per gender
             if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
                 $maleContestants = array_filter($scoredContestants, fn ($c) => ($c['gender'] ?? '') === 'male');
                 $femaleContestants = array_filter($scoredContestants, fn ($c) => ($c['gender'] ?? '') === 'female');
 
-                // Sort and take top N males
-                usort($maleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                $topMales = array_slice($maleContestants, 0, $topN);
-
-                // Sort and take top N females
-                usort($femaleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                $topFemales = array_slice($femaleContestants, 0, $topN);
-
                 $advancingIds = array_merge(
-                    array_column($topMales, 'id'),
-                    array_column($topFemales, 'id')
+                    $this->getTopNWithTies($maleContestants, $topN),
+                    $this->getTopNWithTies($femaleContestants, $topN)
                 );
             } else {
-                // For solo pageants, just take top N overall
-                usort($scoredContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                $topContestants = array_slice($scoredContestants, 0, $topN);
-                $advancingIds = array_column($topContestants, 'id');
+                $advancingIds = $this->getTopNWithTies($scoredContestants, $topN);
             }
 
             return $advancingIds;
+
         } catch (\Exception $e) {
             Log::error('Error getting advancing contestant IDs: '.$e->getMessage(), [
                 'pageant_id' => $pageant->id,
@@ -195,13 +501,11 @@ class ScoreCalculationService
 
     /**
      * Get the previous stage type for a given round.
-     * Returns null if this is the first stage or no previous stage exists.
      *
      * @return string|null The previous stage type, or null if none
      */
     public function getPreviousStageType(Pageant $pageant, Round $round): ?string
     {
-        // Get all unique stage types ordered by their first round's display_order
         $stageTypes = $pageant->rounds
             ->groupBy('type')
             ->map(function ($rounds) {
@@ -215,7 +519,6 @@ class ScoreCalculationService
         $currentStageType = $round->type;
         $currentIndex = array_search($currentStageType, $stageTypes);
 
-        // If this is the first stage or stage not found, return null
         if ($currentIndex === false || $currentIndex === 0) {
             return null;
         }
@@ -224,9 +527,7 @@ class ScoreCalculationService
     }
 
     /**
-     * Compute per-round minor awards for a pageant's semi-final stage.
-     * For each round in the given stage, find the contestant(s) with the highest average score.
-     * For pair pageants, separate winners by gender.
+     * Compute per-round minor awards for a pageant's stage.
      *
      * @param  string  $stage  Typically 'semi-final'
      * @return array<string, array<int, array<string, mixed>>> keyed by round name
@@ -237,7 +538,6 @@ class ScoreCalculationService
             $resultsByRound = [];
             $isPairPageant = $pageant->isPairsOnly() || $pageant->allowsBothTypes();
 
-            // Filter rounds by use_for_minor_awards flag instead of stage type
             $stageRounds = $pageant->rounds->filter(function ($round) {
                 return ($round->use_for_minor_awards ?? false) === true;
             });
@@ -251,7 +551,7 @@ class ScoreCalculationService
                         $memberNames = [];
                         $memberGenders = [];
 
-                        if ($contestant->is_pair && $contestant->members->isNotEmpty()) {
+                        if ($contestant->is_pair && $contestant->members && $contestant->members->isNotEmpty()) {
                             foreach ($contestant->members as $member) {
                                 $memberNames[] = $member->name;
                                 $memberGenders[] = $member->gender;
@@ -279,14 +579,12 @@ class ScoreCalculationService
                 }
 
                 if ($isPairPageant) {
-                    // Separate by gender for pair pageants
                     $maleScores = array_filter($contestantScores, fn ($c) => ($c['gender'] ?? '') === 'male');
                     $femaleScores = array_filter($contestantScores, fn ($c) => ($c['gender'] ?? '') === 'female');
 
                     $maleWinners = [];
                     $femaleWinners = [];
 
-                    // Get male winners
                     if (! empty($maleScores)) {
                         usort($maleScores, fn ($a, $b) => $b['score'] <=> $a['score']);
                         $topMaleScore = $maleScores[0]['score'];
@@ -295,7 +593,6 @@ class ScoreCalculationService
                         }));
                     }
 
-                    // Get female winners
                     if (! empty($femaleScores)) {
                         usort($femaleScores, fn ($a, $b) => $b['score'] <=> $a['score']);
                         $topFemaleScore = $femaleScores[0]['score'];
@@ -314,10 +611,9 @@ class ScoreCalculationService
                         'is_pair_pageant' => true,
                         'male_winners' => $maleWinners,
                         'female_winners' => $femaleWinners,
-                        'winners' => array_merge($maleWinners, $femaleWinners), // Combined for compatibility
+                        'winners' => array_merge($maleWinners, $femaleWinners),
                     ];
                 } else {
-                    // Standard single winner logic
                     usort($contestantScores, fn ($a, $b) => $b['score'] <=> $a['score']);
                     $topScore = $contestantScores[0]['score'];
                     $topContestants = array_values(array_filter($contestantScores, function ($row) use ($topScore) {
@@ -350,10 +646,15 @@ class ScoreCalculationService
     }
 
     /**
-     * Calculate final scores for all contestants in a pageant
+     * Calculate final scores for all contestants in a pageant.
+     * Uses the pageant's ranking_method setting.
      */
     public function calculatePageantFinalScores(Pageant $pageant, bool $useCache = true): array
     {
+        if (($pageant->ranking_method ?? 'score_average') === 'rank_sum') {
+            return $this->calculateWithRankSum($pageant, null, $useCache);
+        }
+
         try {
             $cacheKey = "pageant_final_scores_{$pageant->id}";
 
@@ -362,9 +663,11 @@ class ScoreCalculationService
             }
 
             $contestants = [];
+            $tieHandling = $pageant->tie_handling ?? 'average';
 
             foreach ($pageant->contestants as $contestant) {
                 $roundScores = [];
+                $judgeRanks = [];
                 $totalWeightedScore = 0;
                 $totalRoundWeight = 0;
 
@@ -372,26 +675,31 @@ class ScoreCalculationService
                     $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
 
                     if ($roundScore !== null) {
-                        $roundScores[$round->name] = $roundScore;
+                        $roundScores[$round->name] = round($roundScore, 2);
 
                         $roundWeight = $round->weight ?? 1;
-
-                        // Safety check for round weight
                         if ($roundWeight <= 0) {
-                            Log::warning("Invalid round weight for round {$round->id}: {$roundWeight}. Using weight of 1.", [
-                                'pageant_id' => $pageant->id,
-                                'round_id' => $round->id,
-                                'contestant_id' => $contestant->id,
-                            ]);
                             $roundWeight = 1;
                         }
 
                         $totalWeightedScore += $roundScore * $roundWeight;
                         $totalRoundWeight += $roundWeight;
+
+                        $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
+                        $judgeRanks[$round->name] = $roundJudgeData;
                     }
                 }
 
                 $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+
+                $memberNames = [];
+                $memberGenders = [];
+                if ($contestant->is_pair && $contestant->members && $contestant->members->isNotEmpty()) {
+                    foreach ($contestant->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
 
                 $contestants[] = [
                     'id' => $contestant->id,
@@ -399,46 +707,27 @@ class ScoreCalculationService
                     'name' => $contestant->name,
                     'gender' => $contestant->gender,
                     'region' => $contestant->origin,
+                    'is_pair' => $contestant->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
                     'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                     'scores' => $roundScores,
+                    'judgeRanks' => $judgeRanks,
                     'finalScore' => round($finalScore, 2),
+                    'totalScore' => round($finalScore, 2),
+                    'totalRankSum' => 0,
                 ];
             }
 
-            // For pair pageants, separate rankings by gender
-            if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                $maleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'male');
-                $femaleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'female');
+            $result = $this->applyGenderSeparatedRanking(
+                $contestants,
+                $pageant,
+                'finalScore',
+                'desc',
+                $tieHandling
+            );
 
-                // Sort male contestants
-                usort($maleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                foreach ($maleContestants as $index => &$contestant) {
-                    $contestant['rank'] = $index + 1;
-                    $contestant['genderRank'] = $index + 1;
-                }
-
-                // Sort female contestants
-                usort($femaleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                foreach ($femaleContestants as $index => &$contestant) {
-                    $contestant['rank'] = $index + 1;
-                    $contestant['genderRank'] = $index + 1;
-                }
-
-                // Combine and maintain separate rankings
-                $result = array_merge($maleContestants, $femaleContestants);
-            } else {
-                // Sort by final score descending and add ranks (standard ranking)
-                usort($contestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                foreach ($contestants as $index => &$contestant) {
-                    $contestant['rank'] = $index + 1;
-                }
-                $result = $contestants;
-            }
-
-            // Cache for 30 minutes
             Cache::put($cacheKey, $result, now()->addMinutes(30));
-
-            // Broadcast rankings update
             RankingsUpdated::dispatch($pageant->id, $result);
 
             return $result;
@@ -449,7 +738,6 @@ class ScoreCalculationService
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // Return empty array on error to prevent system crashes
             return [];
         }
     }
@@ -468,7 +756,6 @@ class ScoreCalculationService
 
             $judgeAverages = [];
 
-            // Get all judges for this pageant
             foreach ($pageant->judges as $judge) {
                 $judgeScore = $this->calculateJudgeContestantScore($judge->id, $contestant->id, $round->id, $pageant->id);
 
@@ -477,13 +764,11 @@ class ScoreCalculationService
                 }
             }
 
-            // Average across all judges for this round
             $roundScore = null;
             if (! empty($judgeAverages)) {
                 $roundScore = array_sum($judgeAverages) / count($judgeAverages);
             }
 
-            // Cache for 15 minutes
             Cache::put($cacheKey, $roundScore, now()->addMinutes(15));
 
             return $roundScore;
@@ -523,28 +808,11 @@ class ScoreCalculationService
             foreach ($scores as $score) {
                 $weight = $score->criteria->weight ?? 1;
 
-                // Safety checks for weight
                 if ($weight <= 0) {
-                    Log::warning("Invalid weight for criteria {$score->criteria->id}: {$weight}. Using weight of 1.", [
-                        'judge_id' => $judgeId,
-                        'contestant_id' => $contestantId,
-                        'round_id' => $roundId,
-                        'pageant_id' => $pageantId,
-                        'criteria_id' => $score->criteria->id,
-                    ]);
                     $weight = 1;
                 }
 
-                // Safety check for score value
                 if (! is_numeric($score->score)) {
-                    Log::error("Non-numeric score found: {$score->score} for criteria {$score->criteria->id}", [
-                        'judge_id' => $judgeId,
-                        'contestant_id' => $contestantId,
-                        'round_id' => $roundId,
-                        'pageant_id' => $pageantId,
-                        'score_id' => $score->id,
-                    ]);
-
                     continue;
                 }
 
@@ -553,11 +821,6 @@ class ScoreCalculationService
             }
 
             if ($criteriaWeightTotal <= 0) {
-                Log::warning("Total criteria weight is zero or negative for judge {$judgeId}, contestant {$contestantId}, round {$roundId}", [
-                    'total_weight' => $criteriaWeightTotal,
-                    'pageant_id' => $pageantId,
-                ]);
-
                 return null;
             }
 
@@ -592,11 +855,6 @@ class ScoreCalculationService
             $contestant = $pageant->contestants->find($contestantId);
 
             if (! $contestant) {
-                Log::warning('Contestant not found in pageant', [
-                    'pageant_id' => $pageantId,
-                    'contestant_id' => $contestantId,
-                ]);
-
                 return null;
             }
 
@@ -608,14 +866,7 @@ class ScoreCalculationService
 
                 if ($roundScore !== null) {
                     $roundWeight = $round->weight ?? 1;
-
-                    // Safety check for round weight
                     if ($roundWeight <= 0) {
-                        Log::warning("Invalid round weight for round {$round->id}: {$roundWeight}. Using weight of 1.", [
-                            'pageant_id' => $pageantId,
-                            'round_id' => $round->id,
-                            'contestant_id' => $contestantId,
-                        ]);
                         $roundWeight = 1;
                     }
 
@@ -626,7 +877,6 @@ class ScoreCalculationService
 
             $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : null;
 
-            // Cache for 30 minutes
             Cache::put($cacheKey, $finalScore, now()->addMinutes(30));
 
             return $finalScore;
@@ -649,16 +899,16 @@ class ScoreCalculationService
     {
         Cache::forget("contestant_final_score_{$pageantId}_{$contestantId}");
         Cache::forget("pageant_final_scores_{$pageantId}");
+        Cache::forget("pageant_ranksum_scores_{$pageantId}_all");
 
-        // Also invalidate round-specific caches
         $pageant = Pageant::with('rounds')->find($pageantId);
         if ($pageant) {
             foreach ($pageant->rounds as $round) {
                 Cache::forget("contestant_round_score_{$contestantId}_{$round->id}");
 
-                // Invalidate stage-level caches for each round type
                 if ($round->type) {
                     Cache::forget("pageant_stage_scores_{$pageantId}_{$round->type}");
+                    Cache::forget("pageant_ranksum_scores_{$pageantId}_{$round->type}");
                 }
             }
         }
@@ -670,14 +920,14 @@ class ScoreCalculationService
     public function invalidatePageantCache(int $pageantId): void
     {
         Cache::forget("pageant_final_scores_{$pageantId}");
+        Cache::forget("pageant_ranksum_scores_{$pageantId}_all");
 
-        // Get all contestants and invalidate their caches
         $pageant = Pageant::with(['contestants', 'rounds'])->find($pageantId);
         if ($pageant) {
-            // Invalidate all stage-level caches
             $stageTypes = $pageant->rounds->pluck('type')->unique()->filter();
             foreach ($stageTypes as $stageType) {
                 Cache::forget("pageant_stage_scores_{$pageantId}_{$stageType}");
+                Cache::forget("pageant_ranksum_scores_{$pageantId}_{$stageType}");
             }
 
             foreach ($pageant->contestants as $contestant) {

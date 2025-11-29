@@ -87,6 +87,16 @@
                   placeholder="Select Round"
                 />
               </div>
+              <!-- Ranking Method Indicator -->
+              <div 
+                v-if="pageant"
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium"
+                :class="isRankSumMethod ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
+                :title="isRankSumMethod ? 'Scores are converted to ranks per judge - lowest sum wins' : 'Scores are averaged - highest average wins'"
+              >
+                <BarChart3 class="w-3.5 h-3.5" />
+                <span>{{ isRankSumMethod ? 'Rank Sum' : 'Avg Score' }}</span>
+              </div>
             </div>
             
             <div class="flex items-center gap-2">
@@ -218,7 +228,7 @@
 import { ref, computed, watch } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
-import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard, FileText, Activity, Crown } from 'lucide-vue-next'
+import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard, FileText, Activity, Crown, BarChart3 } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
 import DetailedScoreTable from '../../Components/tabulator/DetailedScoreTable.vue'
 import AuditLogsViewer from '../../Components/tabulator/AuditLogsViewer.vue'
@@ -263,6 +273,8 @@ interface Pageant {
   id: number
   name: string
   contestant_type?: 'solo' | 'pairs' | 'both'
+  ranking_method?: 'score_average' | 'rank_sum'
+  tie_handling?: 'sequential' | 'average' | 'minimum'
 }
 
 interface Criteria {
@@ -292,6 +304,9 @@ const criteria = ref(props.criteria || [])
 const detailedScores = ref(props.detailedScores || {})
 // Ensure currentRoundId is a string to match the option values in CustomSelect
 const currentRoundId = ref((props.currentRound?.id ?? props.rounds[0]?.id)?.toString() || '')
+
+// Check if using rank-sum method
+const isRankSumMethod = computed(() => props.pageant?.ranking_method === 'rank_sum')
 
 const roundOptions = computed(() => {
   return props.rounds.map(round => ({

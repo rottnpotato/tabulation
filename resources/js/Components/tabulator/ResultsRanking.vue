@@ -37,7 +37,7 @@
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
-              Total
+              {{ rankingMethod === 'rank_sum' ? 'Rank Sum' : 'Total' }}
             </th>
           </tr>
         </thead>
@@ -126,14 +126,39 @@
               {{ formatScore(contestant.scores[round.name] || 0) }}
             </td>
 
-            <!-- Total Score -->
+            <!-- Total Score / Rank Sum -->
             <td class="whitespace-nowrap px-4 py-3 text-right">
-              <span
-                class="text-sm font-semibold tabular-nums"
-                :class="getScoreClass(contestant.totalScore)"
-              >
-                {{ formatScore(contestant.totalScore) }}
-              </span>
+              <div class="flex flex-col items-end">
+                <span
+                  v-if="rankingMethod === 'rank_sum'"
+                  class="text-sm font-semibold tabular-nums text-purple-700"
+                  :title="`Rank Sum: ${formatScore(contestant.totalRankSum, 1)} (lower is better)`"
+                >
+                  {{ formatScore(contestant.totalRankSum, 1) }}
+                </span>
+                <span
+                  v-else
+                  class="text-sm font-semibold tabular-nums"
+                  :class="getScoreClass(contestant.totalScore)"
+                >
+                  {{ formatScore(contestant.totalScore) }}
+                </span>
+                <!-- Show the other metric as secondary info -->
+                <span 
+                  v-if="rankingMethod === 'rank_sum' && contestant.totalScore"
+                  class="text-xs text-gray-400"
+                  :title="`Average Score: ${formatScore(contestant.totalScore)}`"
+                >
+                  ({{ formatScore(contestant.totalScore) }})
+                </span>
+                <span 
+                  v-else-if="rankingMethod !== 'rank_sum' && contestant.totalRankSum"
+                  class="text-xs text-gray-400"
+                  :title="`Rank Sum: ${formatScore(contestant.totalRankSum, 1)}`"
+                >
+                  Σ{{ formatScore(contestant.totalRankSum, 1) }}
+                </span>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -175,6 +200,8 @@ interface Contestant {
   image: string
   scores: Record<string, number>
   totalScore: number
+  totalRankSum?: number
+  judgeRanks?: Record<string, { scores: number[], ranks: number[], details: Array<{ judge_id: number, judge_name: string, score: number, rank: number }> }>
   qualified?: boolean
   qualification_cutoff?: number | null
 }
@@ -186,12 +213,14 @@ interface Props {
   isUpdating?: boolean
   numberOfWinners?: number
   showWinners?: boolean
+  rankingMethod?: 'score_average' | 'rank_sum'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isUpdating: false,
   numberOfWinners: 3,
-  showWinners: false
+  showWinners: false,
+  rankingMethod: 'score_average'
 })
 
 // Track previous rankings for animation
@@ -218,6 +247,13 @@ const toNumber = (value: unknown): number | null => {
 
 const rankedContestants = computed(() => {
   return [...props.contestants].sort((a, b) => {
+    if (props.rankingMethod === 'rank_sum') {
+      // Lower rank sum is better
+      const aRankSum = toNumber(a.totalRankSum) ?? Infinity
+      const bRankSum = toNumber(b.totalRankSum) ?? Infinity
+      return aRankSum - bRankSum
+    }
+    // Higher score is better
     const aTotal = toNumber(a.totalScore) ?? 0
     const bTotal = toNumber(b.totalScore) ?? 0
     return bTotal - aTotal

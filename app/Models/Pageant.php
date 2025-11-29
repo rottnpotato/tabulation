@@ -35,6 +35,8 @@ class Pageant extends Model
         'edit_permission_expires_at',
         'edit_permission_granted_to',
         'scoring_system',
+        'ranking_method',
+        'tie_handling',
         'contestant_type',
         'required_judges',
         'is_locked',
