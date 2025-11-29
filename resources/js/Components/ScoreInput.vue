@@ -28,7 +28,8 @@
         <input
           type="number"
           inputmode="decimal"
-          class="w-20 text-center rounded-xl border border-slate-300 focus:border-teal-500 focus:ring-teal-500 disabled:bg-slate-100 disabled:opacity-50 font-bold text-slate-700"
+          class="w-20 text-center rounded-xl border focus:ring-teal-500 disabled:bg-slate-100 disabled:opacity-50 font-bold transition-colors"
+          :class="isOutOfRange && validateRange ? 'border-red-400 focus:border-red-500 text-red-600 bg-red-50' : 'border-slate-300 focus:border-teal-500 text-slate-700'"
           :min="min"
           :max="max"
           :step="step"
@@ -48,7 +49,8 @@
         <input
           type="number"
           inputmode="decimal"
-          class="w-full text-center rounded-xl border-2 border-slate-100 bg-slate-50 focus:bg-white focus:border-teal-500 focus:ring-0 disabled:bg-slate-100 disabled:opacity-50 font-black text-slate-800 text-2xl h-12 transition-all"
+          class="w-full text-center rounded-xl border-2 focus:ring-0 disabled:bg-slate-100 disabled:opacity-50 font-black text-2xl h-12 transition-all"
+          :class="isOutOfRange && validateRange ? 'border-red-300 bg-red-50 focus:bg-red-50 focus:border-red-500 text-red-600' : 'border-slate-100 bg-slate-50 focus:bg-white focus:border-teal-500 text-slate-800'"
           :min="min"
           :max="max"
           :step="step"
@@ -59,8 +61,9 @@
           @blur="onNumberBlur"
           @keypress="validateNumberInput"
         />
-        <div class="absolute bottom-0 left-0 h-1 bg-teal-500 transition-all duration-300 rounded-b-md opacity-20 group-focus-within:opacity-100"
-             :style="{ width: `${((currentValue - min) / (max - min)) * 100}%` }">
+        <div class="absolute bottom-0 left-0 h-1 transition-all duration-300 rounded-b-md opacity-20 group-focus-within:opacity-100"
+             :class="isOutOfRange && validateRange ? 'bg-red-500' : 'bg-teal-500'"
+             :style="{ width: `${Math.min(100, Math.max(0, ((currentValue - min) / (max - min)) * 100))}%` }">
         </div>
       </div>
     </template>
@@ -80,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -114,6 +117,10 @@ const props = defineProps({
   showSlider: {
     type: Boolean,
     default: true,
+  },
+  validateRange: {
+    type: Boolean,
+    default: true,
   }
 })
 
@@ -122,20 +129,43 @@ const emit = defineEmits(['update:modelValue', 'change'])
 const displayStep = computed(() => (props.allowDecimals ? props.decimalPlaces : 0))
 const stepSize = computed(() => (props.allowDecimals ? props.step : Math.max(1, Math.round(props.step))))
 
+// Track if there's a validation error for styling
+const hasValidationError = ref(false)
+
 const currentValue = computed({
   get() {
     const val = Number(props.modelValue)
     if (Number.isNaN(val)) {
       return props.min
     }
-    return clamp(roundTo(val))
+    // Only clamp for display if validateRange is false
+    if (!props.validateRange) {
+      return clamp(roundTo(val))
+    }
+    return roundTo(val)
   },
   set(v) {
     const num = Number(v)
-    const next = clamp(roundTo(num))
-    emit('update:modelValue', next)
-    emit('change', next)
+    const rounded = roundTo(num)
+    
+    // If validateRange is true, emit the raw value for parent validation
+    // If validateRange is false, clamp the value as before
+    if (props.validateRange) {
+      emit('update:modelValue', rounded)
+      emit('change', rounded)
+    } else {
+      const clamped = clamp(rounded)
+      emit('update:modelValue', clamped)
+      emit('change', clamped)
+    }
   },
+})
+
+// Check if current value is out of range (for visual feedback)
+const isOutOfRange = computed(() => {
+  const val = Number(props.modelValue)
+  if (Number.isNaN(val)) return false
+  return val < props.min || val > props.max
 })
 
 function roundTo(value) {
@@ -151,11 +181,14 @@ function clamp(value) {
 }
 
 function step(delta) {
-  currentValue.value = Number(currentValue.value) + Number(delta)
+  const newValue = Number(currentValue.value) + Number(delta)
+  // For step buttons, always clamp to prevent going out of bounds
+  currentValue.value = clamp(newValue)
 }
 
 function onRangeInput(e) {
-  currentValue.value = Number(e.target.value)
+  // Slider always stays in range
+  currentValue.value = clamp(Number(e.target.value))
 }
 
 function onNumberInput(e) {
@@ -178,16 +211,15 @@ function onNumberInput(e) {
   
   e.target.value = value
   
-  // Immediately clamp the value if it's a valid number
-  const numValue = Number(value)
-  if (!Number.isNaN(numValue) && value !== '' && value !== '-') {
-    // If value exceeds max, immediately set to max
-    if (numValue > props.max) {
-      currentValue.value = props.max
-      e.target.value = props.max
+  // When validateRange is false, immediately clamp values
+  if (!props.validateRange) {
+    const numValue = Number(value)
+    if (!Number.isNaN(numValue) && value !== '' && value !== '-') {
+      if (numValue > props.max) {
+        currentValue.value = props.max
+        e.target.value = props.max
+      }
     }
-    // If value is below min, we'll let it be for now (user might be typing)
-    // but it will be clamped on blur/change
   }
 }
 
@@ -203,20 +235,31 @@ function onNumberChange(e) {
   
   const numValue = Number(value)
   
-  // Clamp the value to min/max range
-  if (numValue < props.min) {
+  if (Number.isNaN(numValue)) {
     currentValue.value = props.min
     e.target.value = props.min
     return
   }
   
-  if (numValue > props.max) {
-    currentValue.value = props.max
-    e.target.value = props.max
-    return
+  // When validateRange is true, emit the raw value for parent validation
+  if (props.validateRange) {
+    currentValue.value = numValue
+  } else {
+    // When validateRange is false, clamp the value
+    if (numValue < props.min) {
+      currentValue.value = props.min
+      e.target.value = props.min
+      return
+    }
+    
+    if (numValue > props.max) {
+      currentValue.value = props.max
+      e.target.value = props.max
+      return
+    }
+    
+    currentValue.value = numValue
   }
-  
-  currentValue.value = numValue
 }
 
 function onNumberBlur(e) {
@@ -231,18 +274,23 @@ function onNumberBlur(e) {
   
   const numValue = Number(value)
   
-  // Ensure value is within bounds on blur
+  // Ensure value is valid on blur
   if (Number.isNaN(numValue)) {
     currentValue.value = props.min
     e.target.value = props.min
     return
   }
   
-  // Clamp and update if out of bounds
-  const clampedValue = clamp(roundTo(numValue))
-  if (clampedValue !== numValue) {
-    currentValue.value = clampedValue
-    e.target.value = clampedValue
+  // When validateRange is true, emit raw value and let parent validate
+  if (props.validateRange) {
+    currentValue.value = numValue
+  } else {
+    // When validateRange is false, clamp and update if out of bounds
+    const clampedValue = clamp(roundTo(numValue))
+    if (clampedValue !== numValue) {
+      currentValue.value = clampedValue
+      e.target.value = clampedValue
+    }
   }
 }
 

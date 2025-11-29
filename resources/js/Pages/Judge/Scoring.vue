@@ -195,6 +195,7 @@
                         :decimal-places="criterion.decimal_places || 1"
                         :disabled="!canEditScores"
                         :show-slider="false"
+                        :validate-range="true"
                         v-model="scores[`${activeContestant.id}-${criterion.id}`]"
                         @change="(val) => handleScoreChange(val, activeContestant.id, criterion.id, criterion)"
                         class="w-full"
@@ -262,6 +263,7 @@
                                     :decimal-places="criterion.decimal_places || 1"
                                     :disabled="!canEditScores"
                                     :show-slider="false"
+                                    :validate-range="true"
                                     v-model="scores[`${activeContestant.id}-${criterion.id}`]"
                                     @change="(val) => handleScoreChange(val, activeContestant.id, criterion.id, criterion)"
                                     class="w-full"
@@ -607,14 +609,51 @@ const prevContestant = () => {
 const handleScoreChange = (value, contestantId, criterionId, criterion) => {
   try {
     let v = Number(value);
-    if (Number.isNaN(v) || !Number.isFinite(v)) v = Number(criterion.min_score) || 0;
-    
     const minScore = Number(criterion.min_score) || 0;
     const maxScore = Number(criterion.max_score) || 100;
+    const scoreKey = `${contestantId}-${criterionId}`;
+    const previousValue = scores.value[scoreKey];
     
-    if (v < minScore) v = minScore;
-    if (v > maxScore) v = maxScore;
+    // Check for invalid number input
+    if (Number.isNaN(v) || !Number.isFinite(v)) {
+      if (notificationSystem.value) {
+        notificationSystem.value.warning(`Please enter a valid number for "${criterion.name}"`, {
+          title: 'Invalid Score',
+          timeout: 4000
+        });
+      }
+      // Revert to previous value or clear the field
+      scores.value[scoreKey] = previousValue !== undefined ? previousValue : null;
+      return;
+    }
     
+    // Check if score is below minimum
+    if (v < minScore) {
+      if (notificationSystem.value) {
+        notificationSystem.value.warning(`Score for "${criterion.name}" must be at least ${formatScore(minScore)}. You entered ${formatScore(v)}.`, {
+          title: 'Score Too Low',
+          timeout: 5000
+        });
+      }
+      // Revert to previous value or clear the field
+      scores.value[scoreKey] = previousValue !== undefined && previousValue !== null ? previousValue : null;
+      return;
+    }
+    
+    // Check if score exceeds maximum
+    if (v > maxScore) {
+      if (notificationSystem.value) {
+        notificationSystem.value.warning(`Score for "${criterion.name}" cannot exceed ${formatScore(maxScore)}. You entered ${formatScore(v)}.`, {
+          title: 'Score Too High',
+          timeout: 5000
+        });
+      }
+      // Revert to previous value or clear the field
+      scores.value[scoreKey] = previousValue !== undefined && previousValue !== null ? previousValue : null;
+      return;
+    }
+    
+    // Apply decimal formatting if valid
     if (!criterion.allow_decimals) {
       v = Math.round(v);
     } else if (criterion.decimal_places > 0) {
@@ -624,10 +663,16 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
         v = Math.round(v);
       }
     }
-    scores.value[`${contestantId}-${criterionId}`] = v;
+    
+    scores.value[scoreKey] = v;
   } catch (error) {
     console.error('Error in handleScoreChange:', error);
-    scores.value[`${contestantId}-${criterionId}`] = Number(criterion.min_score) || 0;
+    if (notificationSystem.value) {
+      notificationSystem.value.error('An error occurred while processing the score. Please try again.', {
+        title: 'Error',
+        timeout: 4000
+      });
+    }
   }
 }
 
@@ -670,24 +715,62 @@ const submitScores = async (contestantId, autoAdvance = true) => {
   
   try {
     const contestantScores = {}
-    let hasInvalidScores = false;
+    const invalidScores = [];
     
     props.criteria.forEach(criterion => {
       const score = scores.value[`${contestantId}-${criterion.id}`];
       if (score === undefined || score === null) {
-        hasInvalidScores = true;
+        invalidScores.push({
+          name: criterion.name,
+          reason: 'missing'
+        });
         return;
       }
       const minScore = Number(criterion.min_score);
       const maxScore = Number(criterion.max_score);
-      if (score < minScore || score > maxScore) {
-        hasInvalidScores = true;
+      if (score < minScore) {
+        invalidScores.push({
+          name: criterion.name,
+          reason: 'too_low',
+          value: score,
+          min: minScore,
+          max: maxScore
+        });
+        return;
+      }
+      if (score > maxScore) {
+        invalidScores.push({
+          name: criterion.name,
+          reason: 'too_high',
+          value: score,
+          min: minScore,
+          max: maxScore
+        });
         return;
       }
       contestantScores[criterion.id] = score;
     });
     
-    if (hasInvalidScores) throw new Error('Some scores are invalid. Please check your inputs.');
+    if (invalidScores.length > 0) {
+      const errorMessages = invalidScores.map(inv => {
+        if (inv.reason === 'missing') {
+          return `"${inv.name}" - score is required`;
+        } else if (inv.reason === 'too_low') {
+          return `"${inv.name}" - ${formatScore(inv.value)} is below minimum (${formatScore(inv.min)})`;
+        } else if (inv.reason === 'too_high') {
+          return `"${inv.name}" - ${formatScore(inv.value)} exceeds maximum (${formatScore(inv.max)})`;
+        }
+        return `"${inv.name}" - invalid score`;
+      });
+      
+      if (notificationSystem.value) {
+        notificationSystem.value.error(
+          `Please correct the following scores:\n${errorMessages.join('\n')}`,
+          { title: 'Invalid Scores', timeout: 8000 }
+        );
+      }
+      return;
+    }
     
     const response = await window.axios.post(route('judge.scores.submit', [props.pageant.id, props.currentRound.id]), {
       contestant_id: contestantId,
