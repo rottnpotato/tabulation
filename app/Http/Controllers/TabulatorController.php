@@ -230,6 +230,11 @@ class TabulatorController extends Controller
         $tabulator = Auth::user();
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
+        // Check if pageant has reached required judges limit
+        if ($pageant->required_judges && $pageant->judges()->count() >= $pageant->required_judges) {
+            return back()->withErrors(['message' => 'This pageant has already reached the maximum number of judges.']);
+        }
+
         $validated = $request->validated();
 
         // Create the judge account

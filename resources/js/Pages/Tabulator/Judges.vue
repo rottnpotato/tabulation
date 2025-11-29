@@ -35,9 +35,21 @@
               </p>
             </div>
             <div v-if="pageant && !pageant.is_completed" class="flex flex-wrap gap-2">
+              <!-- Judge Limit Warning Badge -->
+              <div v-if="hasReachedJudgeLimit" class="flex items-center px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs sm:text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <span>Judge limit reached</span>
+              </div>
+              <div v-else-if="remainingJudgeSlots !== null" class="flex items-center px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-teal-700 text-xs sm:text-sm font-medium">
+                <span>{{ remainingJudgeSlots }} slot{{ remainingJudgeSlots !== 1 ? 's' : '' }} remaining</span>
+              </div>
               <button 
                 @click="showCreateJudgeModal = true"
-                class="bg-teal-600 text-white rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-700 flex items-center shadow-sm transition-all"
+                :disabled="hasReachedJudgeLimit"
+                class="bg-teal-600 text-white rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-700 flex items-center shadow-sm transition-all disabled:bg-slate-300 disabled:cursor-not-allowed disabled:hover:bg-slate-300"
+                :title="hasReachedJudgeLimit ? 'Maximum number of judges reached' : 'Create a new judge account'"
               >
                 <UserPlus2 class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span>Create New Judge</span>
@@ -45,7 +57,9 @@
               <button 
                 v-if="availableJudges && availableJudges.length > 0"
                 @click="showAddJudgeModal = true"
-                class="bg-white text-teal-700 border border-teal-200 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-50 flex items-center shadow-sm transition-all"
+                :disabled="hasReachedJudgeLimit"
+                class="bg-white text-teal-700 border border-teal-200 rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium hover:bg-teal-50 flex items-center shadow-sm transition-all disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed disabled:hover:bg-slate-100"
+                :title="hasReachedJudgeLimit ? 'Maximum number of judges reached' : 'Add an existing judge'"
               >
                 <UserPlus class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span>Add Judge</span>
@@ -545,6 +559,18 @@ const averageSubmissions = computed(() => {
   if (props.judges.length === 0) return 0
   const total = props.judges.reduce((sum, judge) => sum + judge.scoresSubmitted, 0)
   return Math.round(total / props.judges.length)
+})
+
+// Check if judge limit has been reached
+const hasReachedJudgeLimit = computed(() => {
+  if (!props.pageant?.required_judges) return false
+  return props.judges.length >= props.pageant.required_judges
+})
+
+// Remaining judges that can be added
+const remainingJudgeSlots = computed(() => {
+  if (!props.pageant?.required_judges) return null
+  return Math.max(0, props.pageant.required_judges - props.judges.length)
 })
 
 

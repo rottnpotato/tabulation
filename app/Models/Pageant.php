@@ -669,6 +669,59 @@ class Pageant extends Model
     }
 
     /**
+     * Get the current scoring status for display purposes
+     * Returns: 'not_started', 'open', 'ended', 'completed', or 'archived'
+     */
+    public function getScoringStatus(): string
+    {
+        if ($this->isCompleted()) {
+            return 'completed';
+        }
+
+        if ($this->isArchived()) {
+            return 'archived';
+        }
+
+        if (! $this->start_date) {
+            return 'not_started';
+        }
+
+        // Get current time in Philippine Standard Time (Asia/Manila)
+        $nowInPH = now()->setTimezone('Asia/Manila');
+
+        // Build start datetime with time if available
+        $startDateTimeInPH = $this->start_date->copy()->setTimezone('Asia/Manila');
+        if ($this->start_time) {
+            $timeParts = explode(':', $this->start_time);
+            $startDateTimeInPH->setTime((int) $timeParts[0], (int) $timeParts[1], 0);
+        } else {
+            $startDateTimeInPH->startOfDay();
+        }
+
+        // Check if current time is before start datetime
+        if ($nowInPH->lessThan($startDateTimeInPH)) {
+            return 'not_started';
+        }
+
+        // If end date is set, check if current time is after end datetime
+        if ($this->end_date) {
+            $endDateTimeInPH = $this->end_date->copy()->setTimezone('Asia/Manila');
+            if ($this->end_time) {
+                $timeParts = explode(':', $this->end_time);
+                $endDateTimeInPH->setTime((int) $timeParts[0], (int) $timeParts[1], 59);
+            } else {
+                $endDateTimeInPH->endOfDay();
+            }
+
+            if ($nowInPH->greaterThan($endDateTimeInPH)) {
+                return 'ended';
+            }
+        }
+
+        return 'open';
+    }
+
+    /**
      * Lock the pageant configuration
      */
     public function lockConfiguration($userId = null): void

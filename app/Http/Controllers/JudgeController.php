@@ -68,7 +68,12 @@ class JudgeController extends Controller
                     'description' => $pageant->description,
                     'status' => $pageant->status,
                     'pageant_date' => $pageant->pageant_date,
+                    'start_date' => $pageant->start_date?->format('F j, Y'),
+                    'start_time' => $pageant->start_time,
+                    'end_date' => $pageant->end_date?->format('F j, Y'),
+                    'end_time' => $pageant->end_time,
                     'can_be_scored' => $pageant->canBeScored(),
+                    'scoring_status' => $pageant->getScoringStatus(),
                     'venue' => $pageant->venue,
                     'location' => $pageant->location,
                     'cover_image' => $pageant->cover_image,
@@ -82,6 +87,7 @@ class JudgeController extends Controller
                         'name' => $pageant->currentRound->name,
                         'is_locked' => $pageant->currentRound->is_locked ?? false,
                     ] : null,
+                    'scoring_system' => $pageant->scoring_system,
                 ];
             });
 
@@ -265,8 +271,11 @@ class JudgeController extends Controller
                 'status' => $pageant->status,
                 'is_completed' => $pageant->isCompleted(),
                 'can_be_scored' => $pageant->canBeScored(),
+                'scoring_status' => $pageant->getScoringStatus(),
                 'start_date' => $pageant->start_date?->format('F j, Y'),
                 'start_time' => $pageant->start_time,
+                'end_date' => $pageant->end_date?->format('F j, Y'),
+                'end_time' => $pageant->end_time,
             ],
             'rounds' => $rounds->map(function ($round) use ($judge) {
                 return [

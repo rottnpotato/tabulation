@@ -209,10 +209,16 @@
 
             <!-- Action Button -->
             <div class="pt-2">
-              <!-- Date restriction warning -->
-              <div v-if="!pageant.can_be_scored && pageant.pageant_date" class="mb-3 px-3 py-2 rounded-lg bg-amber-900/30 border border-amber-700/50 text-amber-200 text-xs flex items-center gap-2">
+              <!-- Scoring not yet started -->
+              <div v-if="pageant.scoring_status === 'not_started' && pageant.start_date" class="mb-3 px-3 py-2 rounded-lg bg-sky-900/30 border border-sky-700/50 text-sky-200 text-xs flex items-center gap-2">
+                <Calendar class="w-3.5 h-3.5 text-sky-400" />
+                <span>Scoring opens on {{ pageant.start_date }}{{ pageant.start_time ? ` at ${formatTime(pageant.start_time)}` : '' }}</span>
+              </div>
+              
+              <!-- Scoring period has ended -->
+              <div v-else-if="pageant.scoring_status === 'ended'" class="mb-3 px-3 py-2 rounded-lg bg-amber-900/30 border border-amber-700/50 text-amber-200 text-xs flex items-center gap-2">
                 <Calendar class="w-3.5 h-3.5 text-amber-400" />
-                <span>Scoring opens on {{ formatDate(pageant.pageant_date) }}</span>
+                <span>Scoring period has ended{{ pageant.end_date ? ` (ended ${pageant.end_date}${pageant.end_time ? ` at ${formatTime(pageant.end_time)}` : ''})` : '' }}</span>
               </div>
               
               <Link
@@ -224,11 +230,18 @@
                 {{ pageant.current_round ? 'Continue Scoring' : 'Start Scoring' }}
               </Link>
               <div
-                v-else-if="!pageant.can_be_scored && pageant.rounds_count > 0"
+                v-else-if="pageant.scoring_status === 'not_started' && pageant.rounds_count > 0"
                 class="w-full py-3.5 bg-teal-900/40 text-teal-500/50 font-bold rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-teal-900/50"
               >
                 <Calendar class="w-4 h-4" />
-                Available on Pageant Date
+                Scoring Not Yet Open
+              </div>
+              <div
+                v-else-if="pageant.scoring_status === 'ended' && pageant.rounds_count > 0"
+                class="w-full py-3.5 bg-amber-900/40 text-amber-500/50 font-bold rounded-xl cursor-not-allowed flex items-center justify-center gap-2 border border-amber-900/50"
+              >
+                <Calendar class="w-4 h-4" />
+                Scoring Period Ended
               </div>
               <div
                 v-else
@@ -398,6 +411,15 @@ const formatDate = (dateString) => {
     month: 'short',
     day: 'numeric'
   })
+}
+
+const formatTime = (time) => {
+  if (!time) return ''
+  const [hours, minutes] = time.split(':')
+  const hour = parseInt(hours)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const displayHour = hour % 12 || 12
+  return `${displayHour}:${minutes} ${ampm}`
 }
 
 const formatDateShort = (dateString) => {
