@@ -436,9 +436,9 @@ const logoInput = ref(null)
 const form = useForm({
   name: props.pageant.name,
   description: props.pageant.description || '',
-  start_date: props.pageant.start_date ? new Date(props.pageant.start_date).toISOString().substr(0, 10) : '',
+  start_date: props.pageant.start_date || '',
   start_time: props.pageant.start_time || '',
-  end_date: props.pageant.end_date ? new Date(props.pageant.end_date).toISOString().substr(0, 10) : '',
+  end_date: props.pageant.end_date || '',
   end_time: props.pageant.end_time || '',
   venue: props.pageant.venue || '',
   location: props.pageant.location || '',
