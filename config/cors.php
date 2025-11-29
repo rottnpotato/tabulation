@@ -25,16 +25,19 @@ return [
 
     // Explicitly allow local dev origins; adjust for your environment as needed
     'allowed_origins' => [
+        '*',
         'http://127.0.0.1:8000',
         'http://localhost:8000',
         // Vite dev server origins (IPv4, IPv6 localhost)
         'http://127.0.0.1:5173',
         'http://localhost:5173',
         'http://[::1]:5173',
+        'http://192.168.1.18:8000'
     ],
 
     'allowed_origins_patterns' => [
         // Optional: allow any local dev origin with any port
+        '*',
         '/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(\:\d+)?$/',
     ],
 
