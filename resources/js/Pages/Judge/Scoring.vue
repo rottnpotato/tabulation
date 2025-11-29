@@ -118,9 +118,34 @@
 
         <!-- Right: Active Contestant Progress & Score Reference -->
         <div class="w-full md:w-auto flex items-center justify-center md:justify-end gap-3">
+            <!-- Gender Filter (for pair competitions) -->
+            <div v-if="isPairCompetition" class="flex items-center bg-white/60 rounded-lg p-0.5 border border-white/50">
+                <button 
+                    @click="handleGenderFilterChange('all')"
+                    class="px-3 py-1.5 rounded-md text-xs font-bold transition-all"
+                    :class="genderFilter === 'all' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-white/50'"
+                >
+                    All
+                </button>
+                <button 
+                    @click="handleGenderFilterChange('female')"
+                    class="px-3 py-1.5 rounded-md text-xs font-bold transition-all"
+                    :class="genderFilter === 'female' ? 'bg-pink-500 text-white' : 'text-slate-600 hover:bg-white/50'"
+                >
+                    Female
+                </button>
+                <button 
+                    @click="handleGenderFilterChange('male')"
+                    class="px-3 py-1.5 rounded-md text-xs font-bold transition-all"
+                    :class="genderFilter === 'male' ? 'bg-blue-500 text-white' : 'text-slate-600 hover:bg-white/50'"
+                >
+                    Male
+                </button>
+            </div>
+            
             <!-- Score Reference Toggle -->
             <button
-                v-if="otherContestantsScores.length > 0"
+                v-if="otherContestantsScores.length > 0 || (isPairCompetition && (femaleScores.length > 0 || maleScores.length > 0))"
                 @click="showScoreReference = !showScoreReference"
                 class="px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2"
                 :class="showScoreReference ? 'bg-teal-600 text-white' : 'bg-white/70 text-teal-700 hover:bg-white'"
@@ -241,6 +266,12 @@
                         <!-- Number Badge -->
                         <div class="absolute top-6 right-6 w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white/90 backdrop-blur-md text-slate-900 flex items-center justify-center font-black text-xl lg:text-2xl shadow-lg border border-white/50">
                             {{ activeContestant.number }}
+                        </div>
+                        
+                        <!-- Gender Badge (for pair competitions) -->
+                        <div v-if="isPairCompetition && activeContestant.gender" class="absolute top-6 left-6 px-3 py-1.5 rounded-xl backdrop-blur-md font-bold text-xs shadow-lg border border-white/50"
+                            :class="activeContestant.gender === 'female' ? 'bg-pink-500/90 text-white' : 'bg-blue-500/90 text-white'">
+                            {{ activeContestant.gender === 'female' ? 'Female' : 'Male' }}
                         </div>
                     </div>
                 </div>
@@ -406,55 +437,157 @@
             <div class="sticky top-0 bg-white/95 backdrop-blur-xl border-b border-teal-100 px-4 py-4 flex items-center justify-between z-10">
                 <div>
                     <h3 class="font-bold text-slate-900 text-lg">My Scores Reference</h3>
-                    <p class="text-xs text-slate-500">{{ otherContestantsScores.length }} contestant(s) scored</p>
+                    <p class="text-xs text-slate-500">
+                        <template v-if="isPairCompetition">
+                            {{ femaleScores.length }} female, {{ maleScores.length }} male scored
+                        </template>
+                        <template v-else>
+                            {{ otherContestantsScores.length }} contestant(s) scored
+                        </template>
+                    </p>
                 </div>
                 <button @click="showScoreReference = false" class="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
                     <X class="w-5 h-5" />
                 </button>
             </div>
             
-            <div class="p-4 space-y-3">
-                <div v-if="otherContestantsScores.length === 0" class="text-center py-12 text-slate-400">
+            <div class="p-4 space-y-4">
+                <!-- Empty State -->
+                <div v-if="otherContestantsScores.length === 0 && (!isPairCompetition || (femaleScores.length === 0 && maleScores.length === 0))" class="text-center py-12 text-slate-400">
                     <Users class="w-12 h-12 mx-auto mb-3 opacity-30" />
                     <p class="text-sm">No other contestants scored yet</p>
                 </div>
                 
-                <div 
-                    v-for="contestantScore in otherContestantsScores" 
-                    :key="contestantScore.contestant_id"
-                    class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all"
-                >
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm">
-                                {{ contestantScore.contestant_number }}
-                            </div>
-                            <div>
-                                <p class="font-bold text-slate-900 text-sm">{{ contestantScore.contestant_name }}</p>
-                                <p class="text-xs text-slate-500">{{ contestantScore.is_complete ? 'Complete' : 'In Progress' }}</p>
-                            </div>
+                <!-- Pair Competition: Separated by Gender -->
+                <template v-if="isPairCompetition">
+                    <!-- Female Section -->
+                    <div v-if="femaleScores.length > 0" class="space-y-3">
+                        <div class="flex items-center gap-2 pb-2 border-b border-pink-200">
+                            <div class="w-3 h-3 rounded-full bg-pink-500"></div>
+                            <h4 class="font-bold text-pink-700 text-sm uppercase tracking-wide">Female Contestants ({{ femaleScores.length }})</h4>
                         </div>
-                        <div class="text-right">
-                            <p class="text-xs text-slate-500 font-medium">Total</p>
-                            <p class="text-xl font-black" :class="contestantScore.average ? 'text-teal-600' : 'text-slate-400'">
-                                {{ contestantScore.average ? formatScore(contestantScore.average) : '-' }}
-                            </p>
+                        <div 
+                            v-for="contestantScore in femaleScores" 
+                            :key="contestantScore.contestant_id"
+                            class="bg-pink-50 border border-pink-200 rounded-xl p-4 hover:shadow-md transition-all"
+                        >
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-pink-200 text-pink-700 flex items-center justify-center font-bold text-sm">
+                                        {{ contestantScore.contestant_number }}
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-900 text-sm">{{ contestantScore.contestant_name }}</p>
+                                        <p class="text-xs text-pink-600">{{ contestantScore.is_complete ? 'Complete' : 'In Progress' }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-slate-500 font-medium">Total</p>
+                                    <p class="text-xl font-black" :class="contestantScore.average ? 'text-pink-600' : 'text-slate-400'">
+                                        {{ contestantScore.average ? formatScore(contestantScore.average) : '-' }}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <div 
+                                    v-for="criterion in criteria" 
+                                    :key="criterion.id"
+                                    class="flex items-center justify-between text-xs"
+                                >
+                                    <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
+                                    <span class="font-bold" :class="getScoreForCriterion(contestantScore.scores, criterion.id) ? 'text-slate-900' : 'text-slate-300'">
+                                        {{ formatScore(getScoreForCriterion(contestantScore.scores, criterion.id) || '-') }}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="space-y-2">
+                    <!-- Male Section -->
+                    <div v-if="maleScores.length > 0" class="space-y-3">
+                        <div class="flex items-center gap-2 pb-2 border-b border-blue-200">
+                            <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <h4 class="font-bold text-blue-700 text-sm uppercase tracking-wide">Male Contestants ({{ maleScores.length }})</h4>
+                        </div>
                         <div 
-                            v-for="criterion in criteria" 
-                            :key="criterion.id"
-                            class="flex items-center justify-between text-xs"
+                            v-for="contestantScore in maleScores" 
+                            :key="contestantScore.contestant_id"
+                            class="bg-blue-50 border border-blue-200 rounded-xl p-4 hover:shadow-md transition-all"
                         >
-                            <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
-                            <span class="font-bold" :class="getScoreForCriterion(contestantScore.scores, criterion.id) ? 'text-slate-900' : 'text-slate-300'">
-                                {{ formatScore(getScoreForCriterion(contestantScore.scores, criterion.id) || '-') }}
-                            </span>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-200 text-blue-700 flex items-center justify-center font-bold text-sm">
+                                        {{ contestantScore.contestant_number }}
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-900 text-sm">{{ contestantScore.contestant_name }}</p>
+                                        <p class="text-xs text-blue-600">{{ contestantScore.is_complete ? 'Complete' : 'In Progress' }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-slate-500 font-medium">Total</p>
+                                    <p class="text-xl font-black" :class="contestantScore.average ? 'text-blue-600' : 'text-slate-400'">
+                                        {{ contestantScore.average ? formatScore(contestantScore.average) : '-' }}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <div 
+                                    v-for="criterion in criteria" 
+                                    :key="criterion.id"
+                                    class="flex items-center justify-between text-xs"
+                                >
+                                    <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
+                                    <span class="font-bold" :class="getScoreForCriterion(contestantScore.scores, criterion.id) ? 'text-slate-900' : 'text-slate-300'">
+                                        {{ formatScore(getScoreForCriterion(contestantScore.scores, criterion.id) || '-') }}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </template>
+                
+                <!-- Solo Competition: All together -->
+                <template v-else>
+                    <div 
+                        v-for="contestantScore in otherContestantsScores" 
+                        :key="contestantScore.contestant_id"
+                        class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all"
+                    >
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm">
+                                    {{ contestantScore.contestant_number }}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-900 text-sm">{{ contestantScore.contestant_name }}</p>
+                                    <p class="text-xs text-slate-500">{{ contestantScore.is_complete ? 'Complete' : 'In Progress' }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-slate-500 font-medium">Total</p>
+                                <p class="text-xl font-black" :class="contestantScore.average ? 'text-teal-600' : 'text-slate-400'">
+                                    {{ contestantScore.average ? formatScore(contestantScore.average) : '-' }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div 
+                                v-for="criterion in criteria" 
+                                :key="criterion.id"
+                                class="flex items-center justify-between text-xs"
+                            >
+                                <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
+                                <span class="font-bold" :class="getScoreForCriterion(contestantScore.scores, criterion.id) ? 'text-slate-900' : 'text-slate-300'">
+                                    {{ formatScore(getScoreForCriterion(contestantScore.scores, criterion.id) || '-') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
     </Transition>
@@ -466,7 +599,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Star, Save, CheckCircle, AlertCircle, Lock, MapPin, Target, Users, Calendar, ChevronLeft, ChevronRight, X, Eye, EyeOff } from 'lucide-vue-next'
+import { Star, Save, CheckCircle, AlertCircle, Lock, MapPin, Target, Users, Calendar, ChevronLeft, ChevronRight, X, Eye, EyeOff, Filter } from 'lucide-vue-next'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { Dialog, DialogPanel, TransitionRoot, TransitionChild } from '@headlessui/vue'
@@ -503,6 +636,7 @@ const realtimeLoading = ref(false)
 const isChannelReady = ref(false)
 const showDetails = ref(false)
 const showScoreReference = ref(false)
+const genderFilter = ref('all') // 'all', 'female', 'male'
 let pageantChannel = null
 
 const scores = ref({ ...props.existingScores })
@@ -515,16 +649,21 @@ const isPairCompetition = computed(() => {
 
 // Sort contestants with gender grouping for pair competitions  
 const sortedContestants = computed(() => {
-  const contestants = [...props.contestants]
+  let contestants = [...props.contestants]
+  
+  // Apply gender filter for pair competitions
+  if (isPairCompetition.value && genderFilter.value !== 'all') {
+    contestants = contestants.filter(c => c.gender === genderFilter.value)
+  }
   
   if (isPairCompetition.value) {
-    // For pair competitions: group by gender (males first, then females)
-    const males = contestants.filter(c => c.gender === 'male').sort((a, b) => {
+    // For pair competitions: group by gender (females first, then males for traditional order)
+    const females = contestants.filter(c => c.gender === 'female').sort((a, b) => {
       const numA = parseInt(a.number || 0)
       const numB = parseInt(b.number || 0)
       return numA - numB
     })
-    const females = contestants.filter(c => c.gender === 'female').sort((a, b) => {
+    const males = contestants.filter(c => c.gender === 'male').sort((a, b) => {
       const numA = parseInt(a.number || 0)
       const numB = parseInt(b.number || 0)
       return numA - numB
@@ -534,7 +673,7 @@ const sortedContestants = computed(() => {
       const numB = parseInt(b.number || 0)
       return numA - numB
     })
-    return [...males, ...females, ...others]
+    return [...females, ...males, ...others]
   }
   
   // Default sorting by number
@@ -548,8 +687,39 @@ const sortedContestants = computed(() => {
 // Computed
 const activeContestant = computed(() => sortedContestants.value[currentIndex.value] || {})
 
+// Get other contestants' scores, grouped by gender for pair pageants
 const otherContestantsScores = computed(() => {
-  return props.allContestantScores.filter(cs => cs.contestant_id !== activeContestant.value.id)
+  const allScores = props.allContestantScores.filter(cs => cs.contestant_id !== activeContestant.value.id)
+  
+  if (isPairCompetition.value) {
+    // Sort by gender (females first) then by number for pair pageants
+    const females = allScores.filter(cs => cs.contestant_gender === 'female').sort((a, b) => {
+      return (a.contestant_number || 0) - (b.contestant_number || 0)
+    })
+    const males = allScores.filter(cs => cs.contestant_gender === 'male').sort((a, b) => {
+      return (a.contestant_number || 0) - (b.contestant_number || 0)
+    })
+    const others = allScores.filter(cs => !cs.contestant_gender || (cs.contestant_gender !== 'male' && cs.contestant_gender !== 'female')).sort((a, b) => {
+      return (a.contestant_number || 0) - (b.contestant_number || 0)
+    })
+    return [...females, ...males, ...others]
+  }
+  
+  return allScores.sort((a, b) => (a.contestant_number || 0) - (b.contestant_number || 0))
+})
+
+// Get female scores for reference panel
+const femaleScores = computed(() => {
+  return props.allContestantScores
+    .filter(cs => cs.contestant_gender === 'female' && cs.contestant_id !== activeContestant.value.id)
+    .sort((a, b) => (a.contestant_number || 0) - (b.contestant_number || 0))
+})
+
+// Get male scores for reference panel
+const maleScores = computed(() => {
+  return props.allContestantScores
+    .filter(cs => cs.contestant_gender === 'male' && cs.contestant_id !== activeContestant.value.id)
+    .sort((a, b) => (a.contestant_number || 0) - (b.contestant_number || 0))
 })
 
 const currentAverage = computed(() => {
@@ -592,6 +762,11 @@ const getCompletedCriteriaCount = (contestantId) => {
 const handleRoundChange = (roundId) => {
   if (roundId === props.currentRound.id) return
   router.visit(route('judge.scoring', [props.pageant.id, roundId]))
+}
+
+const handleGenderFilterChange = (gender) => {
+  genderFilter.value = gender
+  currentIndex.value = 0 // Reset to first contestant when filter changes
 }
 
 const nextContestant = () => {

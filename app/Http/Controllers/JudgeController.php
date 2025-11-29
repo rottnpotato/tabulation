@@ -190,6 +190,7 @@ class JudgeController extends Controller
                 'name' => $contestant->is_pair ? ($contestant->display_name ?? $contestant->name) : $contestant->name,
                 'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                 'origin' => $contestant->origin,
+                'gender' => $contestant->gender,
                 'is_pair' => (bool) $contestant->is_pair,
                 'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
             ];
@@ -251,6 +252,7 @@ class JudgeController extends Controller
                     'contestant_id' => $contestant->id,
                     'contestant_name' => $contestant->is_pair ? ($contestant->display_name ?? $contestant->name) : $contestant->name,
                     'contestant_number' => $contestant->number,
+                    'contestant_gender' => $contestant->gender,
                     'scores' => $contestantScores->map(fn ($s) => [
                         'criteria_id' => $s->criteria_id,
                         'score' => $s->score,
@@ -266,6 +268,7 @@ class JudgeController extends Controller
                 'id' => $pageant->id,
                 'name' => $pageant->name,
                 'scoring_system' => $pageant->scoring_system,
+                'contestant_type' => $pageant->contestant_type,
                 'current_round_id' => $pageant->current_round_id,
                 'has_current_round' => $pageant->hasCurrentRound(),
                 'status' => $pageant->status,

@@ -117,6 +117,7 @@ class ScoreCalculationService
     /**
      * Get the IDs of contestants who advance from a given stage based on top_n_proceed.
      * For pair pageants, returns top N from each gender separately.
+     * Only considers contestants who have been scored (finalScore > 0).
      *
      * @param  string  $stage  The stage type to get results from (e.g., 'semi-final', 'preliminary')
      * @return array<int> Array of contestant IDs that advance, empty if no top_n_proceed is set
@@ -146,12 +147,20 @@ class ScoreCalculationService
                 return [];
             }
 
+            // Filter out contestants who have not been scored (finalScore <= 0)
+            $scoredContestants = array_filter($stageResults, fn ($c) => ($c['finalScore'] ?? 0) > 0);
+
+            if (empty($scoredContestants)) {
+                // No contestants have been scored yet, return empty to allow all
+                return [];
+            }
+
             $advancingIds = [];
 
             // For pair pageants, apply top N separately per gender
             if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                $maleContestants = array_filter($stageResults, fn ($c) => ($c['gender'] ?? '') === 'male');
-                $femaleContestants = array_filter($stageResults, fn ($c) => ($c['gender'] ?? '') === 'female');
+                $maleContestants = array_filter($scoredContestants, fn ($c) => ($c['gender'] ?? '') === 'male');
+                $femaleContestants = array_filter($scoredContestants, fn ($c) => ($c['gender'] ?? '') === 'female');
 
                 // Sort and take top N males
                 usort($maleContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
@@ -167,8 +176,8 @@ class ScoreCalculationService
                 );
             } else {
                 // For solo pageants, just take top N overall
-                usort($stageResults, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
-                $topContestants = array_slice($stageResults, 0, $topN);
+                usort($scoredContestants, fn ($a, $b) => $b['finalScore'] <=> $a['finalScore']);
+                $topContestants = array_slice($scoredContestants, 0, $topN);
                 $advancingIds = array_column($topContestants, 'id');
             }
 
