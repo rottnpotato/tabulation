@@ -7,6 +7,17 @@ declare global {
     Echo: Echo;
     Pusher: any;
     axios: any;
+    Ziggy: {
+      url: string;
+      port: number | null;
+      defaults: Record<string, any>;
+      routes: Record<string, {
+        uri: string;
+        methods: string[];
+        parameters?: string[];
+        wheres?: Record<string, string>;
+      }>;
+    };
   }
 }
 
