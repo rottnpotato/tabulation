@@ -5,7 +5,6 @@ import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createPinia } from 'pinia';
 import { ZiggyVue } from 'ziggy-js';
-import { Ziggy } from './ziggy';
 import NotificationPlugin from './Plugins/NotificationPlugin';
 
 // Add progress indicator configuration
@@ -38,8 +37,9 @@ createInertiaApp({
     setup({ el, App, props, plugin }) {
         const pinia = createPinia();
 
-        // Use the Ziggy configuration as-is from Laravel
-        // No need to override it since Laravel generates the correct URL with port
+        // Use the dynamic Ziggy configuration from the server (provided by @routes directive)
+        // This ensures URLs work correctly regardless of environment (localhost, deployed, etc.)
+        const Ziggy = window.Ziggy;
         
         createApp({ render: () => h(App, props) })
             .use(plugin)    
