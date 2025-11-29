@@ -477,82 +477,12 @@ class TabulatorController extends Controller
         // Calculate overall final scores using the service
         $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant);
 
-        // Calculate results for each round grouping (up to that round)
+        // Calculate results for each round/stage using unified calculation method
         $roundResults = [];
         $orderedRounds = $pageant->rounds->sortBy('display_order');
 
-        foreach ($orderedRounds as $index => $currentRound) {
-            // Get all rounds up to and including the current round
-            $roundsUpToCurrent = $orderedRounds->filter(function ($r) use ($currentRound) {
-                return $r->display_order <= $currentRound->display_order;
-            });
-
-            // Calculate scores using only these rounds
-            $roundContestants = [];
-            foreach ($pageant->contestants as $contestant) {
-                $roundScores = [];
-                $totalWeightedScore = 0;
-                $totalRoundWeight = 0;
-
-                foreach ($roundsUpToCurrent as $round) {
-                    $roundScore = $this->scoreCalculationService->calculateContestantRoundScore($contestant, $round, $pageant);
-
-                    if ($roundScore !== null) {
-                        $roundScores[$round->name] = $roundScore;
-                        $roundWeight = $round->weight ?? 1;
-                        if ($roundWeight <= 0) {
-                            $roundWeight = 1;
-                        }
-                        $totalWeightedScore += $roundScore * $roundWeight;
-                        $totalRoundWeight += $roundWeight;
-                    }
-                }
-
-                $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
-
-                $roundContestants[] = [
-                    'id' => $contestant->id,
-                    'number' => $contestant->number,
-                    'name' => $contestant->name,
-                    'gender' => $contestant->gender,
-                    'region' => $contestant->origin,
-                    'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
-                    'scores' => $roundScores,
-                    'totalScore' => round($finalScore, 2),
-                ];
-            }
-
-            // Sort by score
-            usort($roundContestants, fn ($a, $b) => $b['totalScore'] <=> $a['totalScore']);
-
-            // Add ranks
-            foreach ($roundContestants as $rankIndex => &$contestant) {
-                $contestant['rank'] = $rankIndex + 1;
-            }
-            unset($contestant); // Break the reference
-
-            // Apply filtering based on previous STAGE's top_n_proceed (not previous round)
-            // Get the previous stage type for this round
-            $previousStageType = $this->scoreCalculationService->getPreviousStageType($pageant, $currentRound);
-
-            if ($previousStageType !== null) {
-                // Get advancing contestant IDs from the previous stage
-                $advancedContestants = $this->scoreCalculationService->getAdvancingContestantIds($pageant, $previousStageType);
-
-                // If there are advancement rules, filter contestants
-                if (! empty($advancedContestants)) {
-                    $roundContestants = array_filter($roundContestants, function ($c) use ($advancedContestants) {
-                        return in_array($c['id'], $advancedContestants);
-                    });
-                    $roundContestants = array_values($roundContestants);
-
-                    // Re-rank after filtering
-                    foreach ($roundContestants as $rankIndex => &$contestant) {
-                        $contestant['rank'] = $rankIndex + 1;
-                    }
-                    unset($contestant); // Break the reference
-                }
-            }
+        foreach ($orderedRounds as $currentRound) {
+            $roundContestants = $this->scoreCalculationService->calculateRoundViewScores($pageant, $currentRound);
 
             $roundResults['round_'.$currentRound->id] = [
                 'contestants' => $roundContestants,

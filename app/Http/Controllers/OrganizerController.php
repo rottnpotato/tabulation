@@ -1375,6 +1375,12 @@ class OrganizerController extends Controller
             'is_active' => true,
         ]);
 
+        // Update pageant ranking method if provided
+        if (isset($validated['ranking_method'])) {
+            $pageant = \App\Models\Pageant::findOrFail($pageantId);
+            $pageant->update(['ranking_method' => $validated['ranking_method']]);
+        }
+
         // Generate identifier if not provided
         if (! $round->identifier) {
             $round->update(['identifier' => $round->generateIdentifier()]);
@@ -1441,6 +1447,12 @@ class OrganizerController extends Controller
             'use_for_minor_awards' => $validated['use_for_minor_awards'] ?? false,
             'is_active' => $validated['is_active'] ?? $round->is_active,
         ]);
+
+        // Update pageant ranking method if provided
+        if (isset($validated['ranking_method'])) {
+            $pageant = \App\Models\Pageant::findOrFail($pageantId);
+            $pageant->update(['ranking_method' => $validated['ranking_method']]);
+        }
 
         // Log activity
         $this->auditLogService->log(

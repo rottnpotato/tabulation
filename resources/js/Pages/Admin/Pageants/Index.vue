@@ -271,6 +271,9 @@
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
                   Edit Permission
                 </th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
+                  Reassign
+                </th>
                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                   Actions
                 </th>
@@ -278,7 +281,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-if="paginatedPageants.length === 0">
-                <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                <td colspan="9" class="px-6 py-10 text-center text-gray-500">
                   <div class="flex flex-col items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="12" cy="12" r="10"></circle>
@@ -371,6 +374,21 @@
                   <div v-else class="text-gray-400 text-xs italic">
                     Not applicable
                   </div>
+                </td>
+                <td class="px-4 py-4 text-sm" @click.stop>
+                  <button
+                    @click.stop="openReassignModal(pageant)"
+                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-all"
+                    title="Reassign Organizer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Reassign
+                  </button>
                 </td>
                 <td class="px-4 py-4 text-sm text-right whitespace-nowrap">
                   <div class="inline-flex items-center space-x-2">
@@ -562,6 +580,92 @@
         </div>
       </div>
     </Modal>
+
+    <!-- Reassign Organizer Modal -->
+    <Modal :show="showReassignModal" @close="closeReassignModal">
+      <div class="p-6 bg-white rounded-lg shadow-md">
+        <div class="flex items-center space-x-3 mb-4">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center bg-teal-100">
+            <Users class="h-6 w-6 text-teal-600" />
+          </div>
+          <div>
+            <h3 class="text-lg font-medium text-gray-900">Reassign Organizer</h3>
+            <p class="text-sm text-gray-500">{{ reassignPageant?.name }}</p>
+          </div>
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Select New Organizer(s)
+          </label>
+          <p class="text-xs text-gray-500 mb-3">
+            Choose one or more organizers to manage this pageant. Current organizers will be replaced.
+          </p>
+          <div class="space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-md p-3">
+            <label 
+              v-for="organizer in props.organizers" 
+              :key="organizer.id"
+              class="flex items-center p-2 rounded hover:bg-gray-50 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                :value="organizer.id"
+                v-model="selectedOrganizerIds"
+                class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+              />
+              <span class="ml-3 text-sm text-gray-700">{{ organizer.name }}</span>
+              <span class="ml-2 text-xs text-gray-500">({{ organizer.email }})</span>
+            </label>
+          </div>
+          <p v-if="selectedOrganizerIds.length === 0" class="mt-2 text-xs text-red-600">
+            Please select at least one organizer
+          </p>
+          <div class="mt-3 flex justify-end">
+            <button
+              type="button"
+              @click="showNewOrganizerModal = true"
+              class="text-sm text-teal-600 hover:text-teal-800 flex items-center font-medium"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              Create New Organizer
+            </button>
+          </div>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+          <button
+            @click="closeReassignModal"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          >
+            Cancel
+          </button>
+          <button
+            @click="confirmReassign"
+            :disabled="isReassigning || selectedOrganizerIds.length === 0"
+            class="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <template v-if="isReassigning">
+              <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 inline-block"></div>
+              Reassigning...
+            </template>
+            <template v-else>
+              Reassign Organizer
+            </template>
+          </button>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- Create New Organizer Modal -->
+    <CreateOrganizerModal 
+      :show="showNewOrganizerModal" 
+      @close="showNewOrganizerModal = false"
+      @created="handleOrganizerCreated"
+    />
   </AdminLayout>
 </template>
 
@@ -593,6 +697,7 @@ import {
 import { useNotification } from '@/Composables/useNotification';
 import CustomSelect from '@/Components/CustomSelect.vue';
 import Modal from '@/Components/Modal.vue';
+import CreateOrganizerModal from '@/Components/CreateOrganizerModal.vue';
 
 // Define props from controller
 const props = defineProps({
@@ -646,11 +751,76 @@ const lastAction = ref('');
 const lastActionPageant = ref(null);
 const archiveReason = ref('');
 
+// Reassign organizer state
+const showReassignModal = ref(false);
+const reassignPageant = ref(null);
+const selectedOrganizerIds = ref([]);
+const isReassigning = ref(false);
+const showNewOrganizerModal = ref(false);
+
 const confirmArchive = (pageant) => {
   selectedPageant.value = pageant;
   confirmAction.value = 'archive';
   archiveReason.value = ''; // Reset reason
   showConfirmModal.value = true;
+};
+
+const openReassignModal = (pageant) => {
+  reassignPageant.value = pageant;
+  // Pre-select current organizers
+  selectedOrganizerIds.value = pageant.organizers ? pageant.organizers.map(o => o.id) : [];
+  showReassignModal.value = true;
+};
+
+const closeReassignModal = () => {
+  showReassignModal.value = false;
+  reassignPageant.value = null;
+  selectedOrganizerIds.value = [];
+  isReassigning.value = false;
+};
+
+const handleOrganizerCreated = (newOrganizer) => {
+  // Add the new organizer to selected list
+  selectedOrganizerIds.value.push(newOrganizer.id);
+  
+  // Show success notification
+  notify.success(`Organizer "${newOrganizer.name}" created successfully and added to selection!`);
+  
+  // Close the create organizer modal
+  showNewOrganizerModal.value = false;
+  
+  // Refresh the data to get updated organizers list
+  refreshData();
+};
+
+const confirmReassign = () => {
+  if (!reassignPageant.value || selectedOrganizerIds.value.length === 0) return;
+  
+  isReassigning.value = true;
+  
+  router.put(route('admin.pageants.update', reassignPageant.value.id), {
+    organizer_ids: selectedOrganizerIds.value,
+  }, {
+    onSuccess: () => {
+      notify.success(`Organizer(s) reassigned successfully for "${reassignPageant.value.name}"!`);
+      closeReassignModal();
+      refreshData();
+    },
+    onError: (errors) => {
+      console.error('Error reassigning organizer:', errors);
+      
+      if (errors && errors.message) {
+        notify.error(errors.message);
+      } else if (errors && errors.organizer_ids) {
+        notify.error(Array.isArray(errors.organizer_ids) ? errors.organizer_ids[0] : errors.organizer_ids);
+      } else {
+        notify.error('Failed to reassign organizer. Please try again.');
+      }
+    },
+    onFinish: () => {
+      isReassigning.value = false;
+    }
+  });
 };
 
 // Filter options for CustomSelect components

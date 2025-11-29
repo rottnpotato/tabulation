@@ -54,6 +54,7 @@ class UpdateRoundRequest extends FormRequest
                 'min:1',
             ],
             'use_for_minor_awards' => ['nullable', 'boolean'],
+            'ranking_method' => ['nullable', 'string', 'in:score_average,rank_sum'],
         ];
     }
 
@@ -78,6 +79,7 @@ class UpdateRoundRequest extends FormRequest
             'display_order.unique' => 'This display order is already in use by another round in this pageant.',
             'top_n_proceed.required' => 'Semi-final rounds must specify how many contestants advance to the next round.',
             'top_n_proceed.min' => 'At least 1 contestant must proceed.',
+            'ranking_method.in' => 'Invalid ranking method selected.',
         ];
     }
 

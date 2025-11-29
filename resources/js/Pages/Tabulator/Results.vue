@@ -481,7 +481,17 @@ const displayedRounds = computed(() => {
   const selectedRound = props.rounds.find(r => r.id.toString() === activeRound.value)
   if (!selectedRound) return props.rounds
   
-  return props.rounds.filter(r => (r.display_order || 0) <= (selectedRound.display_order || 0))
+  // Filter rounds and verify they have score data
+  const roundsUpToSelected = props.rounds.filter(r => (r.display_order || 0) <= (selectedRound.display_order || 0))
+  
+  // For round-specific views, only show rounds that have actual scores in the contestants data
+  if (displayedContestants.value && displayedContestants.value.length > 0) {
+    const firstContestant = displayedContestants.value[0]
+    const availableRoundNames = new Set(Object.keys(firstContestant.scores || {}))
+    return roundsUpToSelected.filter(r => availableRoundNames.has(r.name))
+  }
+  
+  return roundsUpToSelected
 })
 
 const highestScore = computed(() => {
