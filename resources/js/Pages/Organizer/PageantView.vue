@@ -924,12 +924,12 @@
                           </span>
                           <span v-else>Save</span>
                         </button>
-                        <!-- Show saved value badge when there are no pending changes -->
+                        <!-- Show saved value badge when there are no pending changes and a value exists -->
                         <span 
-                          v-else-if="roundsByType[stageType].topNProceed !== null && roundsByType[stageType].topNProceed !== undefined" 
+                          v-else-if="getDisplayTopN(stageType) !== null" 
                           class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300"
                         >
-                          ✓ Top {{ roundsByType[stageType].topNProceed }}
+                          ✓ Top {{ getDisplayTopN(stageType) }}
                         </span>
                         <!-- Show not configured indicator when no value is set -->
                         <span 
@@ -2808,7 +2808,9 @@ const stageTopNProcessing = ref({})
 // Initialize stage form values from current data
 const initializeStageTopNForm = () => {
   Object.keys(roundsByType.value).forEach(type => {
-    stageTopNForm.value[type] = roundsByType.value[type].topNProceed || null
+    // Use explicit null check to preserve numeric values including 0
+    const topN = roundsByType.value[type].topNProceed
+    stageTopNForm.value[type] = topN !== null && topN !== undefined ? topN : null
   })
 }
 
@@ -2841,9 +2843,27 @@ const updateStageTopN = (stageType) => {
 
 // Check if stage Top N has changed
 const hasStageTopNChanged = (stageType) => {
-  const current = stageTopNForm.value[stageType] || null
-  const original = roundsByType.value[stageType]?.topNProceed || null
+  // Handle empty string, null, undefined, and NaN consistently
+  const currentRaw = stageTopNForm.value[stageType]
+  const current = currentRaw === '' || currentRaw === null || currentRaw === undefined || Number.isNaN(currentRaw) ? null : Number(currentRaw)
+  const originalRaw = roundsByType.value[stageType]?.topNProceed
+  const original = originalRaw === null || originalRaw === undefined ? null : Number(originalRaw)
   return current !== original
+}
+
+// Get the display value for Top N (prioritizes form value, falls back to stored value)
+const getDisplayTopN = (stageType) => {
+  // First check the form value (what the user sees in the input)
+  const formValue = stageTopNForm.value[stageType]
+  if (formValue !== null && formValue !== undefined && formValue !== '' && !Number.isNaN(formValue)) {
+    return Number(formValue)
+  }
+  // Fall back to stored value from props
+  const storedValue = roundsByType.value[stageType]?.topNProceed
+  if (storedValue !== null && storedValue !== undefined) {
+    return Number(storedValue)
+  }
+  return null
 }
 
 

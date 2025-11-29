@@ -221,7 +221,8 @@ const props = defineProps<Props>()
 const localScores = ref(props.scores ? new Map(Object.entries(props.scores)) : new Map())
 const criteria = ref(props.criteria || [])
 const detailedScores = ref(props.detailedScores || {})
-const currentRoundId = ref(props.currentRound?.id || (props.rounds[0]?.id))
+// Ensure currentRoundId is a string to match the option values in CustomSelect
+const currentRoundId = ref((props.currentRound?.id ?? props.rounds[0]?.id)?.toString() || '')
 
 const roundOptions = computed(() => {
   return props.rounds.map(round => ({
