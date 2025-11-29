@@ -419,6 +419,7 @@ class AdminController extends Controller
             'contestants',
             'segments',
             'categories',
+            'rounds',
             'activities' => function ($query) {
                 $query->latest()->limit(10);
             },
@@ -438,6 +439,18 @@ class AdminController extends Controller
                 'id' => $organizer->id,
                 'name' => $organizer->name,
                 'email' => $organizer->email,
+            ];
+        });
+
+        // Add rounds data
+        $pageantData['rounds'] = $pageant->rounds->map(function ($round) {
+            return [
+                'id' => $round->id,
+                'name' => $round->name,
+                'type' => $round->type,
+                'is_active' => $round->is_active ?? false,
+                'order' => $round->order ?? 0,
+                'status' => $round->status ?? 'pending',
             ];
         });
 

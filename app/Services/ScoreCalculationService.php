@@ -957,4 +957,136 @@ class ScoreCalculationService
 
         return array_slice($allResults, 0, $limit);
     }
+
+    /**
+     * Calculate scores for a specific round view (unified calculation).
+     *
+     * Rules:
+     * 1. Same type rounds are accumulated together
+     * 2. Different types are calculated independently (no cross-type accumulation)
+     * 3. Final round type always starts fresh (no accumulation from previous stages)
+     *
+     * @param  Round  $targetRound  The round to calculate results for
+     * @param  bool  $useCache  Whether to use caching
+     * @return array Array of contestant results with scores and ranks
+     */
+    public function calculateRoundViewScores(Pageant $pageant, Round $targetRound, bool $useCache = true): array
+    {
+        try {
+            $cacheKey = "round_view_scores_{$pageant->id}_{$targetRound->id}";
+
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            $targetType = strtolower($targetRound->type ?? 'preliminary');
+
+            // For Final round type, always start fresh - only use that specific round
+            if ($targetType === 'final') {
+                $roundsToUse = collect([$targetRound]);
+            } else {
+                // For non-final rounds, only accumulate rounds of the SAME type
+                $roundsToUse = $pageant->rounds
+                    ->sortBy('display_order')
+                    ->filter(function ($r) use ($targetRound, $targetType) {
+                        $roundType = strtolower($r->type ?? 'preliminary');
+
+                        return $roundType === $targetType && $r->display_order <= $targetRound->display_order;
+                    });
+            }
+
+            // Calculate scores using only rounds of the same type (or just final round itself)
+            $contestants = [];
+            foreach ($pageant->contestants as $contestant) {
+                $roundScores = [];
+                $totalWeightedScore = 0;
+                $totalRoundWeight = 0;
+
+                foreach ($roundsToUse as $round) {
+                    $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
+
+                    if ($roundScore !== null) {
+                        $roundScores[$round->name] = round($roundScore, 2);
+                        $roundWeight = $round->weight ?? 1;
+                        if ($roundWeight <= 0) {
+                            $roundWeight = 1;
+                        }
+                        $totalWeightedScore += $roundScore * $roundWeight;
+                        $totalRoundWeight += $roundWeight;
+                    }
+                }
+
+                $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+
+                $memberNames = [];
+                $memberGenders = [];
+                if ($contestant->is_pair && $contestant->members && $contestant->members->isNotEmpty()) {
+                    foreach ($contestant->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
+
+                $contestants[] = [
+                    'id' => $contestant->id,
+                    'number' => $contestant->number,
+                    'name' => $contestant->name,
+                    'gender' => $contestant->gender,
+                    'region' => $contestant->origin,
+                    'is_pair' => $contestant->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
+                    'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                    'scores' => $roundScores,
+                    'totalScore' => round($finalScore, 2),
+                    'finalScore' => round($finalScore, 2),
+                ];
+            }
+
+            // Sort by score and apply ranking
+            $tieHandling = $pageant->tie_handling ?? 'average';
+            $result = $this->applyGenderSeparatedRanking(
+                $contestants,
+                $pageant,
+                'finalScore',
+                'desc',
+                $tieHandling
+            );
+
+            // Apply filtering based on previous STAGE's top_n_proceed
+            $previousStageType = $this->getPreviousStageType($pageant, $targetRound);
+            if ($previousStageType !== null) {
+                $advancedContestants = $this->getAdvancingContestantIds($pageant, $previousStageType);
+
+                if (! empty($advancedContestants)) {
+                    $result = array_filter($result, function ($c) use ($advancedContestants) {
+                        return in_array($c['id'], $advancedContestants);
+                    });
+                    $result = array_values($result);
+
+                    // Re-apply ranking after filtering
+                    $result = $this->applyGenderSeparatedRanking(
+                        $result,
+                        $pageant,
+                        'finalScore',
+                        'desc',
+                        $tieHandling
+                    );
+                }
+            }
+
+            Cache::put($cacheKey, $result, now()->addMinutes(30));
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating round view scores: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'round_id' => $targetRound->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
 }

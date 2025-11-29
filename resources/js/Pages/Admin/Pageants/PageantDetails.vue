@@ -10,22 +10,6 @@
           <ChevronLeft class="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
           Back to {{ fromPage === 'index' ? 'All' : fromPage === 'previous' ? 'Previous' : 'Previous' }} Pageants
         </Link>
-        <div class="flex flex-wrap gap-2 sm:space-x-3">
-          <button
-            @click="exportPageantData"
-            class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 z-50 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 transition-colors duration-150 ease-in-out cursor-pointer btn-transition"
-          >
-            <FileText class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            Export Data
-          </button>
-          <button
-            @click="editPageant"
-            class="inline-flex items-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium z-50 text-white bg-teal-600 border border-teal-700 rounded-md shadow-sm hover:bg-teal-700 transition-colors duration-150 ease-in-out cursor-pointer btn-transition"
-          >
-            <Edit class="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-            Edit Pageant
-          </button>
-        </div>
       </div>
   
       <!-- Hero section with pageant cover -->
@@ -307,14 +291,14 @@
         <div class="p-6">
           <div class="flex items-center justify-between mb-2">
             <h2 class="text-xl font-semibold text-gray-900">Contestants</h2>
-            <Link
+            <!-- <Link
               href="#"
               class="inline-flex items-center px-3 py-2 text-sm font-medium text-teal-600 hover:text-teal-700 hover:underline cursor-pointer"
               @click.prevent="viewAllContestants"
             >
               View All Contestants
               <ChevronRight class="h-4 w-4 ml-1" />
-            </Link>
+            </Link> -->
           </div>
           
           <div class="flex items-center mb-6">
@@ -492,54 +476,55 @@
   
         <div class="bg-white shadow-sm rounded-lg overflow-hidden">
           <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Judges</h3>
-            <div v-if="pageant.judges && pageant.judges.length > 0" class="space-y-3">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Target class="h-5 w-5 text-teal-600 mr-2" />
+              Rounds
+            </h3>
+            <div v-if="pageant.rounds && pageant.rounds.length > 0" class="space-y-3">
               <div
-                v-for="judge in pageant.judges"
-                :key="judge.id"
-                class="flex items-center"
+                v-for="round in pageant.rounds"
+                :key="round.id"
+                class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
               >
-                <div
-                  class="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden"
-                >
-                  <img
-                    v-if="judge.photo"
-                    :src="judge.photo"
-                    :alt="judge.name"
-                    class="h-full w-full object-cover"
-                  />
-                  <User2 v-else class="h-6 w-6 m-2 text-gray-500" />
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm font-medium text-gray-900">
-                    {{ judge.name }}
-                  </p>
-                  <p class="text-xs text-gray-500">{{ judge.role }}</p>
-                </div>
-                <div class="ml-auto flex items-center">
-                  <span
-                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                    :class="
-                      judge.active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    "
+                <div class="flex items-center">
+                  <div
+                    :class="[
+                      'h-8 w-8 rounded-full flex items-center justify-center mr-3',
+                      round.is_active ? 'bg-teal-100 text-teal-600' : 'bg-gray-200 text-gray-500'
+                    ]"
                   >
-                    {{ judge.active ? 'Active' : 'Standby' }}
-                  </span>
+                    <CheckCircle v-if="round.status === 'completed'" class="h-4 w-4" />
+                    <Activity v-else-if="round.is_active" class="h-4 w-4" />
+                    <Clock v-else class="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">{{ round.name }}</p>
+                    <p class="text-xs text-gray-500 capitalize">{{ round.type || 'Standard' }}</p>
+                  </div>
                 </div>
+                <span
+                  :class="[
+                    'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                    round.is_active ? 'bg-teal-100 text-teal-800' : 
+                    round.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                    'bg-gray-100 text-gray-600'
+                  ]"
+                >
+                  {{ round.is_active ? 'Active' : round.status === 'completed' ? 'Completed' : 'Pending' }}
+                </span>
               </div>
             </div>
             <div v-else class="flex flex-col items-center justify-center text-center py-8">
-              <User2 class="h-8 w-8 text-gray-300 mb-2" />
-              <p class="text-gray-500">No judges have been assigned to this pageant yet.</p>
+              <Target class="h-8 w-8 text-gray-300 mb-2" />
+              <p class="text-gray-500">No rounds have been created for this pageant yet.</p>
             </div>
           </div>
         </div>
   
         <div class="bg-white shadow-sm rounded-lg overflow-hidden">
           <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <ClipboardList class="h-5 w-5 text-teal-600 mr-2" />
               Activity Log
             </h3>
             <div v-if="pageant.recentActivities && pageant.recentActivities.length > 0" class="space-y-4">
@@ -568,16 +553,6 @@
             </div>
           </div>
         </div>
-      </div>
-  
-      <!-- Action Buttons -->
-      <div class="flex justify-end space-x-4 mt-8">
-        <button
-          class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 transition-colors duration-150 ease-in-out cursor-pointer"
-        >
-          <PauseCircle class="h-5 w-5 mr-2 text-amber-500" />
-          Pause Pageant
-        </button>
       </div>
     </div>
   </template>

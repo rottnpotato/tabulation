@@ -891,6 +891,13 @@
                       <p class="text-sm text-purple-700">
                         Total Weight: {{ roundsByType[stageType].totalWeight }}% across {{ roundsByType[stageType].rounds.length }} round{{ roundsByType[stageType].rounds.length !== 1 ? 's' : '' }}
                       </p>
+                      <div class="flex items-center gap-2 mt-1">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                          :class="pageant.ranking_method === 'rank_sum' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'">
+                          <Scale class="h-3 w-3 mr-1" />
+                          {{ pageant.ranking_method === 'rank_sum' ? 'Rank-based (Lowest Wins)' : 'Score-based (Highest Wins)' }}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   
@@ -1886,6 +1893,25 @@
                       </div>
 
                       <div>
+                        <label for="rankingMethod" class="block text-sm font-medium text-gray-700 mb-1">
+                          Score Method <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                          id="rankingMethod"
+                          v-model="roundForm.ranking_method"
+                          class="w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors"
+                          required
+                        >
+                          <option value="rank_sum">Rank-based (Lowest Wins)</option>
+                          <option value="score_average">Score-based (Highest Wins)</option>
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">
+                          <span v-if="roundForm.ranking_method === 'rank_sum'">Judges rank contestants; lowest total rank wins</span>
+                          <span v-else>Judges score contestants; highest average score wins</span>
+                        </p>
+                      </div>
+
+                      <div>
                         <label for="roundIdentifier" class="block text-sm font-medium text-gray-700 mb-1">
                           Identifier
                         </label>
@@ -2546,6 +2572,7 @@ const roundForm = ref({
   display_order: 0,
   top_n_proceed: null,
   use_for_minor_awards: false,
+  ranking_method: props.pageant.ranking_method || 'rank_sum',
   processing: false
 })
 
@@ -3542,6 +3569,7 @@ const openEditRoundModal = (round) => {
     display_order: round.display_order,
     top_n_proceed: round.top_n_proceed || null,
     use_for_minor_awards: round.use_for_minor_awards || false,
+    ranking_method: props.pageant.ranking_method || 'rank_sum',
     processing: false
   }
   showRoundModal.value = true
@@ -3564,6 +3592,7 @@ const resetRoundForm = () => {
     display_order: suggestedRoundDisplayOrder.value,
     top_n_proceed: null,
     use_for_minor_awards: false,
+    ranking_method: props.pageant.ranking_method || 'rank_sum',
     processing: false
   }
 }
@@ -3603,7 +3632,8 @@ const submitRoundForm = () => {
     identifier: roundForm.value.identifier,
     weight: roundForm.value.weight,
     display_order: roundForm.value.display_order,
-    use_for_minor_awards: roundForm.value.use_for_minor_awards
+    use_for_minor_awards: roundForm.value.use_for_minor_awards,
+    ranking_method: roundForm.value.ranking_method
   }, {
     onSuccess: () => {
       closeRoundModal()

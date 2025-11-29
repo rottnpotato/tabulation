@@ -86,9 +86,9 @@
                 </div>
                 <div class="w-full sm:w-64">
                   <CustomSelect
-                    v-model="activeRound"
-                    :options="roundOptions"
-                    placeholder="Select round"
+                    v-model="activeView"
+                    :options="viewOptions"
+                    placeholder="Select view"
                   />
                 </div>
               </div>
@@ -110,11 +110,11 @@
                 </div>
               </div>
 
-              <div v-if="currentRoundInfo" class="flex items-center gap-2 p-3 bg-teal-50 border border-teal-100 rounded-xl">
+              <div v-if="currentViewInfo" class="flex items-center gap-2 p-3 bg-teal-50 border border-teal-100 rounded-xl">
                 <div class="text-sm text-teal-700">
-                  <span class="font-semibold">{{ currentRoundInfo.name }}</span>
-                  <span v-if="currentRoundInfo.top_n_proceed" class="ml-2">
-                    • Top {{ currentRoundInfo.top_n_proceed }} advance
+                  <span class="font-semibold">{{ currentViewInfo.name }}</span>
+                  <span v-if="currentViewInfo.description" class="ml-2">
+                    • {{ currentViewInfo.description }}
                   </span>
                 </div>
               </div>
@@ -150,52 +150,131 @@
                 </div>
                 <span class="text-sm font-medium text-slate-600">Contestants</span>
               </div>
-              <span class="text-lg font-bold text-slate-900">{{ contestants.length }}</span>
+              <span class="text-lg font-bold text-slate-900">{{ displayedContestants.length }}</span>
             </div>
           </div>
         </div>
 
         <!-- Results Display -->
         <div v-if="displayedContestants && displayedContestants.length > 0" class="space-y-8">
-          <!-- For pair pageants, show separate rankings -->
-          <template v-if="isPairPageant">
-            <!-- Male Rankings -->
-            <div v-if="maleContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-              <div class="px-6 py-5 border-b border-slate-100 bg-blue-50/30">
-                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700">
-                    ♂
-                  </span>
-                  {{ getResultsTitle() }} - Male
-                </h2>
+          <!-- Overall Tally View (No Ranking) -->
+          <template v-if="activeView === 'overall-tally'">
+            <!-- For pair pageants, show separate by gender -->
+            <template v-if="isPairPageant">
+              <!-- Male Scores -->
+              <div v-if="maleContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-100 bg-blue-50/30">
+                  <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700">
+                      ♂
+                    </span>
+                    Overall Tally - Male
+                  </h2>
+                </div>
+                <div class="p-0">
+                  <ScoreDisplay
+                    title="Male Contestants"
+                    :contestants="maleContestants"
+                    :rounds="displayedRounds"
+                  />
+                </div>
+              </div>
+
+              <!-- Female Scores -->
+              <div v-if="femaleContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-100 bg-pink-50/30">
+                  <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 text-pink-700">
+                      ♀
+                    </span>
+                    Overall Tally - Female
+                  </h2>
+                </div>
+                <div class="p-0">
+                  <ScoreDisplay
+                    title="Female Contestants"
+                    :contestants="femaleContestants"
+                    :rounds="displayedRounds"
+                  />
+                </div>
+              </div>
+            </template>
+
+            <!-- Standard single tally -->
+            <div v-else class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                <h2 class="text-lg font-bold text-slate-900">Overall Tally</h2>
               </div>
               <div class="p-0">
-                <ResultsRanking
-                  :title="`${getResultsTitle()} - Male`"
-                  :contestants="maleContestants"
+                <ScoreDisplay
+                  title="All Contestants"
+                  :contestants="displayedContestants"
                   :rounds="displayedRounds"
-                  :is-updating="isUpdating"
-                  :number-of-winners="pageant?.number_of_winners || 3"
-                  :show-winners="shouldShowWinners"
-                  :ranking-method="pageant?.ranking_method || 'score_average'"
                 />
               </div>
             </div>
+          </template>
 
-            <!-- Female Rankings -->
-            <div v-if="femaleContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-              <div class="px-6 py-5 border-b border-slate-100 bg-pink-50/30">
-                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 text-pink-700">
-                    ♀
-                  </span>
-                  {{ getResultsTitle() }} - Female
-                </h2>
+          <!-- Final Results or Proceeding to Final (With Ranking) -->
+          <template v-else>
+            <!-- For pair pageants, show separate rankings -->
+            <template v-if="isPairPageant">
+              <!-- Male Rankings -->
+              <div v-if="maleContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-100 bg-blue-50/30">
+                  <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700">
+                      ♂
+                    </span>
+                    {{ getResultsTitle() }} - Male
+                  </h2>
+                </div>
+                <div class="p-0">
+                  <ResultsRanking
+                    :title="`${getResultsTitle()} - Male`"
+                    :contestants="maleContestants"
+                    :rounds="displayedRounds"
+                    :is-updating="isUpdating"
+                    :number-of-winners="pageant?.number_of_winners || 3"
+                    :show-winners="shouldShowWinners"
+                    :ranking-method="pageant?.ranking_method || 'score_average'"
+                  />
+                </div>
+              </div>
+
+              <!-- Female Rankings -->
+              <div v-if="femaleContestants.length > 0" class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-100 bg-pink-50/30">
+                  <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-100 text-pink-700">
+                      ♀
+                    </span>
+                    {{ getResultsTitle() }} - Female
+                  </h2>
+                </div>
+                <div class="p-0">
+                  <ResultsRanking
+                    :title="`${getResultsTitle()} - Female`"
+                    :contestants="femaleContestants"
+                    :rounds="displayedRounds"
+                    :is-updating="isUpdating"
+                    :number-of-winners="pageant?.number_of_winners || 3"
+                    :show-winners="shouldShowWinners"
+                    :ranking-method="pageant?.ranking_method || 'score_average'"
+                  />
+                </div>
+              </div>
+            </template>
+
+            <!-- Standard single ranking -->
+            <div v-else class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+                <h2 class="text-lg font-bold text-slate-900">{{ getResultsTitle() }}</h2>
               </div>
               <div class="p-0">
                 <ResultsRanking
-                  :title="`${getResultsTitle()} - Female`"
-                  :contestants="femaleContestants"
+                  :title="getResultsTitle()"
+                  :contestants="displayedContestants"
                   :rounds="displayedRounds"
                   :is-updating="isUpdating"
                   :number-of-winners="pageant?.number_of_winners || 3"
@@ -205,24 +284,6 @@
               </div>
             </div>
           </template>
-
-          <!-- Standard single ranking -->
-          <div v-else class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-              <h2 class="text-lg font-bold text-slate-900">{{ getResultsTitle() }}</h2>
-            </div>
-            <div class="p-0">
-              <ResultsRanking
-                :title="getResultsTitle()"
-                :contestants="displayedContestants"
-                :rounds="displayedRounds"
-                :is-updating="isUpdating"
-                :number-of-winners="pageant?.number_of_winners || 3"
-                :show-winners="shouldShowWinners"
-                :ranking-method="pageant?.ranking_method || 'score_average'"
-              />
-            </div>
-          </div>
         </div>
 
         <!-- Empty State -->
@@ -247,6 +308,7 @@ import { route } from 'ziggy-js'
 import { RefreshCw, Printer, Trophy, BarChart3, Users, LayoutDashboard, Target, Award } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
 import ResultsRanking from '../../Components/tabulator/ResultsRanking.vue'
+import ScoreDisplay from '../../Components/tabulator/ScoreDisplay.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 
 defineOptions({
@@ -293,13 +355,21 @@ interface Pageant {
 
 interface Props {
   pageant?: Pageant
-  contestants: Contestant[]
+  overallTally: Contestant[]
+  finalResults: Contestant[]
+  proceedingToFinal: Contestant[]
+  preFinalRounds: Round[]
+  finalRounds: Round[]
   rounds: Round[]
   roundResults: Record<string, RoundResult>
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  contestants: () => [],
+  overallTally: () => [],
+  finalResults: () => [],
+  proceedingToFinal: () => [],
+  preFinalRounds: () => [],
+  finalRounds: () => [],
   rounds: () => [],
   roundResults: () => ({})
 })
@@ -308,8 +378,7 @@ const props = withDefaults(defineProps<Props>(), {
 const previousRankings = ref<Map<number, number>>(new Map())
 const isUpdating = ref(false)
 
-const activeRound = ref('overall')
-const selectedRoundId = ref<number | null>(null)
+const activeView = ref('overall-tally')
 
 const isRankSumMethod = computed(() => {
   return props.pageant?.ranking_method === 'rank_sum'
@@ -325,21 +394,23 @@ const getTieHandlingLabel = () => {
   }
 }
 
-const roundOptions = computed(() => {
+const viewOptions = computed(() => {
   const options = [
-    { value: 'overall', label: 'Overall Results' }
+    { value: 'overall-tally', label: 'Overall Tally' }
   ]
   
-  if (props.rounds) {
-    props.rounds.forEach((round, index) => {
-      const label = round.top_n_proceed 
-        ? `${round.name} (Top ${round.top_n_proceed})` 
-        : round.name
-      options.push({
-        value: round.id.toString(),
-        label: label
-      })
-    })
+  // Add Final Results if there are final rounds
+  if (props.finalRounds && props.finalRounds.length > 0) {
+    options.push({ value: 'final-results', label: 'Final Results' })
+  }
+  
+  // Add Proceeding to Final if there are pre-final rounds
+  if (props.preFinalRounds && props.preFinalRounds.length > 0) {
+    const lastPreFinalRound = props.preFinalRounds[props.preFinalRounds.length - 1]
+    const label = lastPreFinalRound?.top_n_proceed 
+      ? `Proceeding to Final (Top ${lastPreFinalRound.top_n_proceed})`
+      : 'Proceeding to Final'
+    options.push({ value: 'proceeding-to-final', label })
   }
   
   return options
@@ -347,20 +418,19 @@ const roundOptions = computed(() => {
 
 const displayedContestants = computed(() => {
   let baseList: Contestant[] = []
-  let topNProceed: number | null = null
   
-  if (activeRound.value === 'overall') {
-    baseList = props.contestants || []
-    // For overall, use number of winners as the cutoff
-    topNProceed = props.pageant?.number_of_winners || null
-  } else {
-    // Get contestants for the selected round
-    const roundKey = `round_${activeRound.value}`
-    const roundResult = props.roundResults[roundKey]
-    if (roundResult && roundResult.contestants) {
-      baseList = roundResult.contestants
-      topNProceed = roundResult.top_n_proceed || null
-    }
+  switch (activeView.value) {
+    case 'overall-tally':
+      baseList = props.overallTally || []
+      break
+    case 'final-results':
+      baseList = props.finalResults || []
+      break
+    case 'proceeding-to-final':
+      baseList = props.proceedingToFinal || []
+      break
+    default:
+      baseList = props.overallTally || []
   }
 
   // Deduplicate by contestant ID (keep first occurrence)
@@ -380,41 +450,27 @@ const displayedContestants = computed(() => {
     return scoreB - scoreA
   })
 
-  // Track ranking changes and recompute qualified status based on current rank
-  const newRankings = new Map<number, number>()
-  const result = sorted.map((contestant, index) => {
-    const currentRank = index + 1
-    newRankings.set(contestant.id, currentRank)
-    
-    // Recompute qualified status based on current position
-    const qualified = topNProceed === null || currentRank <= topNProceed
-    
-    return {
-      ...contestant,
-      rank: currentRank,
-      qualified,
-      qualification_cutoff: topNProceed
-    }
-  })
-
-  // Store new rankings for next comparison
-  previousRankings.value = newRankings
-
-  return result
+  return sorted
 })
 
 const isPairPageant = computed(() => {
   return props.pageant?.contestant_type === 'pairs' || props.pageant?.contestant_type === 'both'
 })
 
-// Get the current qualification cutoff for the active round
+// Get the current qualification cutoff for the active view
 const currentQualificationCutoff = computed(() => {
-  if (activeRound.value === 'overall') {
-    return props.pageant?.number_of_winners || null
+  switch (activeView.value) {
+    case 'final-results':
+      return props.pageant?.number_of_winners || null
+    case 'proceeding-to-final':
+      if (props.preFinalRounds && props.preFinalRounds.length > 0) {
+        const lastPreFinalRound = props.preFinalRounds[props.preFinalRounds.length - 1]
+        return lastPreFinalRound.top_n_proceed || null
+      }
+      return null
+    default:
+      return null // Overall tally has no cutoff
   }
-  const roundKey = `round_${activeRound.value}`
-  const roundResult = props.roundResults[roundKey]
-  return roundResult?.top_n_proceed || null
 })
 
 const maleContestants = computed(() => {
@@ -467,21 +523,45 @@ const femaleContestants = computed(() => {
   })
 })
 
-const currentRoundInfo = computed(() => {
-  if (activeRound.value === 'overall') return null
-  const round = props.rounds.find(r => r.id.toString() === activeRound.value)
-  return round || null
+const currentViewInfo = computed(() => {
+  switch (activeView.value) {
+    case 'overall-tally':
+      return {
+        name: 'Overall Tally',
+        description: 'All rounds scores without ranking'
+      }
+    case 'final-results':
+      return {
+        name: 'Final Results',
+        description: `Top ${props.pageant?.number_of_winners || 3} winners`,
+        top_n_proceed: props.pageant?.number_of_winners
+      }
+    case 'proceeding-to-final':
+      if (props.preFinalRounds && props.preFinalRounds.length > 0) {
+        const lastRound = props.preFinalRounds[props.preFinalRounds.length - 1]
+        return {
+          name: 'Proceeding to Final',
+          description: lastRound.top_n_proceed ? `Top ${lastRound.top_n_proceed} advance to final` : '',
+          top_n_proceed: lastRound.top_n_proceed
+        }
+      }
+      return null
+    default:
+      return null
+  }
 })
 
 const displayedRounds = computed(() => {
-  if (activeRound.value === 'overall') {
-    return props.rounds
+  switch (activeView.value) {
+    case 'overall-tally':
+      return props.rounds // All rounds for overall tally
+    case 'final-results':
+      return props.finalRounds // Only final rounds
+    case 'proceeding-to-final':
+      return props.preFinalRounds // Only pre-final rounds
+    default:
+      return props.rounds
   }
-  // Show only rounds up to and including the selected round
-  const selectedRound = props.rounds.find(r => r.id.toString() === activeRound.value)
-  if (!selectedRound) return props.rounds
-  
-  return props.rounds.filter(r => (r.display_order || 0) <= (selectedRound.display_order || 0))
 })
 
 const highestScore = computed(() => {
@@ -515,40 +595,21 @@ const averageScore = computed(() => {
 })
 
 const getResultsTitle = () => {
-  if (activeRound.value === 'overall') return 'Overall Rankings'
-  const round = props.rounds.find(r => r.id.toString() === activeRound.value)
-  return round ? `${round.name} Rankings` : 'Rankings'
-}
-
-const isWinner = (contestant: Contestant) => {
-  // Only show winner status for final round or overall view
-  if (activeRound.value !== 'overall') {
-    const round = props.rounds.find(r => r.id.toString() === activeRound.value)
-    if (!round || round.type !== 'final') return false
+  switch (activeView.value) {
+    case 'overall-tally':
+      return 'Overall Tally'
+    case 'final-results':
+      return 'Final Results'
+    case 'proceeding-to-final':
+      return 'Proceeding to Final'
+    default:
+      return 'Results'
   }
-  
-  const numberOfWinners = props.pageant?.number_of_winners || 3
-  return contestant.rank && contestant.rank <= numberOfWinners
-}
-
-const getWinnerPosition = (rank: number) => {
-  const positions = ['1st', '2nd', '3rd']
-  return positions[rank - 1] || `${rank}th`
 }
 
 const shouldShowWinners = computed(() => {
-  // Show winners for overall view or when viewing the last final round
-  if (activeRound.value === 'overall') return true
-  
-  const selectedRound = props.rounds.find(r => r.id.toString() === activeRound.value)
-  if (!selectedRound) return false
-  
-  // Check if this is the last final round
-  const finalRounds = props.rounds.filter(r => r.type === 'final')
-  if (finalRounds.length === 0) return false
-  
-  const lastFinalRound = finalRounds.sort((a, b) => (b.display_order || 0) - (a.display_order || 0))[0]
-  return selectedRound.id === lastFinalRound.id
+  // Only show winners for final results view
+  return activeView.value === 'final-results'
 })
 
 const refreshData = () => {

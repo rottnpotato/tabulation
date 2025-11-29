@@ -15,7 +15,7 @@
           <tr>
             <th
               scope="col"
-              class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
+              class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               Rank
             </th>
@@ -29,7 +29,7 @@
               v-for="round in rounds"
               :key="round.id"
               scope="col"
-              class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
+              class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               {{ round.name }}
             </th>
@@ -42,20 +42,19 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 bg-white">
-          <tr
-            v-for="(contestant, index) in rankedContestants"
-            :key="contestant.id"
-            class="hover:bg-gray-50/80 transition-all duration-500 ease-out"
-            :class="[
-              {
-                'bg-emerald-50/30': contestant.qualified && contestant.qualification_cutoff,
-                'opacity-60': !contestant.qualified && contestant.qualification_cutoff !== null && contestant.qualification_cutoff !== undefined,
-                'animate-rank-up': getRankChange(contestant.id, index + 1) === 'up',
-                'animate-rank-down': getRankChange(contestant.id, index + 1) === 'down',
-                'animate-pulse-subtle': isUpdating && getRankChange(contestant.id, index + 1) === 'same'
-              }
-            ]"
-          >
+          <template v-for="(contestant, index) in rankedContestants" :key="contestant.id">
+            <tr
+              class="hover:bg-gray-50/80 transition-all duration-500 ease-out"
+              :class="[
+                {
+                  'bg-emerald-50/40 border-l-4 border-l-emerald-500': contestant.qualified && contestant.qualification_cutoff,
+                  'opacity-50 border-l-4 border-l-slate-300': !contestant.qualified && contestant.qualification_cutoff !== null && contestant.qualification_cutoff !== undefined,
+                  'animate-rank-up': getRankChange(contestant.id, index + 1) === 'up',
+                  'animate-rank-down': getRankChange(contestant.id, index + 1) === 'down',
+                  'animate-pulse-subtle': isUpdating && getRankChange(contestant.id, index + 1) === 'same'
+                }
+              ]"
+            >
             <!-- Rank -->
             <td class="whitespace-nowrap px-4 py-3 text-center">
               <div class="flex items-center justify-center gap-2">
@@ -86,10 +85,23 @@
                 </div>
                 <span
                   v-if="contestant.qualified && contestant.qualification_cutoff"
-                  class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200"
-                  :title="`Qualified (Top ${contestant.qualification_cutoff})`"
+                  class="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white border border-emerald-600 shadow-sm"
+                  :title="`Proceeded to Next Round (Top ${contestant.qualification_cutoff})`"
                 >
-                  ✓
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                  <span>Proceeded</span>
+                </span>
+                <span
+                  v-else-if="!contestant.qualified && contestant.qualification_cutoff !== null && contestant.qualification_cutoff !== undefined"
+                  class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 border border-slate-200"
+                  :title="`Did not proceed (below Top ${contestant.qualification_cutoff})`"
+                >
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  <span>Eliminated</span>
                 </span>
               </div>
             </td>
@@ -121,9 +133,13 @@
             <td
               v-for="round in rounds"
               :key="round.id"
-              class="whitespace-nowrap px-4 py-3 text-right text-sm font-medium tabular-nums text-gray-900"
+              class="whitespace-nowrap px-4 py-3 text-center text-sm font-medium tabular-nums"
+              :class="contestant.scores[round.name] !== undefined ? 'text-gray-900' : 'text-gray-300'"
             >
-              {{ formatScore(contestant.scores[round.name] || 0) }}
+              <span v-if="contestant.scores[round.name] !== undefined">
+                {{ formatScore(contestant.scores[round.name]) }}
+              </span>
+              <span v-else class="text-gray-300 italic">—</span>
             </td>
 
             <!-- Total Score / Rank Sum -->
@@ -161,6 +177,25 @@
               </div>
             </td>
           </tr>
+          
+          <!-- Qualification Cutoff Line -->
+          <tr 
+            v-if="shouldShowCutoffLine(index)"
+            class="bg-slate-100 border-t-2 border-b-2 border-slate-400"
+          >
+            <td :colspan="rounds.length + 3" class="px-4 py-2">
+              <div class="flex items-center justify-center gap-2 text-xs font-semibold text-slate-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+                <span>Qualification Cutoff (Top {{ contestant.qualification_cutoff }})</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+              </div>
+            </td>
+          </tr>
+        </template>
         </tbody>
       </table>
     </div>
@@ -276,6 +311,20 @@ watch(
   { deep: true }
 )
 
+// Helper function to determine if cutoff line should be shown after this contestant
+const shouldShowCutoffLine = (index: number): boolean => {
+  const currentContestant = rankedContestants.value[index]
+  const nextContestant = rankedContestants.value[index + 1]
+  
+  // Only show cutoff line if there's a qualification cutoff defined
+  if (!currentContestant.qualification_cutoff) {
+    return false
+  }
+  
+  // Show line after the last qualified contestant (before first non-qualified)
+  return !!(currentContestant.qualified && nextContestant && !nextContestant.qualified)
+}
+
 const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down' | 'same' | 'new' => {
   const prevRank = previousRankMap.value.get(contestantId)
   
@@ -330,14 +379,14 @@ const getRankBadgeClass = (rank: number, qualified?: boolean): string => {
   // Non-final rounds - show advancing badges with green/emerald for qualifiers
   switch (rank) {
     case 1:
-      return 'bg-emerald-100 text-emerald-900 border-2 border-emerald-400 shadow-md ring-2 ring-emerald-200'
+      return isQualified ? 'bg-emerald-100 text-emerald-900 border-2 border-emerald-400 shadow-md ring-2 ring-emerald-200' : 'bg-slate-50 text-slate-500 border-2 border-slate-200'
     case 2:
-      return 'bg-emerald-50 text-emerald-800 border-2 border-emerald-300 shadow-sm ring-2 ring-emerald-100'
+      return isQualified ? 'bg-emerald-50 text-emerald-800 border-2 border-emerald-300 shadow-sm ring-2 ring-emerald-100' : 'bg-slate-50 text-slate-500 border-2 border-slate-200'
     case 3:
-      return 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200 shadow-sm ring-2 ring-emerald-100'
+      return isQualified ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200 shadow-sm ring-2 ring-emerald-100' : 'bg-slate-50 text-slate-500 border-2 border-slate-200'
     default:
       if (!isQualified) {
-        return 'bg-slate-50 text-slate-400 border-2 border-slate-100'
+        return 'bg-slate-50 text-slate-500 border-2 border-slate-200'
       }
       return 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200 shadow-sm ring-1 ring-emerald-100'
   }

@@ -225,26 +225,69 @@ class Pageant extends Model
     }
 
     /**
-     * Get the top categories for this pageant with no placeholder data.
+     * Get the top categories for this pageant with actual scoring data.
      */
     public function getTopCategoriesAttribute()
     {
-        $categories = $this->categories()
-            ->orderBy('weight', 'desc')
-            ->limit(5)
+        // Get all criteria with their scores
+        $criteria = Criteria::where('pageant_id', $this->id)
+            ->with(['category', 'scores'])
             ->get();
 
-        if ($categories->isEmpty()) {
+        if ($criteria->isEmpty()) {
             return [];
         }
 
-        return $categories->map(function ($category) {
-            return [
-                'name' => $category->name,
-                'avgScore' => rand(70, 95), // This should be replaced with actual calculation in real implementation
-                'weight' => $category->weight,
-            ];
+        // Group by category and calculate average scores
+        $categoryScores = [];
+        
+        foreach ($criteria as $criterion) {
+            if (!$criterion->category) {
+                continue;
+            }
+            
+            $categoryId = $criterion->category->id;
+            $categoryName = $criterion->category->name;
+            
+            if (!isset($categoryScores[$categoryId])) {
+                $categoryScores[$categoryId] = [
+                    'name' => $categoryName,
+                    'totalScore' => 0,
+                    'count' => 0,
+                ];
+            }
+            
+            // Get all scores for this criterion
+            $scores = Score::where('pageant_id', $this->id)
+                ->where('criteria_id', $criterion->id)
+                ->get();
+            
+            foreach ($scores as $score) {
+                // Normalize score to percentage
+                $normalizedScore = ($score->score / $criterion->max_score) * 100;
+                $categoryScores[$categoryId]['totalScore'] += $normalizedScore;
+                $categoryScores[$categoryId]['count']++;
+            }
+        }
+        
+        // Calculate averages and sort by score
+        $topCategories = [];
+        foreach ($categoryScores as $categoryId => $data) {
+            if ($data['count'] > 0) {
+                $topCategories[] = [
+                    'name' => $data['name'],
+                    'avgScore' => round($data['totalScore'] / $data['count'], 1),
+                ];
+            }
+        }
+        
+        // Sort by average score descending
+        usort($topCategories, function ($a, $b) {
+            return $b['avgScore'] <=> $a['avgScore'];
         });
+        
+        // Return top 5
+        return array_slice($topCategories, 0, 5);
     }
 
     /**

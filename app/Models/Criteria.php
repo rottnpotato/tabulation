@@ -82,4 +82,12 @@ class Criteria extends Model
     {
         return $this->belongsTo(Round::class);
     }
+
+    /**
+     * Get the scores for this criteria.
+     */
+    public function scores()
+    {
+        return $this->hasMany(Score::class);
+    }
 }
