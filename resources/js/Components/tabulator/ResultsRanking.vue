@@ -14,6 +14,7 @@
         <thead class="bg-gray-50">
           <tr>
             <th
+              v-if="!hideRankColumn"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
@@ -37,7 +38,8 @@
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
-              {{ rankingMethod === 'rank_sum' ? 'Rank Sum' : 'Total' }}
+              <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
+              <span v-else>{{ rankingMethod === 'rank_sum' ? 'Rank Sum' : 'Total' }}</span>
             </th>
           </tr>
         </thead>
@@ -56,7 +58,7 @@
               ]"
             >
             <!-- Rank -->
-            <td class="whitespace-nowrap px-4 py-3 text-center">
+            <td v-if="!hideRankColumn" class="whitespace-nowrap px-4 py-3 text-center">
               <div class="flex items-center justify-center gap-2">
                 <div class="relative">
                   <span
@@ -249,13 +251,17 @@ interface Props {
   numberOfWinners?: number
   showWinners?: boolean
   rankingMethod?: 'score_average' | 'rank_sum'
+  hideRankColumn?: boolean
+  isLastFinalRound?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isUpdating: false,
   numberOfWinners: 3,
   showWinners: false,
-  rankingMethod: 'score_average'
+  rankingMethod: 'score_average',
+  hideRankColumn: false,
+  isLastFinalRound: false
 })
 
 // Track previous rankings for animation

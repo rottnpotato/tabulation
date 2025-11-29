@@ -178,6 +178,8 @@
                   :number-of-winners="pageant?.number_of_winners || 3"
                   :show-winners="shouldShowWinners"
                   :ranking-method="pageant?.ranking_method || 'score_average'"
+                  :hide-rank-column="activeRound === 'overall'"
+                  :is-last-final-round="shouldShowWinners"
                 />
               </div>
             </div>
@@ -201,6 +203,8 @@
                   :number-of-winners="pageant?.number_of_winners || 3"
                   :show-winners="shouldShowWinners"
                   :ranking-method="pageant?.ranking_method || 'score_average'"
+                  :hide-rank-column="activeRound === 'overall'"
+                  :is-last-final-round="shouldShowWinners"
                 />
               </div>
             </div>
@@ -220,6 +224,8 @@
                 :number-of-winners="pageant?.number_of_winners || 3"
                 :show-winners="shouldShowWinners"
                 :ranking-method="pageant?.ranking_method || 'score_average'"
+                :hide-rank-column="activeRound === 'overall'"
+                :is-last-final-round="shouldShowWinners"
               />
             </div>
           </div>

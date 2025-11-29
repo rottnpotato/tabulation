@@ -393,6 +393,7 @@
                           :is-male-category="true"
                           :is-last-final-round="isLastFinalRound"
                           :number-of-winners="pageant?.number_of_winners || 3"
+                          :hide-rank-column="selectedStage === 'overall'"
                         />
                       </div>
                       
@@ -412,6 +413,7 @@
                           :is-female-category="true"
                           :is-last-final-round="isLastFinalRound"
                           :number-of-winners="pageant?.number_of_winners || 3"
+                          :hide-rank-column="selectedStage === 'overall'"
                         />
                       </div>
                     </div>
@@ -493,6 +495,7 @@
                     :report-title="reportTitle"
                     :is-last-final-round="isLastFinalRound"
                     :number-of-winners="pageant?.number_of_winners || 3"
+                    :hide-rank-column="selectedStage === 'overall'"
                   />
                   </template>
                 </div>
@@ -639,6 +642,7 @@
               :is-male-category="true"
               :is-last-final-round="isLastFinalRound"
               :number-of-winners="pageant?.number_of_winners || 3"
+              :hide-rank-column="selectedStage === 'overall'"
             />
           </div>
           
@@ -658,6 +662,7 @@
               :is-female-category="true"
               :is-last-final-round="isLastFinalRound"
               :number-of-winners="pageant?.number_of_winners || 3"
+              :hide-rank-column="selectedStage === 'overall'"
             />
           </div>
         </div>
@@ -733,6 +738,7 @@
         :report-title="reportTitle"
         :is-last-final-round="isLastFinalRound"
         :number-of-winners="pageant?.number_of_winners || 3"
+        :hide-rank-column="selectedStage === 'overall'"
       />
       </template>
     </div>

@@ -107,10 +107,13 @@
       <table class="w-full border-collapse text-[10px]">
         <thead>
           <tr class="bg-gray-100 border-y-2 border-black">
-            <th class="py-1 px-1 text-left font-bold w-8">Rank</th>
+            <th v-if="!hideRankColumn" class="py-1 px-1 text-left font-bold w-8">Rank</th>
             <th class="py-1 px-1 text-left font-bold w-6">#</th>
             <th class="py-1 px-2 text-left font-bold">Contestant</th>
-            <th class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">Final Score</th>
+            <th class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
+              <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
+              <span v-else>Final Score</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -120,7 +123,7 @@
             class="border-b border-gray-200"
             :class="{'bg-gray-50': index % 2 === 0}"
           >
-            <td class="py-1 px-1 font-bold">
+            <td v-if="!hideRankColumn" class="py-1 px-1 font-bold">
               {{ index + 1 }}
             </td>
             <td class="py-1 px-1">
@@ -216,10 +219,12 @@ interface Props {
   isFemaleCategory?: boolean
   isLastFinalRound?: boolean
   numberOfWinners?: number
+  hideRankColumn?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  numberOfWinners: 3
+  numberOfWinners: 3,
+  hideRankColumn: false
 })
 
 const topThree = computed(() => {
