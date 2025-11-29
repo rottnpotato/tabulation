@@ -76,6 +76,120 @@
         </div>
       </div>
   
+      <!-- Scoring Overview Section -->
+      <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <BarChart3 class="h-5 w-5 text-teal-600" />
+              Scoring Overview
+            </h2>
+            <div v-if="pageant.currentActiveRound" class="flex items-center gap-2">
+              <span class="text-sm text-gray-500">Current Round:</span>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                {{ pageant.currentActiveRound.name }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Scoring Progress -->
+            <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-teal-700">Scoring Progress</span>
+                <Activity class="h-4 w-4 text-teal-600" />
+              </div>
+              <div class="text-2xl font-bold text-teal-900">
+                {{ pageant.scoringStats?.completionPercentage || 0 }}%
+              </div>
+              <div class="w-full bg-teal-200 rounded-full h-2 mt-2">
+                <div 
+                  class="bg-teal-600 h-2 rounded-full transition-all duration-500"
+                  :style="{ width: `${pageant.scoringStats?.completionPercentage || 0}%` }"
+                ></div>
+              </div>
+              <p class="text-xs text-teal-600 mt-1">
+                {{ pageant.scoringStats?.actualScores || 0 }} of {{ pageant.scoringStats?.expectedScores || 0 }} scores submitted
+              </p>
+            </div>
+            
+            <!-- Contestants Scored -->
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-blue-700">Contestants Scored</span>
+                <Users class="h-4 w-4 text-blue-600" />
+              </div>
+              <div class="text-2xl font-bold text-blue-900">
+                {{ pageant.scoringStats?.contestantsWithScores || 0 }} / {{ pageant.scoringStats?.totalContestants || 0 }}
+              </div>
+              <p class="text-xs text-blue-600 mt-1">
+                {{ pageant.scoringStats?.hasScores ? 'Scoring in progress' : 'No scores yet' }}
+              </p>
+            </div>
+            
+            <!-- Judges -->
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-purple-700">Active Judges</span>
+                <User2 class="h-4 w-4 text-purple-600" />
+              </div>
+              <div class="text-2xl font-bold text-purple-900">
+                {{ pageant.scoringStats?.totalJudges || 0 }}
+              </div>
+              <p class="text-xs text-purple-600 mt-1">
+                Assigned to this pageant
+              </p>
+            </div>
+            
+            <!-- Rounds -->
+            <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-amber-700">Total Rounds</span>
+                <Target class="h-4 w-4 text-amber-600" />
+              </div>
+              <div class="text-2xl font-bold text-amber-900">
+                {{ pageant.scoringStats?.totalRounds || 0 }}
+              </div>
+              <p class="text-xs text-amber-600 mt-1">
+                {{ pageant.currentActiveRound ? 'Active round in progress' : 'No active round' }}
+              </p>
+            </div>
+          </div>
+          
+          <!-- Status Indicators -->
+          <div class="flex flex-wrap gap-2">
+            <span 
+              v-if="pageant.scoringStats?.hasScores"
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+            >
+              <CheckCircle class="h-3 w-3 mr-1" />
+              Scoring Started
+            </span>
+            <span 
+              v-else
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+            >
+              <Clock class="h-3 w-3 mr-1" />
+              Awaiting Scores
+            </span>
+            <span 
+              v-if="pageant.currentActiveRound"
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800"
+            >
+              <Activity class="h-3 w-3 mr-1" />
+              {{ pageant.currentActiveRound.name }} Active
+            </span>
+            <span 
+              v-if="pageant.scoringStats?.completionPercentage >= 100"
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+            >
+              <CheckCircle class="h-3 w-3 mr-1" />
+              All Scores Complete
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- Pageant Progress Section -->
       <div class="bg-white shadow-sm rounded-lg overflow-hidden">
         <div class="border-b border-gray-200">
@@ -489,6 +603,10 @@
     Eye,
     PauseCircle,
     ClipboardList,
+    User2,
+    Activity,
+    Target,
+    BarChart3,
   } from 'lucide-vue-next';
   import AdminLayout from '@/Layouts/AdminLayout.vue';
   

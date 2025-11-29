@@ -362,7 +362,7 @@ class Pageant extends Model
     }
 
     /**
-     * Get contestant data with no placeholders.
+     * Get contestant data with computed scores from the scores table.
      */
     public function getPageantContestantsAttribute()
     {
@@ -372,14 +372,39 @@ class Pageant extends Model
             return [];
         }
 
-        return $contestants->map(function ($contestant) {
+        // Get all scores for this pageant grouped by contestant
+        $contestantScores = Score::where('pageant_id', $this->id)
+            ->with('criteria')
+            ->get()
+            ->groupBy('contestant_id');
+
+        return $contestants->map(function ($contestant) use ($contestantScores) {
+            $scores = $contestantScores->get($contestant->id);
+            $averageScore = null;
+
+            if ($scores && $scores->count() > 0) {
+                // Calculate weighted average score for this contestant
+                $totalWeightedScore = 0;
+                $totalWeight = 0;
+
+                foreach ($scores as $scoreRecord) {
+                    $weight = $scoreRecord->criteria->weight ?? 1;
+                    $totalWeightedScore += $scoreRecord->score * $weight;
+                    $totalWeight += $weight;
+                }
+
+                if ($totalWeight > 0) {
+                    $averageScore = round($totalWeightedScore / $totalWeight, 2);
+                }
+            }
+
             return [
                 'id' => $contestant->id,
                 'name' => $contestant->name,
                 'number' => $contestant->number,
                 'age' => $contestant->age,
                 'origin' => $contestant->origin,
-                'score' => json_decode($contestant->scores, true)['average'] ?? null,
+                'score' => $averageScore,
                 'photo' => $contestant->photo ?? null,
             ];
         });
@@ -414,6 +439,10 @@ class Pageant extends Model
             ],
         ];
 
+        // Calculate scoring statistics
+        $scoringStats = $this->getScoringStats();
+        $currentActiveRound = $this->getCurrentActiveRound();
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -435,6 +464,65 @@ class Pageant extends Model
             'recentActivities' => $this->PageantActivities,
             'contestants' => $this->PageantContestants,
             'scoringSystem' => $scoringSystemMap[$this->scoring_system] ?? $scoringSystemMap['percentage'],
+            'scoringStats' => $scoringStats,
+            'currentActiveRound' => $currentActiveRound,
+        ];
+    }
+
+    /**
+     * Get the currently active round for this pageant
+     */
+    public function getCurrentActiveRound()
+    {
+        $activeRound = $this->rounds()->where('is_active', true)->first();
+
+        if (! $activeRound) {
+            return null;
+        }
+
+        return [
+            'id' => $activeRound->id,
+            'name' => $activeRound->name,
+            'type' => $activeRound->type,
+        ];
+    }
+
+    /**
+     * Get scoring statistics for this pageant
+     */
+    public function getScoringStats()
+    {
+        $totalContestants = $this->contestants()->count();
+        $totalJudges = $this->judges()->count();
+        $totalRounds = $this->rounds()->count();
+
+        // Count contestants with at least one score
+        $contestantsWithScores = Score::where('pageant_id', $this->id)
+            ->distinct('contestant_id')
+            ->count('contestant_id');
+
+        // Count total expected scores (contestants * judges * all criteria across all rounds)
+        $totalCriteria = Criteria::whereIn('round_id', $this->rounds()->pluck('id'))->count();
+        $expectedScores = $totalContestants * $totalJudges * $totalCriteria;
+        $actualScores = Score::where('pageant_id', $this->id)->count();
+
+        // Calculate completion percentage
+        $completionPercentage = $expectedScores > 0
+            ? round(($actualScores / $expectedScores) * 100, 1)
+            : 0;
+
+        // Check if any scoring has been done
+        $hasScores = $actualScores > 0;
+
+        return [
+            'totalContestants' => $totalContestants,
+            'totalJudges' => $totalJudges,
+            'totalRounds' => $totalRounds,
+            'contestantsWithScores' => $contestantsWithScores,
+            'expectedScores' => $expectedScores,
+            'actualScores' => $actualScores,
+            'completionPercentage' => $completionPercentage,
+            'hasScores' => $hasScores,
         ];
     }
 

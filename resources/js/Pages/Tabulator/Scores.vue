@@ -126,18 +126,78 @@
               ]">
               {{ getRoundTypeDisplay(currentRound) }}
           </span>
+          <span v-if="isPairsType" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+            Pairs Competition
+          </span>
         </div>
-        <DetailedScoreTable 
-          :title="`${getCurrentRoundLabel()}`"
-          :contestants="contestants"
-          :judges="judges"
-          :scores="localScores"
-          :criteria="criteria"
-          :detailed-scores="detailedScores"
-          :score-key="currentRound?.id.toString()"
-          empty-title="No Scores Available"
-          empty-message="Scores will appear here once judges start submitting their evaluations."
-        />
+        
+        <!-- For pairs type: Show separate tables for male and female contestants -->
+        <div v-if="isPairsType" class="space-y-8">
+          <!-- Male Contestants Table -->
+          <div v-if="maleContestants.length > 0">
+            <div class="mb-3 flex items-center gap-2">
+              <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg border border-blue-200">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a4 4 0 100-8 4 4 0 000 8z"/>
+                  <path fill-rule="evenodd" d="M10 14c-4.418 0-8 1.79-8 4v1a1 1 0 001 1h14a1 1 0 001-1v-1c0-2.21-3.582-4-8-4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-sm font-semibold text-blue-700">Male Contestants</span>
+                <span class="text-xs text-blue-500">({{ maleContestants.length }})</span>
+              </div>
+            </div>
+            <DetailedScoreTable 
+              :title="`Male - ${getCurrentRoundLabel()}`"
+              :contestants="maleContestants"
+              :judges="judges"
+              :scores="localScores"
+              :criteria="criteria"
+              :detailed-scores="detailedScores"
+              :score-key="currentRound?.id.toString()"
+              empty-title="No Male Contestants"
+              empty-message="No male contestants have been added to this round."
+            />
+          </div>
+          
+          <!-- Female Contestants Table -->
+          <div v-if="femaleContestants.length > 0">
+            <div class="mb-3 flex items-center gap-2">
+              <div class="flex items-center gap-2 px-3 py-1.5 bg-pink-50 rounded-lg border border-pink-200">
+                <svg class="w-4 h-4 text-pink-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a4 4 0 100-8 4 4 0 000 8z"/>
+                  <path fill-rule="evenodd" d="M10 14c-4.418 0-8 1.79-8 4v1a1 1 0 001 1h14a1 1 0 001-1v-1c0-2.21-3.582-4-8-4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-sm font-semibold text-pink-700">Female Contestants</span>
+                <span class="text-xs text-pink-500">({{ femaleContestants.length }})</span>
+              </div>
+            </div>
+            <DetailedScoreTable 
+              :title="`Female - ${getCurrentRoundLabel()}`"
+              :contestants="femaleContestants"
+              :judges="judges"
+              :scores="localScores"
+              :criteria="criteria"
+              :detailed-scores="detailedScores"
+              :score-key="currentRound?.id.toString()"
+              empty-title="No Female Contestants"
+              empty-message="No female contestants have been added to this round."
+            />
+          </div>
+        </div>
+        
+        <!-- For solo/both types: Show single table with all contestants -->
+        <div v-else>
+          <DetailedScoreTable 
+            :title="`${getCurrentRoundLabel()}`"
+            :contestants="contestants"
+            :judges="judges"
+            :scores="localScores"
+            :criteria="criteria"
+            :detailed-scores="detailedScores"
+            :score-key="currentRound?.id.toString()"
+            empty-title="No Scores Available"
+            empty-message="Scores will appear here once judges start submitting their evaluations."
+          />
+        </div>
       </div>
 
       <!-- Audit Logs Viewer -->
@@ -177,13 +237,21 @@ interface Round {
   weight: number
 }
 
+interface ContestantMember {
+  id: number
+  name: string
+  gender?: string
+}
+
 interface Contestant {
   id: number
   name: string
   number: number
   image: string
   is_pair?: boolean
+  gender?: string
   members_text?: string
+  members?: ContestantMember[]
 }
 
 interface Judge {
@@ -194,6 +262,7 @@ interface Judge {
 interface Pageant {
   id: number
   name: string
+  contestant_type?: 'solo' | 'pairs' | 'both'
 }
 
 interface Criteria {
@@ -229,6 +298,20 @@ const roundOptions = computed(() => {
     value: round.id.toString(),
     label: round.name
   }))
+})
+
+// Check if we should show contestants separated by gender (only for pairs type)
+const isPairsType = computed(() => props.pageant?.contestant_type === 'pairs')
+
+// Separate contestants by gender for pairs view
+const maleContestants = computed(() => {
+  if (!isPairsType.value) return []
+  return props.contestants.filter(c => c.gender?.toLowerCase() === 'male')
+})
+
+const femaleContestants = computed(() => {
+  if (!isPairsType.value) return []
+  return props.contestants.filter(c => c.gender?.toLowerCase() === 'female')
 })
 
 // Watch for changes in props.scores and update localScores accordingly

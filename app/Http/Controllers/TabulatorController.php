@@ -327,7 +327,11 @@ class TabulatorController extends Controller
 
         if (! $currentRound) {
             return Inertia::render('Tabulator/Scores', [
-                'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
+                'pageant' => [
+                    'id' => $pageant->id,
+                    'name' => $pageant->name,
+                    'contestant_type' => $pageant->contestant_type ?? 'solo',
+                ],
                 'rounds' => $rounds,
                 'contestants' => [],
                 'judges' => [],
@@ -336,14 +340,22 @@ class TabulatorController extends Controller
             ]);
         }
 
-        $contestants = $pageant->contestants()->with('members:id,name')->get()->map(function ($contestant) {
+        $contestants = $pageant->contestants()->with('members:id,name,gender')->get()->map(function ($contestant) {
             return [
                 'id' => $contestant->id,
                 'number' => $contestant->number,
                 'name' => $contestant->is_pair ? ($contestant->display_name ?? $contestant->name) : $contestant->name,
                 'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                 'is_pair' => (bool) $contestant->is_pair,
+                'gender' => $contestant->gender,
                 'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
+                'members' => $contestant->is_pair ? $contestant->members->map(function ($member) {
+                    return [
+                        'id' => $member->id,
+                        'name' => $member->name,
+                        'gender' => $member->gender,
+                    ];
+                })->values()->all() : null,
             ];
         });
 
@@ -419,7 +431,11 @@ class TabulatorController extends Controller
             ->keyBy('key');
 
         return Inertia::render('Tabulator/Scores', [
-            'pageant' => ['id' => $pageant->id, 'name' => $pageant->name],
+            'pageant' => [
+                'id' => $pageant->id,
+                'name' => $pageant->name,
+                'contestant_type' => $pageant->contestant_type ?? 'solo',
+            ],
             'rounds' => $rounds,
             'currentRound' => [
                 'id' => $currentRound->id,
