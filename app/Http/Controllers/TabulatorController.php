@@ -513,7 +513,8 @@ class TabulatorController extends Controller
 
         // Calculate overall results with all round scores displayed
         // But rank by ONLY the final round score (not cumulative)
-        $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant);
+        // Force fresh calculation by disabling cache to ensure latest scores are shown
+        $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant, false);
         
         // Find the last final round to use for ranking
         $lastFinalRound = $pageant->rounds
@@ -552,7 +553,8 @@ class TabulatorController extends Controller
         $orderedRounds = $pageant->rounds->sortBy('display_order');
 
         foreach ($orderedRounds as $currentRound) {
-            $roundContestants = $this->scoreCalculationService->calculateRoundViewScores($pageant, $currentRound);
+            // Force fresh calculation by disabling cache to ensure latest scores are shown
+            $roundContestants = $this->scoreCalculationService->calculateRoundViewScores($pageant, $currentRound, false);
 
             $roundResults['round_'.$currentRound->id] = [
                 'contestants' => $roundContestants,

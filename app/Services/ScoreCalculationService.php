@@ -424,11 +424,31 @@ class ScoreCalculationService
 
         $advancingIds = [];
 
+        // Sort contestants by rank to ensure we process in correct order
+        usort($contestants, function ($a, $b) {
+            $rankA = $a['rank'] ?? PHP_INT_MAX;
+            $rankB = $b['rank'] ?? PHP_INT_MAX;
+            return $rankA <=> $rankB;
+        });
+
+        // Track the cutoff rank - we need to include all contestants with this rank or better
+        $cutoffRank = null;
+        $count = 0;
+
         foreach ($contestants as $contestant) {
             $rank = $contestant['rank'] ?? PHP_INT_MAX;
 
-            if ($rank <= $topN) {
+            // If we haven't reached topN yet, or this contestant has the same rank as the cutoff
+            if ($count < $topN) {
                 $advancingIds[] = $contestant['id'];
+                $cutoffRank = $rank;
+                $count++;
+            } elseif ($rank == $cutoffRank) {
+                // Include tied contestants at the cutoff position (handles average tie ranks like 4.5)
+                $advancingIds[] = $contestant['id'];
+            } else {
+                // We've exceeded topN and this contestant has a worse rank
+                break;
             }
         }
 
