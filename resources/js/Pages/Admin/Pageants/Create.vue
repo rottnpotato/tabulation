@@ -635,7 +635,16 @@ const organizerConflicts = computed(() => {
 const formatTimeToHi = (time) => {
   if (!time) return ''
   
-  // If already in H:i format (HH:MM), return as is
+  // Remove any whitespace
+  time = time.trim()
+  
+  // If in H:i:s format (with seconds), strip seconds
+  if (/^\d{1,2}:\d{2}:\d{2}$/.test(time)) {
+    const [hours, minutes] = time.split(':')
+    return `${hours.padStart(2, '0')}:${minutes}`
+  }
+  
+  // If in H:i format (HH:MM), ensure proper padding
   if (/^\d{1,2}:\d{2}$/.test(time)) {
     const [hours, minutes] = time.split(':')
     return `${hours.padStart(2, '0')}:${minutes}`
@@ -651,12 +660,17 @@ const submitForm = () => {
   // Reset errors
   errors.value = {};
   
-  // Ensure times are in H:i format before validation
-  if (form.start_time) {
+  // Ensure times are in H:i format or null before validation
+  if (form.start_time && form.start_time.trim() !== '') {
     form.start_time = formatTimeToHi(form.start_time)
+  } else {
+    form.start_time = null
   }
-  if (form.end_time) {
+  
+  if (form.end_time && form.end_time.trim() !== '') {
     form.end_time = formatTimeToHi(form.end_time)
+  } else {
+    form.end_time = null
   }
   
   // Validate
