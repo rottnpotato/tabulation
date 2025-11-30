@@ -510,32 +510,59 @@ const getRankAtRound = (contestant: Contestant, roundIndex: number): number => {
     .slice(0, roundIndex + 1)
     .filter(r => r.type === targetRound.type)
   
-  // Calculate score for this contestant in this stage type
-  let stageScore = 0
-  for (const round of roundsOfSameType) {
-    const score = contestant.scores[round.name]
-    if (score !== undefined) {
-      stageScore += score
+  // For rank sum method, use rank sum; otherwise use score average
+  const useRankSum = props.rankingMethod === 'rank_sum'
+  
+  // Calculate metric for this contestant in this stage type
+  let contestantMetric = 0
+  if (useRankSum) {
+    // For rank sum: sum up rank sums from rounds of same type
+    for (const round of roundsOfSameType) {
+      if (contestant.judgeRanks && contestant.judgeRanks[round.name]) {
+        const ranks = contestant.judgeRanks[round.name].ranks || []
+        contestantMetric += ranks.reduce((sum, rank) => sum + rank, 0)
+      }
+    }
+  } else {
+    // For score average: sum up scores from rounds of same type
+    for (const round of roundsOfSameType) {
+      const score = contestant.scores[round.name]
+      if (score !== undefined) {
+        contestantMetric += score
+      }
     }
   }
   
-  // Calculate stage scores for all contestants
-  const contestantsWithScores = props.contestants.map(c => {
-    let cumScore = 0
-    for (const round of roundsOfSameType) {
-      const score = c.scores[round.name]
-      if (score !== undefined) {
-        cumScore += score
+  // Calculate metrics for all contestants
+  const contestantsWithMetrics = props.contestants.map(c => {
+    let metric = 0
+    if (useRankSum) {
+      for (const round of roundsOfSameType) {
+        if (c.judgeRanks && c.judgeRanks[round.name]) {
+          const ranks = c.judgeRanks[round.name].ranks || []
+          metric += ranks.reduce((sum, rank) => sum + rank, 0)
+        }
+      }
+    } else {
+      for (const round of roundsOfSameType) {
+        const score = c.scores[round.name]
+        if (score !== undefined) {
+          metric += score
+        }
       }
     }
-    return { id: c.id, score: cumScore }
+    return { id: c.id, metric }
   })
   
-  // Sort by score descending
-  contestantsWithScores.sort((a, b) => b.score - a.score)
+  // Sort: for rank sum ascending (lower is better), for scores descending (higher is better)
+  if (useRankSum) {
+    contestantsWithMetrics.sort((a, b) => a.metric - b.metric)
+  } else {
+    contestantsWithMetrics.sort((a, b) => b.metric - a.metric)
+  }
   
   // Find the rank of the current contestant within this stage
-  const rank = contestantsWithScores.findIndex(c => c.id === contestant.id) + 1
+  const rank = contestantsWithMetrics.findIndex(c => c.id === contestant.id) + 1
   
   return rank
 }

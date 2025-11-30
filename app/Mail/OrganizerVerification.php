@@ -23,7 +23,7 @@ class OrganizerVerification extends Mailable
     public function __construct(User $user, string $token)
     {
         $this->user = $user;
-        $this->verificationUrl = route('verify.organizer', ['token' => $token]);
+        $this->verificationUrl = config('app.url') . route('verify.organizer', ['token' => $token], false);
     }
 
     /**

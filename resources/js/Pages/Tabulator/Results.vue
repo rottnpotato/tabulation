@@ -383,24 +383,33 @@ const displayedContestants = computed(() => {
     return true
   })
 
-  // Sort contestants: use backend rank if available (for overall), otherwise sort by score
+  // Sort contestants: use backend rank if available (for overall), otherwise sort by score or rank sum
   const sorted = [...deduplicated].sort((a, b) => {
     // For overall view, trust the backend ranking which is based on final round only
     if (activeRound.value === 'overall' && a.rank && b.rank) {
       return a.rank - b.rank
     }
     
-    // For round-specific views or if no rank, sort by score
-    const scoreA = a.totalScore ?? a.finalScore ?? 0
-    const scoreB = b.totalScore ?? b.finalScore ?? 0
-    return scoreB - scoreA
+    // For round-specific views, check ranking method
+    if (props.pageant?.ranking_method === 'rank_sum') {
+      // For rank sum: lower is better (ascending order)
+      const rankSumA = a.totalRankSum ?? 999999
+      const rankSumB = b.totalRankSum ?? 999999
+      return rankSumA - rankSumB
+    } else {
+      // For score average: higher is better (descending order)
+      const scoreA = a.totalScore ?? a.finalScore ?? 0
+      const scoreB = b.totalScore ?? b.finalScore ?? 0
+      return scoreB - scoreA
+    }
   })
 
   // Track ranking changes and update qualified status
   const newRankings = new Map<number, number>()
   const result = sorted.map((contestant, index) => {
-    // Use backend rank if available (for overall), otherwise use position
-    const currentRank = (activeRound.value === 'overall' && contestant.rank) ? contestant.rank : index + 1
+    // Use backend rank if available, otherwise use position
+    // Backend calculates proper ranks with tie handling
+    const currentRank = contestant.rank ? contestant.rank : index + 1
     newRankings.set(contestant.id, currentRank)
     
     // Recompute qualified status based on current position
@@ -440,23 +449,32 @@ const maleContestants = computed(() => {
   // Filter males
   const males = displayedContestants.value.filter(c => c.gender === 'male')
   
-  // Sort: use backend rank for overall view, otherwise sort by score
+  // Sort: use backend rank for overall view, otherwise sort by score or rank sum
   const sorted = [...males].sort((a, b) => {
     // For overall view, trust the backend ranking which is based on final round only
     if (activeRound.value === 'overall' && a.rank && b.rank) {
       return a.rank - b.rank
     }
     
-    // For round-specific views or if no rank, sort by score
-    const scoreA = a.totalScore ?? a.finalScore ?? 0
-    const scoreB = b.totalScore ?? b.finalScore ?? 0
-    return scoreB - scoreA
+    // For round-specific views, check ranking method
+    if (props.pageant?.ranking_method === 'rank_sum') {
+      // For rank sum: lower is better (ascending order)
+      const rankSumA = a.totalRankSum ?? 999999
+      const rankSumB = b.totalRankSum ?? 999999
+      return rankSumA - rankSumB
+    } else {
+      // For score average: higher is better (descending order)
+      const scoreA = a.totalScore ?? a.finalScore ?? 0
+      const scoreB = b.totalScore ?? b.finalScore ?? 0
+      return scoreB - scoreA
+    }
   })
   
   // Recompute rank and qualified status within male group
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
-    const genderRank = index + 1
+    // Use backend rank if available (handles ties properly)
+    const genderRank = contestant.rank ? contestant.rank : index + 1
     return {
       ...contestant,
       rank: genderRank,
@@ -472,23 +490,32 @@ const femaleContestants = computed(() => {
   // Filter females
   const females = displayedContestants.value.filter(c => c.gender === 'female')
   
-  // Sort: use backend rank for overall view, otherwise sort by score
+  // Sort: use backend rank for overall view, otherwise sort by score or rank sum
   const sorted = [...females].sort((a, b) => {
     // For overall view, trust the backend ranking which is based on final round only
     if (activeRound.value === 'overall' && a.rank && b.rank) {
       return a.rank - b.rank
     }
     
-    // For round-specific views or if no rank, sort by score
-    const scoreA = a.totalScore ?? a.finalScore ?? 0
-    const scoreB = b.totalScore ?? b.finalScore ?? 0
-    return scoreB - scoreA
+    // For round-specific views, check ranking method
+    if (props.pageant?.ranking_method === 'rank_sum') {
+      // For rank sum: lower is better (ascending order)
+      const rankSumA = a.totalRankSum ?? 999999
+      const rankSumB = b.totalRankSum ?? 999999
+      return rankSumA - rankSumB
+    } else {
+      // For score average: higher is better (descending order)
+      const scoreA = a.totalScore ?? a.finalScore ?? 0
+      const scoreB = b.totalScore ?? b.finalScore ?? 0
+      return scoreB - scoreA
+    }
   })
   
   // Recompute rank and qualified status within female group
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
-    const genderRank = index + 1
+    // Use backend rank if available (handles ties properly)
+    const genderRank = contestant.rank ? contestant.rank : index + 1
     return {
       ...contestant,
       rank: genderRank,
