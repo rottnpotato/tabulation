@@ -185,22 +185,26 @@
                 <input
                   id="start_time"
                   type="time"
+                  step="60"
                   v-model="form.start_time"
                   :disabled="!form.start_date"
                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="13:30"
                 />
-                <p class="mt-1 text-xs text-gray-500">Scoring starts at this time</p>
+                <p class="mt-1 text-xs text-gray-500">Use 24-hour format (e.g., 13:30 for 1:30 PM). Scoring starts at this time</p>
               </div>
               <div>
                 <label for="end_time" class="block text-sm font-medium text-gray-700 mb-1">End Time (Optional)</label>
                 <input
                   id="end_time"
                   type="time"
+                  step="60"
                   v-model="form.end_time"
                   :disabled="!form.end_date"
                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder="18:00"
                 />
-                <p class="mt-1 text-xs text-gray-500">Scoring ends at this time</p>
+                <p class="mt-1 text-xs text-gray-500">Use 24-hour format (e.g., 18:00 for 6:00 PM). Scoring ends at this time</p>
               </div>
             </div>
 
@@ -627,12 +631,33 @@ const organizerConflicts = computed(() => {
   return conflicts;
 });
 
+// Format time to H:i format (24-hour)
+const formatTimeToHi = (time) => {
+  if (!time) return ''
+  
+  // If already in H:i format (HH:MM), return as is
+  if (/^\d{1,2}:\d{2}$/.test(time)) {
+    const [hours, minutes] = time.split(':')
+    return `${hours.padStart(2, '0')}:${minutes}`
+  }
+  
+  return time
+}
+
 // Submit the form to create the pageant
 const submitForm = () => {
   console.log('submitForm called - starting validation');
   
   // Reset errors
   errors.value = {};
+  
+  // Ensure times are in H:i format before validation
+  if (form.start_time) {
+    form.start_time = formatTimeToHi(form.start_time)
+  }
+  if (form.end_time) {
+    form.end_time = formatTimeToHi(form.end_time)
+  }
   
   // Validate
   if (!form.name) {

@@ -150,10 +150,12 @@
               id="start_time"
               v-model="form.start_time"
               type="time"
+              step="60"
               :disabled="!form.start_date"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder="13:30"
             />
-            <p class="mt-1 text-sm text-gray-500">Scoring starts at this time</p>
+            <p class="mt-1 text-sm text-gray-500">Use 24-hour format (e.g., 13:30 for 1:30 PM). Scoring starts at this time</p>
           </div>
 
           <!-- End Time -->
@@ -165,10 +167,12 @@
               id="end_time"
               v-model="form.end_time"
               type="time"
+              step="60"
               :disabled="!form.end_date"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder="18:00"
             />
-            <p class="mt-1 text-sm text-gray-500">Scoring ends at this time</p>
+            <p class="mt-1 text-sm text-gray-500">Use 24-hour format (e.g., 18:00 for 6:00 PM). Scoring ends at this time</p>
           </div>
         </div>
 
@@ -443,10 +447,31 @@ const contestantTypeOptions = [
 
 ]
 
+// Format time to H:i format (24-hour)
+const formatTimeToHi = (time) => {
+  if (!time) return ''
+  
+  // If already in H:i format (HH:MM), return as is
+  if (/^\d{1,2}:\d{2}$/.test(time)) {
+    const [hours, minutes] = time.split(':')
+    return `${hours.padStart(2, '0')}:${minutes}`
+  }
+  
+  return time
+}
+
 // Submit form
 const submitForm = () => {
   // Reset errors
   errors.value = {}
+  
+  // Ensure times are in H:i format before validation
+  if (form.start_time) {
+    form.start_time = formatTimeToHi(form.start_time)
+  }
+  if (form.end_time) {
+    form.end_time = formatTimeToHi(form.end_time)
+  }
   
   // Validate required fields
   if (!form.name) {
