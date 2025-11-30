@@ -150,16 +150,21 @@
                 
                 <!-- Advancement Badge for this round -->
                 <template v-if="contestant.scores[round.name] !== undefined">
-                  <!-- Show "Top N" badge for final round if contestant is a winner (ranked among finalists only) -->
+                  <!-- Show "Top N" badge for final round -->
                   <span
-                    v-if="round.type?.toLowerCase() === 'final' && showWinners && hasValidFinalScore(contestant) && getFinalRankAmongFinalists(contestant) <= numberOfWinners"
-                    class="inline-flex items-center gap-0.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-amber-600"
-                    :title="`Winner - Top ${numberOfWinners}`"
+                    v-if="round.type?.toLowerCase() === 'final'"
+                    class="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white border"
+                    :class="getRankInRound(contestant, round) <= numberOfWinners ? 'bg-amber-500 border-amber-600' : 'bg-blue-500 border-blue-600'"
+                    :title="getRankInRound(contestant, round) <= numberOfWinners ? `Winner - Top ${numberOfWinners}` : 'Finalist'"
                   >
-                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg v-if="getRankInRound(contestant, round) <= numberOfWinners" class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    <span>Top {{ getFinalRankAmongFinalists(contestant) }}</span>
+                    <svg v-else class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    <span v-if="getRankInRound(contestant, round) <= numberOfWinners">Top {{ getRankInRound(contestant, round) }}</span>
+                    <span v-else>Finalist</span>
                   </span>
                   
                   <!-- Show "Advanced" badge only for non-final rounds that lead to next stage -->
@@ -533,6 +538,22 @@ const getRankAtRound = (contestant: Contestant, roundIndex: number): number => {
   const rank = contestantsWithScores.findIndex(c => c.id === contestant.id) + 1
   
   return rank
+}
+
+// Get contestant's rank within a specific round based on that round's score only
+const getRankInRound = (contestant: Contestant, round: Round): number => {
+  // Get all contestants who have a score in this specific round
+  const contestantsWithScore = props.contestants
+    .filter(c => c.scores[round.name] !== undefined && c.scores[round.name] !== null)
+    .map(c => ({
+      id: c.id,
+      score: c.scores[round.name]
+    }))
+    .sort((a, b) => b.score - a.score) // Sort descending by score
+  
+  // Find the rank of the current contestant
+  const rankIndex = contestantsWithScore.findIndex(c => c.id === contestant.id)
+  return rankIndex >= 0 ? rankIndex + 1 : -1
 }
 
 const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down' | 'same' | 'new' => {

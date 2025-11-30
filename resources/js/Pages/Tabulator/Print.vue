@@ -1118,10 +1118,16 @@ interface UnlockedRound {
   type: string
 }
 
+interface RoundResult {
+  contestants: Result[]
+  top_n_proceed?: number
+}
+
 interface Props {
   pageant?: Pageant
   rounds?: Round[]
   roundTypes: RoundType[]
+  roundResults?: Record<string, RoundResult>
   resultsByRoundType?: Record<string, Result[]>
   resultsOverall: Result[]
   overallTally?: Result[]
@@ -1213,25 +1219,36 @@ const stageLabels = computed<Record<string, string>>(() => {
 const resultsToShow = computed<Result[]>(() => {
   // Handle 'overall' - Same as Overall Tally in Results page
   if (selectedStage.value === 'overall') {
-    return props.overallTally || props.resultsOverall || []
+    return Array.isArray(props.overallTally) ? props.overallTally : (Array.isArray(props.resultsOverall) ? props.resultsOverall : [])
+  }
+  
+  // Try to get results from individual round data FIRST (same as Results.vue)
+  // Check if selectedStage is a round ID (numeric string)
+  if (props.roundResults && /^\d+$/.test(selectedStage.value)) {
+    const roundKey = `round_${selectedStage.value}`
+    const roundResult = props.roundResults[roundKey]
+    if (roundResult && roundResult.contestants) {
+      return Array.isArray(roundResult.contestants) ? roundResult.contestants : []
+    }
+  }
+  
+  // Try to get results from the dynamic resultsByRoundType (for round types like 'final', 'semi-final')
+  if (props.resultsByRoundType && selectedStage.value in props.resultsByRoundType) {
+    const results = props.resultsByRoundType[selectedStage.value]
+    return Array.isArray(results) ? results : []
   }
   
   // Handle 'final' - Use finalTopN (only contestants who competed in final round)
   if (selectedStage.value.toLowerCase() === 'final') {
-    return props.finalTopN || props.resultsFinal || []
-  }
-  
-  // Try to get results from the new dynamic resultsByRoundType
-  if (props.resultsByRoundType && selectedStage.value in props.resultsByRoundType) {
-    return props.resultsByRoundType[selectedStage.value] || []
+    return Array.isArray(props.finalTopN) ? props.finalTopN : (Array.isArray(props.resultsFinal) ? props.resultsFinal : [])
   }
   
   // Fallback to legacy props for backward compatibility
   switch (selectedStage.value) {
     case 'semi-final':
-      return props.resultsSemiFinal || []
+      return Array.isArray(props.resultsSemiFinal) ? props.resultsSemiFinal : []
     default:
-      return props.overallTally || props.resultsOverall || []
+      return Array.isArray(props.overallTally) ? props.overallTally : (Array.isArray(props.resultsOverall) ? props.resultsOverall : [])
   }
 })
 

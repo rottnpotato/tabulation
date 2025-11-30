@@ -780,7 +780,7 @@ class TabulatorController extends Controller
             ];
         });
 
-        // Get unique round types from pageant with labels
+        // Get unique round types from pageant with labels and top_n_proceed info
         $uniqueRoundTypes = $pageant->rounds
             ->sortBy('display_order')
             ->groupBy('type')
@@ -793,6 +793,7 @@ class TabulatorController extends Controller
                     'label' => ucwords(str_replace(['-', '_'], ' ', $firstRound->type)),
                     'display_order' => $firstRound->display_order,
                     'last_display_order' => $lastRound->display_order,
+                    'top_n_proceed' => $lastRound->top_n_proceed,
                 ];
             })
             ->values();
@@ -828,7 +829,30 @@ class TabulatorController extends Controller
                 ];
             });
 
+            // Filter out contestants who have no scores for this stage (didn't qualify/compete)
+            $stageResults = $stageResults->filter(function ($contestant) {
+                // Only include contestants who have at least one score for this stage
+                $scores = $contestant['scores'] ?? [];
+                $hasScores = !empty($scores) && array_filter($scores, fn($score) => $score !== null && $score > 0);
+                return !empty($hasScores);
+            });
+
             $stageResults = $markQualifiedContestants($stageResults, $roundType)->values();
+            
+            // Apply top_n_proceed filter if defined for this round type
+            if (isset($roundTypeInfo['top_n_proceed']) && $roundTypeInfo['top_n_proceed'] > 0) {
+                $topN = $roundTypeInfo['top_n_proceed'];
+                
+                // For pair pageants, filter each gender separately
+                if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+                    $maleResults = $stageResults->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                    $femaleResults = $stageResults->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                    $stageResults = $maleResults->merge($femaleResults)->values();
+                } else {
+                    $stageResults = $stageResults->take($topN);
+                }
+            }
+            
             $resultsByRoundType[$roundType] = $stageResults;
         }
 
@@ -919,14 +943,87 @@ class TabulatorController extends Controller
 
         // Get rounds ordered for display in Overall Tally table
         $sortedRounds = $pageant->rounds->sortBy('display_order');
-        $rounds = $sortedRounds->map(function ($round) {
+        
+        // Group rounds by type to find advancement info
+        $roundsByType = $sortedRounds->groupBy('type');
+        $lastRoundIdsByType = [];
+        $topNByType = [];
+        
+        foreach ($roundsByType as $type => $roundsOfType) {
+            $lastRound = $roundsOfType->sortByDesc('display_order')->first();
+            if ($lastRound) {
+                $lastRoundIdsByType[$type] = $lastRound->id;
+                
+                // Find top_n_proceed for this stage type
+                $topN = $roundsOfType->whereNotNull('top_n_proceed')
+                    ->where('top_n_proceed', '>', 0)
+                    ->sortByDesc('display_order')
+                    ->first()?->top_n_proceed;
+                    
+                $topNByType[$type] = $topN;
+            }
+        }
+        
+        $rounds = $sortedRounds->map(function ($round) use ($lastRoundIdsByType, $topNByType) {
+            $isLastOfType = ($lastRoundIdsByType[$round->type] ?? null) === $round->id;
+            
+            // Attach top_n_proceed to the last round of each type for badge display
+            $topNProceed = $isLastOfType ? ($topNByType[$round->type] ?? null) : null;
+            
             return [
                 'id' => $round->id,
                 'name' => $round->name,
                 'type' => $round->type,
+                'weight' => $round->weight,
+                'top_n_proceed' => $topNProceed,
                 'display_order' => $round->display_order,
+                'is_last_of_type' => $isLastOfType,
             ];
         })->values();
+
+        // Calculate results for each individual round (same as Results page)
+        $roundResults = [];
+        $orderedRounds = $pageant->rounds->sortBy('display_order');
+
+        foreach ($orderedRounds as $currentRound) {
+            $roundContestants = $this->scoreCalculationService->calculateRoundViewScores($pageant, $currentRound);
+
+            // Format contestants for this round
+            $formattedRoundContestants = collect($roundContestants)->map(function ($contestant) use ($pageant, $currentRound) {
+                $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
+                $memberNames = [];
+                $memberGenders = [];
+
+                if ($contestantModel && $contestantModel->is_pair && $contestantModel->members->isNotEmpty()) {
+                    foreach ($contestantModel->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
+
+                return [
+                    'id' => $contestant['id'],
+                    'number' => $contestant['number'],
+                    'name' => $contestant['name'],
+                    'gender' => $contestantModel->gender ?? null,
+                    'is_pair' => $contestantModel->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
+                    'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                    'scores' => $contestant['scores'] ?? [],
+                    'totalScore' => $contestant['totalScore'] ?? $contestant['finalScore'] ?? 0,
+                    'final_score' => $contestant['totalScore'] ?? $contestant['finalScore'] ?? 0,
+                    'totalRankSum' => $contestant['totalRankSum'] ?? 0,
+                    'judgeRanks' => $contestant['judgeRanks'] ?? [],
+                    'rank' => $contestant['rank'] ?? 0,
+                ];
+            })->values();
+
+            $roundResults['round_'.$currentRound->id] = [
+                'contestants' => $formattedRoundContestants,
+                'top_n_proceed' => $currentRound->top_n_proceed,
+            ];
+        }
 
         return Inertia::render('Tabulator/Print', [
             'pageant' => [
@@ -940,6 +1037,7 @@ class TabulatorController extends Controller
             ],
             'rounds' => $rounds,
             'roundTypes' => $uniqueRoundTypes,
+            'roundResults' => $roundResults,
             'resultsByRoundType' => $resultsByRoundType,
             'resultsOverall' => $overallResults,
             'overallTally' => $overallTally,
