@@ -119,6 +119,7 @@
           v-else
           :contestants="sortedContestants"
           :is-pair-competition="isPairCompetition"
+          :is-pageant-ongoing-fn="isPageantLocked"
           @view="ViewContestantDetails"
           @edit="EditContestant"
           @delete="(c) => DeleteContestant(c.id)"
@@ -516,20 +517,28 @@
                       
                       <!-- Actions -->
                       <div class="flex justify-end space-x-3 pt-4">
-                        <button
-                          @click="EditContestant(SelectedContestant); ShowDetailsModal = false"
-                          class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-lg shadow-sm hover:shadow transition-all flex items-center"
-                        >
-                          <Edit2 class="h-4 w-4 mr-2" />
-                          Edit
-                        </button>
-                        <button
-                          @click="DeleteContestant(SelectedContestant.id); ShowDetailsModal = false"
-                          class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg shadow-sm hover:shadow transition-all flex items-center"
-                        >
-                          <Trash2 class="h-4 w-4 mr-2" />
-                          Delete
-                        </button>
+                        <Tooltip :text="isPageantLocked(SelectedContestant) ? 'Cannot edit - Pageant is locked' : 'Edit contestant information and photos'" position="top">
+                          <button
+                            @click="!isPageantLocked(SelectedContestant) && (EditContestant(SelectedContestant), ShowDetailsModal = false)"
+                            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg shadow-sm transition-all flex items-center"
+                            :class="isPageantLocked(SelectedContestant) ? 'opacity-50 cursor-not-allowed' : 'hover:from-teal-600 hover:to-teal-700 hover:shadow'"
+                            :disabled="isPageantLocked(SelectedContestant)"
+                          >
+                            <Edit2 class="h-4 w-4 mr-2" />
+                            Edit
+                          </button>
+                        </Tooltip>
+                        <Tooltip :text="isPageantLocked(SelectedContestant) ? 'Cannot delete - Pageant is locked' : 'Permanently remove contestant from pageant'" position="top">
+                          <button
+                            @click="!isPageantLocked(SelectedContestant) && (DeleteContestant(SelectedContestant.id), ShowDetailsModal = false)"
+                            class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow-sm transition-all flex items-center"
+                            :class="isPageantLocked(SelectedContestant) ? 'opacity-50 cursor-not-allowed' : 'hover:from-red-600 hover:to-red-700 hover:shadow'"
+                            :disabled="isPageantLocked(SelectedContestant)"
+                          >
+                            <Trash2 class="h-4 w-4 mr-2" />
+                            Delete
+                          </button>
+                        </Tooltip>
                       </div>
                     </div>
                   </div>
@@ -565,6 +574,7 @@ import {
 import ContestantsGrid from '@/Components/ContestantsGrid.vue'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import CustomSelect from '@/Components/CustomSelect.vue'
+import Tooltip from '@/Components/Tooltip.vue'
 import { motion } from 'motion-v'
 
 defineOptions({
@@ -623,6 +633,16 @@ const selectedPageantInfo = computed(() => {
 const isPairCompetition = computed(() => {
   return selectedPageantInfo.value?.contestant_type === 'pairs' || selectedPageantInfo.value?.contestant_type === 'both'
 })
+
+// Check if a contestant's pageant is locked (read-only - no edits/deletes allowed)
+const isPageantLocked = (contestant) => {
+  const status = contestant?.pageant?.status
+  // Allow edits/deletes for all statuses except Active/Ongoing (unless explicitly unlocked)
+  if (status === 'Unlocked_For_Edit') {
+    return false // Explicitly unlocked, allow edits
+  }
+  return status === 'Active' || status === 'Ongoing'
+}
 
 // Sort contestants with gender grouping for pair competitions
 const sortedContestants = computed(() => {
@@ -786,6 +806,15 @@ const ViewContestantDetails = (contestant) => {
 }
 
 const EditContestant = (contestant) => {
+  // Prevent editing if pageant is locked
+  if (isPageantLocked(contestant)) {
+    formErrors.value.general = 'Cannot edit contestants from a locked pageant'
+    setTimeout(() => {
+      delete formErrors.value.general
+    }, 5000)
+    return
+  }
+  
   EditingContestant.value = contestant
   Form.value = { 
     name: contestant.name || '',
@@ -808,6 +837,15 @@ const DeleteContestant = async (id) => {
   
   if (!contestant) {
     formErrors.value.general = 'Contestant not found'
+    return
+  }
+  
+  // Prevent deleting if pageant is locked
+  if (isPageantLocked(contestant)) {
+    formErrors.value.general = 'Cannot delete contestants from a locked pageant'
+    setTimeout(() => {
+      delete formErrors.value.general
+    }, 5000)
     return
   }
   

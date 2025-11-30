@@ -34,7 +34,9 @@
             <div v-if="topThree[0]?.is_pair && topThree[0]?.member_names && topThree[0]?.member_names!.length > 0" class="text-[10px] text-gray-600 italic mt-0.5">
               {{ topThree[0].member_names?.map(n => capitalizeName(n)).join(' & ') }}
             </div>
-            <div class="text-xs font-bold text-amber-700 mt-1">{{ formatScore(topThree[0].final_score) }} pts</div>
+            <div class="text-xs font-bold text-amber-700 mt-1">
+              {{ isRankSumMethod ? `Rank Sum: ${topThree[0].totalRankSum ?? topThree[0].final_score}` : `${formatScore(topThree[0].final_score)} pts` }}
+            </div>
           </div>
         </div>
         <!-- Runner-ups -->
@@ -48,7 +50,9 @@
               <div v-if="topThree[1]?.is_pair && topThree[1]?.member_names && topThree[1].member_names!.length > 0" class="text-[9px] text-gray-500 italic">
                 {{ topThree[1].member_names?.map(n => capitalizeName(n)).join(' & ') }}
               </div>
-              <div class="text-[10px] text-gray-600">{{ formatScore(topThree[1].final_score) }} pts</div>
+              <div class="text-[10px] text-gray-600">
+                {{ isRankSumMethod ? `Rank Sum: ${topThree[1].totalRankSum ?? topThree[1].final_score}` : `${formatScore(topThree[1].final_score)} pts` }}
+              </div>
             </div>
           </div>
           <!-- 2nd Runner-up -->
@@ -60,7 +64,9 @@
               <div v-if="topThree[2]?.is_pair && topThree[2]?.member_names && topThree[2]?.member_names!.length > 0" class="text-[9px] text-gray-500 italic">
                 {{ topThree[2].member_names?.map(n => capitalizeName(n)).join(' & ') }}
               </div>
-              <div class="text-[10px] text-gray-600">{{ formatScore(topThree[2].final_score) }} pts</div>
+              <div class="text-[10px] text-gray-600">
+                {{ isRankSumMethod ? `Rank Sum: ${topThree[2].totalRankSum ?? topThree[2].final_score}` : `${formatScore(topThree[2].final_score)} pts` }}
+              </div>
             </div>
           </div>
         </div>
@@ -71,7 +77,9 @@
             <div class="border border-gray-200 p-1.5 rounded bg-gray-50">
               <div class="text-sm font-bold">#{{ result.number }}</div>
               <div class="text-[10px] font-medium text-gray-700">{{ capitalizeName(result.name) }}</div>
-              <div class="text-[9px] text-gray-500">{{ formatScore(result.final_score) }} pts</div>
+              <div class="text-[9px] text-gray-500">
+                {{ isRankSumMethod ? `Rank Sum: ${result.totalRankSum ?? result.final_score}` : `${formatScore(result.final_score)} pts` }}
+              </div>
             </div>
           </div>
         </div>
@@ -90,7 +98,9 @@
             <div v-if="topThree[1].is_pair && topThree[1].member_names && topThree[1].member_names.length > 0" class="text-xs text-gray-600 italic mb-2">
               {{ topThree[1].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
-            <div class="text-sm font-semibold text-gray-700">{{ formatScore(topThree[1].final_score) }} pts</div>
+            <div class="text-sm font-semibold text-gray-700">
+              {{ isRankSumMethod ? `Rank Sum: ${topThree[1].totalRankSum ?? topThree[1].final_score}` : `${formatScore(topThree[1].final_score)} pts` }}
+            </div>
           </div>
         </div>
 
@@ -103,7 +113,9 @@
             <div v-if="topThree[0].is_pair && topThree[0].member_names && topThree[0].member_names.length > 0" class="text-sm text-gray-700 italic mb-2">
               {{ topThree[0].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
-            <div class="text-base font-bold text-amber-700">{{ formatScore(topThree[0].final_score) }} pts</div>
+            <div class="text-base font-bold text-amber-700">
+              {{ isRankSumMethod ? `Rank Sum: ${topThree[0].totalRankSum ?? topThree[0].final_score}` : `${formatScore(topThree[0].final_score)} pts` }}
+            </div>
           </div>
         </div>
 
@@ -116,7 +128,9 @@
             <div v-if="topThree[2].is_pair && topThree[2].member_names && topThree[2].member_names.length > 0" class="text-xs text-gray-600 italic mb-2">
               {{ topThree[2].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
-            <div class="text-sm font-semibold text-gray-700">{{ formatScore(topThree[2].final_score) }} pts</div>
+            <div class="text-sm font-semibold text-gray-700">
+              {{ isRankSumMethod ? `Rank Sum: ${topThree[2].totalRankSum ?? topThree[2].final_score}` : `${formatScore(topThree[2].final_score)} pts` }}
+            </div>
           </div>
         </div>
       </div>
@@ -131,7 +145,9 @@
             <div v-if="result.is_pair && result.member_names && result.member_names.length > 0" class="text-xs text-gray-500 italic">
               {{ result.member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
-            <div class="text-xs text-gray-600">{{ formatScore(result.final_score) }} pts</div>
+            <div class="text-xs text-gray-600">
+              {{ isRankSumMethod ? `Rank Sum: ${result.totalRankSum ?? result.final_score}` : `${formatScore(result.final_score)} pts` }}
+            </div>
           </div>
         </div>
       </div>
@@ -142,7 +158,7 @@
       <table class="w-full border-collapse text-[10px]">
         <thead>
           <tr class="bg-gray-100 border-y-2 border-black">
-            <th v-if="!hideRankColumn" class="py-1 px-1 text-left font-bold w-8">Rank</th>
+            <th v-if="!hideRankColumn && !isSemiFinalStage" class="py-1 px-1 text-left font-bold w-8">Rank</th>
             <th class="py-1 px-1 text-left font-bold w-6">#</th>
             <th class="py-1 px-2 text-left font-bold">Contestant</th>
             <!-- Show all round columns when showAllRounds is true -->
@@ -150,17 +166,17 @@
               <th 
                 v-for="round in rounds" 
                 :key="round.id"
-                class="py-1 px-1 text-center font-bold w-16 border-l border-gray-300"
+                class="py-1 px-1 text-center font-bold border-l border-gray-300"
               >
                 <div class="flex flex-col items-center">
-                  <span class="truncate max-w-[60px]">{{ round.name }}</span>
+                  <span>{{ round.name }}</span>
                   <span class="text-[8px] font-normal opacity-75 uppercase">{{ round.type }}</span>
                 </div>
               </th>
             </template>
             <th class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
-              <span v-else>Final Score</span>
+              <span v-else>{{ isRankSumMethod ? 'Total Rank' : 'Final Score' }}</span>
             </th>
           </tr>
         </thead>
@@ -171,8 +187,18 @@
             class="border-b border-gray-200"
             :class="{'bg-gray-50': index % 2 === 0}"
           >
-            <td v-if="!hideRankColumn" class="py-1 px-1 font-bold">
-              {{ index + 1 }}
+            <td v-if="!hideRankColumn && !isSemiFinalStage" class="py-1 px-1">
+              <span 
+                class="rank-badge"
+                :class="{
+                  'rank-badge-1': shouldShowPodium && index === 0,
+                  'rank-badge-2': shouldShowPodium && index === 1,
+                  'rank-badge-3': shouldShowPodium && index === 2 && numberOfWinners >= 3,
+                  'rank-badge-default': !shouldShowPodium || index >= 3
+                }"
+              >
+                {{ index + 1 }}
+              </span>
             </td>
             <td class="py-1 px-1">
               {{ result.number }}
@@ -196,7 +222,7 @@
               </td>
             </template>
             <td class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
-              {{ formatScore(result.final_score) }}
+              {{ isRankSumMethod ? (result.totalRankSum ?? result.final_score) : formatScore(result.final_score) }}
             </td>
           </tr>
         </tbody>
@@ -232,11 +258,6 @@
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="mt-8 pt-2 border-t border-gray-200 text-[10px] text-gray-400 flex justify-between">
-      <div>Generated via Tabulator System</div>
-      <div>Page 1 of 1</div>
-    </div>
   </div>
 </template>
 
@@ -254,6 +275,7 @@ interface Result {
   image: string
   scores: Record<string, number>
   final_score: number
+  totalRankSum?: number
 }
 
 interface Pageant {
@@ -291,13 +313,19 @@ interface Props {
   hideRankColumn?: boolean
   showAllRounds?: boolean
   selectedStage?: string
+  rankingMethod?: 'score_average' | 'rank_sum' | 'sum_of_ranks'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   numberOfWinners: 3,
   hideRankColumn: false,
   showAllRounds: false,
-  selectedStage: ''
+  selectedStage: '',
+  rankingMethod: 'score_average'
+})
+
+const isRankSumMethod = computed(() => {
+  return props.rankingMethod === 'sum_of_ranks' || props.rankingMethod === 'rank_sum'
 })
 
 // Get pageant logo URL
@@ -320,10 +348,14 @@ const topThree = computed(() => {
 })
 
 const shouldShowPodium = computed(() => {
-  // Show podium for final round or semi-final round (not for overall tally)
+  // Show podium only for final round (not for semi-final or overall tally)
   const stage = props.selectedStage?.toLowerCase() || ''
-  const isFinalOrSemiFinal = props.isLastFinalRound || stage === 'semi-final' || stage === 'semifinal' || stage.includes('final')
-  return isFinalOrSemiFinal && props.results.length > 0 && stage !== 'overall'
+  // Exclude semi-final from showing podium
+  if (stage === 'semi-final' || stage === 'semifinal' || isSemiFinalStage.value) {
+    return false
+  }
+  const isFinal = props.isLastFinalRound || stage === 'final'
+  return isFinal && props.results.length > 0 && stage !== 'overall'
 })
 
 // Determine if this is a semi-final stage
@@ -343,8 +375,13 @@ const getGenderPrefix = (result: Result): string => {
   return ''
 }
 
-// Get the winner title (e.g., "Mr Pageant Name" or "Ms Pageant Name")
+// Get the winner title (e.g., "Mr Pageant Name" or "Ms Pageant Name" or "Advancing to Finals")
 const getWinnerTitle = (result: Result): string => {
+  // For semi-final stage, show "Advancing to Finals" instead of Mr/Ms
+  if (isSemiFinalStage.value) {
+    return 'Advancing to Finals'
+  }
+  
   const prefix = getGenderPrefix(result)
   if (prefix) {
     return `${prefix} ${props.pageant.name}`
@@ -359,6 +396,10 @@ const getWinnerTitle = (result: Result): string => {
 
 // Get runner-up label with proper ordinal
 const getRunnerUpLabel = (position: number): string => {
+  // For semi-final stage, show "Advancing" instead of "Runner-up"
+  if (isSemiFinalStage.value) {
+    return 'Advancing to Finals'
+  }
   const ordinal = getOrdinalSuffix(position)
   return `${ordinal} Runner-up`
 }
@@ -423,6 +464,45 @@ const capitalizeName = (name: string): string => {
   margin: 0 auto;
 }
 
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 0 6px;
+}
+
+.rank-badge-1 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+  border: 2px solid #f59e0b;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.rank-badge-2 {
+  background: linear-gradient(135deg, #a5b4fc, #818cf8);
+  color: #312e81;
+  border: 2px solid #6366f1;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+}
+
+.rank-badge-3 {
+  background: linear-gradient(135deg, #fdba74, #fb923c);
+  color: #7c2d12;
+  border: 2px solid #ea580c;
+  box-shadow: 0 2px 4px rgba(234, 88, 12, 0.3);
+}
+
+.rank-badge-default {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
 @media print {
   .print-document {
     width: 100%;
@@ -432,6 +512,37 @@ const capitalizeName = (name: string): string => {
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+  
+  /* Print badge styles */
+  .rank-badge {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .rank-badge-1 {
+    background: #fbbf24 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .rank-badge-2 {
+    background: #a5b4fc !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .rank-badge-3 {
+    background: #fdba74 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Ensure images display */
+  img {
+    display: block !important;
+    max-width: 80px !important;
+    max-height: 80px !important;
   }
 }
 </style>

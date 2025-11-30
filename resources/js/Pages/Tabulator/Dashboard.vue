@@ -91,7 +91,10 @@
                       {{ pageantItem.start_date }}
                     </p>
                   </div>
-                  <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
+                  <div v-if="pageantItem.logo_url" class="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 bg-white shadow-sm border border-slate-100 group-hover:border-teal-200 transition-colors">
+                    <img :src="pageantItem.logo_url" :alt="pageantItem.name + ' logo'" class="w-full h-full object-contain p-2">
+                  </div>
+                  <div v-else class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors flex-shrink-0">
                     <ChevronRight class="w-5 h-5 text-slate-400 group-hover:text-teal-600" />
                   </div>
                 </div>
@@ -386,6 +389,8 @@ interface PageantListItem {
   id: number
   name: string
   status: string
+  start_date: string | null
+  logo_url: string | null
   contestants_count: number
   judges_count: number
   rounds_count: number

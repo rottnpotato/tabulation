@@ -143,8 +143,9 @@
             class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:border-teal-300 hover:shadow-md transition-all cursor-pointer relative"
           >
             <div class="flex items-start space-x-3">
-              <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-teal-600 flex items-center justify-center text-white font-bold">
-                {{ pageant.name?.charAt(0) || 'P' }}
+              <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-purple-500 to-teal-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                <img v-if="pageant.logo" :src="pageant.logo" alt="Logo" class="w-full h-full object-cover" />
+                <span v-else>{{ pageant.name?.charAt(0) || 'P' }}</span>
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
@@ -226,6 +227,13 @@
                 alt="Pageant cover" 
                 class="w-full h-full object-cover"
               />
+              
+              <!-- Logo overlay -->
+              <div v-if="pageant.logo" class="absolute bottom-3 left-3">
+                <div class="h-16 w-16 rounded-lg bg-white p-2 shadow-lg">
+                  <img :src="pageant.logo" alt="Pageant logo" class="w-full h-full object-contain" />
+                </div>
+              </div>
               
               <!-- Status badge -->
               <div class="absolute top-3 right-3">

@@ -296,8 +296,8 @@
                     </div>
                     
                     <!-- Condensed Minor Awards Grid -->
-                    <div class="grid gap-3" :class="isPairPageant ? 'grid-cols-1' : 'grid-cols-2'">
-                      <div v-for="award in minorAwardOptions" :key="award.key" class="border border-amber-200 rounded-lg p-3 bg-amber-50/30">
+                    <div class="flex flex-col items-center gap-3">
+                      <div v-for="award in minorAwardOptions" :key="award.key" class="border border-amber-200 rounded-lg p-3 bg-amber-50/30 w-full max-w-2xl">
                         <div class="text-center mb-2 pb-1 border-b border-amber-200">
                           <h3 class="text-sm font-bold text-amber-800">🏆 Best in {{ award.label }}</h3>
                         </div>
@@ -534,6 +534,7 @@
                           :hide-rank-column="selectedStage === 'overall'"
                           :show-all-rounds="selectedStage === 'overall'"
                           :selected-stage="selectedStage"
+                          :ranking-method="pageant?.ranking_method || 'score_average'"
                         />
                       </div>
                       
@@ -557,6 +558,7 @@
                           :hide-rank-column="selectedStage === 'overall'"
                           :show-all-rounds="selectedStage === 'overall'"
                           :selected-stage="selectedStage"
+                          :ranking-method="pageant?.ranking_method || 'score_average'"
                         />
                       </div>
                     </div>
@@ -650,6 +652,7 @@
                     :hide-rank-column="selectedStage === 'overall'"
                     :show-all-rounds="selectedStage === 'overall'"
                     :selected-stage="selectedStage"
+                    :ranking-method="pageant?.ranking_method || 'score_average'"
                   />
                   </template>
                 </div>
@@ -682,8 +685,8 @@
         </div>
         
         <!-- Condensed Minor Awards Grid for Print -->
-        <div class="grid gap-2" :class="isPairPageant ? 'grid-cols-1' : 'grid-cols-2'">
-          <div v-for="award in minorAwardOptions" :key="award.key" class="border border-amber-200 rounded p-2 bg-amber-50/30">
+        <div class="flex flex-col items-center gap-2">
+          <div v-for="award in minorAwardOptions" :key="award.key" class="border border-amber-200 rounded p-2 bg-amber-50/30 w-full max-w-2xl">
             <div class="text-center mb-1 pb-1 border-b border-amber-200">
               <h3 class="text-xs font-bold text-amber-800">🏆 {{ award.label }}</h3>
             </div>
@@ -916,6 +919,7 @@
               :hide-rank-column="selectedStage === 'overall'"
               :show-all-rounds="selectedStage === 'overall'"
               :selected-stage="selectedStage"
+              :ranking-method="pageant?.ranking_method || 'score_average'"
             />
           </div>
           
@@ -939,6 +943,7 @@
               :hide-rank-column="selectedStage === 'overall'"
               :show-all-rounds="selectedStage === 'overall'"
               :selected-stage="selectedStage"
+              :ranking-method="pageant?.ranking_method || 'score_average'"
             />
           </div>
         </div>
@@ -991,6 +996,7 @@
             :number-of-winners="pageant?.number_of_winners || 3"
             :show-all-rounds="selectedStage === 'overall'"
             :selected-stage="selectedStage"
+            :ranking-method="pageant?.ranking_method || 'score_average'"
           />
         </div>
         
@@ -1009,6 +1015,7 @@
             :number-of-winners="pageant?.number_of_winners || 3"
             :show-all-rounds="selectedStage === 'overall'"
             :selected-stage="selectedStage"
+            :ranking-method="pageant?.ranking_method || 'score_average'"
           />
         </div>
       </template>
@@ -1026,6 +1033,7 @@
         :hide-rank-column="selectedStage === 'overall'"
         :show-all-rounds="selectedStage === 'overall'"
         :selected-stage="selectedStage"
+        :ranking-method="pageant?.ranking_method || 'score_average'"
       />
       </template>
     </div>
@@ -1052,6 +1060,7 @@ interface Result {
   image: string
   scores: Record<string, number>
   final_score: number
+  totalRankSum?: number
 }
 
 interface Pageant {
@@ -1063,6 +1072,7 @@ interface Pageant {
   location?: string
   number_of_winners?: number
   logo?: string
+  ranking_method?: 'score_average' | 'rank_sum' | 'ordinal'
 }
 
 interface Judge {
@@ -1477,6 +1487,37 @@ const printResults = () => {
             font-weight: bold;
           }
           
+          /* Winner row highlighting for print */
+          tr.winner-row-1 td {
+            background-color: #fef3c7 !important;
+            border-left: 4px solid #f59e0b !important;
+            font-weight: 700 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          tr.winner-row-2 td {
+            background-color: #e0e7ff !important;
+            border-left: 4px solid #6366f1 !important;
+            font-weight: 700 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          tr.winner-row-3 td {
+            background-color: #fed7aa !important;
+            border-left: 4px solid #ea580c !important;
+            font-weight: 700 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
+          /* Ensure images print */
+          img {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          
           /* Page break controls */
           .page-break-before {
             page-break-before: always;
@@ -1516,11 +1557,14 @@ const printResults = () => {
             padding-bottom: 0px !important;
           }
           
-          /* Image sizing */
+          /* Image sizing - ensure logo displays */
           img {
-            max-width: 60px;
-            max-height: 60px;
-            object-fit: cover;
+            max-width: 80px !important;
+            max-height: 80px !important;
+            object-fit: contain !important;
+            display: block !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           
           /* Remove shadows and rounded corners for print */
@@ -1628,6 +1672,32 @@ const printResults = () => {
     display: none !important;
   }
 }
+
+/* Winner highlighting */
+:deep(.winner-row-1) {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  border-left: 4px solid #f59e0b !important;
+  font-weight: 600 !important;
+}
+
+:deep(.winner-row-2) {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%) !important;
+  border-left: 4px solid #6366f1 !important;
+  font-weight: 600 !important;
+}
+
+:deep(.winner-row-3) {
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%) !important;
+  border-left: 4px solid #ea580c !important;
+  font-weight: 600 !important;
+}
+
+:deep(.winner-row-1 td),
+:deep(.winner-row-2 td),
+:deep(.winner-row-3 td) {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
 </style>
 
 <style>
@@ -1679,6 +1749,38 @@ const printResults = () => {
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+  
+  /* Winner highlighting for print */
+  .winner-row-1 {
+    background-color: #fef3c7 !important;
+    border-left: 4px solid #f59e0b !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .winner-row-2 {
+    background-color: #e0e7ff !important;
+    border-left: 4px solid #6366f1 !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .winner-row-3 {
+    background-color: #fed7aa !important;
+    border-left: 4px solid #ea580c !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  .winner-row-1 td,
+  .winner-row-2 td,
+  .winner-row-3 td {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
   }
 }
 </style>

@@ -358,7 +358,7 @@
             Cancel
           </Link>
           <div class="flex space-x-3">
-            <button
+            <!-- <button
               type="button"
               @click="saveAsDraft"
               class="inline-flex items-center px-4 py-2 border border-teal-300 shadow-sm text-sm font-medium rounded-md text-teal-700 bg-teal-50 hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
@@ -369,7 +369,7 @@
                 <polyline points="7 3 7 8 15 8"></polyline>
               </svg>
               Save as Draft
-            </button>
+            </button> -->
             <button
               type="submit"
               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"

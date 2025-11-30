@@ -446,30 +446,44 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="bg-white shadow-sm rounded-lg overflow-hidden">
           <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-              Top Categories
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <List class="h-5 w-5 text-teal-600 mr-2" />
+              Criterias
             </h3>
-            <div v-if="pageant.topCategories && pageant.topCategories.length > 0" class="space-y-4">
-              <div v-for="category in pageant.topCategories" :key="category.name">
-                <div class="flex items-center justify-between text-sm mb-1">
-                  <span class="font-medium text-gray-700">{{
-                    category.name
-                  }}</span>
-                  <span class="text-gray-500">{{
-                    category.avgScore.toFixed(1)
-                  }}</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    class="bg-teal-600 h-2 rounded-full"
-                    :style="{ width: `${(category.avgScore / 100) * 100}%` }"
-                  ></div>
+            <div v-if="pageant.rounds && pageant.rounds.length > 0 && pageant.rounds.some(r => r.criteria && r.criteria.length > 0)" class="space-y-4 max-h-96 overflow-y-auto">
+              <div v-for="round in pageant.rounds" :key="round.id">
+                <div v-if="round.criteria && round.criteria.length > 0">
+                  <div class="mb-2">
+                    <span class="text-xs font-semibold text-teal-700 uppercase tracking-wide">
+                      {{ round.name }}
+                    </span>
+                  </div>
+                  <div class="space-y-3">
+                    <div 
+                      v-for="criteria in round.criteria" 
+                      :key="criteria.id"
+                      class="bg-gray-50 rounded-lg p-3 border border-gray-200"
+                    >
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="font-medium text-gray-900 text-sm">
+                          {{ criteria.name }}
+                        </span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                          <Percent class="h-3 w-3 mr-1" />
+                          {{ criteria.weight }}%
+                        </span>
+                      </div>
+                      <p v-if="criteria.description" class="text-xs text-gray-500 mt-1">
+                        {{ criteria.description }}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
             <div v-else class="flex flex-col items-center justify-center text-center py-8">
-              <Star class="h-8 w-8 text-gray-300 mb-2" />
-              <p class="text-gray-500">No categories have been set up for this pageant yet.</p>
+              <List class="h-8 w-8 text-gray-300 mb-2" />
+              <p class="text-gray-500">No criterias have been set up for this pageant yet.</p>
             </div>
           </div>
         </div>
@@ -527,23 +541,23 @@
               <ClipboardList class="h-5 w-5 text-teal-600 mr-2" />
               Activity Log
             </h3>
-            <div v-if="pageant.recentActivities && pageant.recentActivities.length > 0" class="space-y-4">
+            <div v-if="pageant.recentActivities && pageant.recentActivities.length > 0" class="space-y-3 max-h-96 overflow-y-auto">
               <div
                 v-for="(activity, index) in pageant.recentActivities"
                 :key="index"
-                class="flex items-start"
+                class="flex items-start p-2 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div
                   class="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 mt-0.5"
                 >
                   <component :is="activity.icon" class="h-4 w-4 text-teal-600" />
                 </div>
-                <div class="ml-3">
+                <div class="ml-3 flex-1">
                   <p
                     class="text-sm text-gray-900"
                     v-html="activity.description"
                   ></p>
-                  <p class="text-xs text-gray-500">{{ activity.time }}</p>
+                  <p class="text-xs text-gray-500 mt-0.5">{{ activity.time }}</p>
                 </div>
               </div>
             </div>
@@ -582,6 +596,9 @@
     Activity,
     Target,
     BarChart3,
+    Award,
+    List,
+    Percent,
   } from 'lucide-vue-next';
   import AdminLayout from '@/Layouts/AdminLayout.vue';
   
@@ -680,9 +697,27 @@
     return (score / maxScore) * 100;
   };
   
+  // Icon mapping helper
+  const iconComponents = {
+    CheckCircle,
+    User2,
+    Clock,
+    Star,
+    Award,
+    List,
+    Edit,
+    Activity,
+    File,
+    Users,
+  };
+  
   // Reactive pageant data combined from props and local enhancements
   const pageant = ref({
     ...props.pageant,
+    recentActivities: props.pageant.recentActivities?.map(activity => ({
+      ...activity,
+      icon: iconComponents[activity.icon] || CheckCircle
+    }))
   });
   
   // Contestants from props

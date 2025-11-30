@@ -191,6 +191,372 @@ class ScoreCalculationService
     }
 
     /**
+     * Calculate ordinal rankings for contestants in a specific round.
+     * This implements the Final Ballot system used in major pageants.
+     *
+     * Flow:
+     * 1. Each judge gives a score for each contestant in the round
+     * 2. Scores are converted to ranks per judge (1 = best, no ties allowed conceptually)
+     * 3. Check for "Majority 1s" - if a contestant has > 50% of judges ranking them #1, they win
+     * 4. If no majority, use "Sum of Ranks" (Golf System) - lowest total wins
+     *
+     * @param  array  $contestants  Array of contestant data with their judge data for this round
+     * @param  int  $judgeCount  Total number of judges who scored
+     * @return array Contestants sorted by ordinal ranking with ordinalData field
+     */
+    private function applyOrdinalRanking(array $contestants, int $judgeCount): array
+    {
+        if (empty($contestants) || $judgeCount <= 0) {
+            return $contestants;
+        }
+
+        // Calculate majority threshold (N/2 + 1 for odd, N/2 + 1 for even)
+        $majorityThreshold = (int) floor($judgeCount / 2) + 1;
+
+        // Calculate ordinal data for each contestant
+        foreach ($contestants as &$contestant) {
+            $ranks = $contestant['ordinalRanks'] ?? [];
+
+            // Count "Rank 1" votes
+            $rank1Count = 0;
+            foreach ($ranks as $rank) {
+                if ($rank == 1 || (is_float($rank) && $rank < 1.5)) {
+                    $rank1Count++;
+                }
+            }
+
+            // Sum of all ranks
+            $rankSum = array_sum($ranks);
+
+            $contestant['ordinalData'] = [
+                'ranks' => $ranks,
+                'rank1Count' => $rank1Count,
+                'rankSum' => round($rankSum, 2),
+                'hasMajority' => $rank1Count >= $majorityThreshold,
+                'majorityThreshold' => $majorityThreshold,
+                'judgeCount' => $judgeCount,
+            ];
+        }
+        unset($contestant);
+
+        // Sort contestants by ordinal rules
+        usort($contestants, function ($a, $b) {
+            $aData = $a['ordinalData'];
+            $bData = $b['ordinalData'];
+
+            // Primary: Majority wins (if one has majority and other doesn't)
+            if ($aData['hasMajority'] && ! $bData['hasMajority']) {
+                return -1;
+            }
+            if (! $aData['hasMajority'] && $bData['hasMajority']) {
+                return 1;
+            }
+
+            // Both have majority or neither has majority
+            // Secondary: More #1 votes is better
+            if ($aData['rank1Count'] != $bData['rank1Count']) {
+                return $bData['rank1Count'] <=> $aData['rank1Count'];
+            }
+
+            // Tertiary: Lower rank sum (golf system) is better
+            return $aData['rankSum'] <=> $bData['rankSum'];
+        });
+
+        // Assign final ranks
+        foreach ($contestants as $index => &$contestant) {
+            $contestant['rank'] = $index + 1;
+            $contestant['ordinalData']['finalRank'] = $index + 1;
+        }
+
+        return $contestants;
+    }
+
+    /**
+     * Apply ordinal ranking with gender separation for pair pageants.
+     */
+    private function applyGenderSeparatedOrdinalRanking(
+        array $contestants,
+        Pageant $pageant,
+        int $judgeCount
+    ): array {
+        if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+            $maleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'male');
+            $femaleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'female');
+
+            $maleContestants = $this->applyOrdinalRanking(array_values($maleContestants), $judgeCount);
+            $femaleContestants = $this->applyOrdinalRanking(array_values($femaleContestants), $judgeCount);
+
+            foreach ($maleContestants as &$c) {
+                $c['genderRank'] = $c['rank'];
+            }
+            foreach ($femaleContestants as &$c) {
+                $c['genderRank'] = $c['rank'];
+            }
+
+            return array_merge($maleContestants, $femaleContestants);
+        }
+
+        return $this->applyOrdinalRanking($contestants, $judgeCount);
+    }
+
+    /**
+     * Calculate scores using Ordinal Ranking method (Final Ballot System).
+     *
+     * This is the pageant-style ranking used in Miss Universe, Miss World, etc.
+     * For each round:
+     * 1. Calculate each judge's score for each contestant
+     * 2. Convert scores to ranks per judge (highest score = rank 1)
+     * 3. Apply ordinal determination: Majority 1s wins, else lowest sum of ranks wins
+     *
+     * @param  Pageant  $pageant  The pageant to calculate for
+     * @param  Round|null  $targetRound  Specific round to calculate (for round-by-round progression)
+     * @param  bool  $useCache  Whether to use caching
+     * @return array<int, array<string, mixed>>
+     */
+    public function calculateWithOrdinal(Pageant $pageant, ?Round $targetRound = null, bool $useCache = true): array
+    {
+        try {
+            $cacheKey = $targetRound
+                ? "pageant_ordinal_scores_{$pageant->id}_{$targetRound->id}"
+                : "pageant_ordinal_scores_{$pageant->id}_all";
+
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            // If no target round, use the last round
+            if (! $targetRound) {
+                $targetRound = $pageant->rounds->sortByDesc('display_order')->first();
+                if (! $targetRound) {
+                    return [];
+                }
+            }
+
+            $contestants = [];
+            $judgeCount = $pageant->judges->count();
+
+            // Get all judges' scores for this round to calculate ranks
+            $allJudgeScores = [];
+            foreach ($pageant->judges as $judge) {
+                $judgeScores = [];
+                foreach ($pageant->contestants as $contestant) {
+                    $score = $this->calculateJudgeContestantScore($judge->id, $contestant->id, $targetRound->id, $pageant->id);
+                    if ($score !== null) {
+                        $judgeScores[$contestant->id] = $score;
+                    }
+                }
+                if (! empty($judgeScores)) {
+                    $allJudgeScores[$judge->id] = $judgeScores;
+                }
+            }
+
+            // For each contestant, calculate their ordinal ranks from each judge
+            foreach ($pageant->contestants as $contestant) {
+                $ordinalRanks = [];
+                $judgeDetails = [];
+                $avgScore = 0;
+                $scoreCount = 0;
+
+                foreach ($pageant->judges as $judge) {
+                    if (! isset($allJudgeScores[$judge->id][$contestant->id])) {
+                        continue;
+                    }
+
+                    $judgeScore = $allJudgeScores[$judge->id][$contestant->id];
+                    $avgScore += $judgeScore;
+                    $scoreCount++;
+
+                    // Calculate this contestant's rank among all contestants for this judge
+                    // Using forced ranking (no ties) - higher score = lower rank number
+                    $rank = 1;
+                    foreach ($allJudgeScores[$judge->id] as $otherId => $otherScore) {
+                        if ($otherId != $contestant->id && $otherScore > $judgeScore) {
+                            $rank++;
+                        }
+                    }
+
+                    $ordinalRanks[] = $rank;
+                    $judgeDetails[] = [
+                        'judge_id' => $judge->id,
+                        'judge_name' => $judge->name ?? "Judge {$judge->id}",
+                        'score' => round($judgeScore, 2),
+                        'rank' => $rank,
+                    ];
+                }
+
+                $avgScore = $scoreCount > 0 ? $avgScore / $scoreCount : 0;
+
+                $memberNames = [];
+                $memberGenders = [];
+                if ($contestant->is_pair && $contestant->members && $contestant->members->isNotEmpty()) {
+                    foreach ($contestant->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
+
+                // Get scores from previous rounds for display
+                $roundScores = [];
+                foreach ($pageant->rounds->sortBy('display_order') as $round) {
+                    if ($round->display_order <= $targetRound->display_order) {
+                        $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
+                        if ($roundScore !== null) {
+                            $roundScores[$round->name] = round($roundScore, 2);
+                        }
+                    }
+                }
+
+                $contestants[] = [
+                    'id' => $contestant->id,
+                    'number' => $contestant->number,
+                    'name' => $contestant->name,
+                    'gender' => $contestant->gender,
+                    'region' => $contestant->origin,
+                    'is_pair' => $contestant->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
+                    'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                    'scores' => $roundScores,
+                    'ordinalRanks' => $ordinalRanks,
+                    'judgeRanks' => [$targetRound->name => ['details' => $judgeDetails, 'ranks' => $ordinalRanks]],
+                    'finalScore' => round($avgScore, 2),
+                    'totalScore' => round($avgScore, 2),
+                    'totalRankSum' => array_sum($ordinalRanks),
+                ];
+            }
+
+            // Filter out contestants with no scores
+            $contestants = array_filter($contestants, fn ($c) => ! empty($c['ordinalRanks']));
+
+            // Apply ordinal ranking
+            $result = $this->applyGenderSeparatedOrdinalRanking(
+                array_values($contestants),
+                $pageant,
+                $judgeCount
+            );
+
+            Cache::put($cacheKey, $result, now()->addMinutes(30));
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating ordinal scores: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'round_id' => $targetRound?->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Calculate ordinal ranking for a specific round, filtering by previous round's top N.
+     *
+     * This is the key method for round-by-round ordinal progression:
+     * 1. Get contestants who qualified from the previous round (based on top_n_proceed)
+     * 2. Calculate ordinal ranking for these contestants in the current round
+     * 3. Clean slate - previous round scores don't carry over, only determine eligibility
+     *
+     * @param  Pageant  $pageant  The pageant
+     * @param  Round  $targetRound  The round to calculate
+     * @param  bool  $useCache  Whether to use caching
+     * @return array Ordinal-ranked contestants for this round
+     */
+    public function calculateOrdinalForRound(Pageant $pageant, Round $targetRound, bool $useCache = true): array
+    {
+        try {
+            $cacheKey = "pageant_ordinal_round_{$pageant->id}_{$targetRound->id}";
+
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            // Get the previous round to determine who qualifies
+            $previousRound = $pageant->rounds
+                ->where('display_order', '<', $targetRound->display_order)
+                ->sortByDesc('display_order')
+                ->first();
+
+            $eligibleContestantIds = null;
+
+            // If there's a previous round with top_n_proceed, get qualifying contestants
+            if ($previousRound && $previousRound->top_n_proceed > 0) {
+                // Calculate ordinal for previous round to determine who advances
+                $previousResults = $this->calculateWithOrdinal($pageant, $previousRound, $useCache);
+                $eligibleContestantIds = $this->getTopNFromOrdinalResults(
+                    $previousResults,
+                    $previousRound->top_n_proceed,
+                    $pageant
+                );
+            }
+
+            // Calculate ordinal for target round
+            $results = $this->calculateWithOrdinal($pageant, $targetRound, false);
+
+            // Filter to only eligible contestants if we have eligibility criteria
+            if ($eligibleContestantIds !== null) {
+                $results = array_filter($results, fn ($c) => in_array($c['id'], $eligibleContestantIds));
+                $results = array_values($results);
+
+                // Re-apply ordinal ranking after filtering
+                $judgeCount = $pageant->judges->count();
+                $results = $this->applyGenderSeparatedOrdinalRanking($results, $pageant, $judgeCount);
+            }
+
+            Cache::put($cacheKey, $results, now()->addMinutes(30));
+
+            return $results;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating ordinal for round: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'round_id' => $targetRound->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Get top N contestant IDs from ordinal results, respecting gender separation.
+     */
+    private function getTopNFromOrdinalResults(array $results, int $topN, Pageant $pageant): array
+    {
+        if (empty($results)) {
+            return [];
+        }
+
+        $advancingIds = [];
+
+        if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+            // Separate by gender and get top N from each
+            $maleResults = array_filter($results, fn ($c) => ($c['gender'] ?? '') === 'male');
+            $femaleResults = array_filter($results, fn ($c) => ($c['gender'] ?? '') === 'female');
+
+            // Sort by rank and take top N from each
+            usort($maleResults, fn ($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
+            usort($femaleResults, fn ($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
+
+            foreach (array_slice($maleResults, 0, $topN) as $contestant) {
+                $advancingIds[] = $contestant['id'];
+            }
+            foreach (array_slice($femaleResults, 0, $topN) as $contestant) {
+                $advancingIds[] = $contestant['id'];
+            }
+        } else {
+            // Sort by rank and take top N
+            usort($results, fn ($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
+            foreach (array_slice($results, 0, $topN) as $contestant) {
+                $advancingIds[] = $contestant['id'];
+            }
+        }
+
+        return $advancingIds;
+    }
+
+    /**
      * Calculate comprehensive scores using rank-sum method (Excel-style).
      *
      * @return array<int, array<string, mixed>>
@@ -307,8 +673,21 @@ class ScoreCalculationService
      */
     public function calculatePageantStageScores(Pageant $pageant, string $stage, bool $useCache = true): array
     {
-        if (($pageant->ranking_method ?? 'score_average') === 'rank_sum') {
+        $rankingMethod = $pageant->ranking_method ?? 'score_average';
+
+        if ($rankingMethod === 'rank_sum') {
             return $this->calculateWithRankSum($pageant, $stage, $useCache);
+        }
+
+        // For ordinal method, get the last round of this stage and calculate ordinal for it
+        if ($rankingMethod === 'ordinal') {
+            $stageRounds = $pageant->rounds->filter(fn ($r) => ($r->type ?? null) === $stage);
+            $lastStageRound = $stageRounds->sortByDesc('display_order')->first();
+            if ($lastStageRound) {
+                return $this->calculateOrdinalForRound($pageant, $lastStageRound, $useCache);
+            }
+
+            return [];
         }
 
         try {
@@ -348,7 +727,7 @@ class ScoreCalculationService
 
                         $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
                         $judgeRanks[$round->name] = $roundJudgeData;
-                        
+
                         // Always calculate rank sum for display purposes
                         if (isset($roundJudgeData['ranks']) && is_array($roundJudgeData['ranks'])) {
                             $roundRankSum = array_sum($roundJudgeData['ranks']);
@@ -428,6 +807,7 @@ class ScoreCalculationService
         usort($contestants, function ($a, $b) {
             $rankA = $a['rank'] ?? PHP_INT_MAX;
             $rankB = $b['rank'] ?? PHP_INT_MAX;
+
             return $rankA <=> $rankB;
         });
 
@@ -485,6 +865,12 @@ class ScoreCalculationService
             }
 
             $rankingMethod = $pageant->ranking_method ?? 'score_average';
+
+            // For ordinal method, use ordinal-specific filtering
+            if ($rankingMethod === 'ordinal') {
+                return $this->getTopNFromOrdinalResults($stageResults, $topN, $pageant);
+            }
+
             $scoreField = $rankingMethod === 'rank_sum' ? 'totalRankSum' : 'finalScore';
 
             $scoredContestants = array_filter($stageResults, function ($c) use ($scoreField, $rankingMethod) {
@@ -673,13 +1059,120 @@ class ScoreCalculationService
     }
 
     /**
+     * Get all contestants with all their scores across all rounds.
+     * This method does NOT apply ranking method filtering - it returns ALL contestants.
+     * Used for the Overall Tally view in ordinal ranking to show non-finalists too.
+     */
+    public function calculateAllContestantsWithScores(Pageant $pageant, bool $useCache = true): array
+    {
+        try {
+            $cacheKey = "pageant_all_contestants_scores_{$pageant->id}";
+
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            $contestants = [];
+            $tieHandling = $pageant->tie_handling ?? 'average';
+
+            foreach ($pageant->contestants as $contestant) {
+                $roundScores = [];
+                $judgeRanks = [];
+                $totalWeightedScore = 0;
+                $totalRoundWeight = 0;
+                $totalRankSum = 0;
+
+                foreach ($pageant->rounds as $round) {
+                    $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
+
+                    if ($roundScore !== null) {
+                        $roundScores[$round->name] = round($roundScore, 2);
+
+                        $roundWeight = $round->weight ?? 1;
+                        if ($roundWeight <= 0) {
+                            $roundWeight = 1;
+                        }
+
+                        $totalWeightedScore += $roundScore * $roundWeight;
+                        $totalRoundWeight += $roundWeight;
+
+                        $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
+                        $judgeRanks[$round->name] = $roundJudgeData;
+
+                        // Calculate rank sum for display purposes
+                        if (isset($roundJudgeData['ranks']) && is_array($roundJudgeData['ranks'])) {
+                            $roundRankSum = array_sum($roundJudgeData['ranks']);
+                            $totalRankSum += $roundRankSum;
+                        }
+                    }
+                }
+
+                $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+
+                $memberNames = [];
+                $memberGenders = [];
+                if ($contestant->is_pair && $contestant->members && $contestant->members->isNotEmpty()) {
+                    foreach ($contestant->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
+
+                $contestants[] = [
+                    'id' => $contestant->id,
+                    'number' => $contestant->number,
+                    'name' => $contestant->name,
+                    'gender' => $contestant->gender,
+                    'region' => $contestant->origin,
+                    'is_pair' => $contestant->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
+                    'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                    'scores' => $roundScores,
+                    'judgeRanks' => $judgeRanks,
+                    'finalScore' => round($finalScore, 2),
+                    'totalScore' => round($finalScore, 2),
+                    'totalRankSum' => round($totalRankSum, 2),
+                    'rank' => 0, // Will be set by caller
+                ];
+            }
+
+            if ($useCache) {
+                Cache::put($cacheKey, $contestants, now()->addMinutes(30));
+            }
+
+            return $contestants;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating all contestants with scores: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
      * Calculate final scores for all contestants in a pageant.
      * Uses the pageant's ranking_method setting.
      */
     public function calculatePageantFinalScores(Pageant $pageant, bool $useCache = true): array
     {
-        if (($pageant->ranking_method ?? 'score_average') === 'rank_sum') {
+        $rankingMethod = $pageant->ranking_method ?? 'score_average';
+
+        if ($rankingMethod === 'rank_sum') {
             return $this->calculateWithRankSum($pageant, null, $useCache);
+        }
+
+        // For ordinal method, use the last round for final ranking
+        if ($rankingMethod === 'ordinal') {
+            $lastRound = $pageant->rounds->sortByDesc('display_order')->first();
+            if ($lastRound) {
+                return $this->calculateOrdinalForRound($pageant, $lastRound, $useCache);
+            }
+
+            return [];
         }
 
         try {
@@ -715,7 +1208,7 @@ class ScoreCalculationService
 
                         $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
                         $judgeRanks[$round->name] = $roundJudgeData;
-                        
+
                         // Always calculate rank sum for display purposes
                         if (isset($roundJudgeData['ranks']) && is_array($roundJudgeData['ranks'])) {
                             $roundRankSum = array_sum($roundJudgeData['ranks']);
@@ -955,6 +1448,7 @@ class ScoreCalculationService
     {
         Cache::forget("pageant_final_scores_{$pageantId}");
         Cache::forget("pageant_ranksum_scores_{$pageantId}_all");
+        Cache::forget("pageant_ordinal_scores_{$pageantId}_all");
 
         $pageant = Pageant::with(['contestants', 'rounds'])->find($pageantId);
         if ($pageant) {
@@ -962,6 +1456,12 @@ class ScoreCalculationService
             foreach ($stageTypes as $stageType) {
                 Cache::forget("pageant_stage_scores_{$pageantId}_{$stageType}");
                 Cache::forget("pageant_ranksum_scores_{$pageantId}_{$stageType}");
+            }
+
+            // Invalidate ordinal cache for each round
+            foreach ($pageant->rounds as $round) {
+                Cache::forget("pageant_ordinal_scores_{$pageantId}_{$round->id}");
+                Cache::forget("pageant_ordinal_round_{$pageantId}_{$round->id}");
             }
 
             foreach ($pageant->contestants as $contestant) {
@@ -1006,6 +1506,11 @@ class ScoreCalculationService
      */
     public function calculateRoundViewScores(Pageant $pageant, Round $targetRound, bool $useCache = true): array
     {
+        // For ordinal method, use the ordinal calculation for this specific round
+        if (($pageant->ranking_method ?? 'score_average') === 'ordinal') {
+            return $this->calculateOrdinalForRound($pageant, $targetRound, $useCache);
+        }
+
         try {
             $cacheKey = "round_view_scores_{$pageant->id}_{$targetRound->id}";
 
@@ -1040,7 +1545,7 @@ class ScoreCalculationService
             // Calculate scores using only rounds of the same type (or just final round itself)
             $contestants = [];
             $tieHandling = $pageant->tie_handling ?? 'average';
-            
+
             foreach ($pageant->contestants as $contestant) {
                 $roundScores = [];
                 $judgeRanks = [];
@@ -1069,13 +1574,13 @@ class ScoreCalculationService
                         $totalWeightedScore += $roundScore * $roundWeight;
                         $totalRoundWeight += $roundWeight;
                     }
-                    
+
                     // Always get judge ranks for display purposes (regardless of ranking method)
                     $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
                     if ($pageant->ranking_method === 'rank_sum') {
                         $judgeRanks[$round->name] = $roundJudgeData;
                     }
-                    
+
                     // Always sum up the rank sum for this round (for secondary display)
                     if (isset($roundJudgeData['ranks']) && is_array($roundJudgeData['ranks'])) {
                         $roundRankSum = array_sum($roundJudgeData['ranks']);

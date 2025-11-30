@@ -17,7 +17,7 @@
                 minute: '2-digit'
               }) }}</p>
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-4" :class="{ 'no-print': isGeneratingPDF }">
               <div class="flex items-center text-sm text-gray-600">
                 <span class="font-medium mr-2">Report Period:</span>
                 <select 
@@ -35,26 +35,19 @@
               <div class="flex items-center space-x-2">
                 <button 
                   @click="refreshData" 
-                  class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   :disabled="isLoading"
                 >
                   <RefreshCw :class="['h-4 w-4 mr-2 text-gray-500', {'animate-spin': isLoading}]" />
                   {{ isLoading ? 'Refreshing...' : 'Refresh' }}
                 </button>
                 <button 
-                  @click="previewReport('comprehensive')" 
-                  class="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  @click="printReport" 
+                  class="inline-flex items-center px-4 py-2 border border-blue-600 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="isLoading"
                 >
-                  <Eye class="h-4 w-4 mr-2 text-blue-600" />
-                  Preview Full Report
-                </button>
-                <button 
-                  @click="exportReportsPDF" 
-                  class="inline-flex items-center px-4 py-2 border border-blue-600 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  :disabled="isExporting"
-                >
-                  <FileDown :class="['h-4 w-4 mr-2', {'animate-spin': isExporting}]" />
-                  {{ isExporting ? 'Generating...' : 'Export PDF' }}
+                  <FileDown :class="['h-4 w-4 mr-2', {'animate-spin': isLoading}]" />
+                  {{ isLoading ? 'Generating PDF...' : 'Print Report' }}
                 </button>
               </div>
             </div>
@@ -179,93 +172,44 @@
         </div>
       </div>
     
-      <!-- Report Generation -->
-      <div class="bg-white border border-gray-200 rounded-lg">
+      <!-- Report Generation 
+      <-- <div class="bg-white border border-gray-200 rounded-lg">
         <div class="px-6 py-4 border-b border-gray-200">
           <h2 class="text-lg font-semibold text-gray-900">Report Generation</h2>
           <p class="text-sm text-gray-600 mt-1">Generate and export detailed reports in various formats</p>
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <!-- Pageant Report -->
-            <div class="border border-gray-200 rounded-lg p-4">
+            <-- Pageant Report -->
+            <!-- <div class="border border-gray-200 rounded-lg p-4">
               <div class="text-center">
                 <FileText class="h-8 w-8 text-blue-500 mx-auto mb-3" />
                 <h3 class="text-sm font-medium text-gray-900 mb-2">Pageant Report</h3>
                 <p class="text-xs text-gray-600 mb-4">Comprehensive pageant statistics and data</p>
-                <div class="space-y-2">
-                  <button 
-                    @click="previewReport('pageants')" 
-                    class="w-full px-3 py-2 text-xs border border-blue-300 rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    Preview Report
-                  </button>
-                  <button 
-                    @click="exportReportCSV('pageants')" 
-                    class="w-full px-3 py-2 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    Export CSV
-                  </button>
-                </div>
               </div>
             </div>
-            
-            <!-- User Report -->
-            <div class="border border-gray-200 rounded-lg p-4">
+             
+            <-- User Report
+            <-- <div class="border border-gray-200 rounded-lg p-4">
               <div class="text-center">
                 <Users class="h-8 w-8 text-indigo-500 mx-auto mb-3" />
                 <h3 class="text-sm font-medium text-gray-900 mb-2">User Report</h3>
                 <p class="text-xs text-gray-600 mb-4">User management and role distribution data</p>
-                <div class="space-y-2">
-                  <button 
-                    @click="previewReport('users')" 
-                    class="w-full px-3 py-2 text-xs border border-indigo-300 rounded text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  >
-                    Preview Report
-                  </button>
-                  <button 
-                    @click="exportReportCSV('users')" 
-                    class="w-full px-3 py-2 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  >
-                    Export CSV
-                  </button>
-                </div>
               </div>
-            </div>
+            </div> 
             
-            <!-- System Report -->
-            <div class="border border-gray-200 rounded-lg p-4">
+            <-- System Report -->
+            <!-- <div class="border border-gray-200 rounded-lg p-4">
               <div class="text-center">
                 <BarChart3 class="h-8 w-8 text-purple-500 mx-auto mb-3" />
                 <h3 class="text-sm font-medium text-gray-900 mb-2">System Report</h3>
                 <p class="text-xs text-gray-600 mb-4">System analytics and usage metrics</p>
-                <div class="space-y-2">
-                  <button 
-                    @click="previewReport('system')" 
-                    class="w-full px-3 py-2 text-xs border border-purple-300 rounded text-purple-700 bg-purple-50 hover:bg-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  >
-                    Preview Report
-                  </button>
-                  <button 
-                    @click="exportReportCSV('system')" 
-                    class="w-full px-3 py-2 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                  >
-                    Export CSV
-                  </button>
-                </div>
-              </div>
-            </div>
+              </div> 
+            <-- </div>
           </div>
-        </div>
-      </div>
+        </div> 
+      </div> -->
     </div>
-
-    <!-- Report Preview Modal -->
-    <ReportPreview 
-      :show="showPreview"
-      :reportData="currentReportData"
-      @close="closePreview"
-    />
   </div>
 </template>
 
@@ -273,7 +217,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import ReportPreview from '@/Components/ReportPreview.vue'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -300,8 +243,7 @@ import {
   BarChart3, 
   FileText, 
   PieChart,
-  Download,
-  Eye
+  Download
 } from 'lucide-vue-next'
 
 // Define the layout to use
@@ -331,10 +273,8 @@ const props = defineProps({
 
 // UI state
 const isLoading = ref(false)
-const isExporting = ref(false)
+const isGeneratingPDF = ref(false)
 const selectedPeriod = ref('30')
-const showPreview = ref(false)
-const currentReportData = ref({})
 
 // Computed values
 const totalUsers = computed(() => {
@@ -528,151 +468,97 @@ const updatePeriod = () => {
   }, 1000)
 }
 
-// Generate report data
-const generateReportData = (type = 'comprehensive') => {
-  const now = new Date()
-  const periodText = selectedPeriod.value === 'all' ? 'All Time' : 
-                   selectedPeriod.value === 'year' ? 'This Year' : 
-                   `Last ${selectedPeriod.value} days`
-
-  // Sample recent pageants data - in real app this would come from props or API
-  const samplePageants = [
-    { id: 1, title: 'Miss Universe 2024', status: 'Completed', contestants_count: 25, created_at: '2024-01-15' },
-    { id: 2, title: 'Miss World 2024', status: 'Ongoing', contestants_count: 18, created_at: '2024-01-10' },
-    { id: 3, title: 'Miss Earth 2024', status: 'Upcoming', contestants_count: 22, created_at: '2024-01-05' },
-    { id: 4, title: 'Miss International 2024', status: 'Completed', contestants_count: 30, created_at: '2024-01-01' }
-  ]
-
-  const baseData = {
-    title: type === 'comprehensive' ? 'Comprehensive System Report' : 
-           type === 'pageants' ? 'Pageant Activity Report' :
-           type === 'users' ? 'User Management Report' : 'System Analytics Report',
-    generatedDate: now.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }),
-    period: periodText,
-    summary: {
-      totalPageants: totalPageants.value,
-      totalUsers: totalUsers.value,
-      completionRate: props.pageantStats.completionRate,
-      avgDuration: props.pageantStats.avgDuration
-    },
-    userDistribution: props.userStats.byRole || {},
-    recentPageants: samplePageants,
-    monthlyActivity: {
-      'January': 12,
-      'February': 8,
-      'March': 15,
-      'April': 10
-    },
-    scoringSystems: props.systemStats.scoringDistribution || {}
-  }
-
-  // Customize data based on report type
-  if (type === 'pageants') {
-    baseData.title = 'Pageant Activity Report'
-    // Focus on pageant-specific data
-  } else if (type === 'users') {
-    baseData.title = 'User Management Report'
-    // Focus on user-specific data
-  } else if (type === 'system') {
-    baseData.title = 'System Analytics Report'
-    // Focus on system metrics
-  }
-
-  return baseData
-}
-
-const exportReportsPDF = () => {
-  currentReportData.value = generateReportData('comprehensive')
-  showPreview.value = true
-}
-
-const previewReport = (type) => {
-  currentReportData.value = generateReportData(type)
-  showPreview.value = true
-}
-
-const closePreview = () => {
-  showPreview.value = false
-  currentReportData.value = {}
-}
-
-const exportReportCSV = (type) => {
+// Print report function - generates PDF and opens print dialog
+const printReport = async () => {
+  // Don't generate if already loading
+  if (isLoading.value || isGeneratingPDF.value) return
+  
+  isLoading.value = true
+  isGeneratingPDF.value = true
+  
   try {
-    let csvContent = ''
-    let filename = ''
-
-    if (type === 'pageants') {
-      csvContent = generatePageantCSV()
-      filename = 'pageant_report'
-    } else if (type === 'users') {
-      csvContent = generateUserCSV()
-      filename = 'user_report'
-    } else if (type === 'system') {
-      csvContent = generateSystemCSV()
-      filename = 'system_report'
+    // Wait for the UI to update (hide buttons)
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Dynamic import to avoid loading jsPDF unless needed
+    const { jsPDF } = await import('jspdf')
+    const html2canvas = await import('html2canvas')
+    
+    // Get all the report sections - start from the body to capture everything
+    const reportContainer = document.querySelector('.space-y-8.bg-gray-50.min-h-screen')
+    
+    if (!reportContainer) {
+      console.error('Report content not found')
+      alert('Unable to generate report. Please try again.')
+      isLoading.value = false
+      isGeneratingPDF.value = false
+      return
     }
-
-    // Create and download CSV file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob)
-      link.setAttribute('href', url)
-      link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+    
+    // Create canvas from the report content with better settings
+    const canvas = await html2canvas.default(reportContainer, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#f9fafb',
+      logging: false,
+      width: reportContainer.scrollWidth,
+      height: reportContainer.scrollHeight,
+      x: 0,
+      y: 0,
+      ignoreElements: (element) => {
+        return element.classList.contains('no-print')
+      }
+    })
+    
+    const imgData = canvas.toDataURL('image/png', 1.0)
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    
+    const imgWidth = 210 // A4 width in mm
+    const pageHeight = 297 // A4 height in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+    let heightLeft = imgHeight
+    
+    let position = 0
+    
+    // Add the image to PDF
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, '', 'FAST')
+    heightLeft -= pageHeight
+    
+    // Add new pages if content is longer than one page
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight
+      pdf.addPage()
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, '', 'FAST')
+      heightLeft -= pageHeight
     }
+    
+    // Get PDF as blob and open print dialog
+    const pdfBlob = pdf.output('blob')
+    const pdfUrl = URL.createObjectURL(pdfBlob)
+    
+    // Open PDF in new window and trigger print dialog
+    const printWindow = window.open(pdfUrl, '_blank')
+    if (printWindow) {
+      printWindow.addEventListener('load', () => {
+        setTimeout(() => {
+          printWindow.print()
+          // Clean up the blob URL after print dialog
+          setTimeout(() => URL.revokeObjectURL(pdfUrl), 100)
+        }, 250)
+      })
+    } else {
+      alert('Please allow pop-ups to print the report')
+      URL.revokeObjectURL(pdfUrl)
+    }
+    
   } catch (error) {
-    console.error('Error generating CSV:', error)
-    alert('Error generating CSV file. Please try again.')
+    console.error('Error generating PDF:', error)
+    alert('Error generating PDF. Please try again.')
+  } finally {
+    isLoading.value = false
+    isGeneratingPDF.value = false
   }
-}
-
-const generatePageantCSV = () => {
-  const headers = ['Title', 'Status', 'Contestants', 'Created Date', 'Completion Rate']
-  const data = [
-    ['Miss Universe 2024', 'Completed', '25', '2024-01-15', '100%'],
-    ['Miss World 2024', 'Ongoing', '18', '2024-01-10', '75%'],
-    ['Miss Earth 2024', 'Upcoming', '22', '2024-01-05', '0%'],
-    ['Miss International 2024', 'Completed', '30', '2024-01-01', '100%']
-  ]
-  
-  return [headers, ...data].map(row => row.join(',')).join('\n')
-}
-
-const generateUserCSV = () => {
-  const headers = ['Role', 'Count', 'Percentage']
-  const totalUsers = Object.values(props.userStats.byRole || {}).reduce((sum, count) => sum + count, 0)
-  const data = Object.entries(props.userStats.byRole || {}).map(([role, count]) => [
-    role.charAt(0).toUpperCase() + role.slice(1),
-    count,
-    `${((count / totalUsers) * 100).toFixed(1)}%`
-  ])
-  
-  return [headers, ...data].map(row => row.join(',')).join('\n')
-}
-
-const generateSystemCSV = () => {
-  const headers = ['Metric', 'Value']
-  const data = [
-    ['Total Pageants', totalPageants.value],
-    ['Total Users', totalUsers.value],
-    ['Completion Rate', `${props.pageantStats.completionRate}%`],
-    ['Average Duration', `${props.pageantStats.avgDuration} days`],
-    ...Object.entries(props.systemStats.scoringDistribution || {}).map(([system, count]) => 
-      [`Scoring System: ${system}`, count]
-    )
-  ]
-  
-  return [headers, ...data].map(row => row.join(',')).join('\n')
 }
 </script>
 
@@ -680,5 +566,14 @@ const generateSystemCSV = () => {
 /* Document-style report page */
 .report-page {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Hide elements with no-print class during PDF generation */
+.no-print {
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 </style> 

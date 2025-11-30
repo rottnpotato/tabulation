@@ -54,7 +54,7 @@ class UpdateRoundRequest extends FormRequest
                 'min:1',
             ],
             'use_for_minor_awards' => ['nullable', 'boolean'],
-            'ranking_method' => ['nullable', 'string', 'in:score_average,rank_sum'],
+            'ranking_method' => ['nullable', 'string', 'in:score_average,rank_sum,ordinal'],
         ];
     }
 

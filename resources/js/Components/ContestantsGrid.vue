@@ -13,6 +13,7 @@
             v-for="contestant in maleContestants"
             :key="contestant.id"
             :contestant="contestant"
+            :is-ongoing="isPageantOngoingFn(contestant)"
             @view="$emit('view', contestant)"
             @edit="$emit('edit', contestant)"
             @delete="$emit('delete', contestant)"
@@ -32,6 +33,7 @@
             v-for="contestant in femaleContestants"
             :key="contestant.id"
             :contestant="contestant"
+            :is-ongoing="isPageantOngoingFn(contestant)"
             @view="$emit('view', contestant)"
             @edit="$emit('edit', contestant)"
             @delete="$emit('delete', contestant)"
@@ -46,6 +48,7 @@
         v-for="contestant in contestants"
         :key="contestant.id"
         :contestant="contestant"
+        :is-ongoing="isPageantOngoingFn(contestant)"
         @view="$emit('view', contestant)"
         @edit="$emit('edit', contestant)"
         @delete="$emit('delete', contestant)"
@@ -61,6 +64,7 @@ import ContestantCard from '@/Components/ContestantCard.vue'
 const props = defineProps({
   contestants: { type: Array, required: true },
   isPairCompetition: { type: Boolean, default: false },
+  isPageantOngoingFn: { type: Function, default: () => false }, // Actually checks if locked
 })
 
 defineEmits(['view', 'edit', 'delete'])

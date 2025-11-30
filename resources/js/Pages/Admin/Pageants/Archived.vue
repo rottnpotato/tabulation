@@ -4,9 +4,12 @@
     <!-- Main content container with card styling -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 sm:mb-6">
       <!-- Header section -->
-      <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h1 class="text-xl sm:text-2xl font-semibold text-gray-800">Archived Pageants</h1>
+      <div class="px-4 sm:px-6 py-5 sm:py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Archived Pageants</h1>
+            <p class="text-sm text-gray-500 mt-1">View and manage historical pageant records</p>
+          </div>
           <div class="flex items-center gap-2">
             <Link 
               href="/admin/pageants"
@@ -27,7 +30,7 @@
       </div>
 
       <!-- Filter & Search Section -->
-      <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
+      <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 bg-gradient-to-br from-gray-50 via-white to-gray-50">
         <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0">
           <div class="sm:hidden w-full">
             <button 
@@ -137,17 +140,18 @@
           <div 
             v-for="pageant in filteredPageants" 
             :key="pageant.id"
-            class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:border-teal-300 hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
+            class="bg-white border border-gray-200 rounded-xl p-4 shadow-md hover:border-red-300 hover:shadow-xl transition-all duration-300 cursor-pointer relative overflow-hidden transform hover:-translate-y-1"
             @click="navigateToDetails(pageant.id)"
           >
             <!-- Archive status ribbon -->
-            <div class="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-red-500 text-white w-40 h-5 flex items-center justify-center text-2xs font-bold rotate-45 shadow-md">
+            <div class="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-gradient-to-r from-red-600 to-red-500 text-white w-40 h-5 flex items-center justify-center text-2xs font-bold rotate-45 shadow-lg">
               ARCHIVED
             </div>
             
             <div class="flex items-start space-x-3">
-              <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-gray-500 to-red-600 flex items-center justify-center text-white font-bold">
-                {{ pageant.name?.charAt(0) || 'A' }}
+              <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-r from-gray-500 to-red-600 flex items-center justify-center text-white font-bold overflow-hidden">
+                <img v-if="pageant.logo" :src="pageant.logo" alt="Logo" class="w-full h-full object-cover p-1 bg-white" />
+                <span v-else>{{ pageant.name?.charAt(0) || 'A' }}</span>
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between">
@@ -218,18 +222,33 @@
           <div 
             v-for="pageant in filteredPageants" 
             :key="pageant.id"
-            class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group relative"
+            class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer group relative transform hover:-translate-y-2"
             @click="navigateToDetails(pageant.id)"
           >
             <!-- Archived badge - diagonal ribbon at the corner -->
-            <div class="absolute top-0 right-0 w-20 h-20 overflow-hidden">
-              <div class="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-red-500 text-white w-40 h-5 flex items-center justify-center text-2xs font-bold rotate-45 shadow-md">
+            <div class="absolute top-0 right-0 w-20 h-20 overflow-hidden z-10">
+              <div class="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 bg-gradient-to-r from-red-600 to-red-500 text-white w-40 h-5 flex items-center justify-center text-2xs font-bold rotate-45 shadow-lg">
                 ARCHIVED
               </div>
             </div>
             
-            <!-- Gradient background with event theme info -->
-            <div class="h-36 bg-gradient-to-r from-gray-700 to-red-700 relative overflow-hidden">
+            <!-- Cover image or gradient background with event theme info -->
+            <div class="h-40 bg-gradient-to-br from-gray-800 via-gray-700 to-red-700 relative overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+              <img 
+                v-if="pageant.cover_image" 
+                :src="pageant.cover_image" 
+                alt="Pageant cover" 
+                class="w-full h-full object-cover"
+              />
+              
+              <!-- Logo overlay -->
+              <div v-if="pageant.logo" class="absolute bottom-3 left-3 opacity-75">
+                <div class="h-14 w-14 rounded-lg bg-white p-1.5 shadow-lg">
+                  <img :src="pageant.logo" alt="Pageant logo" class="w-full h-full object-contain" />
+                </div>
+              </div>
+              
               <!-- Blur overlay with themed icons representing the archived event -->
               <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                 <div class="grid grid-cols-3 gap-4 px-4 w-full">
@@ -256,7 +275,7 @@
               </div>
               
               <!-- Hover effect with view details button -->
-              <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-sm">
                 <Link 
                   :href="safeRoute('admin.pageants.archived.detail', { id: pageant.id })"
                   class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
@@ -269,7 +288,7 @@
             </div>
             
             <!-- Pageant card body -->
-            <div class="p-4">
+            <div class="p-5">
               <h3 class="text-lg font-semibold text-gray-800 mb-1 truncate group-hover:text-teal-600 transition-colors">{{ pageant.name }}</h3>
               <p v-if="pageant.venue" class="text-sm text-gray-500 mb-3">{{ pageant.venue }}</p>
               
@@ -299,19 +318,9 @@
               
               <!-- Quick stats -->
               <div class="flex flex-wrap gap-2 mt-3">
-                <span v-if="pageant.budget" class="px-2 py-0.5 bg-blue-100 text-blue-700 text-2xs rounded-full inline-flex items-center">
-                  <DollarSign class="h-3 w-3 mr-1" />
-                  Budget: ${{ pageant.budget }}
-                </span>
-                
                 <span v-if="pageant.organizer" class="px-2 py-0.5 bg-purple-100 text-purple-700 text-2xs rounded-full inline-flex items-center">
                   <User class="h-3 w-3 mr-1" />
                   {{ pageant.organizer }}
-                </span>
-                
-                <span v-if="pageant.category" class="px-2 py-0.5 bg-amber-100 text-amber-700 text-2xs rounded-full inline-flex items-center">
-                  <Tag class="h-3 w-3 mr-1" />
-                  {{ pageant.category }}
                 </span>
               </div>
               
@@ -345,9 +354,7 @@ import {
   MapPin,
   Plus,
   UserMinus,
-  DollarSign,
   User,
-  Tag,
   ArrowRight
 } from 'lucide-vue-next';
 import AdminLayout from '@/Layouts/AdminLayout.vue';

@@ -4,8 +4,8 @@
     <!-- Main content container -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 sm:mb-6">
       <!-- Header section -->
-      <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="px-4 sm:px-6 py-5 sm:py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div class="flex items-center space-x-3">
             <Link 
               href="/admin/pageants/archived"
@@ -35,31 +35,35 @@
               Restore Pageant
             </button>
             
-            <button 
+            <!-- <button 
               @click="exportData"
               class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium inline-flex items-center transition-colors duration-150"
             >
               <Download class="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
               Export Archive Data
-            </button>
+            </button> -->
           </div>
         </div>
       </div>
 
       <!-- Archive banner -->
-      <div class="relative bg-red-50 py-3 px-4 sm:px-6 border-b border-red-100">
+      <div class="relative bg-gradient-to-r from-red-50 to-red-100/50 py-4 px-4 sm:px-6 border-b border-red-200 shadow-inner">
+        <div class="absolute inset-0 bg-red-100/20"></div>
+        <div class="relative">
         <div class="flex items-center">
           <Archive class="h-5 w-5 text-red-500 mr-2" />
           <span class="text-sm font-medium text-red-800">This pageant has been archived</span>
           <span class="bg-red-100 text-red-800 text-2xs px-2 py-0.5 rounded-full ml-3 font-medium">{{ pageant.reason }}</span>
         </div>
-        <p class="text-xs text-red-700 mt-1 ml-7">
-          Archived on {{ formatDate(pageant.archived_at) }} by {{ pageant.archived_by || "Admin" }}
-        </p>
+          <p class="text-xs text-red-700 mt-1 ml-7">
+            Archived on {{ formatDate(pageant.archived_at) }} by {{ pageant.archived_by || "Admin" }}
+          </p>
+        </div>
       </div>
 
       <!-- Hero section with gradient background -->
-      <div class="relative h-48 sm:h-64 bg-gradient-to-r from-gray-700 to-red-700">
+      <div class="relative h-56 sm:h-72 bg-gradient-to-br from-gray-900 via-gray-800 to-red-900 overflow-hidden">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
         <div class="absolute inset-0 overflow-hidden bg-opacity-60 bg-black flex items-center justify-center">
           <!-- Large archive icon watermark -->
           <Archive class="h-24 w-24 text-white opacity-10" />
@@ -90,12 +94,12 @@
           <AlertOctagon class="h-5 w-5 mr-2 text-red-500" />
           Archive Information
         </h2>
-        <div class="bg-gray-50 rounded-lg p-4 sm:p-5 border border-gray-200">
+        <div class="bg-gradient-to-br from-gray-50 to-white rounded-xl p-5 sm:p-6 border border-gray-200 shadow-inner">
           <h3 class="text-md font-medium text-gray-700 mb-2">Reason for Archiving:</h3>
           <p class="text-gray-600 mb-4">{{ pageant.archive_note }}</p>
           
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
-            <div class="bg-white rounded-md p-3 border border-gray-200 shadow-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-200">
               <div class="flex items-start">
                 <Calendar class="h-5 w-5 text-gray-400 mr-2" />
                 <div>
@@ -105,32 +109,12 @@
               </div>
             </div>
             
-            <div class="bg-white rounded-md p-3 border border-gray-200 shadow-sm">
+            <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-200">
               <div class="flex items-start">
                 <User class="h-5 w-5 text-gray-400 mr-2" />
                 <div>
                   <p class="text-xs text-gray-500 mb-1">Organizer</p>
                   <p class="text-sm font-medium">{{ pageant.organizer || "Not assigned" }}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div class="bg-white rounded-md p-3 border border-gray-200 shadow-sm">
-              <div class="flex items-start">
-                <DollarSign class="h-5 w-5 text-gray-400 mr-2" />
-                <div>
-                  <p class="text-xs text-gray-500 mb-1">Budget</p>
-                  <p class="text-sm font-medium">${{ pageant.budget || "0" }}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div class="bg-white rounded-md p-3 border border-gray-200 shadow-sm">
-              <div class="flex items-start">
-                <Tag class="h-5 w-5 text-gray-400 mr-2" />
-                <div>
-                  <p class="text-xs text-gray-500 mb-1">Category</p>
-                  <p class="text-sm font-medium">{{ pageant.category || "Uncategorized" }}</p>
                 </div>
               </div>
             </div>
@@ -144,7 +128,7 @@
           <ArrowRight class="h-5 w-5 mr-2 text-green-500" />
           Replacement Pageant
         </h2>
-        <div class="bg-gradient-to-r from-green-50 to-white rounded-lg p-4 sm:p-5 border border-green-100">
+        <div class="bg-gradient-to-r from-green-50 via-green-50/50 to-white rounded-xl p-5 sm:p-6 border border-green-200 shadow-sm">
           <div class="flex flex-col sm:flex-row sm:items-center gap-4">
             <div class="flex-grow">
               <h3 class="text-md font-medium text-gray-700 mb-1">{{ pageant.replacement_pageant }}</h3>
@@ -169,7 +153,7 @@
           <UserMinus class="h-5 w-5 mr-2 text-gray-600" />
           Registered Contestants
         </h2>
-        <div v-if="pageant.contestants > 0" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div v-if="pageant.contestants > 0" class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-md">
           <div class="px-4 py-3 border-b border-gray-200 bg-gray-50">
             <p class="text-sm text-gray-700">
               This pageant had <span class="font-semibold">{{ pageant.contestants }}</span> contestants registered before it was archived.
@@ -196,7 +180,7 @@
             </button>
           </div>
         </div>
-        <div v-else class="bg-gray-50 rounded-lg p-8 border border-gray-200 flex flex-col items-center justify-center">
+        <div v-else class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-10 border border-gray-200 flex flex-col items-center justify-center shadow-inner">
           <UserMinus class="h-12 w-12 text-gray-300 mb-2" />
           <p class="text-gray-500 text-center">No contestants were registered before this pageant was archived</p>
         </div>
@@ -218,9 +202,7 @@ import {
   ArrowRight,
   RefreshCw,
   UserMinus,
-  DollarSign,
-  User,
-  Tag
+  User
 } from 'lucide-vue-next';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
@@ -241,8 +223,6 @@ const props = defineProps({
       reason: 'Cancelled',
       archived_at: '2024-02-10',
       archive_note: 'Venue booking conflicts and insufficient sponsorship led to cancellation.',
-      category: 'Beauty',
-      budget: '25000',
       organizer: 'Coastal Events Ltd.',
       contestants: 15,
       replacement_pageant: 'Winter Wonderland 2024',
@@ -303,8 +283,19 @@ const getReasonClass = (reason) => {
 
 // Functions for buttons
 const restorePageant = () => {
-  // This would typically make an API call to restore the pageant
-  alert('This would restore the pageant from archived status. The functionality is not yet implemented.');
+  if (!confirm('Are you sure you want to restore this pageant? This will change its status back to Completed.')) {
+    return;
+  }
+  
+  router.post(route('admin.pageants.archived.restore', props.pageant.id), {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      // Redirect will be handled by the backend
+    },
+    onError: (errors) => {
+      alert(errors.error || 'Failed to restore pageant. Please try again.');
+    }
+  });
 };
 
 const viewReplacementPageant = () => {

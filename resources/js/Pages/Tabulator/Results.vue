@@ -100,10 +100,10 @@
               <div v-if="pageant" class="flex items-center gap-3 mb-4">
                 <div 
                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium"
-                  :class="isRankSumMethod ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
+                  :class="getRankingMethodClass()"
                 >
                   <BarChart3 class="w-4 h-4" />
-                  <span>{{ isRankSumMethod ? 'Rank Sum Method' : 'Score Average Method' }}</span>
+                  <span>{{ getRankingMethodLabel() }}</span>
                 </div>
                 <div 
                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-100 text-slate-600 border border-slate-200"
@@ -297,7 +297,7 @@ interface Pageant {
   name: string
   contestant_type?: string
   number_of_winners?: number
-  ranking_method?: 'score_average' | 'rank_sum'
+  ranking_method?: 'score_average' | 'rank_sum' | 'ordinal'
   tie_handling?: 'sequential' | 'average' | 'minimum'
 }
 
@@ -324,6 +324,30 @@ const selectedRoundId = ref<number | null>(null)
 const isRankSumMethod = computed(() => {
   return props.pageant?.ranking_method === 'rank_sum'
 })
+
+const isOrdinalMethod = computed(() => {
+  return props.pageant?.ranking_method === 'ordinal'
+})
+
+const getRankingMethodLabel = () => {
+  const method = props.pageant?.ranking_method || 'score_average'
+  switch (method) {
+    case 'rank_sum': return 'Rank Sum Method'
+    case 'ordinal': return 'Ordinal/Final Ballot'
+    case 'score_average': 
+    default: return 'Score Average Method'
+  }
+}
+
+const getRankingMethodClass = () => {
+  const method = props.pageant?.ranking_method || 'score_average'
+  switch (method) {
+    case 'rank_sum': return 'bg-purple-100 text-purple-700 border border-purple-200'
+    case 'ordinal': return 'bg-amber-100 text-amber-700 border border-amber-200'
+    case 'score_average':
+    default: return 'bg-blue-100 text-blue-700 border border-blue-200'
+  }
+}
 
 const getTieHandlingLabel = () => {
   const method = props.pageant?.tie_handling || 'average'
@@ -383,16 +407,35 @@ const displayedContestants = computed(() => {
     return true
   })
 
-  // Sort contestants: use backend rank if available (for overall), otherwise sort by score or rank sum
+  const rankingMethod = props.pageant?.ranking_method || 'score_average'
+
+  // Sort contestants: for overall view with ordinal ranking, preserve backend order
+  // Backend already sorts: finalists first (by rank), then non-finalists (by number)
   const sorted = [...deduplicated].sort((a, b) => {
-    // For overall view, trust the backend ranking which is based on final round only
-    if (activeRound.value === 'overall' && a.rank && b.rank) {
-      return a.rank - b.rank
+    // For overall view, trust the backend order completely
+    // This is especially important for ordinal ranking where rank=0 means non-finalist
+    if (activeRound.value === 'overall') {
+      // Both have positive ranks - sort by rank ascending
+      if (a.rank > 0 && b.rank > 0) {
+        return a.rank - b.rank
+      }
+      // Ranked contestants come before unranked (rank=0)
+      if (a.rank > 0 && b.rank === 0) return -1
+      if (a.rank === 0 && b.rank > 0) return 1
+      // Both unranked - sort by contestant number
+      return (a.number ?? 0) - (b.number ?? 0)
     }
     
     // For round-specific views, check ranking method
-    if (props.pageant?.ranking_method === 'rank_sum') {
-      // For rank sum: lower is better (ascending order)
+    if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+      // For rank sum and ordinal: lower is better (ascending order) or use backend rank
+      if (a.rank > 0 && b.rank > 0) {
+        return a.rank - b.rank
+      }
+      // Ranked contestants come before unranked
+      if (a.rank > 0 && b.rank === 0) return -1
+      if (a.rank === 0 && b.rank > 0) return 1
+      // Both unranked - use rank sum
       const rankSumA = a.totalRankSum ?? 999999
       const rankSumB = b.totalRankSum ?? 999999
       return rankSumA - rankSumB
@@ -407,9 +450,9 @@ const displayedContestants = computed(() => {
   // Track ranking changes and update qualified status
   const newRankings = new Map<number, number>()
   const result = sorted.map((contestant, index) => {
-    // Use backend rank if available, otherwise use position
-    // Backend calculates proper ranks with tie handling
-    const currentRank = contestant.rank ? contestant.rank : index + 1
+    // Use backend rank if available and positive, otherwise use position
+    // For ordinal ranking, rank=0 means non-finalist, so use index+1 for display
+    const currentRank = contestant.rank > 0 ? contestant.rank : index + 1
     newRankings.set(contestant.id, currentRank)
     
     // Recompute qualified status based on current position
@@ -449,21 +492,27 @@ const maleContestants = computed(() => {
   // Filter males
   const males = displayedContestants.value.filter(c => c.gender === 'male')
   
-  // Sort: use backend rank for overall view, otherwise sort by score or rank sum
+  const rankingMethod = props.pageant?.ranking_method || 'score_average'
+  
+  // Sort: for overall view with ordinal, preserve backend order
   const sorted = [...males].sort((a, b) => {
-    // For overall view, trust the backend ranking which is based on final round only
-    if (activeRound.value === 'overall' && a.rank && b.rank) {
-      return a.rank - b.rank
+    // For overall view, trust backend order (handles ordinal rank=0 properly)
+    if (activeRound.value === 'overall') {
+      if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
+      if (a.rank > 0 && b.rank === 0) return -1
+      if (a.rank === 0 && b.rank > 0) return 1
+      return (a.number ?? 0) - (b.number ?? 0)
     }
     
     // For round-specific views, check ranking method
-    if (props.pageant?.ranking_method === 'rank_sum') {
-      // For rank sum: lower is better (ascending order)
+    if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+      if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
+      if (a.rank > 0 && b.rank === 0) return -1
+      if (a.rank === 0 && b.rank > 0) return 1
       const rankSumA = a.totalRankSum ?? 999999
       const rankSumB = b.totalRankSum ?? 999999
       return rankSumA - rankSumB
     } else {
-      // For score average: higher is better (descending order)
       const scoreA = a.totalScore ?? a.finalScore ?? 0
       const scoreB = b.totalScore ?? b.finalScore ?? 0
       return scoreB - scoreA
@@ -473,8 +522,8 @@ const maleContestants = computed(() => {
   // Recompute rank and qualified status within male group
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
-    // Use backend rank if available (handles ties properly)
-    const genderRank = contestant.rank ? contestant.rank : index + 1
+    // Use backend rank if available and positive (handles ties properly)
+    const genderRank = contestant.rank > 0 ? contestant.rank : index + 1
     return {
       ...contestant,
       rank: genderRank,
@@ -490,21 +539,27 @@ const femaleContestants = computed(() => {
   // Filter females
   const females = displayedContestants.value.filter(c => c.gender === 'female')
   
-  // Sort: use backend rank for overall view, otherwise sort by score or rank sum
+  const rankingMethod = props.pageant?.ranking_method || 'score_average'
+  
+  // Sort: for overall view with ordinal, preserve backend order
   const sorted = [...females].sort((a, b) => {
-    // For overall view, trust the backend ranking which is based on final round only
-    if (activeRound.value === 'overall' && a.rank && b.rank) {
-      return a.rank - b.rank
+    // For overall view, trust backend order (handles ordinal rank=0 properly)
+    if (activeRound.value === 'overall') {
+      if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
+      if (a.rank > 0 && b.rank === 0) return -1
+      if (a.rank === 0 && b.rank > 0) return 1
+      return (a.number ?? 0) - (b.number ?? 0)
     }
     
     // For round-specific views, check ranking method
-    if (props.pageant?.ranking_method === 'rank_sum') {
-      // For rank sum: lower is better (ascending order)
+    if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+      if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
+      if (a.rank > 0 && b.rank === 0) return -1
+      if (a.rank === 0 && b.rank > 0) return 1
       const rankSumA = a.totalRankSum ?? 999999
       const rankSumB = b.totalRankSum ?? 999999
       return rankSumA - rankSumB
     } else {
-      // For score average: higher is better (descending order)
       const scoreA = a.totalScore ?? a.finalScore ?? 0
       const scoreB = b.totalScore ?? b.finalScore ?? 0
       return scoreB - scoreA
@@ -514,8 +569,8 @@ const femaleContestants = computed(() => {
   // Recompute rank and qualified status within female group
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
-    // Use backend rank if available (handles ties properly)
-    const genderRank = contestant.rank ? contestant.rank : index + 1
+    // Use backend rank if available and positive (handles ties properly)
+    const genderRank = contestant.rank > 0 ? contestant.rank : index + 1
     return {
       ...contestant,
       rank: genderRank,

@@ -201,7 +201,17 @@
                   {{ getActionTextByStatus(pageant.status) }}
                 </span>
               </div>
-              <div class="flex-shrink-0">
+              <div class="flex items-center gap-2">
+                <!-- View Results Button (only for completed pageants) -->
+                <Tooltip v-if="pageant.status === 'Completed'" text="View Results" position="left">
+                  <button
+                    @click.stop="viewResults(pageant)"
+                    class="p-1.5 rounded-full text-gray-400 bg-white border border-gray-200 hover:text-amber-600 hover:border-amber-300 transition-all transform hover:scale-110 hover:shadow-md"
+                  >
+                    <Award class="h-4 w-4" />
+                  </button>
+                </Tooltip>
+                <!-- Manage Pageant Button -->
                 <Tooltip :text="getActionTextByStatus(pageant.status)" position="left">
                   <button
                     @click.stop="managePageant(pageant)"
@@ -225,7 +235,7 @@ import { router } from '@inertiajs/vue3'
 import { 
   Calendar, Crown, ChevronRight, Filter, Users, ListChecks, Scale, 
   ExternalLink, Play, Pause, CheckCircle, Clock, AlertCircle, 
-  Archive, MapPin
+  Archive, MapPin, Award
 } from 'lucide-vue-next'
 import Tooltip from '@/Components/Tooltip.vue'
 import CustomSelect from '@/Components/CustomSelect.vue'
@@ -287,6 +297,11 @@ const toggleFilters = () => {
 const managePageant = (pageant) => {
   // Navigate to pageant detail view
   router.visit(route('organizer.pageant.view', { id: pageant.id }))
+}
+
+const viewResults = (pageant) => {
+  // Navigate to pageant results view
+  router.visit(route('organizer.pageant.results', { id: pageant.id }))
 }
 
 const shouldShowDateRange = (pageant) => {
@@ -358,7 +373,7 @@ const getActionTextByStatus = (status) => {
     case 'Draft':
       return 'Continue Setup'
     case 'Active':
-      return 'View Live Status'
+      return 'View Pageant'
     case 'Completed':
       return 'View Results'
     case 'Unlocked_For_Edit':
