@@ -58,6 +58,7 @@ Route::get('/verify-organizer/{token}', [OrganizerController::class, 'verify'])-
 // Organizer Routes
 Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () {
     Route::get('/dashboard', [OrganizerController::class, 'dashboard'])->name('organizer.dashboard');
+    Route::get('/activities', [OrganizerController::class, 'getActivities'])->name('organizer.activities');
     Route::get('/criteria', [OrganizerController::class, 'criteria'])->name('organizer.criteria');
     Route::get('/contestants', [OrganizerController::class, 'contestants'])->name('organizer.contestants');
     Route::get('/scoring', [OrganizerController::class, 'scoring'])->name('organizer.scoring');

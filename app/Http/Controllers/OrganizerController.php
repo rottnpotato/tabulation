@@ -7,6 +7,7 @@ use App\Http\Requests\StoreRoundRequest;
 use App\Http\Requests\UpdatePageantRequest;
 use App\Http\Requests\UpdateRoundRequest;
 use App\Http\Requests\UpdateScoringSystemRequest;
+use App\Models\Activity;
 use App\Models\Contestant;
 use App\Models\Criteria;
 use App\Models\Pageant;
@@ -281,6 +282,91 @@ class OrganizerController extends Controller
         ]);
     }
 
+    /**
+     * Get activities with filters for the organizer's pageants
+     */
+    public function getActivities(Request $request)
+    {
+        $organizer = Auth::user();
+
+        // Get pageant IDs assigned to this organizer
+        $pageantIds = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->pluck('pageant_id');
+
+        // Build query
+        $query = Activity::whereIn('pageant_id', $pageantIds)
+            ->with(['user', 'pageant:id,name']);
+
+        // Apply filters
+        if ($request->filled('search')) {
+            $query->where('description', 'like', '%'.$request->search.'%');
+        }
+
+        if ($request->filled('action_type')) {
+            $query->where('action_type', $request->action_type);
+        }
+
+        if ($request->filled('pageant_id')) {
+            $query->where('pageant_id', $request->pageant_id);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Order by most recent
+        $query->orderBy('created_at', 'desc');
+
+        // Paginate
+        $perPage = $request->get('per_page', 20);
+        $activities = $query->paginate($perPage);
+
+        // Format activities
+        $formattedActivities = $activities->map(function ($activity) {
+            return [
+                'id' => $activity->id,
+                'pageant_id' => $activity->pageant_id,
+                'pageant_name' => $activity->pageant?->name ?? 'Unknown Pageant',
+                'user_name' => $activity->user?->name ?? 'System',
+                'user_role' => $activity->user?->role ?? 'system',
+                'action_type' => $activity->action_type,
+                'description' => $activity->description,
+                'icon' => $activity->icon,
+                'entity_type' => $activity->entity_type,
+                'entity_id' => $activity->entity_id,
+                'metadata' => $activity->metadata,
+                'created_at' => $activity->created_at->toISOString(),
+                'formatted_time' => $activity->created_at->diffForHumans(),
+            ];
+        });
+
+        // Get pageants for filter
+        $pageants = Pageant::whereIn('id', $pageantIds)
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'activities' => $formattedActivities,
+            'pagination' => [
+                'current_page' => $activities->currentPage(),
+                'last_page' => $activities->lastPage(),
+                'per_page' => $activities->perPage(),
+                'total' => $activities->total(),
+                'from' => $activities->firstItem(),
+                'to' => $activities->lastItem(),
+            ],
+            'filters' => [
+                'pageants' => $pageants,
+            ],
+        ]);
+    }
+
     public function criteria()
     {
         return Inertia::render('Organizer/Criteria');
@@ -497,8 +583,12 @@ class OrganizerController extends Controller
                     'contestant_type' => $pageant->contestant_type,
                     'start_date' => $pageant->start_date?->format('M d, Y'),
                     'end_date' => $pageant->end_date?->format('M d, Y'),
+                    'start_time' => $pageant->start_time,
+                    'end_time' => $pageant->end_time,
                     'venue' => $pageant->venue,
                     'location' => $pageant->location,
+                    'cover_image' => $pageant->cover_image,
+                    'logo' => $pageant->logo,
                     'contestants_count' => DB::table('contestants')->where('pageant_id', $pageant->id)->count(),
                     'criteria_count' => DB::table('criteria')->where('pageant_id', $pageant->id)->count(),
                     'judges_count' => DB::table('pageant_judges')->where('pageant_id', $pageant->id)->count(),

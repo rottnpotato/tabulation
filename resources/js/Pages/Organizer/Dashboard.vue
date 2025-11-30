@@ -191,61 +191,10 @@
         </div>
 
         <!-- Recent Activity -->
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden animate-fade-in h-fit">
-          <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <div>
-              <h2 class="text-lg font-bold text-slate-900">Recent Activity</h2>
-              <p class="text-sm text-slate-500">Latest updates</p>
-            </div>
-          </div>
-          
-          <div class="divide-y divide-slate-100">
-            <div v-if="isLoading" class="p-6 space-y-4">
-              <div v-for="i in 3" :key="i" class="flex items-center gap-4">
-                <div class="h-10 w-10 bg-slate-100 rounded-full animate-pulse"></div>
-                <div class="flex-1 space-y-2">
-                  <div class="h-4 w-3/4 bg-slate-100 rounded animate-pulse"></div>
-                  <div class="h-3 w-1/2 bg-slate-100 rounded animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-            
-            <div v-else-if="activities.length === 0" class="p-8 text-center">
-              <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-50 mb-4">
-                <Activity class="h-8 w-8 text-slate-400" />
-              </div>
-              <h3 class="text-lg font-bold text-slate-900">No recent activity</h3>
-              <p class="text-sm text-slate-500 mt-1">Activities will appear here as they happen.</p>
-            </div>
-            
-            <div v-else v-for="activity in activities" :key="activity.id"
-                 class="group p-5 hover:bg-slate-50/80 transition-all">
-              <div class="flex items-start gap-4">
-                <div class="flex-shrink-0">
-                  <div class="p-2 rounded-xl bg-gradient-to-br shadow-sm group-hover:scale-110 transition-transform"
-                       :class="getActivityIconClass(activity.action_type)">
-                    <component :is="getActivityIcon(activity.action_type)" class="h-4 w-4 text-white" />
-                  </div>
-                </div>
-                
-                <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium text-slate-900">
-                    {{ activity.description }}
-                  </p>
-                  <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500">
-                    <span class="font-medium text-teal-600">{{ activity.pageant_name }}</span>
-                    <span class="text-slate-300">•</span>
-                    <span>{{ activity.formatted_time }}</span>
-                    <span class="text-slate-300">•</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
-                      {{ activity.user_name }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ActivityLogsViewer 
+          :pageant-ids="pageantIds"
+          :initial-limit="15"
+        />
       </div>
 
       <!-- Settings Modal -->
@@ -259,17 +208,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import OrganizerLayout from '@/Layouts/OrganizerLayout.vue'
 import OrganizerSettingsModal from '@/Components/modals/OrganizerSettingsModal.vue'
-import Tooltip from '@/Components/Tooltip.vue'
+import ActivityLogsViewer from '@/Components/organizer/ActivityLogsViewer.vue'
 import { 
-  Calendar, MapPin, Users, ChevronRight, 
-  UserPlus, ListChecks, BarChart2, Settings,
-  Crown, Scale, Timer, CheckCircle, Sparkles, 
-  Layers, Zap, Star, Clock, Edit, Activity, 
-  Unlock, Plus
+  Calendar, MapPin, ChevronRight, 
+  UserPlus, ListChecks, Crown, 
+  Activity, CheckCircle, Plus
 } from 'lucide-vue-next'
 
 defineOptions({
@@ -287,7 +234,6 @@ const props = defineProps({
 // State
 const isLoading = ref(true)
 const isSettingsModalVisible = ref(false)
-const activities = ref(props.recentActivities || [])
 
 // Format date range function
 const formatDateRange = (pageant) => {
@@ -346,91 +292,11 @@ const UpdateSettings = (settings) => {
   alert('Settings updated successfully!')
 }
 
-// Helper functions for activity display
-const getActivityIcon = (actionType) => {
-  const iconMap = {
-    'SCORE_SUBMITTED': Star,
-    'SCORE_UPDATED': Edit,
-    'CONTESTANT_ADDED': UserPlus,
-    'CONTESTANT_UPDATED': Users,
-    'CONTESTANT_REMOVED': Users,
-    'JUDGE_ASSIGNED': Scale,
-    'JUDGE_REMOVED': Users,
-    'TABULATOR_ASSIGNED': BarChart2,
-    'TABULATOR_REMOVED': BarChart2,
-    'ROUND_STARTED': Timer,
-    'ROUND_COMPLETED': CheckCircle,
-    'CRITERIA_CREATED': ListChecks,
-    'CRITERIA_UPDATED': ListChecks,
-    'PAGEANT_UPDATED': Crown,
-    'STATUS_CHANGED': Sparkles,
-  }
-  return iconMap[actionType] || Activity
-}
-
-const getActivityIconClass = (actionType) => {
-  const classMap = {
-    'SCORE_SUBMITTED': 'from-amber-400 to-amber-600',
-    'SCORE_UPDATED': 'from-amber-400 to-amber-600',
-    'CONTESTANT_ADDED': 'from-blue-400 to-blue-600',
-    'CONTESTANT_UPDATED': 'from-blue-400 to-blue-600',
-    'CONTESTANT_REMOVED': 'from-red-400 to-red-600',
-    'JUDGE_ASSIGNED': 'from-indigo-400 to-indigo-600',
-    'JUDGE_REMOVED': 'from-red-400 to-red-600',
-    'TABULATOR_ASSIGNED': 'from-purple-400 to-purple-600',
-    'TABULATOR_REMOVED': 'from-red-400 to-red-600',
-    'ROUND_STARTED': 'from-teal-400 to-teal-600',
-    'ROUND_COMPLETED': 'from-teal-400 to-teal-600',
-    'CRITERIA_CREATED': 'from-cyan-400 to-cyan-600',
-    'CRITERIA_UPDATED': 'from-cyan-400 to-cyan-600',
-    'PAGEANT_UPDATED': 'from-emerald-400 to-emerald-600',
-    'STATUS_CHANGED': 'from-pink-400 to-pink-600',
-  }
-  return classMap[actionType] || 'from-slate-400 to-slate-600'
-}
-
-// Real-time updates using Laravel Echo
+// Simulate loading time with staggered animation
 onMounted(() => {
-  // Simulate loading time with staggered animation
   setTimeout(() => {
     isLoading.value = false
   }, 800)
-  
-  // Subscribe to real-time activity updates for each pageant
-  if (window.Echo && props.pageantIds && props.pageantIds.length > 0) {
-    props.pageantIds.forEach(pageantId => {
-      window.Echo.private(`organizer.pageant.${pageantId}`)
-        .listen('.activity.created', (event) => {
-          activities.value.unshift({
-            id: event.id,
-            pageant_id: event.pageant_id,
-            pageant_name: event.pageant_name || 'Unknown Pageant',
-            user_name: event.user_name,
-            user_role: event.user_role,
-            action_type: event.action_type,
-            description: event.description,
-            icon: event.icon,
-            entity_type: event.entity_type,
-            entity_id: event.entity_id,
-            metadata: event.metadata,
-            created_at: event.created_at,
-            formatted_time: event.formatted_time,
-          })
-          
-          if (activities.value.length > 15) {
-            activities.value = activities.value.slice(0, 15)
-          }
-        })
-    })
-  }
-})
-
-onUnmounted(() => {
-  if (window.Echo && props.pageantIds && props.pageantIds.length > 0) {
-    props.pageantIds.forEach(pageantId => {
-      window.Echo.leave(`organizer.pageant.${pageantId}`)
-    })
-  }
 })
 </script>
 

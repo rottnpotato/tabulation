@@ -418,10 +418,10 @@
                     <Clock class="h-3 w-3 mr-1" />
                     Awaiting scores
                   </span>
-                  <button class="inline-flex items-center text-xs font-medium text-teal-600 hover:text-teal-800 transition-colors">
+                  <!-- <button class="inline-flex items-center text-xs font-medium text-teal-600 hover:text-teal-800 transition-colors">
                     View Details
                     <ChevronRight class="h-3 w-3 ml-1" />
-                  </button>
+                  </button> -->
                 </div>
               </div>
             </div>

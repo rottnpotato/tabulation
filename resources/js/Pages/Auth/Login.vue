@@ -67,7 +67,7 @@
               />
               <span class="ml-2 text-gray-300">Remember me</span>
             </label>
-            <Link href="/forgot-password" class="text-teal-400 hover:text-teal-300 transition-colors duration-300">Forgot password?</Link>
+            <!-- <Link href="/forgot-password" class="text-teal-400 hover:text-teal-300 transition-colors duration-300">Forgot password?</Link> -->
           </div>
 
           <button 
