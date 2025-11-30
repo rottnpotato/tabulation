@@ -82,7 +82,10 @@
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h3 class="text-lg font-bold text-slate-900">Results View</h3>
-                  <p class="text-sm text-slate-500">Select a round or view overall results</p>
+                  <p class="text-sm text-slate-500">
+                    <span v-if="activeRound === 'overall'">Overall tally showing cumulative scores and who advanced at each round</span>
+                    <span v-else>Stage-specific results up to this round</span>
+                  </p>
                 </div>
                 <div class="w-full sm:w-64">
                   <CustomSelect
@@ -266,6 +269,7 @@ interface Round {
   weight: number
   top_n_proceed?: number
   display_order?: number
+  is_last_of_type?: boolean
 }
 
 interface Contestant {
@@ -333,7 +337,7 @@ const getTieHandlingLabel = () => {
 
 const roundOptions = computed(() => {
   const options = [
-    { value: 'overall', label: 'Overall Results' }
+    { value: 'overall', label: 'Overall Tally' }
   ]
   
   if (props.rounds) {
@@ -379,17 +383,24 @@ const displayedContestants = computed(() => {
     return true
   })
 
-  // Sort by total score to determine current rankings
+  // Sort contestants: use backend rank if available (for overall), otherwise sort by score
   const sorted = [...deduplicated].sort((a, b) => {
+    // For overall view, trust the backend ranking which is based on final round only
+    if (activeRound.value === 'overall' && a.rank && b.rank) {
+      return a.rank - b.rank
+    }
+    
+    // For round-specific views or if no rank, sort by score
     const scoreA = a.totalScore ?? a.finalScore ?? 0
     const scoreB = b.totalScore ?? b.finalScore ?? 0
     return scoreB - scoreA
   })
 
-  // Track ranking changes and recompute qualified status based on current rank
+  // Track ranking changes and update qualified status
   const newRankings = new Map<number, number>()
   const result = sorted.map((contestant, index) => {
-    const currentRank = index + 1
+    // Use backend rank if available (for overall), otherwise use position
+    const currentRank = (activeRound.value === 'overall' && contestant.rank) ? contestant.rank : index + 1
     newRankings.set(contestant.id, currentRank)
     
     // Recompute qualified status based on current position
@@ -426,18 +437,25 @@ const currentQualificationCutoff = computed(() => {
 const maleContestants = computed(() => {
   if (!isPairPageant.value) return []
   
-  // Filter and sort males by score
-  const males = displayedContestants.value
-    .filter(c => c.gender === 'male')
-    .sort((a, b) => {
-      const scoreA = a.totalScore ?? a.finalScore ?? 0
-      const scoreB = b.totalScore ?? b.finalScore ?? 0
-      return scoreB - scoreA
-    })
+  // Filter males
+  const males = displayedContestants.value.filter(c => c.gender === 'male')
+  
+  // Sort: use backend rank for overall view, otherwise sort by score
+  const sorted = [...males].sort((a, b) => {
+    // For overall view, trust the backend ranking which is based on final round only
+    if (activeRound.value === 'overall' && a.rank && b.rank) {
+      return a.rank - b.rank
+    }
+    
+    // For round-specific views or if no rank, sort by score
+    const scoreA = a.totalScore ?? a.finalScore ?? 0
+    const scoreB = b.totalScore ?? b.finalScore ?? 0
+    return scoreB - scoreA
+  })
   
   // Recompute rank and qualified status within male group
   const topN = currentQualificationCutoff.value
-  return males.map((contestant, index) => {
+  return sorted.map((contestant, index) => {
     const genderRank = index + 1
     return {
       ...contestant,
@@ -451,18 +469,25 @@ const maleContestants = computed(() => {
 const femaleContestants = computed(() => {
   if (!isPairPageant.value) return []
   
-  // Filter and sort females by score
-  const females = displayedContestants.value
-    .filter(c => c.gender === 'female')
-    .sort((a, b) => {
-      const scoreA = a.totalScore ?? a.finalScore ?? 0
-      const scoreB = b.totalScore ?? b.finalScore ?? 0
-      return scoreB - scoreA
-    })
+  // Filter females
+  const females = displayedContestants.value.filter(c => c.gender === 'female')
+  
+  // Sort: use backend rank for overall view, otherwise sort by score
+  const sorted = [...females].sort((a, b) => {
+    // For overall view, trust the backend ranking which is based on final round only
+    if (activeRound.value === 'overall' && a.rank && b.rank) {
+      return a.rank - b.rank
+    }
+    
+    // For round-specific views or if no rank, sort by score
+    const scoreA = a.totalScore ?? a.finalScore ?? 0
+    const scoreB = b.totalScore ?? b.finalScore ?? 0
+    return scoreB - scoreA
+  })
   
   // Recompute rank and qualified status within female group
   const topN = currentQualificationCutoff.value
-  return females.map((contestant, index) => {
+  return sorted.map((contestant, index) => {
     const genderRank = index + 1
     return {
       ...contestant,
@@ -480,24 +505,43 @@ const currentRoundInfo = computed(() => {
 })
 
 const displayedRounds = computed(() => {
-  if (activeRound.value === 'overall') {
-    return props.rounds
+  let rounds = props.rounds
+  
+  if (activeRound.value !== 'overall') {
+    // Show only rounds up to and including the selected round
+    const selectedRound = props.rounds.find(r => r.id.toString() === activeRound.value)
+    if (!selectedRound) return props.rounds
+    
+    // Filter rounds and verify they have score data
+    const roundsUpToSelected = props.rounds.filter(r => (r.display_order || 0) <= (selectedRound.display_order || 0))
+    
+    // For round-specific views, only show rounds that have actual scores in the contestants data
+    if (displayedContestants.value && displayedContestants.value.length > 0) {
+      const firstContestant = displayedContestants.value[0]
+      const availableRoundNames = new Set(Object.keys(firstContestant.scores || {}))
+      rounds = roundsUpToSelected.filter(r => availableRoundNames.has(r.name))
+    } else {
+      rounds = roundsUpToSelected
+    }
   }
-  // Show only rounds up to and including the selected round
-  const selectedRound = props.rounds.find(r => r.id.toString() === activeRound.value)
-  if (!selectedRound) return props.rounds
   
-  // Filter rounds and verify they have score data
-  const roundsUpToSelected = props.rounds.filter(r => (r.display_order || 0) <= (selectedRound.display_order || 0))
-  
-  // For round-specific views, only show rounds that have actual scores in the contestants data
-  if (displayedContestants.value && displayedContestants.value.length > 0) {
-    const firstContestant = displayedContestants.value[0]
-    const availableRoundNames = new Set(Object.keys(firstContestant.scores || {}))
-    return roundsUpToSelected.filter(r => availableRoundNames.has(r.name))
-  }
-  
-  return roundsUpToSelected
+  // Sort rounds: First by display_order, then prioritize rounds without top_n_proceed (non-advancing)
+  // This ensures rounds like "Evening Gown" appear before "Production Number" when they're in the same stage
+  return [...rounds].sort((a, b) => {
+    const orderA = a.display_order || 0
+    const orderB = b.display_order || 0
+    
+    // First sort by display order
+    if (orderA !== orderB) {
+      return orderA - orderB
+    }
+    
+    // If same display order, prioritize rounds without top_n_proceed (no advancement)
+    const aHasAdvancement = (a.top_n_proceed && a.top_n_proceed > 0) ? 1 : 0
+    const bHasAdvancement = (b.top_n_proceed && b.top_n_proceed > 0) ? 1 : 0
+    
+    return aHasAdvancement - bHasAdvancement
+  })
 })
 
 const highestScore = computed(() => {
@@ -531,7 +575,7 @@ const averageScore = computed(() => {
 })
 
 const getResultsTitle = () => {
-  if (activeRound.value === 'overall') return 'Overall Rankings'
+  if (activeRound.value === 'overall') return 'Overall Tally'
   const round = props.rounds.find(r => r.id.toString() === activeRound.value)
   return round ? `${round.name} Rankings` : 'Rankings'
 }

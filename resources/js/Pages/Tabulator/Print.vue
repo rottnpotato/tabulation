@@ -115,6 +115,17 @@
             </div>
             <div class="relative z-10">
               <h3 class="text-lg font-bold text-slate-900 mb-4">Print Settings</h3>
+              <p class="text-sm text-slate-600 mb-6">
+                <span v-if="selectedStage === 'overall'" class="font-medium text-teal-700">
+                  Overall Tally shows all contestants with their scores across all rounds, ranked by final round score
+                </span>
+                <span v-else-if="selectedStage === 'final-result'" class="font-medium text-amber-700">
+                  Final Result shows only the Top {{ pageant?.number_of_winners || 3 }} contestants who competed in the final round
+                </span>
+                <span v-else>
+                  Configure the stage and format for printing results
+                </span>
+              </p>
               
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Stage Selector -->
@@ -164,7 +175,7 @@
                       <div class="flex items-center gap-2">
                         <Award class="h-4 w-4" :class="selectedMinorAward ? 'text-amber-500' : 'text-slate-400'" />
                         <span :class="selectedMinorAward ? 'text-amber-700' : 'text-slate-500'">
-                          {{ selectedMinorAward ? `Best in ${selectedMinorAward}` : 'Select Minor Award' }}
+                          {{ selectedMinorAward === '__ALL__' ? 'All Minor Awards' : (selectedMinorAward ? `Best in ${selectedMinorAward}` : 'Select Minor Award') }}
                         </span>
                       </div>
                       <ChevronDown class="h-4 w-4 text-slate-400" />
@@ -186,6 +197,16 @@
                         <div v-if="minorAwardOptions.length === 0" class="px-3 py-2 text-sm text-slate-400 italic">
                           No minor awards available
                         </div>
+                        <!-- Print All Minor Awards Option -->
+                        <button
+                          v-if="minorAwardOptions.length > 0"
+                          @click="selectedMinorAward = '__ALL__'; showMinorAwardDropdown = false"
+                          class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all cursor-pointer border-b border-slate-100 mb-1"
+                          :class="selectedMinorAward === '__ALL__' ? 'bg-amber-100 text-amber-800' : 'text-slate-600 hover:bg-amber-50'"
+                        >
+                          <Award class="h-3.5 w-3.5" :class="selectedMinorAward === '__ALL__' ? 'text-amber-600' : 'text-slate-400'" />
+                          <span class="font-medium">📋 Print All Minor Awards</span>
+                        </button>
                         <button
                           v-for="award in minorAwardOptions"
                           :key="award.key"
@@ -248,29 +269,138 @@
               </div>
               <div class="text-right hidden sm:block">
                 <div class="text-sm font-medium text-slate-900">{{ pageant.name }}</div>
-                <div class="text-xs text-slate-500">{{ selectedMinorAward ? `Best in ${selectedMinorAward}` : reportTitle }}</div>
+                <div class="text-xs text-slate-500">{{ selectedMinorAward === '__ALL__' ? 'All Minor Awards' : (selectedMinorAward ? `Best in ${selectedMinorAward}` : reportTitle) }}</div>
               </div>
             </div>
             
             <div class="p-8 bg-slate-100/50 overflow-x-auto">
               <div class="bg-white shadow-lg mx-auto transition-all duration-300" :style="{ width: getPreviewWidth(), minHeight: '11in' }">
                 <div class="p-8" ref="printArea">
-                  <!-- Minor Award Display -->
-                  <template v-if="selectedMinorAward && selectedMinorAwardData">
-                    <div class="text-center mb-8 pb-4 border-b-2 border-amber-400">
-                      <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
-                      <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Minor Awards Report</div>
-                      
-                      <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
-                        <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
-                        <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+                  <!-- All Minor Awards Display (Condensed) -->
+                  <template v-if="selectedMinorAward === '__ALL__'">
+                    <div class="flex items-center gap-4 mb-6 pb-3 border-b-2 border-amber-400">
+                      <!-- Logo -->
+                      <div v-if="getLogoUrl" class="flex-shrink-0">
+                        <img :src="getLogoUrl" alt="Pageant Logo" class="w-16 h-16 object-contain rounded-lg border border-amber-200" />
                       </div>
-                      
-                      <div class="mt-6">
-                        <h2 class="text-xl font-bold text-amber-700 flex items-center justify-center gap-2">
-                          <Award class="h-6 w-6" />
-                          Best in {{ selectedMinorAward }}
-                        </h2>
+                      <!-- Header Content -->
+                      <div class="flex-1 text-center" :class="{ 'pr-16': getLogoUrl }">
+                        <h1 class="text-xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+                        <div class="text-xs uppercase tracking-widest text-gray-600 mb-3">Minor Awards Summary</div>
+                        
+                        <div class="flex justify-center items-center gap-6 text-[10px] text-gray-600">
+                          <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+                          <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Condensed Minor Awards Grid -->
+                    <div class="grid gap-3" :class="isPairPageant ? 'grid-cols-1' : 'grid-cols-2'">
+                      <div v-for="award in minorAwardOptions" :key="award.key" class="border border-amber-200 rounded-lg p-3 bg-amber-50/30">
+                        <div class="text-center mb-2 pb-1 border-b border-amber-200">
+                          <h3 class="text-sm font-bold text-amber-800">🏆 Best in {{ award.label }}</h3>
+                        </div>
+                        
+                        <!-- Pair pageant: Show male & female side by side -->
+                        <template v-if="isPairPageant && getMinorAwardDataByKey(award.key)">
+                          <div class="grid grid-cols-2 gap-2 text-[10px]">
+                            <!-- Male Winner -->
+                            <div v-if="getMinorAwardDataByKey(award.key)?.male_winners?.length > 0" class="text-center border-r border-amber-100 pr-2">
+                              <div class="text-[9px] font-semibold text-blue-700 mb-1">♂ Male</div>
+                              <div v-for="winner in getMinorAwardDataByKey(award.key)?.male_winners" :key="winner.id">
+                                <div class="font-bold text-gray-900">#{{ winner.number }}</div>
+                                <div class="text-gray-700">{{ capitalizeName(winner.name) }}</div>
+                                <div class="text-gray-500 text-[9px]">{{ winner.score?.toFixed(2) }} pts</div>
+                              </div>
+                            </div>
+                            <div v-else class="text-center text-gray-400 italic border-r border-amber-100 pr-2">
+                              <div class="text-[9px] font-semibold text-blue-300 mb-1">♂ Male</div>
+                              No winner
+                            </div>
+                            <!-- Female Winner -->
+                            <div v-if="getMinorAwardDataByKey(award.key)?.female_winners?.length > 0" class="text-center pl-2">
+                              <div class="text-[9px] font-semibold text-pink-700 mb-1">♀ Female</div>
+                              <div v-for="winner in getMinorAwardDataByKey(award.key)?.female_winners" :key="winner.id">
+                                <div class="font-bold text-gray-900">#{{ winner.number }}</div>
+                                <div class="text-gray-700">{{ capitalizeName(winner.name) }}</div>
+                                <div class="text-gray-500 text-[9px]">{{ winner.score?.toFixed(2) }} pts</div>
+                              </div>
+                            </div>
+                            <div v-else class="text-center text-gray-400 italic pl-2">
+                              <div class="text-[9px] font-semibold text-pink-300 mb-1">♀ Female</div>
+                              No winner
+                            </div>
+                          </div>
+                        </template>
+                        
+                        <!-- Solo pageant: Show single winner -->
+                        <template v-else-if="getMinorAwardDataByKey(award.key)?.winners?.length > 0">
+                          <div v-for="winner in getMinorAwardDataByKey(award.key)?.winners" :key="winner.id" class="text-center text-[10px]">
+                            <div class="font-bold text-gray-900">#{{ winner.number }} - {{ capitalizeName(winner.name) }}</div>
+                            <div class="text-gray-500">{{ winner.score?.toFixed(2) }} pts</div>
+                          </div>
+                        </template>
+                        
+                        <!-- No winner -->
+                        <div v-else class="text-center text-[10px] text-gray-400 italic py-2">
+                          No winner determined
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Signatures Section for All Minor Awards -->
+                    <div class="mt-8 pt-4 border-t border-gray-200">
+                      <div class="grid grid-cols-2 gap-6">
+                        <!-- Panel of Judges -->
+                        <div>
+                          <h3 class="text-[10px] font-bold uppercase border-b border-black mb-3 pb-1">Panel of Judges</h3>
+                          <div class="grid grid-cols-2 gap-x-4 gap-y-6">
+                            <div v-for="judge in judges" :key="judge.id" class="text-center">
+                              <div class="border-b border-gray-400 h-6"></div>
+                              <div class="text-[9px] font-bold mt-1">{{ capitalizeName(judge.name) }}</div>
+                              <div class="text-[8px] uppercase text-gray-500">{{ judge.role }}</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Tabulator Certification -->
+                        <div class="flex flex-col justify-end">
+                          <div class="text-right">
+                            <div class="text-[9px] uppercase text-gray-500 mb-4">Certified Correct:</div>
+                            <div class="border-b border-black h-6 w-48 ml-auto"></div>
+                            <div class="text-[10px] font-bold mt-1">{{ tabulatorName }}</div>
+                            <div class="text-[8px] uppercase text-gray-500">Head Tabulator</div>
+                            <div class="text-[8px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  
+                  <!-- Single Minor Award Display -->
+                  <template v-else-if="selectedMinorAward && selectedMinorAwardData">
+                    <div class="flex items-center gap-4 mb-8 pb-4 border-b-2 border-amber-400">
+                      <!-- Logo -->
+                      <div v-if="getLogoUrl" class="flex-shrink-0">
+                        <img :src="getLogoUrl" alt="Pageant Logo" class="w-20 h-20 object-contain rounded-lg border border-amber-200" />
+                      </div>
+                      <!-- Header Content -->
+                      <div class="flex-1 text-center" :class="{ 'pr-20': getLogoUrl }">
+                        <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+                        <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Minor Awards Report</div>
+                        
+                        <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+                          <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+                          <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+                        </div>
+                        
+                        <div class="mt-6">
+                          <h2 class="text-xl font-bold text-amber-700 flex items-center justify-center gap-2">
+                            <Award class="h-6 w-6" />
+                            Best in {{ selectedMinorAward }}
+                          </h2>
+                        </div>
                       </div>
                     </div>
                     
@@ -362,17 +492,24 @@
                   <!-- For pair pageants, show side by side in single view -->
                   <template v-if="isPairPageant && maleResults.length > 0 && femaleResults.length > 0">
                     <!-- Unified Header for Pair Pageants -->
-                    <div class="text-center mb-8 pb-4 border-b-2 border-black">
-                      <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
-                      <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Official Tabulation Report</div>
-                      
-                      <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
-                        <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
-                        <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+                    <div class="flex items-center gap-4 mb-8 pb-4 border-b-2 border-black">
+                      <!-- Logo -->
+                      <div v-if="getLogoUrl" class="flex-shrink-0">
+                        <img :src="getLogoUrl" alt="Pageant Logo" class="w-20 h-20 object-contain rounded-lg border border-gray-200" />
                       </div>
-                      
-                      <div class="mt-6">
-                        <h2 class="text-xl font-bold text-black">{{ reportTitle || 'Final Results' }}</h2>
+                      <!-- Header Content -->
+                      <div class="flex-1 text-center" :class="{ 'pr-20': getLogoUrl }">
+                        <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+                        <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Official Tabulation Report</div>
+                        
+                        <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+                          <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+                          <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+                        </div>
+                        
+                        <div class="mt-6">
+                          <h2 class="text-xl font-bold text-black">{{ reportTitle || 'Final Results' }}</h2>
+                        </div>
                       </div>
                     </div>
                     
@@ -389,11 +526,14 @@
                           :pageant="pageant"
                           :results="maleResults"
                           :judges="judges"
+                          :rounds="rounds"
                           :report-title="reportTitle"
                           :is-male-category="true"
                           :is-last-final-round="isLastFinalRound"
                           :number-of-winners="pageant?.number_of_winners || 3"
                           :hide-rank-column="selectedStage === 'overall'"
+                          :show-all-rounds="selectedStage === 'overall'"
+                          :selected-stage="selectedStage"
                         />
                       </div>
                       
@@ -409,11 +549,14 @@
                           :pageant="pageant"
                           :results="femaleResults"
                           :judges="judges"
+                          :rounds="rounds"
                           :report-title="reportTitle"
                           :is-female-category="true"
                           :is-last-final-round="isLastFinalRound"
                           :number-of-winners="pageant?.number_of_winners || 3"
                           :hide-rank-column="selectedStage === 'overall'"
+                          :show-all-rounds="selectedStage === 'overall'"
+                          :selected-stage="selectedStage"
                         />
                       </div>
                     </div>
@@ -462,9 +605,13 @@
                         :pageant="pageant"
                         :results="maleResults"
                         :judges="judges"
+                        :rounds="rounds"
                         :report-title="`${reportTitle} - Male`"
+                        :is-male-category="true"
                         :is-last-final-round="isLastFinalRound"
                         :number-of-winners="pageant?.number_of_winners || 3"
+                        :show-all-rounds="selectedStage === 'overall'"
+                        :selected-stage="selectedStage"
                       />
                     </div>
                     
@@ -479,9 +626,13 @@
                         :pageant="pageant"
                         :results="femaleResults"
                         :judges="judges"
+                        :rounds="rounds"
                         :report-title="`${reportTitle} - Female`"
+                        :is-female-category="true"
                         :is-last-final-round="isLastFinalRound"
                         :number-of-winners="pageant?.number_of_winners || 3"
+                        :show-all-rounds="selectedStage === 'overall'"
+                        :selected-stage="selectedStage"
                       />
                     </div>
                   </template>
@@ -492,10 +643,13 @@
                     :pageant="pageant"
                     :results="resultsToShow"
                     :judges="judges"
+                    :rounds="rounds"
                     :report-title="reportTitle"
                     :is-last-final-round="isLastFinalRound"
                     :number-of-winners="pageant?.number_of_winners || 3"
                     :hide-rank-column="selectedStage === 'overall'"
+                    :show-all-rounds="selectedStage === 'overall'"
+                    :selected-stage="selectedStage"
                   />
                   </template>
                 </div>
@@ -508,19 +662,128 @@
 
     <!-- Print-Only Content -->
     <div v-if="pageant" class="print-only">
-      <!-- Minor Award Print -->
-      <template v-if="selectedMinorAward && selectedMinorAwardData">
-        <div class="text-center mb-8 pb-4 border-b-2 border-amber-400">
-          <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
-          <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Minor Awards Report</div>
-          
-          <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
-            <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
-            <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+      <!-- All Minor Awards Print (Condensed on One Page) -->
+      <template v-if="selectedMinorAward === '__ALL__'">
+        <div class="flex items-center gap-3 mb-4 pb-2 border-b-2 border-amber-400">
+          <!-- Logo -->
+          <div v-if="getLogoUrl" class="flex-shrink-0">
+            <img :src="getLogoUrl" alt="Pageant Logo" class="w-14 h-14 object-contain rounded border border-amber-200" />
           </div>
-          
-          <div class="mt-6">
-            <h2 class="text-xl font-bold text-amber-700">Best in {{ selectedMinorAward }}</h2>
+          <!-- Header Content -->
+          <div class="flex-1 text-center" :class="{ 'pr-14': getLogoUrl }">
+            <h1 class="text-xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+            <div class="text-xs uppercase tracking-widest text-gray-600 mb-2">Minor Awards Summary</div>
+            
+            <div class="flex justify-center items-center gap-6 text-[10px] text-gray-600">
+              <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+              <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Condensed Minor Awards Grid for Print -->
+        <div class="grid gap-2" :class="isPairPageant ? 'grid-cols-1' : 'grid-cols-2'">
+          <div v-for="award in minorAwardOptions" :key="award.key" class="border border-amber-200 rounded p-2 bg-amber-50/30">
+            <div class="text-center mb-1 pb-1 border-b border-amber-200">
+              <h3 class="text-xs font-bold text-amber-800">🏆 {{ award.label }}</h3>
+            </div>
+            
+            <!-- Pair pageant: Show male & female side by side -->
+            <template v-if="isPairPageant && getMinorAwardDataByKey(award.key)">
+              <div class="grid grid-cols-2 gap-2 text-[9px]">
+                <!-- Male Winner -->
+                <div v-if="getMinorAwardDataByKey(award.key)?.male_winners?.length > 0" class="text-center border-r border-amber-100 pr-1">
+                  <div class="text-[8px] font-semibold text-blue-700 mb-0.5">♂ Male</div>
+                  <div v-for="winner in getMinorAwardDataByKey(award.key)?.male_winners" :key="winner.id">
+                    <div class="font-bold text-gray-900">#{{ winner.number }}</div>
+                    <div class="text-gray-700 leading-tight">{{ capitalizeName(winner.name) }}</div>
+                    <div class="text-gray-500 text-[8px]">{{ winner.score?.toFixed(2) }} pts</div>
+                  </div>
+                </div>
+                <div v-else class="text-center text-gray-400 italic border-r border-amber-100 pr-1">
+                  <div class="text-[8px] font-semibold text-blue-300 mb-0.5">♂ Male</div>
+                  —
+                </div>
+                <!-- Female Winner -->
+                <div v-if="getMinorAwardDataByKey(award.key)?.female_winners?.length > 0" class="text-center pl-1">
+                  <div class="text-[8px] font-semibold text-pink-700 mb-0.5">♀ Female</div>
+                  <div v-for="winner in getMinorAwardDataByKey(award.key)?.female_winners" :key="winner.id">
+                    <div class="font-bold text-gray-900">#{{ winner.number }}</div>
+                    <div class="text-gray-700 leading-tight">{{ capitalizeName(winner.name) }}</div>
+                    <div class="text-gray-500 text-[8px]">{{ winner.score?.toFixed(2) }} pts</div>
+                  </div>
+                </div>
+                <div v-else class="text-center text-gray-400 italic pl-1">
+                  <div class="text-[8px] font-semibold text-pink-300 mb-0.5">♀ Female</div>
+                  —
+                </div>
+              </div>
+            </template>
+            
+            <!-- Solo pageant: Show single winner -->
+            <template v-else-if="getMinorAwardDataByKey(award.key)?.winners?.length > 0">
+              <div v-for="winner in getMinorAwardDataByKey(award.key)?.winners" :key="winner.id" class="text-center text-[9px]">
+                <div class="font-bold text-gray-900">#{{ winner.number }} - {{ capitalizeName(winner.name) }}</div>
+                <div class="text-gray-500 text-[8px]">{{ winner.score?.toFixed(2) }} pts</div>
+              </div>
+            </template>
+            
+            <!-- No winner -->
+            <div v-else class="text-center text-[9px] text-gray-400 italic py-1">
+              No winner determined
+            </div>
+          </div>
+        </div>
+        
+        <!-- Signatures Section for All Minor Awards Print -->
+        <div class="mt-6 pt-3 border-t border-gray-200">
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Panel of Judges -->
+            <div>
+              <h3 class="text-[9px] font-bold uppercase border-b border-black mb-2 pb-0.5">Panel of Judges</h3>
+              <div class="grid grid-cols-2 gap-x-3 gap-y-4">
+                <div v-for="judge in judges" :key="judge.id" class="text-center">
+                  <div class="border-b border-gray-400 h-5"></div>
+                  <div class="text-[8px] font-bold mt-0.5">{{ capitalizeName(judge.name) }}</div>
+                  <div class="text-[7px] uppercase text-gray-500">{{ judge.role }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Tabulator Certification -->
+            <div class="flex flex-col justify-end">
+              <div class="text-right">
+                <div class="text-[8px] uppercase text-gray-500 mb-3">Certified Correct:</div>
+                <div class="border-b border-black h-5 w-40 ml-auto"></div>
+                <div class="text-[9px] font-bold mt-0.5">{{ tabulatorName }}</div>
+                <div class="text-[7px] uppercase text-gray-500">Head Tabulator</div>
+                <div class="text-[7px] text-gray-500">{{ new Date().toLocaleDateString() }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      
+      <!-- Single Minor Award Print -->
+      <template v-else-if="selectedMinorAward && selectedMinorAwardData">
+        <div class="flex items-center gap-4 mb-8 pb-4 border-b-2 border-amber-400">
+          <!-- Logo -->
+          <div v-if="getLogoUrl" class="flex-shrink-0">
+            <img :src="getLogoUrl" alt="Pageant Logo" class="w-20 h-20 object-contain rounded-lg border border-amber-200" />
+          </div>
+          <!-- Header Content -->
+          <div class="flex-1 text-center" :class="{ 'pr-20': getLogoUrl }">
+            <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+            <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Minor Awards Report</div>
+            
+            <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+              <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+              <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+            </div>
+            
+            <div class="mt-6">
+              <h2 class="text-xl font-bold text-amber-700">Best in {{ selectedMinorAward }}</h2>
+            </div>
           </div>
         </div>
         
@@ -611,17 +874,24 @@
       <!-- For pair pageants, show side by side in single view -->
       <template v-if="isPairPageant && maleResults.length > 0 && femaleResults.length > 0">
         <!-- Unified Header for Pair Pageants -->
-        <div class="text-center mb-8 pb-4 border-b-2 border-black">
-          <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
-          <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Official Tabulation Report</div>
-          
-          <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
-            <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
-            <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+        <div class="flex items-center gap-4 mb-8 pb-4 border-b-2 border-black">
+          <!-- Logo -->
+          <div v-if="getLogoUrl" class="flex-shrink-0">
+            <img :src="getLogoUrl" alt="Pageant Logo" class="w-20 h-20 object-contain rounded-lg border border-gray-200" />
           </div>
-          
-          <div class="mt-6">
-            <h2 class="text-xl font-bold text-black">{{ reportTitle || 'Final Results' }}</h2>
+          <!-- Header Content -->
+          <div class="flex-1 text-center" :class="{ 'pr-20': getLogoUrl }">
+            <h1 class="text-2xl font-bold uppercase tracking-wide mb-1">{{ pageant.name }}</h1>
+            <div class="text-sm uppercase tracking-widest text-gray-600 mb-4">Official Tabulation Report</div>
+            
+            <div class="flex justify-center items-center gap-8 text-xs text-gray-600">
+              <span v-if="pageant.date">DATE: {{ pageant.date }}</span>
+              <span v-if="pageant.venue">VENUE: {{ pageant.venue }}</span>
+            </div>
+            
+            <div class="mt-6">
+              <h2 class="text-xl font-bold text-black">{{ reportTitle || 'Final Results' }}</h2>
+            </div>
           </div>
         </div>
         
@@ -638,11 +908,14 @@
               :pageant="pageant"
               :results="maleResults"
               :judges="judges"
+              :rounds="rounds"
               :report-title="reportTitle"
               :is-male-category="true"
               :is-last-final-round="isLastFinalRound"
               :number-of-winners="pageant?.number_of_winners || 3"
               :hide-rank-column="selectedStage === 'overall'"
+              :show-all-rounds="selectedStage === 'overall'"
+              :selected-stage="selectedStage"
             />
           </div>
           
@@ -658,11 +931,14 @@
               :pageant="pageant"
               :results="femaleResults"
               :judges="judges"
+              :rounds="rounds"
               :report-title="reportTitle"
               :is-female-category="true"
               :is-last-final-round="isLastFinalRound"
               :number-of-winners="pageant?.number_of_winners || 3"
               :hide-rank-column="selectedStage === 'overall'"
+              :show-all-rounds="selectedStage === 'overall'"
+              :selected-stage="selectedStage"
             />
           </div>
         </div>
@@ -708,9 +984,13 @@
             :pageant="pageant"
             :results="maleResults"
             :judges="judges"
+            :rounds="rounds"
             :report-title="`${reportTitle} - Male`"
+            :is-male-category="true"
             :is-last-final-round="isLastFinalRound"
             :number-of-winners="pageant?.number_of_winners || 3"
+            :show-all-rounds="selectedStage === 'overall'"
+            :selected-stage="selectedStage"
           />
         </div>
         
@@ -722,9 +1002,13 @@
             :pageant="pageant"
             :results="femaleResults"
             :judges="judges"
+            :rounds="rounds"
             :report-title="`${reportTitle} - Female`"
+            :is-female-category="true"
             :is-last-final-round="isLastFinalRound"
             :number-of-winners="pageant?.number_of_winners || 3"
+            :show-all-rounds="selectedStage === 'overall'"
+            :selected-stage="selectedStage"
           />
         </div>
       </template>
@@ -735,10 +1019,13 @@
         :pageant="pageant"
         :results="resultsToShow"
         :judges="judges"
+        :rounds="rounds"
         :report-title="reportTitle"
         :is-last-final-round="isLastFinalRound"
         :number-of-winners="pageant?.number_of_winners || 3"
         :hide-rank-column="selectedStage === 'overall'"
+        :show-all-rounds="selectedStage === 'overall'"
+        :selected-stage="selectedStage"
       />
       </template>
     </div>
@@ -775,12 +1062,20 @@ interface Pageant {
   venue?: string
   location?: string
   number_of_winners?: number
+  logo?: string
 }
 
 interface Judge {
   id: number
   name: string
   role: string
+}
+
+interface Round {
+  id: number
+  name: string
+  type: string
+  display_order: number
 }
 
 interface RoundType {
@@ -809,7 +1104,7 @@ interface MinorAwardRound {
   }
   male_winners?: MinorAwardWinner[]
   female_winners?: MinorAwardWinner[]
-  winners?: MinorAwardWinner[]
+  winners: MinorAwardWinner[]
 }
 
 interface Tabulator {
@@ -825,9 +1120,12 @@ interface UnlockedRound {
 
 interface Props {
   pageant?: Pageant
+  rounds?: Round[]
   roundTypes: RoundType[]
   resultsByRoundType?: Record<string, Result[]>
   resultsOverall: Result[]
+  overallTally?: Result[]
+  finalTopN?: Result[]
   resultsSemiFinal: Result[]
   resultsFinal: Result[]
   minorAwards?: Record<string, MinorAwardRound>
@@ -854,6 +1152,16 @@ const paperSizes = {
   oficio: { name: 'Oficio (8.5" × 13")', size: '8.5in 13in', margin: '0.5in', width: '8.5in' }
 } as const
 
+// Get pageant logo URL
+const getLogoUrl = computed(() => {
+  const logo = props.pageant?.logo
+  if (!logo || typeof logo !== 'string') return null
+  if (logo.startsWith('http') || logo.startsWith('//') || logo.startsWith('/')) {
+    return logo
+  }
+  return `/storage/${logo}`
+})
+
 // Get available minor awards from props
 const minorAwardOptions = computed(() => {
   if (!props.minorAwards) return []
@@ -877,31 +1185,40 @@ const selectedMinorAwardData = computed(() => {
   return props.minorAwards[selectedMinorAward.value]
 })
 
+// Get minor award data by key (used for "Print All" view)
+const getMinorAwardDataByKey = (key: string) => {
+  if (!props.minorAwards!) return null
+  return props.minorAwards[key!]
+}
+
 // Build dynamic stage labels from round types
 const stageLabels = computed<Record<string, string>>(() => {
   const labels: Record<string, string> = {
-    overall: 'Overall Results (Final Round)',
+    // Overall Tally - same as Results page (all contestants, all rounds, ranked by final score)
+    overall: 'Overall Tally',
   }
   
-  // Add labels for each round type from the pageant
+  // Add labels for each round type from the pageant, but rename 'Final' to 'Final Results'
   props.roundTypes.forEach((roundType) => {
-    labels[roundType.key] = roundType.label
+    if (roundType.key.toLowerCase() === 'final') {
+      labels[roundType.key] = 'Final Results'
+    } else {
+      labels[roundType.key] = roundType.label
+    }
   })
-  
-  // If there's a 'final' type, also add a 'final-top3' option
-  const hasFinal = props.roundTypes.some(rt => rt.key.toLowerCase() === 'final')
-  if (hasFinal) {
-    labels['final-top3'] = 'Final - Top ' + (props.pageant?.number_of_winners || 3)
-  }
   
   return labels
 })
 
 const resultsToShow = computed<Result[]>(() => {
-  // Handle 'final-top3' special case
-  if (selectedStage.value === 'final-top3') {
-    const finalResults = props.resultsByRoundType?.['final'] || props.resultsFinal || []
-    return finalResults.slice(0, props.pageant?.number_of_winners || 3)
+  // Handle 'overall' - Same as Overall Tally in Results page
+  if (selectedStage.value === 'overall') {
+    return props.overallTally || props.resultsOverall || []
+  }
+  
+  // Handle 'final' - Use finalTopN (only contestants who competed in final round)
+  if (selectedStage.value.toLowerCase() === 'final') {
+    return props.finalTopN || props.resultsFinal || []
   }
   
   // Try to get results from the new dynamic resultsByRoundType
@@ -913,11 +1230,8 @@ const resultsToShow = computed<Result[]>(() => {
   switch (selectedStage.value) {
     case 'semi-final':
       return props.resultsSemiFinal || []
-    case 'final':
-      return props.resultsFinal || []
-    case 'overall':
     default:
-      return props.resultsOverall || []
+      return props.overallTally || props.resultsOverall || []
   }
 })
 
@@ -938,7 +1252,7 @@ const femaleResults = computed(() => {
 const reportTitle = computed(() => stageLabels.value[selectedStage.value])
 
 const isLastFinalRound = computed(() => {
-  return selectedStage.value === 'final' || selectedStage.value === 'final-top3'
+  return selectedStage.value.toLowerCase() === 'final'
 })
 
 // Tabulator name for signatures

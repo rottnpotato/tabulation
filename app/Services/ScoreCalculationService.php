@@ -111,7 +111,7 @@ class ScoreCalculationService
     /**
      * Apply ranking with gender separation for pair pageants.
      */
-    private function applyGenderSeparatedRanking(
+    public function applyGenderSeparatedRanking(
         array $contestants,
         Pageant $pageant,
         string $scoreField,
