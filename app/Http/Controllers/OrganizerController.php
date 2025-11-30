@@ -717,6 +717,7 @@ class OrganizerController extends Controller
                     'display_order' => $round->display_order,
                     'is_active' => $round->is_active,
                     'scoring_config' => $round->scoring_config,
+                    'top_n_proceed' => $round->top_n_proceed,
                     'criteria_count' => $round->criteria->count(),
                     'criteria' => $round->criteria->map(function ($criteria) {
                         return [
@@ -1318,6 +1319,7 @@ class OrganizerController extends Controller
                     'display_order' => $round->display_order,
                     'is_active' => $round->is_active,
                     'scoring_config' => $round->scoring_config,
+                    'top_n_proceed' => $round->top_n_proceed,
                     'criteria_count' => $round->criteria->count(),
                     'criteria' => $round->criteria->map(function ($criteria) {
                         return [
