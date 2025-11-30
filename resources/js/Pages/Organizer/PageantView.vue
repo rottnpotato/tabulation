@@ -893,9 +893,9 @@
                       </p>
                       <div class="flex items-center gap-2 mt-1">
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                          :class="pageant.ranking_method === 'rank_sum' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'">
+                          :class="getRankingMethodClass(pageant.ranking_method)">
                           <Scale class="h-3 w-3 mr-1" />
-                          {{ pageant.ranking_method === 'rank_sum' ? 'Rank-based (Lowest Wins)' : 'Score-based (Highest Wins)' }}
+                          {{ getRankingMethodLabel(pageant.ranking_method) }}
                         </span>
                       </div>
                     </div>
@@ -1904,9 +1904,11 @@
                         >
                           <option value="rank_sum">Rank-based (Lowest Wins)</option>
                           <option value="score_average">Score-based (Highest Wins)</option>
+                          <option value="ordinal">Ordinal/Final Ballot (Majority + Sum of Ranks)</option>
                         </select>
                         <p class="mt-1 text-xs text-gray-500">
                           <span v-if="roundForm.ranking_method === 'rank_sum'">Judges rank contestants; lowest total rank wins</span>
+                          <span v-else-if="roundForm.ranking_method === 'ordinal'">Final Ballot system: Majority of #1 votes wins, else lowest sum of ranks wins</span>
                           <span v-else>Judges score contestants; highest average score wins</span>
                         </p>
                       </div>
@@ -3164,6 +3166,32 @@ const getStatusClass = (status) => {
       return { badge: 'bg-teal-100 text-teal-800' }
     default:
       return { badge: 'bg-gray-100 text-gray-800' }
+  }
+}
+
+// Get ranking method label
+const getRankingMethodLabel = (method) => {
+  switch (method) {
+    case 'rank_sum':
+      return 'Rank-based (Lowest Wins)'
+    case 'ordinal':
+      return 'Ordinal/Final Ballot (Majority + Sum)'
+    case 'score_average':
+    default:
+      return 'Score-based (Highest Wins)'
+  }
+}
+
+// Get ranking method class for styling
+const getRankingMethodClass = (method) => {
+  switch (method) {
+    case 'rank_sum':
+      return 'bg-amber-100 text-amber-800'
+    case 'ordinal':
+      return 'bg-purple-100 text-purple-800'
+    case 'score_average':
+    default:
+      return 'bg-blue-100 text-blue-800'
   }
 }
 

@@ -91,22 +91,22 @@
               <div 
                 v-if="pageant"
                 class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium"
-                :class="isRankSumMethod ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'"
-                :title="isRankSumMethod ? 'Scores are converted to ranks per judge - lowest sum wins' : 'Scores are averaged - highest average wins'"
+                :class="getRankingMethodClass()"
+                :title="getRankingMethodTooltip()"
               >
                 <BarChart3 class="w-3.5 h-3.5" />
-                <span>{{ isRankSumMethod ? 'Rank Sum' : 'Avg Score' }}</span>
+                <span>{{ getRankingMethodLabel() }}</span>
               </div>
             </div>
             
             <div class="flex items-center gap-2">
-               <button
+               <!-- <button
                 @click="exportScores"
                 class="inline-flex items-center px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 shadow-sm"
               >
                 <Download class="w-4 h-4 mr-2 text-slate-500" />
                 Export CSV
-              </button>
+              </button> -->
             </div>
           </div>
         </div>
@@ -273,7 +273,7 @@ interface Pageant {
   id: number
   name: string
   contestant_type?: 'solo' | 'pairs' | 'both'
-  ranking_method?: 'score_average' | 'rank_sum'
+  ranking_method?: 'score_average' | 'rank_sum' | 'ordinal'
   tie_handling?: 'sequential' | 'average' | 'minimum'
 }
 
@@ -307,6 +307,40 @@ const currentRoundId = ref((props.currentRound?.id ?? props.rounds[0]?.id)?.toSt
 
 // Check if using rank-sum method
 const isRankSumMethod = computed(() => props.pageant?.ranking_method === 'rank_sum')
+
+// Check if using ordinal method
+const isOrdinalMethod = computed(() => props.pageant?.ranking_method === 'ordinal')
+
+// Get ranking method display info
+const getRankingMethodLabel = () => {
+  const method = props.pageant?.ranking_method || 'score_average'
+  switch (method) {
+    case 'rank_sum': return 'Rank Sum'
+    case 'ordinal': return 'Ordinal'
+    case 'score_average':
+    default: return 'Avg Score'
+  }
+}
+
+const getRankingMethodClass = () => {
+  const method = props.pageant?.ranking_method || 'score_average'
+  switch (method) {
+    case 'rank_sum': return 'bg-purple-100 text-purple-700 border border-purple-200'
+    case 'ordinal': return 'bg-amber-100 text-amber-700 border border-amber-200'
+    case 'score_average':
+    default: return 'bg-blue-100 text-blue-700 border border-blue-200'
+  }
+}
+
+const getRankingMethodTooltip = () => {
+  const method = props.pageant?.ranking_method || 'score_average'
+  switch (method) {
+    case 'rank_sum': return 'Scores are converted to ranks per judge - lowest sum wins'
+    case 'ordinal': return 'Final Ballot system - Majority of #1 votes wins, else lowest sum of ranks'
+    case 'score_average':
+    default: return 'Scores are averaged - highest average wins'
+  }
+}
 
 const roundOptions = computed(() => {
   return props.rounds.map(round => ({

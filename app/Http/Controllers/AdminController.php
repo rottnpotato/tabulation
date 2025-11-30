@@ -442,7 +442,7 @@ class AdminController extends Controller
             ];
         });
 
-        // Add rounds data
+        // Add rounds data with criteria
         $pageantData['rounds'] = $pageant->rounds->map(function ($round) {
             return [
                 'id' => $round->id,
@@ -451,8 +451,64 @@ class AdminController extends Controller
                 'is_active' => $round->is_active ?? false,
                 'order' => $round->order ?? 0,
                 'status' => $round->status ?? 'pending',
+                'criteria' => $round->criteria->map(function ($criteria) {
+                    return [
+                        'id' => $criteria->id,
+                        'name' => $criteria->name,
+                        'weight' => $criteria->weight,
+                        'description' => $criteria->description,
+                    ];
+                }),
             ];
         });
+
+        // Get filtered activities specific to this pageant
+        $activities = $pageant->recentActivities()
+            ->orderBy('created_at', 'desc')
+            ->limit(15)
+            ->get()
+            ->map(function ($activity) {
+                $icon = 'CheckCircle';
+
+                switch ($activity->action_type) {
+                    case 'CONTESTANT_ADDED':
+                    case 'CONTESTANT_UPDATED':
+                    case 'CONTESTANT_REMOVED':
+                        $icon = 'User2';
+                        break;
+                    case 'SEGMENT_CREATED':
+                    case 'SEGMENT_UPDATED':
+                    case 'ROUND_STARTED':
+                    case 'ROUND_COMPLETED':
+                        $icon = 'Clock';
+                        break;
+                    case 'SCORE_SUBMITTED':
+                    case 'SCORE_UPDATED':
+                        $icon = 'Star';
+                        break;
+                    case 'JUDGE_ASSIGNED':
+                    case 'JUDGE_REMOVED':
+                        $icon = 'Award';
+                        break;
+                    case 'CATEGORY_CREATED':
+                    case 'CATEGORY_UPDATED':
+                        $icon = 'List';
+                        break;
+                    case 'PAGEANT_UPDATED':
+                    case 'STATUS_CHANGED':
+                        $icon = 'Edit';
+                        break;
+                }
+
+                return [
+                    'icon' => $icon,
+                    'description' => $activity->description,
+                    'time' => $activity->created_at->diffForHumans(),
+                    'action_type' => $activity->action_type,
+                ];
+            });
+
+        $pageantData['recentActivities'] = $activities;
 
         return Inertia::render('Admin/Pageants/PageantDetails', [
             'pageant' => $pageantData,
@@ -642,6 +698,8 @@ class AdminController extends Controller
                     'start_date' => $pageant->start_date?->format('M d, Y'),
                     'end_date' => $pageant->end_date?->format('M d, Y'),
                     'location' => $pageant->location,
+                    'cover_image' => $pageant->cover_image ? ($pageant->cover_image === 'default-cover.jpg' ? '/images/placeholders/pageant-cover.jpg' : '/storage/'.$pageant->cover_image) : null,
+                    'logo' => $pageant->logo ? ($pageant->logo === 'default-logo.png' ? '/images/placeholders/pageant-logo.png' : '/storage/'.$pageant->logo) : null,
                     'organizers' => $pageant->organizers->map(function ($organizer) {
                         return [
                             'id' => $organizer->id,
@@ -714,6 +772,8 @@ class AdminController extends Controller
                     'start_date' => $pageant->start_date?->format('M d, Y'),
                     'end_date' => $pageant->end_date?->format('M d, Y'),
                     'location' => $pageant->location,
+                    'cover_image' => $pageant->cover_image ? ($pageant->cover_image === 'default-cover.jpg' ? '/images/placeholders/pageant-cover.jpg' : '/storage/'.$pageant->cover_image) : null,
+                    'logo' => $pageant->logo ? ($pageant->logo === 'default-logo.png' ? '/images/placeholders/pageant-logo.png' : '/storage/'.$pageant->logo) : null,
                     'reason' => $pageant->archive_reason,
                     'archived_at' => $pageant->archived_at?->format('Y-m-d'),
                     'archive_note' => $pageant->description,
@@ -759,6 +819,48 @@ class AdminController extends Controller
         return Inertia::render('Admin/Pageants/ArchivedDetail', [
             'pageant' => $pageantData,
         ]);
+    }
+
+    /**
+     * Restore an archived pageant
+     */
+    public function restorePageant($id)
+    {
+        try {
+            $pageant = Pageant::findOrFail($id);
+
+            // Check if pageant is actually archived
+            if (! in_array($pageant->status, ['Archived', 'Cancelled'])) {
+                return redirect()->back()
+                    ->with('error', 'This pageant is not archived and cannot be restored.');
+            }
+
+            // Store previous status for audit log
+            $previousStatus = $pageant->status;
+
+            // Update pageant status to Completed (or Setup if it never started)
+            $newStatus = $pageant->start_date && $pageant->start_date->isPast() ? 'Completed' : 'Setup';
+            $pageant->status = $newStatus;
+            $pageant->archived_at = null;
+            $pageant->save();
+
+            // Log the restoration action
+            $this->auditLogService->log(
+                'Update',
+                'Pageant',
+                $pageant->id,
+                "Restored pageant '{$pageant->name}' from {$previousStatus} to {$newStatus}"
+            );
+
+            return redirect()
+                ->route('admin.pageants.index')
+                ->with('success', "Pageant '{$pageant->name}' has been successfully restored.");
+        } catch (\Exception $e) {
+            Log::error('Error restoring pageant: '.$e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'An error occurred while restoring the pageant. Please try again.');
+        }
     }
 
     public function auditLog(Request $request)

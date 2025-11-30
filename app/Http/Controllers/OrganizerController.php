@@ -16,6 +16,7 @@ use App\Models\Score;
 use App\Models\User;
 use App\Services\ActivityService;
 use App\Services\AuditLogService;
+use App\Services\ScoreCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -32,10 +33,13 @@ class OrganizerController extends Controller
 
     protected $activityService;
 
-    public function __construct(AuditLogService $auditLogService, ActivityService $activityService)
+    protected $scoreCalculationService;
+
+    public function __construct(AuditLogService $auditLogService, ActivityService $activityService, ScoreCalculationService $scoreCalculationService)
     {
         $this->auditLogService = $auditLogService;
         $this->activityService = $activityService;
+        $this->scoreCalculationService = $scoreCalculationService;
     }
 
     /**
@@ -690,6 +694,7 @@ class OrganizerController extends Controller
             'coverImage' => $pageant->cover_image,
             'logo' => $pageant->logo,
             'scoring_system' => $pageant->scoring_system,
+            'ranking_method' => $pageant->ranking_method,
             'contestants_count' => $pageant->contestants->count(),
             'criteria_count' => $pageant->criteria->count(),
             'judges_count' => $pageant->judges->count(),
@@ -833,6 +838,213 @@ class OrganizerController extends Controller
             'auth' => [
                 'user' => Auth::user(),
             ],
+        ]);
+    }
+
+    public function viewResults($id)
+    {
+        // Get the currently logged in organizer
+        $organizer = Auth::user();
+
+        // Check if this organizer has access to this pageant
+        $hasAccess = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->where('pageant_id', $id)
+            ->exists();
+
+        if (! $hasAccess) {
+            return redirect()->route('organizer.my-pageants')
+                ->with('error', 'You do not have access to this pageant');
+        }
+
+        // Get the pageant details with relationships
+        $pageant = Pageant::with([
+            'contestants' => function ($query) {
+                $query->where('active', true)->orderBy('number');
+            },
+            'contestants.members',
+            'rounds' => function ($query) {
+                $query->orderBy('display_order');
+            },
+            'rounds.criteria' => function ($query) {
+                $query->orderBy('display_order');
+            },
+            'judges',
+        ])
+            ->findOrFail($id);
+
+        // Check if all rounds are locked
+        $allRoundsLocked = $pageant->rounds->count() > 0 && $pageant->rounds->every(fn ($round) => $round->is_locked);
+
+        // Get list of unlocked rounds for the warning message
+        $unlockedRounds = $pageant->rounds->filter(fn ($round) => ! $round->is_locked)->map(fn ($round) => [
+            'id' => $round->id,
+            'name' => $round->name,
+            'type' => $round->type,
+        ])->values();
+
+        // Get the last final round
+        $lastFinalRound = $pageant->rounds
+            ->filter(fn ($round) => strtolower($round->type) === 'final')
+            ->sortByDesc('display_order')
+            ->first();
+
+        // Calculate Overall Tally - shows ALL contestants with ALL round scores
+        $overallTallyContestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant);
+
+        if ($lastFinalRound) {
+            // Replace the cumulative finalScore with just the final round score for ranking
+            $overallTallyContestants = collect($overallTallyContestants)->map(function ($contestant) use ($lastFinalRound) {
+                $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
+                $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
+
+                return array_merge($contestant, [
+                    'finalScore' => $finalRoundScore,
+                    'totalScore' => $finalRoundScore,
+                    'hasQualifiedForFinal' => $hasFinalScore,
+                ]);
+            })->toArray();
+
+            // Re-rank contestants based on final round score only
+            $overallTallyContestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
+                $overallTallyContestants,
+                $pageant,
+                'finalScore',
+                'desc',
+                $pageant->tie_handling ?? 'average'
+            );
+        }
+
+        // Format overall tally results for frontend
+        $overallTally = collect($overallTallyContestants)->map(function ($contestant) use ($pageant) {
+            $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
+            $memberNames = [];
+            $memberGenders = [];
+
+            if ($contestantModel && $contestantModel->is_pair && $contestantModel->members->isNotEmpty()) {
+                foreach ($contestantModel->members as $member) {
+                    $memberNames[] = $member->name;
+                    $memberGenders[] = $member->gender;
+                }
+            }
+
+            return [
+                'id' => $contestant['id'],
+                'number' => $contestant['number'],
+                'name' => $contestant['name'],
+                'gender' => $contestantModel->gender ?? null,
+                'is_pair' => $contestantModel->is_pair ?? false,
+                'member_names' => $memberNames,
+                'member_genders' => $memberGenders,
+                'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
+                'scores' => $contestant['scores'] ?? [],
+                'final_score' => $contestant['finalScore'] ?? 0,
+                'rank' => $contestant['rank'] ?? 0,
+                'hasQualifiedForFinal' => $contestant['hasQualifiedForFinal'] ?? false,
+            ];
+        })->values();
+
+        // Final Result (Top N) - Only contestants who competed in the final round
+        $finalTopN = $overallTally->filter(fn ($c) => $c['hasQualifiedForFinal'] === true);
+
+        // Apply top_n_proceed filter if set
+        if ($lastFinalRound && $lastFinalRound->top_n_proceed !== null && $lastFinalRound->top_n_proceed > 0) {
+            $topN = $lastFinalRound->top_n_proceed;
+
+            if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
+                $maleFinalists = $finalTopN->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                $femaleFinalists = $finalTopN->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                $finalTopN = $maleFinalists->merge($femaleFinalists)->values();
+            } else {
+                $finalTopN = $finalTopN->take($topN);
+            }
+        }
+
+        // Get judges for this pageant
+        $judges = $pageant->judges->map(function ($judge) {
+            return [
+                'id' => $judge->id,
+                'name' => $judge->name,
+                'role' => $judge->pivot->role ?? 'Judge',
+            ];
+        });
+
+        // Get rounds ordered for display
+        $sortedRounds = $pageant->rounds->sortBy('display_order');
+
+        // Group rounds by type to find advancement info
+        $roundsByType = $sortedRounds->groupBy('type');
+        $lastRoundIdsByType = [];
+        $topNByType = [];
+
+        foreach ($roundsByType as $type => $roundsOfType) {
+            $lastRound = $roundsOfType->sortByDesc('display_order')->first();
+            if ($lastRound) {
+                $lastRoundIdsByType[$type] = $lastRound->id;
+
+                // Find top_n_proceed for this stage type
+                $topN = $roundsOfType->whereNotNull('top_n_proceed')
+                    ->where('top_n_proceed', '>', 0)
+                    ->sortByDesc('display_order')
+                    ->first()?->top_n_proceed;
+
+                $topNByType[$type] = $topN;
+            }
+        }
+
+        $rounds = $sortedRounds->map(function ($round) use ($lastRoundIdsByType, $topNByType) {
+            $isLastOfType = ($lastRoundIdsByType[$round->type] ?? null) === $round->id;
+
+            // Attach top_n_proceed to the last round of each type for badge display
+            $topNProceed = $isLastOfType ? ($topNByType[$round->type] ?? null) : null;
+
+            return [
+                'id' => $round->id,
+                'name' => $round->name,
+                'type' => $round->type,
+                'weight' => $round->weight,
+                'top_n_proceed' => $topNProceed,
+                'display_order' => $round->display_order,
+                'is_last_of_type' => $isLastOfType,
+            ];
+        })->values();
+
+        // Get unique round types for stage selection
+        $uniqueRoundTypes = $pageant->rounds
+            ->sortBy('display_order')
+            ->groupBy('type')
+            ->map(function ($roundsOfType) {
+                $firstRound = $roundsOfType->first();
+                $lastRound = $roundsOfType->sortByDesc('display_order')->first();
+
+                return [
+                    'key' => $firstRound->type,
+                    'label' => ucwords(str_replace(['-', '_'], ' ', $firstRound->type)),
+                    'display_order' => $firstRound->display_order,
+                    'last_display_order' => $lastRound->display_order,
+                    'top_n_proceed' => $lastRound->top_n_proceed,
+                ];
+            })
+            ->values();
+
+        return Inertia::render('Organizer/Results', [
+            'pageant' => [
+                'id' => $pageant->id,
+                'name' => $pageant->name,
+                'contestant_type' => $pageant->contestant_type,
+                'date' => $pageant->pageant_date?->format('F j, Y'),
+                'venue' => $pageant->venue,
+                'location' => $pageant->location,
+                'number_of_winners' => $pageant->getNumberOfWinners(),
+                'logo' => $pageant->logo,
+            ],
+            'rounds' => $rounds,
+            'roundTypes' => $uniqueRoundTypes,
+            'overallTally' => $overallTally,
+            'finalTopN' => $finalTopN,
+            'judges' => $judges,
+            'allRoundsLocked' => $allRoundsLocked,
+            'unlockedRounds' => $unlockedRounds,
         ]);
     }
 
@@ -1470,7 +1682,15 @@ class OrganizerController extends Controller
         // Update pageant ranking method if provided
         if (isset($validated['ranking_method'])) {
             $pageant = \App\Models\Pageant::findOrFail($pageantId);
-            $pageant->update(['ranking_method' => $validated['ranking_method']]);
+            // Map frontend values to database enum values
+            $rankingMethod = match ($validated['ranking_method']) {
+                'sum_of_ranks' => 'rank_sum',
+                'average' => 'score_average',
+                default => $validated['ranking_method']
+            };
+            Log::info("Creating round - Updating pageant {$pageantId} ranking_method from {$validated['ranking_method']} to {$rankingMethod}");
+            $pageant->update(['ranking_method' => $rankingMethod]);
+            Log::info("Pageant {$pageantId} updated, new ranking_method: {$pageant->fresh()->ranking_method}");
         }
 
         // Generate identifier if not provided
@@ -1543,7 +1763,15 @@ class OrganizerController extends Controller
         // Update pageant ranking method if provided
         if (isset($validated['ranking_method'])) {
             $pageant = \App\Models\Pageant::findOrFail($pageantId);
-            $pageant->update(['ranking_method' => $validated['ranking_method']]);
+            // Map frontend values to database enum values
+            $rankingMethod = match ($validated['ranking_method']) {
+                'sum_of_ranks' => 'rank_sum',
+                'average' => 'score_average',
+                default => $validated['ranking_method']
+            };
+            Log::info("Updating round - Updating pageant {$pageantId} ranking_method from {$validated['ranking_method']} to {$rankingMethod}");
+            $pageant->update(['ranking_method' => $rankingMethod]);
+            Log::info("Pageant {$pageantId} updated, new ranking_method: {$pageant->fresh()->ranking_method}");
         }
 
         // Log activity

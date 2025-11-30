@@ -459,7 +459,7 @@ class TabulatorController extends Controller
      * Show results for a pageant
     /**
      * Show comprehensive results for tabulator
-     * 
+     *
      * For Results page:
      * - "Overall Tally" shows ONLY the final round results (not cumulative)
      * - Individual round views show scores up to that specific round
@@ -478,28 +478,28 @@ class TabulatorController extends Controller
         $roundsByType = $sortedRounds->groupBy('type');
         $lastRoundIdsByType = [];
         $topNByType = [];
-        
+
         foreach ($roundsByType as $type => $rounds) {
             $lastRound = $rounds->sortByDesc('display_order')->first();
             if ($lastRound) {
                 $lastRoundIdsByType[$type] = $lastRound->id;
-                
+
                 // Find top_n_proceed for this stage type (from any round of this type that has it set)
                 $topN = $rounds->whereNotNull('top_n_proceed')
                     ->where('top_n_proceed', '>', 0)
                     ->sortByDesc('display_order')
                     ->first()?->top_n_proceed;
-                    
+
                 $topNByType[$type] = $topN;
             }
         }
 
         $rounds = $sortedRounds->map(function ($round) use ($lastRoundIdsByType, $topNByType) {
             $isLastOfType = ($lastRoundIdsByType[$round->type] ?? null) === $round->id;
-            
+
             // Attach top_n_proceed to the last round of each type for badge display
             $topNProceed = $isLastOfType ? ($topNByType[$round->type] ?? null) : null;
-            
+
             return [
                 'id' => $round->id,
                 'name' => $round->name,
@@ -514,38 +514,105 @@ class TabulatorController extends Controller
         // Calculate overall results with all round scores displayed
         // But rank by ONLY the final round score (not cumulative)
         // Force fresh calculation by disabling cache to ensure latest scores are shown
-        $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant, false);
-        
-        // Find the last final round to use for ranking
-        $lastFinalRound = $pageant->rounds
-            ->filter(fn ($round) => strtolower($round->type) === 'final')
-            ->sortByDesc('display_order')
-            ->first();
+        $rankingMethod = $pageant->ranking_method ?? 'score_average';
 
-        if ($lastFinalRound) {
-            // Replace the cumulative finalScore with just the final round score for ranking
-            // Only contestants with actual final round scores should be ranked as winners
-            $contestants = collect($contestants)->map(function ($contestant) use ($lastFinalRound) {
-                // Get the final round score from the scores array
-                // Use null instead of 0 for contestants who didn't compete in the final
-                $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
-                $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
-                
-                return array_merge($contestant, [
-                    'finalScore' => $finalRoundScore,
-                    'totalScore' => $finalRoundScore,
-                    'hasQualifiedForFinal' => $hasFinalScore,
-                ]);
-            })->toArray();
-            
-            // Re-rank contestants based on final round score only
-            $contestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
-                $contestants,
-                $pageant,
-                'finalScore',
-                'desc',
-                $pageant->tie_handling ?? 'average'
-            );
+        // For ordinal ranking, we need to get ALL contestants with scores first,
+        // then apply ordinal ranking only to finalists - otherwise we'd cut non-finalists
+        if ($rankingMethod === 'ordinal') {
+            // Get all contestants with all their scores (like score_average does)
+            $contestants = $this->scoreCalculationService->calculateAllContestantsWithScores($pageant, false);
+
+            // Find the last final round for ordinal ranking
+            $lastFinalRound = $pageant->rounds
+                ->filter(fn ($round) => strtolower($round->type) === 'final')
+                ->sortByDesc('display_order')
+                ->first();
+
+            if ($lastFinalRound) {
+                // Get ordinal-ranked finalists for the last round
+                $ordinalFinalists = $this->scoreCalculationService->calculateOrdinalForRound($pageant, $lastFinalRound, false);
+                $finalistRanks = collect($ordinalFinalists)->keyBy('id');
+
+                // Merge ordinal ranks into all contestants
+                $contestants = collect($contestants)->map(function ($contestant) use ($lastFinalRound, $finalistRanks) {
+                    $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
+                    $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
+
+                    // Get ordinal rank if this contestant is a finalist
+                    $ordinalRank = null;
+                    $totalRankSum = $contestant['totalRankSum'] ?? 0;
+                    if ($finalistRanks->has($contestant['id'])) {
+                        $finalist = $finalistRanks->get($contestant['id']);
+                        $ordinalRank = $finalist['rank'] ?? null;
+                        $totalRankSum = $finalist['totalRankSum'] ?? $totalRankSum;
+                    }
+
+                    return array_merge($contestant, [
+                        'finalScore' => $finalRoundScore,
+                        'totalScore' => $finalRoundScore,
+                        'hasQualifiedForFinal' => $hasFinalScore,
+                        'rank' => $ordinalRank ?? 0,
+                        'totalRankSum' => $totalRankSum,
+                    ]);
+                })->toArray();
+
+                // Sort: finalists first (by rank), then non-finalists
+                usort($contestants, function ($a, $b) {
+                    $aIsFinalist = ($a['rank'] ?? 0) > 0;
+                    $bIsFinalist = ($b['rank'] ?? 0) > 0;
+
+                    // Finalists come first
+                    if ($aIsFinalist && ! $bIsFinalist) {
+                        return -1;
+                    }
+                    if (! $aIsFinalist && $bIsFinalist) {
+                        return 1;
+                    }
+
+                    // Both finalists: sort by rank (ascending)
+                    if ($aIsFinalist && $bIsFinalist) {
+                        return ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999);
+                    }
+
+                    // Both non-finalists: sort by number
+                    return ($a['number'] ?? 0) <=> ($b['number'] ?? 0);
+                });
+            }
+        } else {
+            // Standard path for score_average and rank_sum methods
+            $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant, false);
+
+            // Find the last final round to use for ranking
+            $lastFinalRound = $pageant->rounds
+                ->filter(fn ($round) => strtolower($round->type) === 'final')
+                ->sortByDesc('display_order')
+                ->first();
+
+            if ($lastFinalRound) {
+                // Replace the cumulative finalScore with just the final round score for ranking
+                // Only contestants with actual final round scores should be ranked as winners
+                $contestants = collect($contestants)->map(function ($contestant) use ($lastFinalRound) {
+                    // Get the final round score from the scores array
+                    // Use null instead of 0 for contestants who didn't compete in the final
+                    $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
+                    $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
+
+                    return array_merge($contestant, [
+                        'finalScore' => $finalRoundScore,
+                        'totalScore' => $finalRoundScore,
+                        'hasQualifiedForFinal' => $hasFinalScore,
+                    ]);
+                })->toArray();
+
+                // Re-rank contestants based on final round score only
+                $contestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
+                    $contestants,
+                    $pageant,
+                    'finalScore',
+                    'desc',
+                    $pageant->tie_handling ?? 'average'
+                );
+            }
         }
 
         // Calculate results for each round/stage using unified calculation method
@@ -556,9 +623,13 @@ class TabulatorController extends Controller
             // Force fresh calculation by disabling cache to ensure latest scores are shown
             $roundContestants = $this->scoreCalculationService->calculateRoundViewScores($pageant, $currentRound, false);
 
+            // For round results, use the round's actual top_n_proceed value from the database
+            // This allows advancement badges to show for any round that has top_n_proceed set
+            $roundTopN = $currentRound->top_n_proceed;
+
             $roundResults['round_'.$currentRound->id] = [
                 'contestants' => $roundContestants,
-                'top_n_proceed' => $currentRound->top_n_proceed,
+                'top_n_proceed' => $roundTopN,
             ];
         }
 
@@ -646,7 +717,7 @@ class TabulatorController extends Controller
 
     /**
      * Show printable results for a pageant
-     * 
+     *
      * For Print page:
      * - "Overall" shows ONLY the final round results (not cumulative)
      * - This is what gets printed as the official final results
@@ -835,16 +906,17 @@ class TabulatorController extends Controller
             $stageResults = $stageResults->filter(function ($contestant) {
                 // Only include contestants who have at least one score for this stage
                 $scores = $contestant['scores'] ?? [];
-                $hasScores = !empty($scores) && array_filter($scores, fn($score) => $score !== null && $score > 0);
-                return !empty($hasScores);
+                $hasScores = ! empty($scores) && array_filter($scores, fn ($score) => $score !== null && $score > 0);
+
+                return ! empty($hasScores);
             });
 
             $stageResults = $markQualifiedContestants($stageResults, $roundType)->values();
-            
+
             // Apply top_n_proceed filter if defined for this round type
             if (isset($roundTypeInfo['top_n_proceed']) && $roundTypeInfo['top_n_proceed'] > 0) {
                 $topN = $roundTypeInfo['top_n_proceed'];
-                
+
                 // For pair pageants, filter each gender separately
                 if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
                     $maleResults = $stageResults->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
@@ -854,7 +926,7 @@ class TabulatorController extends Controller
                     $stageResults = $stageResults->take($topN);
                 }
             }
-            
+
             $resultsByRoundType[$roundType] = $stageResults;
         }
 
@@ -867,20 +939,20 @@ class TabulatorController extends Controller
         // Calculate Overall Tally - same as Results page
         // Shows ALL contestants with ALL round scores, ranked by final round score
         $overallTallyContestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant);
-        
+
         if ($lastFinalRound) {
             // Replace the cumulative finalScore with just the final round score for ranking
             $overallTallyContestants = collect($overallTallyContestants)->map(function ($contestant) use ($lastFinalRound) {
                 $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
                 $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
-                
+
                 return array_merge($contestant, [
                     'finalScore' => $finalRoundScore,
                     'totalScore' => $finalRoundScore,
                     'hasQualifiedForFinal' => $hasFinalScore,
                 ]);
             })->toArray();
-            
+
             // Re-rank contestants based on final round score only
             $overallTallyContestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
                 $overallTallyContestants,
@@ -890,7 +962,7 @@ class TabulatorController extends Controller
                 $pageant->tie_handling ?? 'average'
             );
         }
-        
+
         // Format overall tally results for frontend
         $overallTally = collect($overallTallyContestants)->map(function ($contestant) use ($pageant) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
@@ -923,7 +995,7 @@ class TabulatorController extends Controller
         // Final Result (Top N) - Only contestants who competed in the final round
         // Filter to only those with hasQualifiedForFinal = true
         $finalTopN = $overallTally->filter(fn ($c) => $c['hasQualifiedForFinal'] === true);
-        
+
         // Apply top_n_proceed filter if set
         if ($lastFinalRound && $lastFinalRound->top_n_proceed !== null && $lastFinalRound->top_n_proceed > 0) {
             $topN = $lastFinalRound->top_n_proceed;
@@ -945,33 +1017,33 @@ class TabulatorController extends Controller
 
         // Get rounds ordered for display in Overall Tally table
         $sortedRounds = $pageant->rounds->sortBy('display_order');
-        
+
         // Group rounds by type to find advancement info
         $roundsByType = $sortedRounds->groupBy('type');
         $lastRoundIdsByType = [];
         $topNByType = [];
-        
+
         foreach ($roundsByType as $type => $roundsOfType) {
             $lastRound = $roundsOfType->sortByDesc('display_order')->first();
             if ($lastRound) {
                 $lastRoundIdsByType[$type] = $lastRound->id;
-                
+
                 // Find top_n_proceed for this stage type
                 $topN = $roundsOfType->whereNotNull('top_n_proceed')
                     ->where('top_n_proceed', '>', 0)
                     ->sortByDesc('display_order')
                     ->first()?->top_n_proceed;
-                    
+
                 $topNByType[$type] = $topN;
             }
         }
-        
+
         $rounds = $sortedRounds->map(function ($round) use ($lastRoundIdsByType, $topNByType) {
             $isLastOfType = ($lastRoundIdsByType[$round->type] ?? null) === $round->id;
-            
+
             // Attach top_n_proceed to the last round of each type for badge display
             $topNProceed = $isLastOfType ? ($topNByType[$round->type] ?? null) : null;
-            
+
             return [
                 'id' => $round->id,
                 'name' => $round->name,
@@ -991,7 +1063,7 @@ class TabulatorController extends Controller
             $roundContestants = $this->scoreCalculationService->calculateRoundViewScores($pageant, $currentRound);
 
             // Format contestants for this round
-            $formattedRoundContestants = collect($roundContestants)->map(function ($contestant) use ($pageant, $currentRound) {
+            $formattedRoundContestants = collect($roundContestants)->map(function ($contestant) use ($pageant) {
                 $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
                 $memberNames = [];
                 $memberGenders = [];
@@ -1036,6 +1108,7 @@ class TabulatorController extends Controller
                 'venue' => $pageant->venue,
                 'location' => $pageant->location,
                 'number_of_winners' => $pageant->getNumberOfWinners(),
+                'ranking_method' => $pageant->ranking_method ?? 'score_average',
             ],
             'rounds' => $rounds,
             'roundTypes' => $uniqueRoundTypes,

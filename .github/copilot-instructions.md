@@ -244,7 +244,7 @@ Route::get('/users', function () {
 </code-snippet>
 
 
-=== inertia-vue/v2 rules ===
+=== inertia-vue/v2/forms rules ===
 
 ## Inertia + Vue Forms
 
@@ -308,6 +308,14 @@ Route::get('/users', function () {
 ## Tailwind 3
 
 - Always use Tailwind CSS v3 - verify you're using only classes supported by this version.
+
+
+=== tests rules ===
+
+## Test Enforcement
+
+- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
+- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test` with a specific filename or filter.
 </laravel-boost-guidelines>
 <general-rules>
 # AI Assistant System Prompts Export

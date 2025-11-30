@@ -25,13 +25,22 @@
       <!-- Decorative corner accent -->
       <div class="corner-accent"></div>
       
-      <!-- Pair badge for paired contestants -->
-      <div v-if="contestant.is_paired" class="absolute top-4 left-4">
-        <span class="pair-badge">
+      <!-- Top badges container -->
+      <div class="absolute top-4 left-4 flex flex-col gap-2">
+        <!-- Pair badge for paired contestants -->
+        <span v-if="contestant.is_paired" class="pair-badge">
           <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
             <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
           </svg>
           Paired
+        </span>
+        
+        <!-- Ongoing pageant badge -->
+        <span v-if="isOngoing" class="ongoing-badge">
+          <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+          </svg>
+          Read-Only
         </span>
       </div>
 
@@ -47,19 +56,23 @@
               <span class="hidden sm:inline">View</span>
             </button>
           </Tooltip>
-          <Tooltip text="Edit contestant information and photos" position="top">
+          <Tooltip :text="isOngoing ? 'Cannot edit - Pageant is locked' : 'Edit contestant information and photos'" position="top">
             <button 
-              @click="$emit('edit', contestant)" 
+              @click="!isOngoing && $emit('edit', contestant)" 
               class="action-btn action-btn-secondary"
+              :class="{ 'opacity-50 cursor-not-allowed': isOngoing }"
+              :disabled="isOngoing"
             >
               <Edit class="h-4 w-4 z-10" />
               <span class="hidden sm:inline">Edit</span>
             </button>
           </Tooltip>
-          <Tooltip text="Permanently remove contestant from pageant" position="top">
+          <Tooltip :text="isOngoing ? 'Cannot delete - Pageant is locked' : 'Permanently remove contestant from pageant'" position="top">
             <button 
-              @click="$emit('delete', contestant)" 
+              @click="!isOngoing && $emit('delete', contestant)" 
               class="action-btn action-btn-danger"
+              :class="{ 'opacity-50 cursor-not-allowed': isOngoing }"
+              :disabled="isOngoing"
             >
               <Trash2 class="h-4 w-4 z-10" />
               <span class="hidden sm:inline">Delete</span>
@@ -104,6 +117,7 @@ import Tooltip from '@/Components/Tooltip.vue'
 
 defineProps({
   contestant: { type: Object, required: true },
+  isOngoing: { type: Boolean, default: false },
 })
 
 defineEmits(['view', 'edit', 'delete'])
@@ -189,6 +203,18 @@ const getContestantDisplayName = (contestant) => {
   transform: scale(1.05);
 }
 
+.ongoing-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-white text-xs font-semibold shadow-lg;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.card-contestant:hover .ongoing-badge {
+  transform: scale(1.05);
+}
+
 .action-buttons-overlay {
   @apply absolute inset-0 flex items-center justify-center;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.85) 100%);
@@ -231,11 +257,20 @@ const getContestantDisplayName = (contestant) => {
   z-index: 40;
 }
 
+.action-btn:disabled {
+  @apply cursor-not-allowed;
+  filter: grayscale(0.5);
+}
+
 .card-contestant:hover .action-btn {
   transform: scale(1);
 }
 
-.action-btn:hover {
+.card-contestant:hover .action-btn:disabled {
+  transform: scale(0.95);
+}
+
+.action-btn:not(:disabled):hover {
   transform: scale(1.05) !important;
 }
 

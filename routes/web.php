@@ -70,6 +70,7 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     Route::get('/timeline', [OrganizerController::class, 'timeline'])->name('organizer.timeline');
     Route::get('/pageant/{id}/timeline', [OrganizerController::class, 'pageantTimeline'])->name('organizer.pageant.timeline');
     Route::get('/pageant/{id}', [OrganizerController::class, 'viewPageant'])->name('organizer.pageant.view');
+    Route::get('/pageant/{id}/results', [OrganizerController::class, 'viewResults'])->name('organizer.pageant.results');
     Route::get('/pageant/{id}/edit', [OrganizerController::class, 'editPageant'])->name('organizer.pageant.edit');
     Route::put('/pageant/{id}', [OrganizerController::class, 'updatePageant'])->name('organizer.pageant.update');
     Route::post('/pageant/{id}', [OrganizerController::class, 'updatePageant']);
@@ -176,7 +177,7 @@ Route::middleware(['auth', 'verified', 'check_role:admin'])->prefix('admin')->gr
 
         // User permissions
         Route::get('/permissions', [UserManagementController::class, 'permissions'])->name('admin.users.permissions');
-        Route::put('/permissions/{id}', [UserManagementController::class, 'updatePermissions'])->name('admin.users.permissions.update');
+        Route::put('/permissions/{role}', [UserManagementController::class, 'updatePermissions'])->name('admin.users.permissions.update');
     });
 
     // Organizer management routes (legacy, maintain for backward compatibility)
@@ -208,6 +209,7 @@ Route::middleware(['auth', 'verified', 'check_role:admin'])->prefix('admin')->gr
 
         Route::get('/archived', [AdminController::class, 'archivedPageants'])->name('admin.pageants.archived');
         Route::get('/archived/{id}', [AdminController::class, 'archivedPageantDetail'])->name('admin.pageants.archived.detail');
+        Route::post('/archived/{id}/restore', [AdminController::class, 'restorePageant'])->name('admin.pageants.archived.restore');
 
         // These routes should be last to avoid conflicts with the named routes above
         Route::get('/{id}', [AdminController::class, 'ongoingPageantDetail'])->name('admin.pageants.detail');
