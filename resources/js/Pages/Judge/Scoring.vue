@@ -1,15 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 to-slate-200 text-slate-800 font-sans selection:bg-teal-500 selection:text-white overflow-x-hidden relative">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 text-slate-800 font-sans selection:bg-teal-500 selection:text-white">
     
-    <!-- Dynamic Background -->
-    <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-teal-500/20 blur-[120px] animate-blob"></div>
-        <div class="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/20 blur-[120px] animate-blob animation-delay-2000"></div>
-        <div class="absolute bottom-[-10%] left-[20%] w-[40%] h-[40%] rounded-full bg-sky-500/20 blur-[120px] animate-blob animation-delay-4000"></div>
-        <!-- CSS Noise Pattern -->
-        <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 24px 24px;"></div>
-    </div>
-
     <!-- Real-time Loading Overlay -->
     <div v-if="realtimeLoading" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-[100]">
       <div class="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center space-y-4 animate-in fade-in zoom-in duration-200">
@@ -22,345 +13,250 @@
     </div>
 
     <!-- Completed Pageant Banner -->
-    <div v-if="pageant?.is_completed" class="fixed top-0 inset-x-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-3">
+    <div v-if="pageant?.is_completed" class="fixed top-0 inset-x-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-2">
       <div class="max-w-7xl mx-auto flex items-center justify-center gap-3">
         <div class="flex items-center gap-2 text-amber-800">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-          </svg>
-          <span class="font-semibold">This pageant has been completed.</span>
+          <AlertCircle class="h-4 w-4" />
+          <span class="font-semibold text-sm">This pageant has been completed.</span>
         </div>
-        <span class="text-amber-700 text-sm">You can view your submitted scores but cannot make changes.</span>
+        <span class="text-amber-700 text-xs">View only mode.</span>
       </div>
     </div>
 
     <!-- Scoring Not Yet Open Banner -->
-    <div v-else-if="pageant?.scoring_status === 'not_started' && pageant?.start_date" class="fixed top-0 inset-x-0 z-50 bg-sky-50 border-b border-sky-200 px-4 py-3">
+    <div v-else-if="pageant?.scoring_status === 'not_started' && pageant?.start_date" class="fixed top-0 inset-x-0 z-50 bg-sky-50 border-b border-sky-200 px-4 py-2">
       <div class="max-w-7xl mx-auto flex items-center justify-center gap-3">
         <div class="flex items-center gap-2 text-sky-800">
-          <Calendar class="h-5 w-5" />
-          <span class="font-semibold">Scoring opens on {{ pageant.start_date }}{{ pageant.start_time ? ` at ${formatTime(pageant.start_time)}` : '' }}</span>
+          <Calendar class="h-4 w-4" />
+          <span class="font-semibold text-sm">Scoring opens on {{ pageant.start_date }}{{ pageant.start_time ? ` at ${formatTime(pageant.start_time)}` : '' }}</span>
         </div>
-        <span class="text-sky-700 text-sm">You can review contestants but scoring is not yet available.</span>
       </div>
     </div>
 
     <!-- Scoring Period Ended Banner -->
-    <div v-else-if="pageant?.scoring_status === 'ended'" class="fixed top-0 inset-x-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-3">
+    <div v-else-if="pageant?.scoring_status === 'ended'" class="fixed top-0 inset-x-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-2">
       <div class="max-w-7xl mx-auto flex items-center justify-center gap-3">
         <div class="flex items-center gap-2 text-amber-800">
-          <Calendar class="h-5 w-5" />
-          <span class="font-semibold">Scoring period has ended{{ pageant.end_date ? ` (ended ${pageant.end_date}${pageant.end_time ? ` at ${formatTime(pageant.end_time)}` : ''})` : '' }}</span>
+          <Calendar class="h-4 w-4" />
+          <span class="font-semibold text-sm">Scoring period has ended</span>
         </div>
-        <span class="text-amber-700 text-sm">You can view your submitted scores but cannot make changes.</span>
       </div>
     </div>
 
-    <!-- Header (Glassmorphism) -->
-    <header class="fixed inset-x-0 z-40 h-auto min-h-[5rem] pt-2 pb-2 px-4 lg:px-8 flex flex-col md:flex-row items-center justify-between bg-white/70 backdrop-blur-xl border-b border-white/40 shadow-sm transition-all duration-300 supports-[backdrop-filter]:bg-white/60 gap-4"
-        :class="hasBanner ? 'top-12' : 'top-0'">
-        <!-- Left: Back & Title -->
-        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-            <div class="flex items-center gap-4">
-                <Link :href="route('judge.dashboard')" class="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-teal-600 transition-colors shrink-0">
-                    <ChevronLeft class="w-6 h-6" />
-                </Link>
-                <div class="min-w-0">
-                    <div class="flex items-center gap-2 text-xs font-bold tracking-wider text-teal-600 uppercase truncate">
-                        <span>{{ pageant?.name }}</span>
-                        <span class="w-1 h-1 rounded-full bg-teal-400 shrink-0"></span>
-                        <span>Judge Panel</span>
-                        <span v-if="pageant?.scoring_system" class="w-1 h-1 rounded-full bg-purple-400 shrink-0"></span>
-                        <span v-if="pageant?.scoring_system" class="text-purple-600">{{ formatScoringSystem(pageant.scoring_system) }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-xl font-black text-slate-800 tracking-tight truncate">{{ currentRound?.name }}</h1>
-                        <span v-if="currentRound?.type" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize"
-                            :class="[
-                                currentRound.type.toLowerCase().includes('final') && !currentRound.type.toLowerCase().includes('semi') ? 'bg-purple-100 text-purple-800' :
-                                currentRound.type.toLowerCase().includes('semi') ? 'bg-blue-100 text-blue-800' :
-                                'bg-teal-100 text-teal-800'
-                            ]">
-                            {{ getRoundTypeDisplay(currentRound) }}
-                        </span>
-                    </div>
+    <!-- Compact Header -->
+    <header class="fixed inset-x-0 z-40 bg-white border-b border-slate-200 shadow-sm"
+        :class="hasBanner ? 'top-10' : 'top-0'">
+        <div class="max-w-[1800px] mx-auto px-4 lg:px-6">
+          <!-- Top Row: Title and Actions -->
+          <div class="flex items-center justify-between h-14">
+            <!-- Left: Back & Title -->
+            <div class="flex items-center gap-3">
+              <Link :href="route('judge.dashboard')" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-teal-600 transition-colors">
+                <ChevronLeft class="w-5 h-5" />
+              </Link>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h1 class="text-lg font-bold text-slate-800">{{ currentRound?.name }}</h1>
+                  <span v-if="currentRound?.type" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                      :class="[
+                          currentRound.type.toLowerCase().includes('final') && !currentRound.type.toLowerCase().includes('semi') ? 'bg-purple-100 text-purple-700' :
+                          currentRound.type.toLowerCase().includes('semi') ? 'bg-blue-100 text-blue-700' :
+                          'bg-teal-100 text-teal-700'
+                      ]">
+                      {{ getRoundTypeDisplay(currentRound) }}
+                  </span>
                 </div>
+                <div class="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
+                  <span>{{ pageant?.name }}</span>
+                  <span v-if="pageant?.scoring_system" class="text-slate-300">•</span>
+                  <span v-if="pageant?.scoring_system" class="text-purple-600">{{ formatScoringSystem(pageant.scoring_system) }}</span>
+                </div>
+              </div>
             </div>
-        </div>
 
-        <!-- Center: Round Navigation (Pills) -->
-        <div class="w-full md:w-auto overflow-x-auto scrollbar-hide pb-1 md:pb-0">
-            <div class="flex items-center gap-2 px-1">
-                <button 
-                    v-for="round in rounds" 
-                    :key="round.id"
-                    @click="handleRoundChange(round.id)"
-                    class="relative px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-2 ring-1 ring-inset"
-                    :class="[
-                        currentRoundId === round.id.toString() 
-                            ? 'bg-slate-800 text-white ring-slate-800 shadow-md transform scale-105' 
-                            : 'bg-white/50 text-slate-600 ring-slate-200 hover:bg-white hover:text-teal-600 hover:ring-teal-200'
-                    ]"
-                >
-                    <span v-if="pageant.current_round_id === round.id && !round.is_locked" class="relative flex h-2 w-2">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    <Lock v-if="round.is_locked" class="w-3 h-3" />
-                    <CheckCircle v-else-if="round.is_complete" class="w-3 h-3 text-emerald-500" />
-                    {{ round.name }}
-                    <span v-if="round.scoring_progress && !round.is_complete" class="text-[10px] opacity-70">
-                      ({{ Math.round(round.scoring_progress) }}%)
-                    </span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Right: Active Contestant Progress & Score Reference -->
-        <div class="w-full md:w-auto flex items-center justify-center md:justify-end gap-3">
-            <!-- Gender Filter (for pair competitions) -->
-            <div v-if="isPairCompetition" class="flex items-center bg-white/60 rounded-lg p-0.5 border border-white/50">
+            <!-- Right: Stats & Actions -->
+            <div class="flex items-center gap-3">
+              <!-- Progress Stats -->
+              <div class="hidden sm:flex items-center gap-4 px-4 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="text-center">
+                  <div class="text-lg font-black text-teal-600">{{ scoredContestantsCount }}</div>
+                  <div class="text-[9px] uppercase tracking-wide text-slate-500 font-semibold">Scored</div>
+                </div>
+                <div class="w-px h-8 bg-slate-200"></div>
+                <div class="text-center">
+                  <div class="text-lg font-black text-slate-400">{{ sortedContestants.length - scoredContestantsCount }}</div>
+                  <div class="text-[9px] uppercase tracking-wide text-slate-500 font-semibold">Remaining</div>
+                </div>
+                <div class="w-px h-8 bg-slate-200"></div>
+                <div class="text-center">
+                  <div class="text-lg font-black text-slate-800">{{ sortedContestants.length }}</div>
+                  <div class="text-[9px] uppercase tracking-wide text-slate-500 font-semibold">Total</div>
+                </div>
+              </div>
+              
+              <!-- Gender Filter -->
+              <div v-if="isPairCompetition" class="flex items-center bg-slate-100 rounded-lg p-0.5">
                 <button 
                     @click="handleGenderFilterChange('all')"
                     class="px-3 py-1.5 rounded-md text-xs font-bold transition-all"
-                    :class="genderFilter === 'all' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-white/50'"
-                >
-                    All
-                </button>
+                    :class="genderFilter === 'all' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                >All</button>
                 <button 
                     @click="handleGenderFilterChange('female')"
                     class="px-3 py-1.5 rounded-md text-xs font-bold transition-all"
-                    :class="genderFilter === 'female' ? 'bg-pink-500 text-white' : 'text-slate-600 hover:bg-white/50'"
-                >
-                    Female
-                </button>
+                    :class="genderFilter === 'female' ? 'bg-pink-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                >Female</button>
                 <button 
                     @click="handleGenderFilterChange('male')"
                     class="px-3 py-1.5 rounded-md text-xs font-bold transition-all"
-                    :class="genderFilter === 'male' ? 'bg-blue-500 text-white' : 'text-slate-600 hover:bg-white/50'"
-                >
-                    Male
-                </button>
+                    :class="genderFilter === 'male' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                >Male</button>
+              </div>
             </div>
-            
-            <!-- Score Reference Toggle -->
-            <button
-                v-if="otherContestantsScores.length > 0 || (isPairCompetition && (femaleScores.length > 0 || maleScores.length > 0))"
-                @click="showScoreReference = !showScoreReference"
-                class="px-3 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2"
-                :class="showScoreReference ? 'bg-teal-600 text-white' : 'bg-white/70 text-teal-700 hover:bg-white'"
-                title="View my scores for other contestants"
+          </div>
+          
+          <!-- Bottom Row: Round Navigation -->
+          <div class="flex items-center gap-2 pb-2 overflow-x-auto scrollbar-hide">
+            <button 
+                v-for="round in rounds" 
+                :key="round.id"
+                @click="handleRoundChange(round.id)"
+                class="relative px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5"
+                :class="[
+                    currentRoundId === round.id.toString() 
+                        ? 'bg-slate-800 text-white shadow-md' 
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-teal-300 hover:text-teal-600'
+                ]"
             >
-                <Eye v-if="!showScoreReference" class="w-4 h-4" />
-                <EyeOff v-if="showScoreReference" class="w-4 h-4" />
-                <span class="hidden sm:inline">My Scores</span>
+                <span v-if="pageant.current_round_id === round.id && !round.is_locked" class="relative flex h-1.5 w-1.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                </span>
+                <Lock v-if="round.is_locked" class="w-3 h-3" />
+                <CheckCircle v-else-if="round.is_complete" class="w-3 h-3 text-emerald-500" />
+                {{ round.name }}
             </button>
-            
-            <!-- Active Contestant Progress -->
-            <div v-if="activeContestant && criteria.length > 0" class="flex items-center gap-3 bg-white/50 md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none border md:border-none border-white/50">
-             <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-teal-700 hidden sm:inline">{{ activeContestant.name }}</span>
-                <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{{ getCompletedCriteriaCount(activeContestant.id) }}/{{ criteria.length }}</span>
-             </div>
-             
-             <div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div class="h-full bg-teal-500 rounded-full transition-all duration-500"
-                    :style="{ width: `${(getCompletedCriteriaCount(activeContestant.id) / criteria.length) * 100}%` }">
-                </div>
-            </div>
-             <CheckCircle v-if="isContestantScoreComplete(activeContestant.id)" class="w-4 h-4 text-emerald-500" />
-            </div>
+          </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="relative z-10 pb-24 min-h-screen flex flex-col lg:flex-row items-stretch justify-center gap-6 px-4 lg:px-8 max-w-[1920px] mx-auto"
-        :class="hasBanner ? 'pt-44 md:pt-40' : 'pt-32 md:pt-28'">>
-        
-
+    <main class="relative z-10 min-h-screen px-4 lg:px-6 max-w-[1800px] mx-auto"
+        :class="hasBanner ? 'pt-32' : 'pt-24'">
         
         <!-- Error State -->
-        <div v-if="error" class="absolute inset-0 z-50 bg-slate-50 flex items-center justify-center p-8">
-            <div class="bg-white border border-red-100 rounded-3xl p-8 text-center shadow-xl max-w-md">
-                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <AlertCircle class="h-8 w-8 text-red-600" />
+        <div v-if="error" class="flex items-center justify-center min-h-[60vh]">
+            <div class="bg-white border border-red-100 rounded-2xl p-8 text-center shadow-xl max-w-md">
+                <div class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle class="h-7 w-7 text-red-600" />
                 </div>
                 <h3 class="text-lg font-bold text-red-900 mb-2">Unable to Load Scoring Interface</h3>
-                <p class="text-red-600 mb-6 whitespace-pre-line">{{ error }}</p>
-                <Link :href="route('judge.dashboard')" class="inline-block px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-colors shadow-lg">
+                <p class="text-red-600 mb-6 text-sm">{{ error }}</p>
+                <Link :href="route('judge.dashboard')" class="inline-block px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg transition-colors text-sm">
                     Return to Dashboard
                 </Link>
             </div>
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="contestants.length === 0" class="absolute inset-0 z-50 bg-slate-50 flex items-center justify-center p-8">
+        <div v-else-if="contestants.length === 0" class="flex items-center justify-center min-h-[60vh]">
             <div class="text-center">
-                <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Users class="w-10 h-10 text-slate-400" />
+                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users class="w-8 h-8 text-slate-400" />
                 </div>
-                <h3 class="text-xl font-bold text-slate-900 mb-2">No Contestants Found</h3>
-                <p class="text-slate-500">There are no contestants assigned to this round yet.</p>
+                <h3 class="text-lg font-bold text-slate-900 mb-1">No Contestants Found</h3>
+                <p class="text-slate-500 text-sm">There are no contestants assigned to this round yet.</p>
             </div>
         </div>
 
+        <!-- Tabular Scoring Interface -->
         <template v-else>
-            <!-- Left Scoring Panel -->
-            <div class="hidden lg:flex w-1/4 flex-col gap-3 py-4 overflow-y-auto max-h-[calc(100vh-6rem)] scrollbar-hide pb-20">
-                <div v-for="criterion in criteria" :key="criterion.id" class="bg-white/60 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-white/60 hover:shadow-md hover:bg-white/80 transition-all duration-300 group">
-                    <div class="flex justify-between items-start mb-3">
-                        <label class="font-bold text-slate-700 group-hover:text-teal-700 transition-colors text-sm capitalize">{{ criterion.name }}</label>
-                        <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600 font-bold">{{ formatScore(scores[`${activeContestant.id}-${criterion.id}`] || 0) }} / {{ formatScore(criterion.max_score) }}</span>
-                    </div>
-                    <ScoreInput
-                        :min="Number(criterion.min_score)"
-                        :max="Number(criterion.max_score)"
-                        :step="criterion.allow_decimals ? 0.1 : 1"
-                        :allow-decimals="criterion.allow_decimals"
-                        :decimal-places="criterion.decimal_places || 1"
-                        :disabled="!canEditScores"
-                        :show-slider="false"
-                        :validate-range="true"
-                        v-model="scores[`${activeContestant.id}-${criterion.id}`]"
-                        @change="(val) => handleScoreChange(val, activeContestant.id, criterion.id, criterion)"
-                        class="w-full"
-                    />
-                    <p class="text-[10px] text-slate-400 mt-2 line-clamp-2" :title="criterion.description">{{ criterion.description }}</p>
-                </div>
+          <!-- Pair Competition: Separate Tables -->
+          <template v-if="isPairCompetition && genderFilter === 'all'">
+            <!-- Female Candidates Table -->
+            <div v-if="femaleContestants.length > 0" class="mb-8">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-3 h-3 rounded-full bg-pink-500"></div>
+                <h2 class="text-lg font-bold text-slate-800">Female Candidates</h2>
+                <span class="text-sm text-slate-500">({{ femaleContestants.length }})</span>
+              </div>
+              <ScoringTable 
+                :contestants="femaleContestants" 
+                :criteria="criteria"
+                :scores="scores"
+                :notes="notes"
+                :can-edit-scores="canEditScores"
+                :submit-loading="submitLoading"
+                :format-score="formatScore"
+                :is-percentage-scoring="isPercentageScoring"
+                gender="female"
+                @score-change="handleScoreChange"
+                @submit-scores="submitScores"
+                @view-details="openContestantDetails"
+                @update-notes="updateNotes"
+              />
             </div>
-
-            <!-- Center Stage (Carousel) -->
-            <div class="flex-1 flex flex-col items-center justify-center relative min-h-[400px] lg:min-h-[500px]">
-                <!-- Background Text Effect -->
-                <!-- Background Text Effect -->
-                <h2 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15vw] font-black text-slate-900/5 whitespace-nowrap select-none pointer-events-none z-0">
-                    {{ activeContestant.number }}
-                </h2>
-
-                <!-- Carousel Navigation Buttons -->
-                <button @click="prevContestant" :disabled="currentIndex === 0" class="absolute left-0 lg:-left-4 top-1/2 -translate-y-1/2 z-20 p-3 lg:p-4 rounded-full bg-white/80 backdrop-blur shadow-lg text-slate-600 hover:text-teal-600 hover:scale-110 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-white/50">
-                    <ChevronLeft class="w-6 h-6 lg:w-8 lg:h-8" />
-                </button>
-                <button @click="nextContestant" :disabled="currentIndex === sortedContestants.length - 1" class="absolute right-0 lg:-right-4 top-1/2 -translate-y-1/2 z-20 p-3 lg:p-4 rounded-full bg-white/80 backdrop-blur shadow-lg text-slate-600 hover:text-teal-600 hover:scale-110 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border border-white/50">
-                    <ChevronRight class="w-6 h-6 lg:w-8 lg:h-8" />
-                </button>
-
-                <!-- Active Card -->
-                <div class="relative z-10 w-full max-w-[300px] sm:max-w-sm lg:max-w-md aspect-[3/4] group cursor-pointer perspective-1000" @click="showDetails = true">
-                    <div class="w-full h-full relative preserve-3d transition-transform duration-500 hover:rotate-y-6 hover:scale-105">
-                        <!-- Image -->
-                        <div class="absolute inset-0 rounded-[2rem] lg:rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-400/20 border-4 border-white bg-white">
-                            <img :src="activeContestant.image" class="w-full h-full object-cover" />
-                            <!-- Overlay Gradient -->
-                            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-60"></div>
-                        </div>
-                        
-                        <!-- Floating Info -->
-                        <div class="absolute bottom-0 inset-x-0 p-6 flex flex-col items-center text-center">
-                            <h3 class="text-2xl lg:text-3xl font-black text-white leading-none mb-2 drop-shadow-md">{{ activeContestant.name }}</h3>
-                            <p class="text-sm font-bold text-teal-200 flex items-center gap-1 bg-slate-900/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                                <MapPin class="w-3 h-3" /> {{ activeContestant.origin || 'Unknown' }}
-                            </p>
-                        </div>
-
-                        <!-- Number Badge -->
-                        <div class="absolute top-6 right-6 w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white/90 backdrop-blur-md text-slate-900 flex items-center justify-center font-black text-xl lg:text-2xl shadow-lg border border-white/50">
-                            {{ activeContestant.number }}
-                        </div>
-                        
-                        <!-- Gender Badge (for pair competitions) -->
-                        <div v-if="isPairCompetition && activeContestant.gender" class="absolute top-6 left-6 px-3 py-1.5 rounded-xl backdrop-blur-md font-bold text-xs shadow-lg border border-white/50"
-                            :class="activeContestant.gender === 'female' ? 'bg-pink-500/90 text-white' : 'bg-blue-500/90 text-white'">
-                            {{ activeContestant.gender === 'female' ? 'Female' : 'Male' }}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Mobile Scoring (Visible only on small screens) -->
-                <div class="lg:hidden w-full mt-12 space-y-4 pb-20">
-                    <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-white/50">
-                        <h3 class="font-bold text-slate-900 mb-4">Scoring Criteria</h3>
-                        <div class="space-y-6">
-                            <div v-for="criterion in criteria" :key="criterion.id" class="space-y-2">
-                                <div class="flex justify-between">
-                                    <label class="text-sm font-medium text-slate-700 capitalize">{{ criterion.name }}</label>
-                                    <span class="text-xs font-bold text-slate-500">{{ formatScore(scores[`${activeContestant.id}-${criterion.id}`] || 0) }} / {{ formatScore(criterion.max_score) }}</span>
-                                </div>
-                                <ScoreInput
-                                    :min="Number(criterion.min_score)"
-                                    :max="Number(criterion.max_score)"
-                                    :step="criterion.allow_decimals ? 0.1 : 1"
-                                    :allow-decimals="criterion.allow_decimals"
-                                    :decimal-places="criterion.decimal_places || 1"
-                                    :disabled="!canEditScores"
-                                    :show-slider="false"
-                                    :validate-range="true"
-                                    v-model="scores[`${activeContestant.id}-${criterion.id}`]"
-                                    @change="(val) => handleScoreChange(val, activeContestant.id, criterion.id, criterion)"
-                                    class="w-full"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mobile Notes & Submit -->
-                    <div class="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-white/50">
-                        <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Notes</label>
-                        <textarea 
-                            v-model="notes[activeContestant.id]"
-                            rows="2"
-                            class="w-full bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-teal-500 mb-4 resize-none p-3 text-slate-800 placeholder-slate-400"
-                            placeholder="Optional comments..."
-                        ></textarea>
-                        
-                        <div class="flex items-center justify-between mb-4">
-                            <span class="text-sm font-bold text-slate-500">Total Score</span>
-                            <span class="text-2xl font-black text-teal-600">{{ formatScore(currentAverage) }}</span>
-                        </div>
-
-                        <button 
-                            @click="submitScores(activeContestant.id)"
-                            :disabled="!canEditScores || !isContestantScoreComplete(activeContestant.id) || submitLoading[activeContestant.id]"
-                            class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-teal-600 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                            <span v-if="submitLoading[activeContestant.id]" class="animate-spin">...</span>
-                            <span v-else>Submit Score</span>
-                        </button>
-                    </div>
-                </div>
+            
+            <!-- Male Candidates Table -->
+            <div v-if="maleContestants.length > 0" class="mb-8">
+              <div class="flex items-center gap-3 mb-4">
+                <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                <h2 class="text-lg font-bold text-slate-800">Male Candidates</h2>
+                <span class="text-sm text-slate-500">({{ maleContestants.length }})</span>
+              </div>
+              <ScoringTable 
+                :contestants="maleContestants" 
+                :criteria="criteria"
+                :scores="scores"
+                :notes="notes"
+                :can-edit-scores="canEditScores"
+                :submit-loading="submitLoading"
+                :format-score="formatScore"
+                :is-percentage-scoring="isPercentageScoring"
+                gender="male"
+                @score-change="handleScoreChange"
+                @submit-scores="submitScores"
+                @view-details="openContestantDetails"
+                @update-notes="updateNotes"
+              />
             </div>
-
-            <!-- Right Scoring Panel -->
-            <div class="hidden lg:flex w-1/4 flex-col gap-3 py-4 overflow-y-auto max-h-[calc(100vh-6rem)] scrollbar-hide pb-20">
-                <!-- Notes & Submit -->
-                <div class="bg-white/80 backdrop-blur-md rounded-xl p-4 shadow-lg border border-teal-100">
-                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Judge's Notes</label>
-                    <textarea 
-                        v-model="notes[activeContestant.id]"
-                        rows="3"
-                        class="w-full bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-teal-500 mb-4 resize-none p-3 text-slate-800 placeholder-slate-400"
-                        placeholder="Optional comments..."
-                    ></textarea>
-                    
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-sm font-bold text-slate-500">Total Score</span>
-                        <span class="text-3xl font-black text-teal-600">{{ formatScore(currentAverage) }}</span>
-                    </div>
-
-                    <button 
-                        @click="submitScores(activeContestant.id)"
-                        :disabled="!canEditScores || !isContestantScoreComplete(activeContestant.id) || submitLoading[activeContestant.id]"
-                        class="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-teal-600 transition-all shadow-lg hover:shadow-teal-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        <span v-if="submitLoading[activeContestant.id]" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                        <span v-else>Submit Score</span>
-                    </button>
-                </div>
-            </div>
+          </template>
+          
+          <!-- Single Table (non-pair or filtered) -->
+          <template v-else>
+            <ScoringTable 
+              :contestants="sortedContestants" 
+              :criteria="criteria"
+              :scores="scores"
+              :notes="notes"
+              :can-edit-scores="canEditScores"
+              :submit-loading="submitLoading"
+              :format-score="formatScore"
+              :is-percentage-scoring="isPercentageScoring"
+              :gender="genderFilter !== 'all' ? genderFilter : null"
+              @score-change="handleScoreChange"
+              @submit-scores="submitScores"
+              @view-details="openContestantDetails"
+              @update-notes="updateNotes"
+            />
+          </template>
+          
+          <!-- Floating Submit All Button -->
+          <div class="fixed bottom-6 right-6 z-30">
+            <button 
+              @click="submitAllScores"
+              :disabled="!canEditScores || !hasAnyCompleteScores || isSubmittingAll"
+              class="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-teal-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <span v-if="isSubmittingAll" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              <Save v-else class="w-4 h-4" />
+              <span>Submit All Scores</span>
+            </button>
+          </div>
         </template>
     </main>
 
-    <!-- Details Modal -->
+    <!-- Contestant Details Modal -->
     <TransitionRoot appear :show="showDetails" as="template">
         <Dialog as="div" @close="showDetails = false" class="relative z-[60]">
             <TransitionChild enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
@@ -370,49 +266,77 @@
             <div class="fixed inset-0 overflow-y-auto">
                 <div class="flex min-h-full items-center justify-center p-4 text-center">
                     <TransitionChild enter="duration-300 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-200 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
-                        <DialogPanel class="w-full max-w-4xl transform overflow-hidden rounded-3xl bg-white p-0 text-left align-middle shadow-2xl transition-all">
-                            <div class="flex flex-col md:flex-row h-[600px]">
-                                <div class="w-full md:w-1/2 h-full relative bg-slate-100">
-                                    <img :src="activeContestant.image" class="w-full h-full object-cover" />
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8">
-                                        <h2 class="text-4xl font-black text-white mb-1">{{ activeContestant.name }}</h2>
-                                        <p class="text-teal-300 font-bold text-lg flex items-center gap-2">
-                                            <MapPin class="w-5 h-5" /> {{ activeContestant.origin }}
+                        <DialogPanel class="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-2xl transition-all">
+                            <div class="flex flex-col md:flex-row max-h-[80vh]">
+                                <!-- Image Section -->
+                                <div class="w-full md:w-2/5 h-64 md:h-auto relative bg-slate-100 flex-shrink-0">
+                                    <img v-if="selectedContestant?.image" :src="selectedContestant.image" class="w-full h-full object-cover" />
+                                    <div v-else class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                                        <Users class="w-16 h-16 text-slate-300" />
+                                    </div>
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-6">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <span class="px-2.5 py-1 rounded-lg bg-white/90 text-slate-900 font-black text-lg">#{{ selectedContestant?.number }}</span>
+                                            <span v-if="isPairCompetition && selectedContestant?.gender" 
+                                                class="px-2 py-1 rounded-lg text-xs font-bold"
+                                                :class="selectedContestant.gender === 'female' ? 'bg-pink-500 text-white' : 'bg-blue-500 text-white'">
+                                                {{ selectedContestant.gender === 'female' ? 'Female' : 'Male' }}
+                                            </span>
+                                        </div>
+                                        <h2 class="text-2xl font-black text-white">{{ selectedContestant?.name }}</h2>
+                                        <p v-if="selectedContestant?.origin" class="text-teal-200 font-medium text-sm flex items-center gap-1.5 mt-1">
+                                            <MapPin class="w-3.5 h-3.5" /> {{ selectedContestant.origin }}
                                         </p>
                                     </div>
                                 </div>
-                                <div class="w-full md:w-1/2 p-8 flex flex-col bg-white">
-                                    <div class="flex items-center justify-between mb-8">
-                                        <div class="flex items-center gap-3">
-                                            <span class="px-3 py-1 rounded-lg bg-slate-900 text-white font-black text-lg">#{{ activeContestant.number }}</span>
-                                            <h3 class="text-xl font-bold text-slate-900">Contestant Details</h3>
-                                        </div>
-                                        <button @click="showDetails = false" class="p-2 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-                                            <X class="w-6 h-6" />
+                                
+                                <!-- Details Section -->
+                                <div class="w-full md:w-3/5 p-6 flex flex-col overflow-y-auto">
+                                    <div class="flex items-center justify-between mb-6">
+                                        <h3 class="text-lg font-bold text-slate-900">Contestant Details</h3>
+                                        <button @click="showDetails = false" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                                            <X class="w-5 h-5" />
                                         </button>
                                     </div>
                                     
-                                    <div class="space-y-8 flex-1 overflow-y-auto pr-2">
+                                    <div class="space-y-6 flex-1">
+                                        <!-- Description -->
                                         <div>
                                             <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Description</label>
-                                            <p class="text-slate-600 leading-relaxed text-lg">
-                                                {{ activeContestant.description || 'No description provided for this contestant.' }}
+                                            <p class="text-slate-600 leading-relaxed">
+                                                {{ selectedContestant?.description || 'No description provided for this contestant.' }}
                                             </p>
                                         </div>
                                         
-                                        <div v-if="activeContestant.gallery && activeContestant.gallery.length > 0">
-                                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 block">Gallery</label>
+                                        <!-- Current Scores (if any) -->
+                                        <div v-if="selectedContestant && getContestantTotalScore(selectedContestant.id) !== '-'">
+                                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Your Scores</label>
+                                            <div class="bg-slate-50 rounded-xl p-4 space-y-2">
+                                                <div v-for="criterion in criteria" :key="criterion.id" class="flex justify-between text-sm">
+                                                    <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
+                                                    <span class="font-bold text-slate-900">{{ formatScore(scores[`${selectedContestant.id}-${criterion.id}`]) }}</span>
+                                                </div>
+                                                <div class="border-t border-slate-200 pt-2 mt-2 flex justify-between">
+                                                    <span class="font-bold text-slate-700">Total Points</span>
+                                                    <span class="font-black text-teal-600 text-lg">{{ formatScore(getContestantTotalScore(selectedContestant.id)) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Gallery -->
+                                        <div v-if="selectedContestant?.gallery && selectedContestant.gallery.length > 0">
+                                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Gallery</label>
                                             <div class="grid grid-cols-3 gap-2">
-                                                <div v-for="(img, idx) in activeContestant.gallery" :key="idx" class="aspect-square rounded-lg overflow-hidden bg-slate-100">
-                                                    <img :src="img" class="w-full h-full object-cover hover:scale-110 transition-transform duration-500" />
+                                                <div v-for="(img, idx) in selectedContestant.gallery" :key="idx" class="aspect-square rounded-lg overflow-hidden bg-slate-100">
+                                                    <img :src="img" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300" />
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="mt-auto pt-6 border-t border-slate-100">
-                                        <button @click="showDetails = false" class="w-full py-4 bg-slate-50 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors">
-                                            Close Details
+                                    <div class="mt-6 pt-4 border-t border-slate-100">
+                                        <button @click="showDetails = false" class="w-full py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors text-sm">
+                                            Close
                                         </button>
                                     </div>
                                 </div>
@@ -424,174 +348,6 @@
         </Dialog>
     </TransitionRoot>
 
-    <!-- Score Reference Panel (Sliding from Right) -->
-    <Transition
-        enter-active-class="transition-all duration-300 ease-out"
-        enter-from-class="translate-x-full opacity-0"
-        enter-to-class="translate-x-0 opacity-100"
-        leave-active-class="transition-all duration-300 ease-in"
-        leave-from-class="translate-x-0 opacity-100"
-        leave-to-class="translate-x-full opacity-0"
-    >
-        <div v-if="showScoreReference" class="fixed right-0 top-32 md:top-28 bottom-0 w-full sm:w-96 bg-white/95 backdrop-blur-xl shadow-2xl border-l border-teal-100 z-50 overflow-y-auto">
-            <div class="sticky top-0 bg-white/95 backdrop-blur-xl border-b border-teal-100 px-4 py-4 flex items-center justify-between z-10">
-                <div>
-                    <h3 class="font-bold text-slate-900 text-lg">My Scores Reference</h3>
-                    <p class="text-xs text-slate-500">
-                        <template v-if="isPairCompetition">
-                            {{ femaleScores.length }} female, {{ maleScores.length }} male scored
-                        </template>
-                        <template v-else>
-                            {{ otherContestantsScores.length }} contestant(s) scored
-                        </template>
-                    </p>
-                </div>
-                <button @click="showScoreReference = false" class="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
-                    <X class="w-5 h-5" />
-                </button>
-            </div>
-            
-            <div class="p-4 space-y-4">
-                <!-- Empty State -->
-                <div v-if="otherContestantsScores.length === 0 && (!isPairCompetition || (femaleScores.length === 0 && maleScores.length === 0))" class="text-center py-12 text-slate-400">
-                    <Users class="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p class="text-sm">No other contestants scored yet</p>
-                </div>
-                
-                <!-- Pair Competition: Separated by Gender -->
-                <template v-if="isPairCompetition">
-                    <!-- Female Section -->
-                    <div v-if="femaleScores.length > 0" class="space-y-3">
-                        <div class="flex items-center gap-2 pb-2 border-b border-pink-200">
-                            <div class="w-3 h-3 rounded-full bg-pink-500"></div>
-                            <h4 class="font-bold text-pink-700 text-sm uppercase tracking-wide">Female Contestants ({{ femaleScores.length }})</h4>
-                        </div>
-                        <div 
-                            v-for="contestantScore in femaleScores" 
-                            :key="contestantScore.contestant_id"
-                            class="bg-pink-50 border border-pink-200 rounded-xl p-4 hover:shadow-md transition-all"
-                        >
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-lg bg-pink-200 text-pink-700 flex items-center justify-center font-bold text-sm">
-                                        {{ contestantScore.contestant_number }}
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-slate-900 text-sm">{{ contestantScore.contestant_name }}</p>
-                                        <p class="text-xs text-pink-600">{{ contestantScore.is_complete ? 'Complete' : 'In Progress' }}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-slate-500 font-medium">Total</p>
-                                    <p class="text-xl font-black" :class="contestantScore.average ? 'text-pink-600' : 'text-slate-400'">
-                                        {{ contestantScore.average ? formatScore(contestantScore.average) : '-' }}
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-2">
-                                <div 
-                                    v-for="criterion in criteria" 
-                                    :key="criterion.id"
-                                    class="flex items-center justify-between text-xs"
-                                >
-                                    <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
-                                    <span class="font-bold" :class="getScoreForCriterion(contestantScore.scores, criterion.id) ? 'text-slate-900' : 'text-slate-300'">
-                                        {{ formatScore(getScoreForCriterion(contestantScore.scores, criterion.id) || '-') }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Male Section -->
-                    <div v-if="maleScores.length > 0" class="space-y-3">
-                        <div class="flex items-center gap-2 pb-2 border-b border-blue-200">
-                            <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                            <h4 class="font-bold text-blue-700 text-sm uppercase tracking-wide">Male Contestants ({{ maleScores.length }})</h4>
-                        </div>
-                        <div 
-                            v-for="contestantScore in maleScores" 
-                            :key="contestantScore.contestant_id"
-                            class="bg-blue-50 border border-blue-200 rounded-xl p-4 hover:shadow-md transition-all"
-                        >
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-lg bg-blue-200 text-blue-700 flex items-center justify-center font-bold text-sm">
-                                        {{ contestantScore.contestant_number }}
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-slate-900 text-sm">{{ contestantScore.contestant_name }}</p>
-                                        <p class="text-xs text-blue-600">{{ contestantScore.is_complete ? 'Complete' : 'In Progress' }}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs text-slate-500 font-medium">Total</p>
-                                    <p class="text-xl font-black" :class="contestantScore.average ? 'text-blue-600' : 'text-slate-400'">
-                                        {{ contestantScore.average ? formatScore(contestantScore.average) : '-' }}
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-2">
-                                <div 
-                                    v-for="criterion in criteria" 
-                                    :key="criterion.id"
-                                    class="flex items-center justify-between text-xs"
-                                >
-                                    <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
-                                    <span class="font-bold" :class="getScoreForCriterion(contestantScore.scores, criterion.id) ? 'text-slate-900' : 'text-slate-300'">
-                                        {{ formatScore(getScoreForCriterion(contestantScore.scores, criterion.id) || '-') }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-                
-                <!-- Solo Competition: All together -->
-                <template v-else>
-                    <div 
-                        v-for="contestantScore in otherContestantsScores" 
-                        :key="contestantScore.contestant_id"
-                        class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-all"
-                    >
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm">
-                                    {{ contestantScore.contestant_number }}
-                                </div>
-                                <div>
-                                    <p class="font-bold text-slate-900 text-sm">{{ contestantScore.contestant_name }}</p>
-                                    <p class="text-xs text-slate-500">{{ contestantScore.is_complete ? 'Complete' : 'In Progress' }}</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-slate-500 font-medium">Total</p>
-                                <p class="text-xl font-black" :class="contestantScore.average ? 'text-teal-600' : 'text-slate-400'">
-                                    {{ contestantScore.average ? formatScore(contestantScore.average) : '-' }}
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-2">
-                            <div 
-                                v-for="criterion in criteria" 
-                                :key="criterion.id"
-                                class="flex items-center justify-between text-xs"
-                            >
-                                <span class="text-slate-600 capitalize">{{ criterion.name }}</span>
-                                <span class="font-bold" :class="getScoreForCriterion(contestantScore.scores, criterion.id) ? 'text-slate-900' : 'text-slate-300'">
-                                    {{ formatScore(getScoreForCriterion(contestantScore.scores, criterion.id) || '-') }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-    </Transition>
-
     <!-- Notification System -->
     <NotificationSystem ref="notificationSystem" />
   </div>
@@ -599,12 +355,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Star, Save, CheckCircle, AlertCircle, Lock, MapPin, Target, Users, Calendar, ChevronLeft, ChevronRight, X, Eye, EyeOff, Filter } from 'lucide-vue-next'
+import { Save, CheckCircle, AlertCircle, Lock, MapPin, Users, Calendar, ChevronLeft, X } from 'lucide-vue-next'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
 import { Dialog, DialogPanel, TransitionRoot, TransitionChild } from '@headlessui/vue'
-import ScoreInput from '../../Components/ScoreInput.vue'
 import NotificationSystem from '../../Components/NotificationSystem.vue'
+import ScoringTable from '../../Components/ScoringTable.vue'
 
 // Get the page props for auth user
 const page = usePage()
@@ -629,14 +385,14 @@ const props = defineProps({
 
 // State
 const currentRoundId = ref(props.currentRound?.id?.toString())
-const currentIndex = ref(0)
 const submitLoading = ref({})
 const notificationSystem = ref(null)
 const realtimeLoading = ref(false)
 const isChannelReady = ref(false)
 const showDetails = ref(false)
-const showScoreReference = ref(false)
-const genderFilter = ref('all') // 'all', 'female', 'male'
+const selectedContestant = ref(null)
+const genderFilter = ref('all')
+const isSubmittingAll = ref(false)
 let pageantChannel = null
 
 const scores = ref({ ...props.existingScores })
@@ -657,7 +413,6 @@ const sortedContestants = computed(() => {
   }
   
   if (isPairCompetition.value) {
-    // For pair competitions: group by gender (females first, then males for traditional order)
     const females = contestants.filter(c => c.gender === 'female').sort((a, b) => {
       const numA = parseInt(a.number || 0)
       const numB = parseInt(b.number || 0)
@@ -676,7 +431,6 @@ const sortedContestants = computed(() => {
     return [...females, ...males, ...others]
   }
   
-  // Default sorting by number
   return contestants.sort((a, b) => {
     const numA = parseInt(a.number || 0)
     const numB = parseInt(b.number || 0)
@@ -684,50 +438,31 @@ const sortedContestants = computed(() => {
   })
 })
 
-// Computed
-const activeContestant = computed(() => sortedContestants.value[currentIndex.value] || {})
-
-// Get other contestants' scores, grouped by gender for pair pageants
-const otherContestantsScores = computed(() => {
-  const allScores = props.allContestantScores.filter(cs => cs.contestant_id !== activeContestant.value.id)
-  
-  if (isPairCompetition.value) {
-    // Sort by gender (females first) then by number for pair pageants
-    const females = allScores.filter(cs => cs.contestant_gender === 'female').sort((a, b) => {
-      return (a.contestant_number || 0) - (b.contestant_number || 0)
-    })
-    const males = allScores.filter(cs => cs.contestant_gender === 'male').sort((a, b) => {
-      return (a.contestant_number || 0) - (b.contestant_number || 0)
-    })
-    const others = allScores.filter(cs => !cs.contestant_gender || (cs.contestant_gender !== 'male' && cs.contestant_gender !== 'female')).sort((a, b) => {
-      return (a.contestant_number || 0) - (b.contestant_number || 0)
-    })
-    return [...females, ...males, ...others]
-  }
-  
-  return allScores.sort((a, b) => (a.contestant_number || 0) - (b.contestant_number || 0))
+// Get female contestants
+const femaleContestants = computed(() => {
+  return props.contestants
+    .filter(c => c.gender === 'female')
+    .sort((a, b) => parseInt(a.number || 0) - parseInt(b.number || 0))
 })
 
-// Get female scores for reference panel
-const femaleScores = computed(() => {
-  return props.allContestantScores
-    .filter(cs => cs.contestant_gender === 'female' && cs.contestant_id !== activeContestant.value.id)
-    .sort((a, b) => (a.contestant_number || 0) - (b.contestant_number || 0))
+// Get male contestants
+const maleContestants = computed(() => {
+  return props.contestants
+    .filter(c => c.gender === 'male')
+    .sort((a, b) => parseInt(a.number || 0) - parseInt(b.number || 0))
 })
 
-// Get male scores for reference panel
-const maleScores = computed(() => {
-  return props.allContestantScores
-    .filter(cs => cs.contestant_gender === 'male' && cs.contestant_id !== activeContestant.value.id)
-    .sort((a, b) => (a.contestant_number || 0) - (b.contestant_number || 0))
+// Count scored contestants
+const scoredContestantsCount = computed(() => {
+  return sortedContestants.value.filter(c => isContestantScoreComplete(c.id)).length
 })
 
-const currentAverage = computed(() => {
-  if (!activeContestant.value.id) return '-'
-  return calculateAverage(activeContestant.value.id)
+// Check if there are any complete scores to submit
+const hasAnyCompleteScores = computed(() => {
+  return sortedContestants.value.some(c => isContestantScoreComplete(c.id))
 })
 
-// Check if a banner should be displayed (completed, scoring not yet open, or ended)
+// Check if a banner should be displayed
 const hasBanner = computed(() => {
   const status = props.pageant?.scoring_status
   return props.pageant?.is_completed || status === 'not_started' || status === 'ended'
@@ -766,19 +501,15 @@ const handleRoundChange = (roundId) => {
 
 const handleGenderFilterChange = (gender) => {
   genderFilter.value = gender
-  currentIndex.value = 0 // Reset to first contestant when filter changes
 }
 
-const nextContestant = () => {
-  if (currentIndex.value < sortedContestants.value.length - 1) {
-    currentIndex.value++
-  }
+const openContestantDetails = (contestant) => {
+  selectedContestant.value = contestant
+  showDetails.value = true
 }
 
-const prevContestant = () => {
-  if (currentIndex.value > 0) {
-    currentIndex.value--
-  }
+const updateNotes = (contestantId, noteValue) => {
+  notes.value[contestantId] = noteValue
 }
 
 const handleScoreChange = (value, contestantId, criterionId, criterion) => {
@@ -789,7 +520,6 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
     const scoreKey = `${contestantId}-${criterionId}`;
     const previousValue = scores.value[scoreKey];
     
-    // Check for invalid number input
     if (Number.isNaN(v) || !Number.isFinite(v)) {
       if (notificationSystem.value) {
         notificationSystem.value.warning(`Please enter a valid number for "${criterion.name}"`, {
@@ -797,12 +527,10 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
           timeout: 4000
         });
       }
-      // Revert to previous value or clear the field
       scores.value[scoreKey] = previousValue !== undefined ? previousValue : null;
       return;
     }
     
-    // Check if score is below minimum
     if (v < minScore) {
       if (notificationSystem.value) {
         notificationSystem.value.warning(`Score for "${criterion.name}" must be at least ${formatScore(minScore)}. You entered ${formatScore(v)}.`, {
@@ -810,12 +538,10 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
           timeout: 5000
         });
       }
-      // Revert to previous value or clear the field
       scores.value[scoreKey] = previousValue !== undefined && previousValue !== null ? previousValue : null;
       return;
     }
     
-    // Check if score exceeds maximum
     if (v > maxScore) {
       if (notificationSystem.value) {
         notificationSystem.value.warning(`Score for "${criterion.name}" cannot exceed ${formatScore(maxScore)}. You entered ${formatScore(v)}.`, {
@@ -823,12 +549,10 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
           timeout: 5000
         });
       }
-      // Revert to previous value or clear the field
       scores.value[scoreKey] = previousValue !== undefined && previousValue !== null ? previousValue : null;
       return;
     }
     
-    // Apply decimal formatting if valid
     if (!criterion.allow_decimals) {
       v = Math.round(v);
     } else if (criterion.decimal_places > 0) {
@@ -851,12 +575,12 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
   }
 }
 
-const calculateAverage = (contestantId) => {
+const getContestantTotalScore = (contestantId) => {
   const contestantScores = props.criteria.map(criterion => 
     scores.value[`${contestantId}-${criterion.id}`] || 0
   )
   
-  if (contestantScores.some(score => score === 0)) return '-'
+  if (contestantScores.some(score => score === 0 || score === null || score === undefined)) return '-'
   
   const totalWeight = props.criteria.reduce((sum, criterion) => {
     const weight = criterion.weight || 1;
@@ -879,48 +603,35 @@ const calculateAverage = (contestantId) => {
 }
 
 const isContestantScoreComplete = (contestantId) => {
-  return props.criteria.every(criterion => 
-    scores.value[`${contestantId}-${criterion.id}`] !== undefined && scores.value[`${contestantId}-${criterion.id}`] !== null
-  )
+  return props.criteria.every(criterion => {
+    const score = scores.value[`${contestantId}-${criterion.id}`]
+    return score !== undefined && score !== null
+  })
 }
 
-const submitScores = async (contestantId, autoAdvance = true) => {
+const submitScores = async (contestantId, autoAdvance = false) => {
   if (submitLoading.value[contestantId]) return
   submitLoading.value[contestantId] = true
   
   try {
     const contestantScores = {}
     const invalidScores = [];
+    const contestant = props.contestants.find(c => c.id === contestantId)
     
     props.criteria.forEach(criterion => {
       const score = scores.value[`${contestantId}-${criterion.id}`];
       if (score === undefined || score === null) {
-        invalidScores.push({
-          name: criterion.name,
-          reason: 'missing'
-        });
+        invalidScores.push({ name: criterion.name, reason: 'missing' });
         return;
       }
       const minScore = Number(criterion.min_score);
       const maxScore = Number(criterion.max_score);
       if (score < minScore) {
-        invalidScores.push({
-          name: criterion.name,
-          reason: 'too_low',
-          value: score,
-          min: minScore,
-          max: maxScore
-        });
+        invalidScores.push({ name: criterion.name, reason: 'too_low', value: score, min: minScore, max: maxScore });
         return;
       }
       if (score > maxScore) {
-        invalidScores.push({
-          name: criterion.name,
-          reason: 'too_high',
-          value: score,
-          min: minScore,
-          max: maxScore
-        });
+        invalidScores.push({ name: criterion.name, reason: 'too_high', value: score, min: minScore, max: maxScore });
         return;
       }
       contestantScores[criterion.id] = score;
@@ -928,13 +639,9 @@ const submitScores = async (contestantId, autoAdvance = true) => {
     
     if (invalidScores.length > 0) {
       const errorMessages = invalidScores.map(inv => {
-        if (inv.reason === 'missing') {
-          return `"${inv.name}" - score is required`;
-        } else if (inv.reason === 'too_low') {
-          return `"${inv.name}" - ${formatScore(inv.value)} is below minimum (${formatScore(inv.min)})`;
-        } else if (inv.reason === 'too_high') {
-          return `"${inv.name}" - ${formatScore(inv.value)} exceeds maximum (${formatScore(inv.max)})`;
-        }
+        if (inv.reason === 'missing') return `"${inv.name}" - score is required`;
+        else if (inv.reason === 'too_low') return `"${inv.name}" - ${formatScore(inv.value)} is below minimum (${formatScore(inv.min)})`;
+        else if (inv.reason === 'too_high') return `"${inv.name}" - ${formatScore(inv.value)} exceeds maximum (${formatScore(inv.max)})`;
         return `"${inv.name}" - invalid score`;
       });
       
@@ -955,16 +662,10 @@ const submitScores = async (contestantId, autoAdvance = true) => {
     
     if (response.data.success) {
       if (notificationSystem.value) {
-        notificationSystem.value.success(`Scores for ${activeContestant.value.name} saved!`, {
+        notificationSystem.value.success(`Scores for ${contestant?.name || 'contestant'} saved!`, {
           title: 'Success',
           timeout: 2000
         })
-      }
-      
-      if (autoAdvance && currentIndex.value < sortedContestants.value.length - 1) {
-        setTimeout(() => {
-          nextContestant()
-        }, 500)
       }
     } else {
       throw new Error(response.data.message || 'Failed to submit scores');
@@ -992,6 +693,40 @@ const submitScores = async (contestantId, autoAdvance = true) => {
   }
 }
 
+const submitAllScores = async () => {
+  if (isSubmittingAll.value) return
+  isSubmittingAll.value = true
+  
+  const completeContestants = sortedContestants.value.filter(c => isContestantScoreComplete(c.id))
+  let successCount = 0
+  let errorCount = 0
+  
+  for (const contestant of completeContestants) {
+    try {
+      await submitScores(contestant.id, false)
+      successCount++
+    } catch (error) {
+      errorCount++
+    }
+  }
+  
+  if (notificationSystem.value) {
+    if (errorCount === 0) {
+      notificationSystem.value.success(`All ${successCount} contestant scores submitted successfully!`, {
+        title: 'All Scores Submitted',
+        timeout: 3000
+      })
+    } else {
+      notificationSystem.value.warning(`${successCount} scores submitted, ${errorCount} failed.`, {
+        title: 'Partial Success',
+        timeout: 5000
+      })
+    }
+  }
+  
+  isSubmittingAll.value = false
+}
+
 // Real-time updates
 onMounted(() => {
   if (props.pageant) {
@@ -1006,7 +741,6 @@ onMounted(() => {
       .listen('RoundUpdated', (e) => { handleRoundUpdate(e) })
       .listen('ScoreUpdated', (e) => { handleScoreUpdate(e) })
     
-    // Listen for judge-specific notifications
     if (judgeId) {
       console.log('🔔 Scoring: Subscribing to judge channel:', `judge.${judgeId}`)
       window.Echo.private(`judge.${judgeId}`)
@@ -1036,35 +770,24 @@ const handleJudgeNotification = (event) => {
   console.log('🔔 Scoring: JudgeNotified event received:', event)
   const { title, message, round_name, action } = event
   
-  // Play notification sound
   playNotificationSound()
 
-  // Show notification with appropriate styling
   if (notificationSystem.value) {
     const displayMessage = round_name ? `${message} (${round_name})` : message
     
     if (action === 'score_request') {
-      notificationSystem.value.info(displayMessage, {
-        title: title || 'Scoring Alert',
-        timeout: 10000
-      })
+      notificationSystem.value.info(displayMessage, { title: title || 'Scoring Alert', timeout: 10000 })
     } else {
-      notificationSystem.value.success(displayMessage, {
-        title: title || 'Notification',
-        timeout: 10000
-      })
+      notificationSystem.value.success(displayMessage, { title: title || 'Notification', timeout: 10000 })
     }
   } else {
-    // Fallback to browser alert if notification system not available
     console.warn('⚠️ NotificationSystem ref not available, using browser alert')
     alert(`${title || 'Notification'}: ${message}`)
   }
 }
 
-// Play notification sound
 const playNotificationSound = () => {
   try {
-    // Create a simple beep sound using Web Audio API
     const audioContext = new (window.AudioContext || window.webkitAudioContext)()
     const oscillator = audioContext.createOscillator()
     const gainNode = audioContext.createGain()
@@ -1072,7 +795,7 @@ const playNotificationSound = () => {
     oscillator.connect(gainNode)
     gainNode.connect(audioContext.destination)
     
-    oscillator.frequency.value = 880 // A5 note
+    oscillator.frequency.value = 880
     oscillator.type = 'sine'
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5)
@@ -1085,10 +808,8 @@ const playNotificationSound = () => {
 }
 
 const handleScoreUpdate = async (event) => {
-  // Only refresh if the score is from the current judge and current round
   const judgeId = page.props.auth?.user?.id
   if (event.score?.judge_id === judgeId && event.score?.round_id === props.currentRound?.id) {
-    // Refresh the page data to get updated scores
     router.reload({
       only: ['allContestantScores', 'existingScores'],
       preserveState: true,
@@ -1155,11 +876,6 @@ const formatScoringSystem = (system) => {
   }
   return systemMap[system] || system
 }
-
-const getScoreForCriterion = (scores, criteriaId) => {
-  const scoreObj = scores.find(s => s.criteria_id === criteriaId)
-  return scoreObj ? scoreObj.score : null
-}
 </script>
 
 <style scoped>
@@ -1169,26 +885,5 @@ const getScoreForCriterion = (scores, criteriaId) => {
 .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
-}
-.perspective-1000 {
-    perspective: 1000px;
-}
-.preserve-3d {
-    transform-style: preserve-3d;
-}
-.animate-blob {
-    animation: blob 7s infinite;
-}
-.animation-delay-2000 {
-    animation-delay: 2s;
-}
-.animation-delay-4000 {
-    animation-delay: 4s;
-}
-@keyframes blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
 }
 </style>
