@@ -46,7 +46,7 @@
               {{ judge.name }}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-teal-50">
-              Overall Score (Computed)
+              Overall Score <br>(Computed)</br>
             </th>
           </tr>
         </thead>
@@ -71,20 +71,20 @@
             >
               <span
                 v-if="getScore(contestant.id, judge.id) !== null"
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
+                class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
               >
                 {{ getScore(contestant.id, judge.id) }}
               </span>
-              <span v-else class="text-gray-400 text-sm">—</span>
+              <span v-else class=" text-right text-gray-400 text-sm">—</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap bg-teal-50">
               <span
                 v-if="getContestantAverage(contestant.id) !== null"
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-teal-600 text-white"
+                class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-bold bg-teal-600 text-white"
               >
                 {{ getContestantAverage(contestant.id) }}
               </span>
-              <span v-else class="text-gray-400 text-sm">—</span>
+              <span v-else class="text-right text-gray-400 text-sm">—</span>
             </td>
           </tr>
         </tbody>
