@@ -318,7 +318,7 @@ const getRankingMethodLabel = () => {
     case 'rank_sum': return 'Rank Sum'
     case 'ordinal': return 'Ordinal'
     case 'score_average':
-    default: return 'Avg Score'
+    default: return 'Total Score'
   }
 }
 
