@@ -37,6 +37,8 @@ class Pageant extends Model
         'scoring_system',
         'ranking_method',
         'tie_handling',
+        'final_score_mode',
+        'final_score_inheritance',
         'contestant_type',
         'required_judges',
         'is_locked',
@@ -67,6 +69,7 @@ class Pageant extends Model
         'is_temporarily_editable' => 'boolean',
         'temporary_edit_granted_at' => 'datetime',
         'archived_at' => 'datetime',
+        'final_score_inheritance' => 'array',
     ];
 
     /**

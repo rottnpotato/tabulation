@@ -1520,16 +1520,36 @@ class ScoreCalculationService
 
             $targetType = strtolower($targetRound->type ?? 'preliminary');
 
-            // For Final round type, always start fresh - only use that specific round for RANKING
-            // But include ALL rounds for display purposes
+            // Check if final round should inherit scores from previous stages
+            $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
+            $finalScoreInheritance = $pageant->final_score_inheritance ?? [];
+            $shouldInheritScores = $targetType === 'final' && $finalScoreMode === 'inherit' && !empty($finalScoreInheritance);
+
+            // For Final round type, check if we should inherit or start fresh
             if ($targetType === 'final') {
-                $roundsToUse = collect([$targetRound]);
-                // Get all rounds up to and including this round for display
-                $roundsForDisplay = $pageant->rounds
-                    ->sortBy('display_order')
-                    ->filter(function ($r) use ($targetRound) {
-                        return $r->display_order <= $targetRound->display_order;
-                    });
+                if ($shouldInheritScores) {
+                    // Inherit mode: include all rounds from stages configured in inheritance
+                    $roundsToUse = $pageant->rounds
+                        ->sortBy('display_order')
+                        ->filter(function ($r) use ($targetRound, $finalScoreInheritance) {
+                            $roundType = strtolower($r->type ?? '');
+                            // Include this round if its type is in the inheritance config AND display_order <= target
+                            return isset($finalScoreInheritance[$roundType]) && $r->display_order <= $targetRound->display_order;
+                        });
+                    $roundsForDisplay = $pageant->rounds
+                        ->sortBy('display_order')
+                        ->filter(function ($r) use ($targetRound) {
+                            return $r->display_order <= $targetRound->display_order;
+                        });
+                } else {
+                    // Fresh mode (default): only use the final round itself
+                    $roundsToUse = collect([$targetRound]);
+                    $roundsForDisplay = $pageant->rounds
+                        ->sortBy('display_order')
+                        ->filter(function ($r) use ($targetRound) {
+                            return $r->display_order <= $targetRound->display_order;
+                        });
+                }
             } else {
                 // For non-final rounds, only accumulate rounds of the SAME type
                 $roundsToUse = $pageant->rounds
@@ -1542,7 +1562,7 @@ class ScoreCalculationService
                 $roundsForDisplay = $roundsToUse; // Same for non-final rounds
             }
 
-            // Calculate scores using only rounds of the same type (or just final round itself)
+            // Calculate scores using only rounds of the same type (or inherited rounds)
             $contestants = [];
             $tieHandling = $pageant->tie_handling ?? 'average';
 
@@ -1562,29 +1582,64 @@ class ScoreCalculationService
                     }
                 }
 
-                // Calculate weighted score and rank sum using only the rounds for ranking
-                foreach ($roundsToUse as $round) {
-                    $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
+                // Calculate weighted score and rank sum
+                if ($shouldInheritScores) {
+                    // Inheritance mode: calculate weighted average per stage type, then combine using inheritance percentages
+                    $stageScores = [];
+                    $stageWeights = [];
+                    
+                    foreach ($roundsToUse as $round) {
+                        $roundType = strtolower($round->type ?? '');
+                        $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
 
-                    if ($roundScore !== null) {
-                        $roundWeight = $round->weight ?? 1;
-                        if ($roundWeight <= 0) {
-                            $roundWeight = 1;
+                        if ($roundScore !== null) {
+                            if (!isset($stageScores[$roundType])) {
+                                $stageScores[$roundType] = 0;
+                                $stageWeights[$roundType] = 0;
+                            }
+                            $roundWeight = $round->weight ?? 1;
+                            if ($roundWeight <= 0) {
+                                $roundWeight = 1;
+                            }
+                            $stageScores[$roundType] += $roundScore * $roundWeight;
+                            $stageWeights[$roundType] += $roundWeight;
                         }
-                        $totalWeightedScore += $roundScore * $roundWeight;
-                        $totalRoundWeight += $roundWeight;
                     }
 
-                    // Always get judge ranks for display purposes (regardless of ranking method)
-                    $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
-                    if ($pageant->ranking_method === 'rank_sum') {
-                        $judgeRanks[$round->name] = $roundJudgeData;
+                    // Apply inheritance percentages
+                    foreach ($stageScores as $stageType => $weightedSum) {
+                        if ($stageWeights[$stageType] > 0) {
+                            $stageAverage = $weightedSum / $stageWeights[$stageType];
+                            $inheritancePercentage = ($finalScoreInheritance[$stageType] ?? 0) / 100;
+                            $totalWeightedScore += $stageAverage * $inheritancePercentage;
+                            $totalRoundWeight += $inheritancePercentage;
+                        }
                     }
+                } else {
+                    // Standard calculation (fresh mode or non-final rounds)
+                    foreach ($roundsToUse as $round) {
+                        $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
 
-                    // Always sum up the rank sum for this round (for secondary display)
-                    if (isset($roundJudgeData['ranks']) && is_array($roundJudgeData['ranks'])) {
-                        $roundRankSum = array_sum($roundJudgeData['ranks']);
-                        $totalRankSum += $roundRankSum;
+                        if ($roundScore !== null) {
+                            $roundWeight = $round->weight ?? 1;
+                            if ($roundWeight <= 0) {
+                                $roundWeight = 1;
+                            }
+                            $totalWeightedScore += $roundScore * $roundWeight;
+                            $totalRoundWeight += $roundWeight;
+                        }
+
+                        // Always get judge ranks for display purposes (regardless of ranking method)
+                        $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
+                        if ($pageant->ranking_method === 'rank_sum') {
+                            $judgeRanks[$round->name] = $roundJudgeData;
+                        }
+
+                        // Always sum up the rank sum for this round (for secondary display)
+                        if (isset($roundJudgeData['ranks']) && is_array($roundJudgeData['ranks'])) {
+                            $roundRankSum = array_sum($roundJudgeData['ranks']);
+                            $totalRankSum += $roundRankSum;
+                        }
                     }
                 }
 

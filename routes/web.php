@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified'])->prefix('organizer')->group(function () 
     // Judge and Tabulator Management Routes
     Route::put('/pageant/{id}/required-judges', [OrganizerController::class, 'updateRequiredJudges'])->name('organizer.pageant.required-judges.update');
     Route::put('/pageant/{id}/scoring-system', [OrganizerController::class, 'updateScoringSystem'])->name('organizer.pageant.scoring-system.update');
+    Route::put('/pageant/{id}/final-score-config', [OrganizerController::class, 'updateFinalScoreConfig'])->name('organizer.pageant.final-score-config.update');
     Route::post('/pageant/{id}/tabulators', [OrganizerController::class, 'assignTabulator'])->name('organizer.pageant.tabulators.assign');
 
     // Pageant status and locking routes

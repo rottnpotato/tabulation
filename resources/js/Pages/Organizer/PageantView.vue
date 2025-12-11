@@ -1478,6 +1478,115 @@
             </div>
           </div>
           
+          <!-- Final Round Scoring Configuration -->
+          <div v-if="canEdit" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+            <div class="p-4 sm:p-6">
+              <div class="flex items-start mb-4">
+                <Target class="h-6 w-6 text-teal-500 mt-0.5" />
+                <div class="ml-3">
+                  <h4 class="text-base font-medium text-gray-900">Final Round Scoring</h4>
+                  <p class="text-sm text-gray-500 mt-1">
+                    Configure how final round scores are calculated. Choose whether to start fresh or inherit scores from previous stages.
+                  </p>
+                </div>
+              </div>
+              
+              <!-- Mode Selection -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-3">Scoring Mode</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Fresh Start Option -->
+                  <div 
+                    @click="finalScoreConfigForm.final_score_mode = 'fresh'"
+                    :class="[
+                      'relative border rounded-lg p-4 cursor-pointer hover:bg-teal-50 transition-colors',
+                      finalScoreConfigForm.final_score_mode === 'fresh' ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'
+                    ]"
+                  >
+                    <div class="flex items-start">
+                      <div class="flex items-center h-5">
+                        <input type="radio" v-model="finalScoreConfigForm.final_score_mode" value="fresh" class="h-4 w-4 text-teal-600 border-gray-300 focus:ring-teal-500" />
+                      </div>
+                      <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">Fresh Start</span>
+                        <span class="block text-sm text-gray-500 mt-1">
+                          Final round scores start from zero. Only scores from the final round are used for final ranking.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Inherit Scores Option -->
+                  <div 
+                    @click="finalScoreConfigForm.final_score_mode = 'inherit'"
+                    :class="[
+                      'relative border rounded-lg p-4 cursor-pointer hover:bg-teal-50 transition-colors',
+                      finalScoreConfigForm.final_score_mode === 'inherit' ? 'border-teal-500 bg-teal-50 ring-2 ring-teal-200' : 'border-gray-300'
+                    ]"
+                  >
+                    <div class="flex items-start">
+                      <div class="flex items-center h-5">
+                        <input type="radio" v-model="finalScoreConfigForm.final_score_mode" value="inherit" class="h-4 w-4 text-teal-600 border-gray-300 focus:ring-teal-500" />
+                      </div>
+                      <div class="ml-3">
+                        <span class="block text-sm font-medium text-gray-900">Inherit from Previous Stages</span>
+                        <span class="block text-sm text-gray-500 mt-1">
+                          Combine scores from previous stages with final round using configured percentages.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Inheritance Configuration (shown when inherit mode selected) -->
+              <div v-if="finalScoreConfigForm.final_score_mode === 'inherit'" class="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h5 class="text-sm font-medium text-gray-700">Stage Percentage Configuration</h5>
+                <p class="text-sm text-gray-500">
+                  Set the percentage weight for each stage. Percentages must sum to 100%.
+                </p>
+                
+                <div class="space-y-3">
+                  <div v-for="stageType in availableStageTypes" :key="stageType" class="flex items-center gap-4">
+                    <label class="text-sm text-gray-700 w-32 capitalize">{{ stageType.replace('-', ' ') }}</label>
+                    <div class="flex items-center gap-2">
+                      <input 
+                        type="number" 
+                        v-model.number="finalScoreConfigForm.final_score_inheritance[stageType]"
+                        min="0" 
+                        max="100" 
+                        step="1"
+                        class="w-20 text-sm border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500"
+                      />
+                      <span class="text-sm text-gray-500">%</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Percentage Total Indicator -->
+                <div class="mt-3 p-2 rounded border" :class="inheritancePercentageTotal === 100 ? 'bg-teal-50 border-teal-200' : 'bg-red-50 border-red-200'">
+                  <p class="text-sm font-medium" :class="inheritancePercentageTotal === 100 ? 'text-teal-700' : 'text-red-700'">
+                    Total: {{ inheritancePercentageTotal }}%
+                    <span v-if="inheritancePercentageTotal === 100" class="ml-2">✓ Valid</span>
+                    <span v-else class="ml-2">⚠ Must equal 100%</span>
+                  </p>
+                </div>
+              </div>
+              
+              <!-- Save Button -->
+              <div class="mt-6 flex justify-end">
+                <button 
+                  @click="saveFinalScoreConfig"
+                  :disabled="finalScoreConfigForm.processing || (finalScoreConfigForm.final_score_mode === 'inherit' && inheritancePercentageTotal !== 100)"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Save class="h-4 w-4 mr-1.5" />
+                  {{ finalScoreConfigForm.processing ? 'Saving...' : 'Save Configuration' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div v-if="isCompleted || isActive" class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <div class="p-4 sm:p-6">
               <h4 class="text-base font-medium text-gray-900 mb-4">View Results</h4>
@@ -2772,6 +2881,67 @@ const scoringSystemForm = ref({
   scoring_system: props.pageant.scoring_system || 'percentage',
   processing: false
 })
+
+// Final Score Configuration Form
+const getInitialInheritance = () => {
+  const inheritance = props.pageant.final_score_inheritance || {}
+  // Initialize with available stage types if empty
+  if (Object.keys(inheritance).length === 0 && props.pageant.rounds) {
+    const stageTypes = [...new Set(props.pageant.rounds.map(r => r.type).filter(Boolean))]
+    stageTypes.forEach(type => {
+      inheritance[type] = type === 'final' ? 70 : 30 // Default weights
+    })
+  }
+  return inheritance
+}
+
+const finalScoreConfigForm = ref({
+  final_score_mode: props.pageant.final_score_mode || 'fresh',
+  final_score_inheritance: getInitialInheritance(),
+  processing: false
+})
+
+// Get available stage types from rounds
+const availableStageTypes = computed(() => {
+  if (!props.pageant.rounds || props.pageant.rounds.length === 0) {
+    return []
+  }
+  return [...new Set(props.pageant.rounds.map(r => r.type).filter(Boolean))]
+})
+
+// Calculate total percentage for inheritance validation
+const inheritancePercentageTotal = computed(() => {
+  const inheritance = finalScoreConfigForm.value.final_score_inheritance
+  return Object.values(inheritance).reduce((sum, val) => sum + (Number(val) || 0), 0)
+})
+
+// Save final score configuration
+const saveFinalScoreConfig = () => {
+  if (finalScoreConfigForm.value.final_score_mode === 'inherit' && inheritancePercentageTotal.value !== 100) {
+    alert('Percentages must sum to 100%')
+    return
+  }
+  
+  finalScoreConfigForm.value.processing = true
+  
+  router.put(route('organizer.pageant.final-score-config.update', props.pageant.id), {
+    final_score_mode: finalScoreConfigForm.value.final_score_mode,
+    final_score_inheritance: finalScoreConfigForm.value.final_score_mode === 'inherit' 
+      ? finalScoreConfigForm.value.final_score_inheritance 
+      : null
+  }, {
+    onSuccess: () => {
+      finalScoreConfigForm.value.processing = false
+    },
+    onError: (errors) => {
+      console.error('Final score config error:', errors)
+      alert('Error saving configuration. Please try again.')
+    },
+    onFinish: () => {
+      finalScoreConfigForm.value.processing = false
+    }
+  })
+}
 
 // Development flag for debugging
 const isDevelopment = computed(() => {

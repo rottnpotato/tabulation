@@ -1357,6 +1357,66 @@ class OrganizerController extends Controller
     }
 
     /**
+     * Update the final round scoring configuration for a pageant.
+     * Controls whether final rounds start fresh or inherit scores from previous stages.
+     */
+    public function updateFinalScoreConfig(\App\Http\Requests\UpdateFinalScoreConfigRequest $request, $id)
+    {
+        // Get the currently logged in organizer
+        $organizer = Auth::user();
+
+        // Check if this organizer has access to this pageant
+        $hasAccess = DB::table('pageant_organizers')
+            ->where('user_id', $organizer->id)
+            ->where('pageant_id', $id)
+            ->exists();
+
+        if (! $hasAccess) {
+            return redirect()->route('organizer.my-pageants')
+                ->with('error', 'You do not have access to this pageant');
+        }
+
+        // Find the pageant
+        $pageant = Pageant::findOrFail($id);
+
+        // Check if the pageant can be edited
+        if (! $pageant->canBeEdited()) {
+            $errorMessage = $pageant->hasStartDateReached()
+                ? 'This pageant cannot be edited because the start date has been reached. Please contact an administrator for edit approval.'
+                : 'This pageant cannot be edited in its current status';
+
+            return redirect()->route('organizer.pageant.view', $id)
+                ->with('error', $errorMessage);
+        }
+
+        // Validate request
+        $validated = $request->validated();
+
+        // Update the pageant
+        $pageant->update([
+            'final_score_mode' => $validated['final_score_mode'],
+            'final_score_inheritance' => $validated['final_score_mode'] === 'inherit' 
+                ? $validated['final_score_inheritance'] 
+                : null,
+        ]);
+
+        // Invalidate score cache since calculation method changed
+        $this->scoreCalculationService->invalidatePageantCache($pageant->id);
+
+        // Log the action
+        $modeLabel = $validated['final_score_mode'] === 'fresh' ? 'Fresh Start' : 'Inherit from Previous Stages';
+        $this->auditLogService->log(
+            'FINAL_SCORE_CONFIG_UPDATED',
+            'Pageant',
+            $pageant->id,
+            "Updated final score configuration for pageant '{$pageant->name}' to {$modeLabel}"
+        );
+
+        return redirect()->route('organizer.pageant.view', $id)
+            ->with('success', 'Final round scoring configuration updated successfully');
+    }
+
+    /**
      * Assign a tabulator to a pageant
      */
     public function assignTabulator(Request $request, $id)
