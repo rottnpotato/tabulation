@@ -90,21 +90,21 @@
             >
               <span
                 v-if="getScore(contestant.id, judge.id) !== null"
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
+                class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
               >
                 {{ getScore(contestant.id, judge.id) }}
               </span>
-              <span v-else class="text-gray-400 text-sm">—</span>
+              <span v-else class=" text-right text-gray-400 text-sm">—</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/30' : 'bg-teal-50'">
               <span
                 v-if="getContestantAverage(contestant.id) !== null && !contestant.backed_out"
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-teal-600 text-white"
+                class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-bold bg-teal-600 text-white"
               >
                 {{ getContestantAverage(contestant.id) }}
               </span>
               <span v-else-if="contestant.backed_out" class="text-red-400 text-sm italic">N/A</span>
-              <span v-else class="text-gray-400 text-sm">—</span>
+              <span v-else class="text-right text-gray-400 text-sm">—</span>
             </td>
             <!-- Actions Column -->
             <td v-if="showBackedOutActions" class="px-6 py-4 whitespace-nowrap text-center">
