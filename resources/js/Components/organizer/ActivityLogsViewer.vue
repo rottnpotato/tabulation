@@ -62,7 +62,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { 
   Activity, Star, Edit, UserPlus, Users, Scale, 
-  BarChart2, Timer, CheckCircle, ListChecks, Crown, Sparkles 
+  BarChart2, Timer, CheckCircle, ListChecks, Crown, Sparkles, UserX, UserCheck 
 } from 'lucide-vue-next'
 import { route } from 'ziggy-js'
 
@@ -130,6 +130,8 @@ const getActivityIcon = (actionType: string) => {
     'CONTESTANT_ADDED': UserPlus,
     'CONTESTANT_UPDATED': Users,
     'CONTESTANT_REMOVED': Users,
+    'CONTESTANT_BACKED_OUT': UserX,
+    'CONTESTANT_RESTORED': UserCheck,
     'JUDGE_ASSIGNED': Scale,
     'JUDGE_REMOVED': Users,
     'TABULATOR_ASSIGNED': BarChart2,
@@ -151,6 +153,8 @@ const getActivityIconClass = (actionType: string) => {
     'CONTESTANT_ADDED': 'from-blue-400 to-blue-600',
     'CONTESTANT_UPDATED': 'from-blue-400 to-blue-600',
     'CONTESTANT_REMOVED': 'from-red-400 to-red-600',
+    'CONTESTANT_BACKED_OUT': 'from-red-500 to-red-700',
+    'CONTESTANT_RESTORED': 'from-green-400 to-green-600',
     'JUDGE_ASSIGNED': 'from-indigo-400 to-indigo-600',
     'JUDGE_REMOVED': 'from-red-400 to-red-600',
     'TABULATOR_ASSIGNED': 'from-purple-400 to-purple-600',

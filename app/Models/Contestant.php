@@ -33,6 +33,10 @@ class Contestant extends Model
         'rank',
         'is_pair',
         'pair_id',
+        'backed_out',
+        'backed_out_at',
+        'backed_out_by',
+        'backed_out_reason',
     ];
 
     /**
@@ -48,6 +52,8 @@ class Contestant extends Model
         'number' => 'integer',
         'rank' => 'integer',
         'is_pair' => 'boolean',
+        'backed_out' => 'boolean',
+        'backed_out_at' => 'datetime',
     ];
 
     /**
@@ -127,6 +133,14 @@ class Contestant extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the user who marked this contestant as backed out.
+     */
+    public function backedOutByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'backed_out_by');
     }
 
     /**

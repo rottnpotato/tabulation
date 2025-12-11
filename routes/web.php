@@ -257,4 +257,8 @@ Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulat
     Route::post('/{pageantId}/rounds/{roundId}/lock', [TabulatorController::class, 'lockRound'])->name('tabulator.rounds.lock');
     Route::post('/{pageantId}/rounds/{roundId}/unlock', [TabulatorController::class, 'unlockRound'])->name('tabulator.rounds.unlock');
     Route::post('/{pageantId}/notify-judges', [TabulatorController::class, 'notifyJudges'])->name('tabulator.notify-judges');
+
+    // Contestant back-out management
+    Route::post('/{pageantId}/contestants/{contestantId}/back-out', [TabulatorController::class, 'markBackedOut'])->name('tabulator.contestants.back-out');
+    Route::post('/{pageantId}/contestants/{contestantId}/undo-back-out', [TabulatorController::class, 'undoBackedOut'])->name('tabulator.contestants.undo-back-out');
 });

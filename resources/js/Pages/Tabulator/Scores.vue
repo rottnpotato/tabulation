@@ -163,8 +163,11 @@
               :criteria="criteria"
               :detailed-scores="detailedScores"
               :score-key="currentRound?.id.toString()"
+              :show-backed-out-actions="true"
               empty-title="No Male Contestants"
               empty-message="No male contestants have been added to this round."
+              @back-out="openBackedOutDialog"
+              @restore="handleRestore"
             />
           </div>
           
@@ -188,8 +191,11 @@
               :criteria="criteria"
               :detailed-scores="detailedScores"
               :score-key="currentRound?.id.toString()"
+              :show-backed-out-actions="true"
               empty-title="No Female Contestants"
               empty-message="No female contestants have been added to this round."
+              @back-out="openBackedOutDialog"
+              @restore="handleRestore"
             />
           </div>
         </div>
@@ -204,11 +210,26 @@
             :criteria="criteria"
             :detailed-scores="detailedScores"
             :score-key="currentRound?.id.toString()"
+            :show-backed-out-actions="true"
             empty-title="No Scores Available"
             empty-message="Scores will appear here once judges start submitting their evaluations."
+            @back-out="openBackedOutDialog"
+            @restore="handleRestore"
           />
         </div>
       </div>
+
+      <!-- Backed Out Dialog -->
+      <BackedOutDialog
+        :show="showBackedOutDialog"
+        :contestant="selectedContestant"
+        :is-loading="isBackingOut"
+        @close="showBackedOutDialog = false"
+        @confirm="handleBackOut"
+      />
+
+      <!-- Notification System -->
+      <NotificationSystem ref="notificationRef" />
 
       <!-- Audit Logs Viewer -->
       <div v-if="pageant && currentRound">
@@ -232,6 +253,8 @@ import { RefreshCw, Download, Target, ClipboardList, LayoutDashboard, FileText, 
 import CustomSelect from '../../Components/CustomSelect.vue'
 import DetailedScoreTable from '../../Components/tabulator/DetailedScoreTable.vue'
 import AuditLogsViewer from '../../Components/tabulator/AuditLogsViewer.vue'
+import BackedOutDialog from '../../Components/tabulator/BackedOutDialog.vue'
+import NotificationSystem from '../../Components/NotificationSystem.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
 
 import { onMounted, onUnmounted } from 'vue'
@@ -532,6 +555,107 @@ const exportScores = () => {
 
 const refreshData = () => {
   router.reload()
+}
+
+// ============================================
+// Backed Out Contestant Management
+// ============================================
+
+interface BackedOutContestant {
+  id: number
+  number: number
+  name: string
+}
+
+const notificationRef = ref<InstanceType<typeof NotificationSystem> | null>(null)
+const showBackedOutDialog = ref(false)
+const selectedContestant = ref<BackedOutContestant | null>(null)
+const isBackingOut = ref(false)
+
+const openBackedOutDialog = (contestant: BackedOutContestant) => {
+  selectedContestant.value = contestant
+  showBackedOutDialog.value = true
+}
+
+const handleBackOut = async (reason: string) => {
+  if (!props.pageant || !selectedContestant.value) return
+
+  isBackingOut.value = true
+
+  try {
+    const response = await fetch(
+      route('tabulator.contestants.back-out', {
+        pageantId: props.pageant.id,
+        contestantId: selectedContestant.value.id
+      }),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({ reason })
+      }
+    )
+
+    const data = await response.json()
+
+    if (response.ok && data.success) {
+      console.log('✅ ' + (data.message || 'Contestant marked as backed out'))
+      notificationRef.value?.success(data.message || 'Contestant marked as backed out', { title: 'Success' })
+      showBackedOutDialog.value = false
+      selectedContestant.value = null
+      // Refresh the page to get updated contestant data
+      refreshData()
+    } else {
+      console.error('❌ ' + (data.message || 'Failed to mark contestant as backed out'))
+      notificationRef.value?.error(data.message || 'Failed to mark contestant as backed out', { title: 'Error' })
+    }
+  } catch (error) {
+    console.error('Error marking contestant as backed out:', error)
+    notificationRef.value?.error('An error occurred while marking the contestant as backed out', { title: 'Error' })
+  } finally {
+    isBackingOut.value = false
+  }
+}
+
+const handleRestore = async (contestant: BackedOutContestant) => {
+  if (!props.pageant) return
+
+  try {
+    const response = await fetch(
+      route('tabulator.contestants.undo-back-out', {
+        pageantId: props.pageant.id,
+        contestantId: contestant.id
+      }),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+      }
+    )
+
+    const data = await response.json()
+
+    if (response.ok && data.success) {
+      console.log('✅ ' + (data.message || 'Contestant has been restored'))
+      notificationRef.value?.success(data.message || 'Contestant has been restored', { title: 'Success' })
+      // Refresh the page to get updated contestant data
+      refreshData()
+    } else {
+      console.error('❌ ' + (data.message || 'Failed to restore contestant'))
+      notificationRef.value?.error(data.message || 'Failed to restore contestant', { title: 'Error' })
+    }
+  } catch (error) {
+    console.error('Error restoring contestant:', error)
+    notificationRef.value?.error('An error occurred while restoring the contestant', { title: 'Error' })
+  }
 }
 </script>
 

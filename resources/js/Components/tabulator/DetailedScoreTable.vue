@@ -48,18 +48,37 @@
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-teal-50">
               Average
             </th>
+            <th v-if="showBackedOutActions" scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="contestant in contestants" :key="contestant.id" class="hover:bg-gray-50 transition-colors">
-            <td class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap">
+          <tr 
+            v-for="contestant in contestants" 
+            :key="contestant.id" 
+            class="transition-colors"
+            :class="[
+              contestant.backed_out ? 'bg-red-50/50 opacity-60' : 'hover:bg-gray-50'
+            ]"
+          >
+            <td class="sticky left-0 z-10 px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/50' : 'bg-white'">
               <div class="flex items-center">
-                <div class="flex-shrink-0 h-10 w-10">
-                  <img class="h-10 w-10 rounded-full object-cover" :src="contestant.image" :alt="contestant.name" />
+                <div class="flex-shrink-0 h-10 w-10 relative">
+                  <img class="h-10 w-10 rounded-full object-cover" :class="{ 'grayscale': contestant.backed_out }" :src="contestant.image" :alt="contestant.name" />
+                  <div v-if="contestant.backed_out" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <UserX class="w-3 h-3 text-white" />
+                  </div>
                 </div>
                 <div class="ml-4">
-                  <div class="text-sm font-medium text-gray-900">
+                  <div class="text-sm font-medium" :class="contestant.backed_out ? 'text-gray-500 line-through' : 'text-gray-900'">
                     #{{ contestant.number }} {{ contestant.name }}
+                  </div>
+                  <div v-if="contestant.backed_out" class="flex items-center gap-1 mt-1">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">
+                      <UserX class="w-3 h-3 mr-1" />
+                      BACKED OUT
+                    </span>
                   </div>
                 </div>
               </div>
@@ -77,14 +96,36 @@
               </span>
               <span v-else class="text-gray-400 text-sm">—</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap bg-teal-50">
+            <td class="px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/30' : 'bg-teal-50'">
               <span
-                v-if="getContestantAverage(contestant.id) !== null"
+                v-if="getContestantAverage(contestant.id) !== null && !contestant.backed_out"
                 class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-teal-600 text-white"
               >
                 {{ getContestantAverage(contestant.id) }}
               </span>
+              <span v-else-if="contestant.backed_out" class="text-red-400 text-sm italic">N/A</span>
               <span v-else class="text-gray-400 text-sm">—</span>
+            </td>
+            <!-- Actions Column -->
+            <td v-if="showBackedOutActions" class="px-6 py-4 whitespace-nowrap text-center">
+              <button
+                v-if="contestant.backed_out"
+                @click="emit('restore', contestant)"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg transition-colors" 
+                title="Restore this contestant"
+              >
+                <RotateCcw class="w-3.5 h-3.5 mr-1" />
+                Restore
+              </button>
+              <button
+                v-else
+                @click="emit('back-out', contestant)"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
+                title="Mark as backed out"
+              >
+                <UserX class="w-3.5 h-3.5 mr-1" />
+                Back Out
+              </button>
             </td>
           </tr>
         </tbody>
@@ -93,24 +134,81 @@
 
     <!-- Detailed View (Individual Criteria Scores) -->
     <div v-else class="overflow-x-auto">
-      <div v-for="contestant in contestants" :key="contestant.id" class="border-b border-gray-200 last:border-b-0">
+      <div 
+        v-for="contestant in contestants" 
+        :key="contestant.id" 
+        class="border-b border-gray-200 last:border-b-0"
+        :class="{ 'opacity-60 bg-red-50/30': contestant.backed_out }"
+      >
         <!-- Contestant Header -->
-        <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 flex items-center justify-between">
+        <div 
+          class="px-6 py-4 flex items-center justify-between"
+          :class="contestant.backed_out ? 'bg-gradient-to-r from-red-50 to-red-100' : 'bg-gradient-to-r from-gray-50 to-gray-100'"
+        >
           <div class="flex items-center space-x-4">
-            <img class="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" :src="contestant.image" :alt="contestant.name" />
+            <div class="relative">
+              <img 
+                class="h-12 w-12 rounded-full object-cover border-2 shadow-sm" 
+                :class="contestant.backed_out ? 'border-red-200 grayscale' : 'border-white'"
+                :src="contestant.image" 
+                :alt="contestant.name" 
+              />
+              <div v-if="contestant.backed_out" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                <UserX class="w-3 h-3 text-white" />
+              </div>
+            </div>
             <div>
-              <h4 class="text-base font-semibold text-gray-900">
+              <h4 
+                class="text-base font-semibold" 
+                :class="contestant.backed_out ? 'text-gray-500 line-through' : 'text-gray-900'"
+              >
                 #{{ contestant.number }} {{ contestant.name }}
               </h4>
               <p v-if="contestant.is_pair && contestant.members_text" class="text-sm text-gray-600">
                 {{ contestant.members_text }}
               </p>
+              <div v-if="contestant.backed_out" class="flex items-center gap-2 mt-1">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">
+                  <UserX class="w-3 h-3 mr-1" />
+                  BACKED OUT
+                </span>
+                <span v-if="contestant.backed_out_reason" class="text-xs text-red-600 italic">
+                  {{ contestant.backed_out_reason }}
+                </span>
+              </div>
             </div>
           </div>
-          <div class="text-right">
-            <div class="text-xs text-gray-500 uppercase tracking-wider">Overall Average</div>
-            <div class="text-2xl font-bold text-teal-600">
-              {{ getContestantAverage(contestant.id) || '—' }}
+          <div class="flex items-center gap-4">
+            <!-- Action Buttons -->
+            <div v-if="showBackedOutActions">
+              <button
+                v-if="contestant.backed_out"
+                @click="emit('restore', contestant)"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg transition-colors"
+                title="Restore this contestant"
+              >
+                <RotateCcw class="w-3.5 h-3.5 mr-1" />
+                Restore
+              </button>
+              <button
+                v-else
+                @click="emit('back-out', contestant)"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
+                title="Mark as backed out"
+              >
+                <UserX class="w-3.5 h-3.5 mr-1" />
+                Back Out
+              </button>
+            </div>
+            <!-- Average Score -->
+            <div class="text-right">
+              <div class="text-xs text-gray-500 uppercase tracking-wider">Overall Average</div>
+              <div v-if="!contestant.backed_out" class="text-2xl font-bold text-teal-600">
+                {{ getContestantAverage(contestant.id) || '—' }}
+              </div>
+              <div v-else class="text-lg font-medium text-red-400 italic">
+                N/A
+              </div>
             </div>
           </div>
         </div>
@@ -193,7 +291,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Table2, BarChart3, ListChecks, AlertCircle } from 'lucide-vue-next'
+import { Table2, BarChart3, ListChecks, AlertCircle, UserX, RotateCcw } from 'lucide-vue-next'
 
 interface Contestant {
   id: number
@@ -202,6 +300,9 @@ interface Contestant {
   image: string
   is_pair?: boolean
   members_text?: string
+  backed_out?: boolean
+  backed_out_at?: string
+  backed_out_reason?: string
 }
 
 interface Judge {
@@ -229,6 +330,7 @@ interface Props {
   emptyTitle?: string
   emptyMessage?: string
   showToggle?: boolean
+  showBackedOutActions?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -236,8 +338,14 @@ const props = withDefaults(defineProps<Props>(), {
   detailedScores: () => ({}),
   emptyTitle: 'No Scores Yet',
   emptyMessage: 'Scores will appear here once judges start submitting.',
-  showToggle: true
+  showToggle: true,
+  showBackedOutActions: false
 })
+
+const emit = defineEmits<{
+  (e: 'back-out', contestant: Contestant): void
+  (e: 'restore', contestant: Contestant): void
+}>()
 
 const viewMode = ref<'summary' | 'detailed'>('summary')
 

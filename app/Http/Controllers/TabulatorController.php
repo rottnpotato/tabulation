@@ -358,6 +358,8 @@ class TabulatorController extends Controller
                         'gender' => $member->gender,
                     ];
                 })->values()->all() : null,
+                'backed_out' => (bool) $contestant->backed_out,
+                'backed_out_reason' => $contestant->backed_out_reason,
             ];
         });
 
@@ -1582,6 +1584,147 @@ class TabulatorController extends Controller
         }
 
         return redirect()->back()->with('success', "Successfully notified {$notifiedCount} judge(s).");
+    }
+
+    /**
+     * Mark a contestant as backed out
+     */
+    public function markBackedOut(Request $request, $pageantId, $contestantId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $contestant = Contestant::where('pageant_id', $pageantId)
+            ->findOrFail($contestantId);
+
+        // Update contestant backed out status
+        $contestant->update([
+            'backed_out' => true,
+            'backed_out_at' => now(),
+            'backed_out_by' => $tabulator->id,
+            'backed_out_reason' => $request->reason,
+        ]);
+
+        // Log the action
+        AuditLog::create([
+            'user_id' => $tabulator->id,
+            'user_role' => $tabulator->role,
+            'action_type' => 'CONTESTANT_BACKED_OUT',
+            'target_entity' => 'Contestant',
+            'target_id' => $contestant->id,
+            'details' => json_encode([
+                'contestant_name' => $contestant->name,
+                'contestant_number' => $contestant->number,
+                'pageant_id' => $pageantId,
+                'pageant_name' => $pageant->name,
+                'reason' => $request->reason,
+                'backed_out_by' => $tabulator->name,
+            ]),
+            'ip_address' => $request->ip(),
+        ]);
+
+        // Broadcast real-time update to all listeners on the pageant channel
+        event(new \App\Events\ContestantBackedOut(
+            $contestant,
+            $pageant,
+            'backed_out',
+            $request->reason,
+            $tabulator->name
+        ));
+
+        // Notify all judges assigned to this pageant
+        foreach ($pageant->judges as $judge) {
+            event(new \App\Events\JudgeNotified(
+                $judge->id,
+                $pageantId,
+                "Contestant #{$contestant->number} ({$contestant->name}) has been marked as backed out. Reason: {$request->reason}",
+                'Contestant Backed Out',
+                null,
+                'contestant_backed_out'
+            ));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Contestant #{$contestant->number} has been marked as backed out.",
+        ]);
+    }
+
+    /**
+     * Undo backed out status for a contestant
+     */
+    public function undoBackedOut(Request $request, $pageantId, $contestantId)
+    {
+        $tabulator = Auth::user();
+        $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
+
+        $contestant = Contestant::where('pageant_id', $pageantId)
+            ->findOrFail($contestantId);
+
+        if (!$contestant->backed_out) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This contestant is not marked as backed out.',
+            ], 400);
+        }
+
+        $previousReason = $contestant->backed_out_reason;
+
+        // Restore contestant status
+        $contestant->update([
+            'backed_out' => false,
+            'backed_out_at' => null,
+            'backed_out_by' => null,
+            'backed_out_reason' => null,
+        ]);
+
+        // Log the action
+        AuditLog::create([
+            'user_id' => $tabulator->id,
+            'user_role' => $tabulator->role,
+            'action_type' => 'CONTESTANT_RESTORED',
+            'target_entity' => 'Contestant',
+            'target_id' => $contestant->id,
+            'details' => json_encode([
+                'contestant_name' => $contestant->name,
+                'contestant_number' => $contestant->number,
+                'pageant_id' => $pageantId,
+                'pageant_name' => $pageant->name,
+                'previous_reason' => $previousReason,
+                'restored_by' => $tabulator->name,
+            ]),
+            'ip_address' => $request->ip(),
+        ]);
+
+        // Broadcast real-time update
+        event(new \App\Events\ContestantBackedOut(
+            $contestant,
+            $pageant,
+            'restored',
+            null,
+            $tabulator->name
+        ));
+
+        // Notify all judges assigned to this pageant
+        foreach ($pageant->judges as $judge) {
+            event(new \App\Events\JudgeNotified(
+                $judge->id,
+                $pageantId,
+                "Contestant #{$contestant->number} ({$contestant->name}) has been restored and can now be scored.",
+                'Contestant Restored',
+                null,
+                'contestant_restored'
+            ));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Contestant #{$contestant->number} has been restored.",
+        ]);
     }
 
     /**

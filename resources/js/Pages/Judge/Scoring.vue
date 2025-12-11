@@ -740,6 +740,7 @@ onMounted(() => {
       })
       .listen('RoundUpdated', (e) => { handleRoundUpdate(e) })
       .listen('ScoreUpdated', (e) => { handleScoreUpdate(e) })
+      .listen('ContestantBackedOut', (e) => { handleContestantBackedOut(e) })
     
     if (judgeId) {
       console.log('🔔 Scoring: Subscribing to judge channel:', `judge.${judgeId}`)
@@ -854,6 +855,35 @@ const handleRoundUpdate = (event) => {
       }
       break
   }
+}
+
+const handleContestantBackedOut = (event) => {
+  console.log('🚫 Scoring: ContestantBackedOut event received:', event)
+  const { contestant_id, contestant_name, contestant_number, action, reason, backed_out } = event
+  
+  // Play notification sound
+  playNotificationSound()
+  
+  if (notificationSystem.value) {
+    if (action === 'backed_out') {
+      notificationSystem.value.warning(
+        `Contestant #${contestant_number} (${contestant_name}) has been marked as backed out${reason ? `: ${reason}` : ''}`,
+        { title: 'Contestant Backed Out', timeout: 8000 }
+      )
+    } else if (action === 'restored') {
+      notificationSystem.value.success(
+        `Contestant #${contestant_number} (${contestant_name}) has been restored and can now be scored.`,
+        { title: 'Contestant Restored', timeout: 8000 }
+      )
+    }
+  }
+  
+  // Reload page to get updated contestant data
+  router.reload({
+    only: ['contestants'],
+    preserveState: true,
+    preserveScroll: true
+  })
 }
 
 const isPercentageScoring = computed(() => {

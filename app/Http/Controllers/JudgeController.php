@@ -193,6 +193,8 @@ class JudgeController extends Controller
                 'gender' => $contestant->gender,
                 'is_pair' => (bool) $contestant->is_pair,
                 'members_text' => $contestant->is_pair ? $contestant->members->pluck('name')->implode(' & ') : null,
+                'backed_out' => (bool) $contestant->backed_out,
+                'backed_out_reason' => $contestant->backed_out_reason,
             ];
         });
 
@@ -386,6 +388,14 @@ class JudgeController extends Controller
 
         // Verify contestant belongs to this pageant
         $contestant = $pageant->contestants()->findOrFail($contestantId);
+
+        // Check if contestant is backed out
+        if ($contestant->backed_out) {
+            return response()->json([
+                'success' => false,
+                'message' => "Cannot submit scores for contestant #{$contestant->number} ({$contestant->name}) - they have been marked as backed out.",
+            ], 403);
+        }
 
         // Get criteria for detailed validation
         $criteria = $round->criteria()->whereIn('id', array_keys($scores))->get();
