@@ -46,7 +46,7 @@
               {{ judge.name }}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-teal-50">
-              Overall Score <br>(Computed)</br>
+              Total Score
             </th>
             <th v-if="showBackedOutActions" scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
@@ -89,19 +89,19 @@
               class="px-6 py-4 whitespace-nowrap"
             >
               <span
-                v-if="getScore(contestant.id, judge.id) !== null"
+                v-if="getTotalScore(contestant.id, judge.id) !== null"
                 class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
               >
-                {{ getScore(contestant.id, judge.id) }}
+                {{ getTotalScore(contestant.id, judge.id) }}
               </span>
               <span v-else class=" text-right text-gray-400 text-sm">—</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/30' : 'bg-teal-50'">
               <span
-                v-if="getContestantAverage(contestant.id) !== null && !contestant.backed_out"
+                v-if="getContestantTotal(contestant.id) !== null && !contestant.backed_out"
                 class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-bold bg-teal-600 text-white"
               >
-                {{ getContestantAverage(contestant.id) }}
+                {{ getContestantTotal(contestant.id) }}
               </span>
               <span v-else-if="contestant.backed_out" class="text-red-400 text-sm italic">N/A</span>
               <span v-else class="text-right text-gray-400 text-sm">—</span>
@@ -200,11 +200,11 @@
                 Back Out
               </button>
             </div>
-            <!-- Average Score -->
+            <!-- Total Score -->
             <div class="text-right">
-              <div class="text-xs text-gray-500 uppercase tracking-wider">Overall Average</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wider">Total Score</div>
               <div v-if="!contestant.backed_out" class="text-2xl font-bold text-teal-600">
-                {{ getContestantAverage(contestant.id) || '—' }}
+                {{ getContestantTotal(contestant.id) || '—' }}
               </div>
               <div v-else class="text-lg font-medium text-red-400 italic">
                 N/A
@@ -262,10 +262,10 @@
                   <span v-else class="text-gray-300 text-sm">—</span>
                 </td>
               </tr>
-              <!-- Judge Average Row -->
+              <!-- Judge Totals Row -->
               <tr class="bg-teal-50 font-semibold">
                 <td class="px-6 py-3 text-sm text-gray-900" colspan="2">
-                  Judge Averages (Weighted)
+                  Judge Totals (Weighted)
                 </td>
                 <td
                   v-for="judge in judges"
@@ -273,10 +273,10 @@
                   class="px-6 py-3 text-center"
                 >
                   <span
-                    v-if="getScore(contestant.id, judge.id) !== null"
+                    v-if="getTotalScore(contestant.id, judge.id) !== null"
                     class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-teal-600 text-white"
                   >
-                    {{ getScore(contestant.id, judge.id) }}
+                    {{ getTotalScore(contestant.id, judge.id) }}
                   </span>
                   <span v-else class="text-gray-400 text-sm">—</span>
                 </td>
@@ -324,6 +324,7 @@ interface Props {
   contestants: Contestant[]
   judges: Judge[]
   scores: Map<string, number> | Record<string, number>
+  totalScores?: Map<string, number> | Record<string, number>
   criteria?: Criteria[]
   detailedScores?: Record<string, any>
   scoreKey?: string
@@ -336,6 +337,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   criteria: () => [],
   detailedScores: () => ({}),
+  totalScores: () => ({}),
   emptyTitle: 'No Scores Yet',
   emptyMessage: 'Scores will appear here once judges start submitting.',
   showToggle: true,
@@ -363,6 +365,16 @@ const getScore = (contestantId: number, judgeId: number): number | null => {
   return score !== undefined ? Number(score) : null
 }
 
+const getTotalScore = (contestantId: number, judgeId: number): number | null => {
+  const key = props.scoreKey 
+    ? `${contestantId}-${judgeId}-${props.scoreKey}`
+    : `${contestantId}-${judgeId}`
+  
+  const totalScoresMap = props.totalScores instanceof Map ? props.totalScores : new Map(Object.entries(props.totalScores || {}))
+  const score = totalScoresMap.get(key)
+  return score !== undefined ? Number(score) : null
+}
+
 const getDetailedScore = (contestantId: number, judgeId: number, criteriaId: number): number | null => {
   const key = `${contestantId}-${judgeId}-${criteriaId}`
   const score = props.detailedScores[key]
@@ -380,6 +392,19 @@ const getContestantAverage = (contestantId: number): number | null => {
   
   const sum = judgeScores.reduce((acc, score) => acc + score, 0)
   return Number((sum / judgeScores.length).toFixed(2))
+}
+
+const getContestantTotal = (contestantId: number): number | null => {
+  const judgeTotalScores = props.judges
+    .map(judge => getTotalScore(contestantId, judge.id))
+    .filter(score => score !== null) as number[]
+  
+  if (judgeTotalScores.length === 0) {
+    return null
+  }
+  
+  const sum = judgeTotalScores.reduce((acc, score) => acc + score, 0)
+  return Number(sum.toFixed(2))
 }
 
 const getScoreColor = (score: number | null, maxScore: number): string => {

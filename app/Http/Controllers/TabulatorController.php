@@ -339,6 +339,7 @@ class TabulatorController extends Controller
                 'judges' => [],
                 'currentRound' => null,
                 'scores' => [],
+                'totalScores' => [],
             ]);
         }
 
@@ -379,6 +380,7 @@ class TabulatorController extends Controller
             ->groupBy(['contestant_id', 'judge_id']);
 
         $scores = [];
+        $totalScores = [];
         $scoringSystem = $pageant->scoring_system ?? 'percentage';
 
         foreach ($scoresQuery as $contestantId => $judgeScores) {
@@ -401,6 +403,8 @@ class TabulatorController extends Controller
 
                     $key = $contestantId.'-'.$judgeId.'-'.$roundId;
                     $scores[$key] = round($normalizedScore, 2);
+                    // Store total (sum) of weighted scores for display purposes
+                    $totalScores[$key] = round($totalWeightedScore, 2);
                 }
             }
         }
@@ -452,6 +456,7 @@ class TabulatorController extends Controller
             'contestants' => $contestants,
             'judges' => $judges,
             'scores' => $scores,
+            'totalScores' => $totalScores,
             'criteria' => $criteria,
             'detailedScores' => $detailedScores,
         ]);
@@ -1665,7 +1670,7 @@ class TabulatorController extends Controller
         $contestant = Contestant::where('pageant_id', $pageantId)
             ->findOrFail($contestantId);
 
-        if (!$contestant->backed_out) {
+        if (! $contestant->backed_out) {
             return response()->json([
                 'success' => false,
                 'message' => 'This contestant is not marked as backed out.',
