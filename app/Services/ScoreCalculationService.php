@@ -119,8 +119,8 @@ class ScoreCalculationService
         string $tieHandling
     ): array {
         if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-            $maleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'male');
-            $femaleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'female');
+            $maleContestants = array_filter($contestants, fn($c) => ($c['gender'] ?? '') === 'male');
+            $femaleContestants = array_filter($contestants, fn($c) => ($c['gender'] ?? '') === 'female');
 
             $maleContestants = $this->applyRanking($maleContestants, $scoreField, $direction, $tieHandling);
             $femaleContestants = $this->applyRanking($femaleContestants, $scoreField, $direction, $tieHandling);
@@ -245,10 +245,10 @@ class ScoreCalculationService
             $bData = $b['ordinalData'];
 
             // Primary: Majority wins (if one has majority and other doesn't)
-            if ($aData['hasMajority'] && ! $bData['hasMajority']) {
+            if ($aData['hasMajority'] && !$bData['hasMajority']) {
                 return -1;
             }
-            if (! $aData['hasMajority'] && $bData['hasMajority']) {
+            if (!$aData['hasMajority'] && $bData['hasMajority']) {
                 return 1;
             }
 
@@ -280,8 +280,8 @@ class ScoreCalculationService
         int $judgeCount
     ): array {
         if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-            $maleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'male');
-            $femaleContestants = array_filter($contestants, fn ($c) => ($c['gender'] ?? '') === 'female');
+            $maleContestants = array_filter($contestants, fn($c) => ($c['gender'] ?? '') === 'male');
+            $femaleContestants = array_filter($contestants, fn($c) => ($c['gender'] ?? '') === 'female');
 
             $maleContestants = $this->applyOrdinalRanking(array_values($maleContestants), $judgeCount);
             $femaleContestants = $this->applyOrdinalRanking(array_values($femaleContestants), $judgeCount);
@@ -325,9 +325,9 @@ class ScoreCalculationService
             }
 
             // If no target round, use the last round
-            if (! $targetRound) {
+            if (!$targetRound) {
                 $targetRound = $pageant->rounds->sortByDesc('display_order')->first();
-                if (! $targetRound) {
+                if (!$targetRound) {
                     return [];
                 }
             }
@@ -345,7 +345,7 @@ class ScoreCalculationService
                         $judgeScores[$contestant->id] = $score;
                     }
                 }
-                if (! empty($judgeScores)) {
+                if (!empty($judgeScores)) {
                     $allJudgeScores[$judge->id] = $judgeScores;
                 }
             }
@@ -358,7 +358,7 @@ class ScoreCalculationService
                 $scoreCount = 0;
 
                 foreach ($pageant->judges as $judge) {
-                    if (! isset($allJudgeScores[$judge->id][$contestant->id])) {
+                    if (!isset($allJudgeScores[$judge->id][$contestant->id])) {
                         continue;
                     }
 
@@ -426,7 +426,7 @@ class ScoreCalculationService
             }
 
             // Filter out contestants with no scores
-            $contestants = array_filter($contestants, fn ($c) => ! empty($c['ordinalRanks']));
+            $contestants = array_filter($contestants, fn($c) => !empty($c['ordinalRanks']));
 
             // Apply ordinal ranking
             $result = $this->applyGenderSeparatedOrdinalRanking(
@@ -440,7 +440,7 @@ class ScoreCalculationService
             return $result;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating ordinal scores: '.$e->getMessage(), [
+            Log::error('Error calculating ordinal scores: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'round_id' => $targetRound?->id,
                 'trace' => $e->getTraceAsString(),
@@ -496,7 +496,7 @@ class ScoreCalculationService
 
             // Filter to only eligible contestants if we have eligibility criteria
             if ($eligibleContestantIds !== null) {
-                $results = array_filter($results, fn ($c) => in_array($c['id'], $eligibleContestantIds));
+                $results = array_filter($results, fn($c) => in_array($c['id'], $eligibleContestantIds));
                 $results = array_values($results);
 
                 // Re-apply ordinal ranking after filtering
@@ -509,7 +509,7 @@ class ScoreCalculationService
             return $results;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating ordinal for round: '.$e->getMessage(), [
+            Log::error('Error calculating ordinal for round: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'round_id' => $targetRound->id,
                 'trace' => $e->getTraceAsString(),
@@ -532,12 +532,12 @@ class ScoreCalculationService
 
         if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
             // Separate by gender and get top N from each
-            $maleResults = array_filter($results, fn ($c) => ($c['gender'] ?? '') === 'male');
-            $femaleResults = array_filter($results, fn ($c) => ($c['gender'] ?? '') === 'female');
+            $maleResults = array_filter($results, fn($c) => ($c['gender'] ?? '') === 'male');
+            $femaleResults = array_filter($results, fn($c) => ($c['gender'] ?? '') === 'female');
 
             // Sort by rank and take top N from each
-            usort($maleResults, fn ($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
-            usort($femaleResults, fn ($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
+            usort($maleResults, fn($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
+            usort($femaleResults, fn($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
 
             foreach (array_slice($maleResults, 0, $topN) as $contestant) {
                 $advancingIds[] = $contestant['id'];
@@ -547,7 +547,7 @@ class ScoreCalculationService
             }
         } else {
             // Sort by rank and take top N
-            usort($results, fn ($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
+            usort($results, fn($a, $b) => ($a['rank'] ?? 999) <=> ($b['rank'] ?? 999));
             foreach (array_slice($results, 0, $topN) as $contestant) {
                 $advancingIds[] = $contestant['id'];
             }
@@ -580,7 +580,7 @@ class ScoreCalculationService
             }
 
             $rounds = $stage
-                ? $pageant->rounds->filter(fn ($r) => ($r->type ?? null) === $stage)
+                ? $pageant->rounds->filter(fn($r) => ($r->type ?? null) === $stage)
                 : $pageant->rounds;
 
             if ($rounds->isEmpty()) {
@@ -595,7 +595,7 @@ class ScoreCalculationService
                 $roundRankSums[$round->id] = [];
                 foreach ($pageant->contestants as $contestant) {
                     $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
-                    if (! empty($roundJudgeData['ranks'])) {
+                    if (!empty($roundJudgeData['ranks'])) {
                         $roundRankSums[$round->id][$contestant->id] = array_sum($roundJudgeData['ranks']);
                     }
                 }
@@ -631,7 +631,7 @@ class ScoreCalculationService
 
                     $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
 
-                    if (! empty($roundJudgeData['scores'])) {
+                    if (!empty($roundJudgeData['scores'])) {
                         $roundAvgScore = array_sum($roundJudgeData['scores']) / count($roundJudgeData['scores']);
                         $roundScores[$round->name] = round($roundAvgScore, 2);
 
@@ -653,7 +653,7 @@ class ScoreCalculationService
                 }
 
                 // Excel formula: average of weighted ranks = sum / count (or sum / 3 for 3 rounds)
-                $roundCount = count(array_filter($perRoundRanks, fn ($r) => $r > 0));
+                $roundCount = count(array_filter($perRoundRanks, fn($r) => $r > 0));
                 $weightedRankAvg = $roundCount > 0 ? $weightedRankSum / $roundCount : 0;
 
                 $memberNames = [];
@@ -680,16 +680,16 @@ class ScoreCalculationService
                     'perRoundRanks' => $perRoundRanks,
                     'totalRankSum' => round($totalRankSum, 2),
                     'weightedRankAvg' => round($weightedRankAvg, 4),
-                    'finalScore' => round($weightedRankAvg, 4),
-                    'totalScore' => round($weightedRankAvg, 4),
+                    'finalScore' => round($totalRankSum, 2),
+                    'totalScore' => round($totalRankSum, 2),
                 ];
             }
 
-            // Step 4: Apply final ranking by weighted average (lower is better)
+            // Step 4: Apply final ranking by total rank sum (lower is better)
             $result = $this->applyGenderSeparatedRanking(
                 $contestants,
                 $pageant,
-                'weightedRankAvg',
+                'totalRankSum',
                 'asc',
                 $tieHandling
             );
@@ -699,7 +699,7 @@ class ScoreCalculationService
             return $result;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating rank-sum scores: '.$e->getMessage(), [
+            Log::error('Error calculating rank-sum scores: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'stage' => $stage,
                 'trace' => $e->getTraceAsString(),
@@ -726,7 +726,7 @@ class ScoreCalculationService
 
         // For ordinal method, get the last round of this stage and calculate ordinal for it
         if ($rankingMethod === 'ordinal') {
-            $stageRounds = $pageant->rounds->filter(fn ($r) => ($r->type ?? null) === $stage);
+            $stageRounds = $pageant->rounds->filter(fn($r) => ($r->type ?? null) === $stage);
             $lastStageRound = $stageRounds->sortByDesc('display_order')->first();
             if ($lastStageRound) {
                 return $this->calculateOrdinalForRound($pageant, $lastStageRound, $useCache);
@@ -823,7 +823,7 @@ class ScoreCalculationService
             return $result;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating pageant stage scores: '.$e->getMessage(), [
+            Log::error('Error calculating pageant stage scores: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'stage' => $stage,
                 'trace' => $e->getTraceAsString(),
@@ -890,7 +890,7 @@ class ScoreCalculationService
     public function getAdvancingContestantIds(Pageant $pageant, string $stage): array
     {
         try {
-            $stageRounds = $pageant->rounds->filter(fn ($round) => ($round->type ?? null) === $stage);
+            $stageRounds = $pageant->rounds->filter(fn($round) => ($round->type ?? null) === $stage);
 
             if ($stageRounds->isEmpty()) {
                 return [];
@@ -933,8 +933,8 @@ class ScoreCalculationService
             $advancingIds = [];
 
             if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                $maleContestants = array_filter($scoredContestants, fn ($c) => ($c['gender'] ?? '') === 'male');
-                $femaleContestants = array_filter($scoredContestants, fn ($c) => ($c['gender'] ?? '') === 'female');
+                $maleContestants = array_filter($scoredContestants, fn($c) => ($c['gender'] ?? '') === 'male');
+                $femaleContestants = array_filter($scoredContestants, fn($c) => ($c['gender'] ?? '') === 'female');
 
                 $advancingIds = array_merge(
                     $this->getTopNWithTies($maleContestants, $topN),
@@ -947,7 +947,7 @@ class ScoreCalculationService
             return $advancingIds;
 
         } catch (\Exception $e) {
-            Log::error('Error getting advancing contestant IDs: '.$e->getMessage(), [
+            Log::error('Error getting advancing contestant IDs: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'stage' => $stage,
                 'trace' => $e->getTraceAsString(),
@@ -969,7 +969,7 @@ class ScoreCalculationService
             ->map(function ($rounds) {
                 return $rounds->min('display_order');
             })
-            ->sortBy(fn ($order) => $order)
+            ->sortBy(fn($order) => $order)
             ->keys()
             ->values()
             ->toArray();
@@ -1037,22 +1037,22 @@ class ScoreCalculationService
                 }
 
                 if ($isPairPageant) {
-                    $maleScores = array_filter($contestantScores, fn ($c) => ($c['gender'] ?? '') === 'male');
-                    $femaleScores = array_filter($contestantScores, fn ($c) => ($c['gender'] ?? '') === 'female');
+                    $maleScores = array_filter($contestantScores, fn($c) => ($c['gender'] ?? '') === 'male');
+                    $femaleScores = array_filter($contestantScores, fn($c) => ($c['gender'] ?? '') === 'female');
 
                     $maleWinners = [];
                     $femaleWinners = [];
 
-                    if (! empty($maleScores)) {
-                        usort($maleScores, fn ($a, $b) => $b['score'] <=> $a['score']);
+                    if (!empty($maleScores)) {
+                        usort($maleScores, fn($a, $b) => $b['score'] <=> $a['score']);
                         $topMaleScore = $maleScores[0]['score'];
                         $maleWinners = array_values(array_filter($maleScores, function ($row) use ($topMaleScore) {
                             return abs($row['score'] - $topMaleScore) < 0.00001;
                         }));
                     }
 
-                    if (! empty($femaleScores)) {
-                        usort($femaleScores, fn ($a, $b) => $b['score'] <=> $a['score']);
+                    if (!empty($femaleScores)) {
+                        usort($femaleScores, fn($a, $b) => $b['score'] <=> $a['score']);
                         $topFemaleScore = $femaleScores[0]['score'];
                         $femaleWinners = array_values(array_filter($femaleScores, function ($row) use ($topFemaleScore) {
                             return abs($row['score'] - $topFemaleScore) < 0.00001;
@@ -1072,7 +1072,7 @@ class ScoreCalculationService
                         'winners' => array_merge($maleWinners, $femaleWinners),
                     ];
                 } else {
-                    usort($contestantScores, fn ($a, $b) => $b['score'] <=> $a['score']);
+                    usort($contestantScores, fn($a, $b) => $b['score'] <=> $a['score']);
                     $topScore = $contestantScores[0]['score'];
                     $topContestants = array_values(array_filter($contestantScores, function ($row) use ($topScore) {
                         return abs($row['score'] - $topScore) < 0.00001;
@@ -1093,7 +1093,7 @@ class ScoreCalculationService
 
             return $resultsByRound;
         } catch (\Exception $e) {
-            Log::error('Error calculating minor awards by stage: '.$e->getMessage(), [
+            Log::error('Error calculating minor awards by stage: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'stage' => $stage,
                 'trace' => $e->getTraceAsString(),
@@ -1189,7 +1189,7 @@ class ScoreCalculationService
             return $contestants;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating all contestants with scores: '.$e->getMessage(), [
+            Log::error('Error calculating all contestants with scores: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -1305,7 +1305,7 @@ class ScoreCalculationService
             return $result;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating pageant final scores: '.$e->getMessage(), [
+            Log::error('Error calculating pageant final scores: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -1337,7 +1337,7 @@ class ScoreCalculationService
             }
 
             $roundScore = null;
-            if (! empty($judgeAverages)) {
+            if (!empty($judgeAverages)) {
                 $roundScore = array_sum($judgeAverages) / count($judgeAverages);
             }
 
@@ -1346,7 +1346,7 @@ class ScoreCalculationService
             return $roundScore;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating contestant round score: '.$e->getMessage(), [
+            Log::error('Error calculating contestant round score: ' . $e->getMessage(), [
                 'contestant_id' => $contestant->id,
                 'round_id' => $round->id,
                 'pageant_id' => $pageant->id,
@@ -1384,7 +1384,7 @@ class ScoreCalculationService
                     $weight = 1;
                 }
 
-                if (! is_numeric($score->score)) {
+                if (!is_numeric($score->score)) {
                     continue;
                 }
 
@@ -1399,7 +1399,7 @@ class ScoreCalculationService
             return $criteriaWeightedSum / $criteriaWeightTotal;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating judge contestant score: '.$e->getMessage(), [
+            Log::error('Error calculating judge contestant score: ' . $e->getMessage(), [
                 'judge_id' => $judgeId,
                 'contestant_id' => $contestantId,
                 'round_id' => $roundId,
@@ -1426,7 +1426,7 @@ class ScoreCalculationService
             $pageant = Pageant::with(['contestants', 'rounds', 'judges'])->findOrFail($pageantId);
             $contestant = $pageant->contestants->find($contestantId);
 
-            if (! $contestant) {
+            if (!$contestant) {
                 return null;
             }
 
@@ -1454,7 +1454,7 @@ class ScoreCalculationService
             return $finalScore;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating contestant final score: '.$e->getMessage(), [
+            Log::error('Error calculating contestant final score: ' . $e->getMessage(), [
                 'pageant_id' => $pageantId,
                 'contestant_id' => $contestantId,
                 'trace' => $e->getTraceAsString(),
@@ -1568,7 +1568,7 @@ class ScoreCalculationService
             // Check if final round should inherit scores from previous stages
             $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
             $finalScoreInheritance = $pageant->final_score_inheritance ?? [];
-            $shouldInheritScores = $targetType === 'final' && $finalScoreMode === 'inherit' && ! empty($finalScoreInheritance);
+            $shouldInheritScores = $targetType === 'final' && $finalScoreMode === 'inherit' && !empty($finalScoreInheritance);
 
             // For Final round type, check if we should inherit or start fresh
             if ($targetType === 'final') {
@@ -1639,7 +1639,7 @@ class ScoreCalculationService
                         $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
 
                         if ($roundScore !== null) {
-                            if (! isset($stageScores[$roundType])) {
+                            if (!isset($stageScores[$roundType])) {
                                 $stageScores[$roundType] = 0;
                                 $stageWeights[$roundType] = 0;
                             }
@@ -1734,7 +1734,7 @@ class ScoreCalculationService
             if ($previousStageType !== null) {
                 $advancedContestants = $this->getAdvancingContestantIds($pageant, $previousStageType);
 
-                if (! empty($advancedContestants)) {
+                if (!empty($advancedContestants)) {
                     $result = array_filter($result, function ($c) use ($advancedContestants) {
                         return in_array($c['id'], $advancedContestants);
                     });
@@ -1756,7 +1756,7 @@ class ScoreCalculationService
             return $result;
 
         } catch (\Exception $e) {
-            Log::error('Error calculating round view scores: '.$e->getMessage(), [
+            Log::error('Error calculating round view scores: ' . $e->getMessage(), [
                 'pageant_id' => $pageant->id,
                 'round_id' => $targetRound->id,
                 'trace' => $e->getTraceAsString(),

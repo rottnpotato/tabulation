@@ -36,7 +36,7 @@ class TabulatorController extends Controller
         $tabulator = Auth::user();
 
         // If no pageant specified, get all pageants this tabulator is assigned to
-        if (! $pageantId) {
+        if (!$pageantId) {
             $pageants = Pageant::whereHas('tabulators', function ($query) use ($tabulator) {
                 $query->where('user_id', $tabulator->id);
             })->with(['contestants', 'judges', 'rounds.criteria'])->get();
@@ -97,7 +97,7 @@ class TabulatorController extends Controller
      */
     public function judges($pageantId)
     {
-        if (! Auth::user()->hasPermission('tabulator_view_judges')) {
+        if (!Auth::user()->hasPermission('tabulator_view_judges')) {
             return redirect()->back()->with('error', 'You do not have permission to view judge information.');
         }
 
@@ -190,7 +190,7 @@ class TabulatorController extends Controller
 
         $judge = $pageant->judges()->where('user_id', $judgeId)->first();
         if ($judge) {
-            $newStatus = ! $judge->pivot->active;
+            $newStatus = !$judge->pivot->active;
             $pageant->judges()->updateExistingPivot($judgeId, ['active' => $newStatus]);
 
             return back()->with('success', 'Judge status updated successfully.');
@@ -270,7 +270,7 @@ class TabulatorController extends Controller
         $judge = User::findOrFail($judgeId);
 
         // Verify judge is assigned to this pageant
-        if (! $pageant->judges()->where('user_id', $judgeId)->exists()) {
+        if (!$pageant->judges()->where('user_id', $judgeId)->exists()) {
             return back()->withErrors(['message' => 'Judge not found for this pageant.']);
         }
 
@@ -283,7 +283,7 @@ class TabulatorController extends Controller
             'email' => $validated['email'] ?? null,
         ];
 
-        if (! empty($validated['password'])) {
+        if (!empty($validated['password'])) {
             $updateData['password'] = $validated['password'];
         }
 
@@ -319,13 +319,13 @@ class TabulatorController extends Controller
         });
 
         // If no round specified, use first round
-        if (! $roundId && $rounds->count() > 0) {
+        if (!$roundId && $rounds->count() > 0) {
             $roundId = $rounds->first()['id'];
         }
 
         $currentRound = $pageant->rounds->find($roundId);
 
-        if (! $currentRound) {
+        if (!$currentRound) {
             return Inertia::render('Tabulator/Scores', [
                 'pageant' => [
                     'id' => $pageant->id,
@@ -391,7 +391,7 @@ class TabulatorController extends Controller
                     $judgeTotal += $scoreRecord->score;
                 }
 
-                $key = $contestantId.'-'.$judgeId.'-'.$roundId;
+                $key = $contestantId . '-' . $judgeId . '-' . $roundId;
                 // Store the simple sum of scores for this judge
                 $scores[$key] = round($judgeTotal, 2);
                 $totalScores[$key] = round($judgeTotal, 2);
@@ -520,7 +520,7 @@ class TabulatorController extends Controller
 
             // Find the last final round for ordinal ranking
             $lastFinalRound = $pageant->rounds
-                ->filter(fn ($round) => strtolower($round->type) === 'final')
+                ->filter(fn($round) => strtolower($round->type) === 'final')
                 ->sortByDesc('display_order')
                 ->first();
 
@@ -558,10 +558,10 @@ class TabulatorController extends Controller
                     $bIsFinalist = ($b['rank'] ?? 0) > 0;
 
                     // Finalists come first
-                    if ($aIsFinalist && ! $bIsFinalist) {
+                    if ($aIsFinalist && !$bIsFinalist) {
                         return -1;
                     }
-                    if (! $aIsFinalist && $bIsFinalist) {
+                    if (!$aIsFinalist && $bIsFinalist) {
                         return 1;
                     }
 
@@ -580,34 +580,137 @@ class TabulatorController extends Controller
 
             // Find the last final round to use for ranking
             $lastFinalRound = $pageant->rounds
-                ->filter(fn ($round) => strtolower($round->type) === 'final')
+                ->filter(fn($round) => strtolower($round->type) === 'final')
                 ->sortByDesc('display_order')
                 ->first();
 
             if ($lastFinalRound) {
-                // Replace the cumulative finalScore with just the final round score for ranking
-                // Only contestants with actual final round scores should be ranked as winners
-                $contestants = collect($contestants)->map(function ($contestant) use ($lastFinalRound) {
-                    // Get the final round score from the scores array
-                    // Use null instead of 0 for contestants who didn't compete in the final
-                    $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
-                    $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
+                $rankingMethod = $pageant->ranking_method ?? 'score_average';
+                $tieHandling = $pageant->tie_handling ?? 'average';
 
-                    return array_merge($contestant, [
-                        'finalScore' => $finalRoundScore,
-                        'totalScore' => $finalRoundScore,
-                        'hasQualifiedForFinal' => $hasFinalScore,
-                    ]);
-                })->toArray();
+                if ($rankingMethod === 'rank_sum') {
+                    $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
 
-                // Re-rank contestants based on final round score only
-                $contestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
-                    $contestants,
-                    $pageant,
-                    'finalScore',
-                    'desc',
-                    $pageant->tie_handling ?? 'average'
-                );
+                    // Calculate rank sums based on final_score_mode
+                    $contestants = collect($contestants)->map(function ($contestant) use ($lastFinalRound, $finalScoreMode) {
+                        $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
+
+                        if ($finalScoreMode === 'inherit') {
+                            // Inherit mode: sum rank sums from ALL rounds
+                            $totalRankSum = 0;
+                            $rawScoreSum = 0;
+                            if (isset($contestant['judgeRanks']) && is_array($contestant['judgeRanks'])) {
+                                foreach ($contestant['judgeRanks'] as $roundName => $roundData) {
+                                    if (isset($roundData['ranks']) && is_array($roundData['ranks'])) {
+                                        $totalRankSum += array_sum($roundData['ranks']);
+                                    }
+                                }
+                            }
+                            // Sum all scores for tie-breaking and display
+                            if (isset($contestant['scores']) && is_array($contestant['scores'])) {
+                                foreach ($contestant['scores'] as $score) {
+                                    if ($score !== null) {
+                                        $rawScoreSum += $score;
+                                    }
+                                }
+                            }
+
+                            return array_merge($contestant, [
+                                'finalScore' => $hasFinalScore ? $totalRankSum : null,
+                                'totalScore' => $hasFinalScore ? $totalRankSum : null,
+                                'totalRankSum' => $hasFinalScore ? $totalRankSum : 0,
+                                'rawScore' => $rawScoreSum,
+                                'displayScore' => $rawScoreSum, // Shows cumulative score for Inherit mode
+                                'hasQualifiedForFinal' => $hasFinalScore,
+                            ]);
+                        } else {
+                            // Fresh Start mode: only final round's rank sum
+                            $finalRoundRankSum = 0;
+                            $rawScore = 0;
+                            if ($hasFinalScore) {
+                                if (isset($contestant['judgeRanks'][$lastFinalRound->name]['ranks'])) {
+                                    $finalRoundRankSum = array_sum($contestant['judgeRanks'][$lastFinalRound->name]['ranks']);
+                                }
+                                $rawScore = $contestant['scores'][$lastFinalRound->name];
+                            }
+
+                            return array_merge($contestant, [
+                                'finalScore' => $hasFinalScore ? $finalRoundRankSum : null,
+                                'totalScore' => $hasFinalScore ? $finalRoundRankSum : null,
+                                'totalRankSum' => $hasFinalScore ? $finalRoundRankSum : 0,
+                                'rawScore' => $rawScore,
+                                'displayScore' => $rawScore, // Shows only final round score for Fresh Start
+                                'hasQualifiedForFinal' => $hasFinalScore,
+                            ]);
+                        }
+                    })->toArray();
+
+                    // Sort and detect ties for tie-breaking info
+                    usort($contestants, function ($a, $b) {
+                        $rankSumA = $a['totalRankSum'] ?? PHP_INT_MAX;
+                        $rankSumB = $b['totalRankSum'] ?? PHP_INT_MAX;
+
+                        if ($rankSumA !== $rankSumB) {
+                            return $rankSumA <=> $rankSumB;
+                        }
+
+                        $rawScoreA = $a['rawScore'] ?? 0;
+                        $rawScoreB = $b['rawScore'] ?? 0;
+                        return $rawScoreB <=> $rawScoreA;
+                    });
+
+                    // Add tie-break info for contestants with same rank sum
+                    $prevRankSum = null;
+                    $prevRawScore = null;
+                    $prevIndex = null;
+                    foreach ($contestants as $i => &$contestant) {
+                        $currentRankSum = $contestant['totalRankSum'] ?? 0;
+                        $currentRawScore = $contestant['rawScore'] ?? 0;
+
+                        if ($prevRankSum !== null && $currentRankSum == $prevRankSum && $currentRawScore != $prevRawScore) {
+                            // This contestant was in a tie that was resolved by raw score
+                            $contestant['tieBreakInfo'] = "Tie resolved by score ({$currentRawScore} vs {$prevRawScore})";
+                            if ($prevIndex !== null) {
+                                $contestants[$prevIndex]['tieBreakInfo'] = "Tie resolved by score ({$prevRawScore} vs {$currentRawScore})";
+                            }
+                        }
+
+                        $prevRankSum = $currentRankSum;
+                        $prevRawScore = $currentRawScore;
+                        $prevIndex = $i;
+                    }
+                    unset($contestant);
+
+                    // Re-rank contestants
+                    $contestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
+                        $contestants,
+                        $pageant,
+                        'totalRankSum',
+                        'asc',
+                        $tieHandling
+                    );
+                } else {
+                    // For score_average: use the final round score for ranking
+                    $contestants = collect($contestants)->map(function ($contestant) use ($lastFinalRound) {
+                        $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
+                        $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
+
+                        return array_merge($contestant, [
+                            'finalScore' => $finalRoundScore,
+                            'totalScore' => $finalRoundScore,
+                            'hasQualifiedForFinal' => $hasFinalScore,
+                        ]);
+                    })->toArray();
+
+                    // Re-rank contestants based on final round score only (descending - higher is better)
+                    $contestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
+                        $contestants,
+                        $pageant,
+                        'finalScore',
+                        'desc',
+                        $tieHandling
+                    );
+                }
             }
         }
 
@@ -623,7 +726,7 @@ class TabulatorController extends Controller
             // This allows advancement badges to show for any round that has top_n_proceed set
             $roundTopN = $currentRound->top_n_proceed;
 
-            $roundResults['round_'.$currentRound->id] = [
+            $roundResults['round_' . $currentRound->id] = [
                 'contestants' => $roundContestants,
                 'top_n_proceed' => $roundTopN,
             ];
@@ -685,13 +788,36 @@ class TabulatorController extends Controller
         // This does NOT affect the actual ranking calculation which uses weighted averages
         $displayScoresPerContestant = $this->calculateDisplayScores($pageant);
 
+        // Find the last final round for Fresh Start mode
+        $lastFinalRound = $pageant->rounds
+            ->filter(fn($round) => strtolower($round->type) === 'final')
+            ->sortByDesc('display_order')
+            ->first();
+        $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
+        $rankingMethod = $pageant->ranking_method ?? 'score_average';
+
         // Merge display scores into contestant data
-        $contestants = collect($contestants)->map(function ($contestant) use ($displayScoresPerContestant) {
+        $contestants = collect($contestants)->map(function ($contestant) use ($displayScoresPerContestant, $lastFinalRound, $finalScoreMode, $rankingMethod) {
             $contestantId = $contestant['id'];
             $displayScores = $displayScoresPerContestant[$contestantId] ?? [];
 
-            // Calculate display total (sum of all round display scores)
-            $displayTotal = array_sum($displayScores);
+            // Calculate display total based on fresh_start vs inherit mode (only for rank_sum)
+            if ($rankingMethod === 'rank_sum' && $lastFinalRound) {
+                $hasFinalScore = $contestant['hasQualifiedForFinal'] ?? false;
+
+                if ($finalScoreMode === 'inherit') {
+                    // Inherit mode: sum of all round raw scores
+                    $displayTotal = $hasFinalScore ? array_sum($displayScores) : 0;
+                } else {
+                    // Fresh Start mode: only final round's raw score
+                    $displayTotal = $hasFinalScore
+                        ? ($displayScores[$lastFinalRound->name] ?? 0)
+                        : 0;
+                }
+            } else {
+                // For score_average or no final round: sum all rounds
+                $displayTotal = array_sum($displayScores);
+            }
 
             return array_merge($contestant, [
                 'displayScores' => $displayScores,
@@ -755,10 +881,10 @@ class TabulatorController extends Controller
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
         // Check if all rounds are locked
-        $allRoundsLocked = $pageant->rounds->count() > 0 && $pageant->rounds->every(fn ($round) => $round->is_locked);
+        $allRoundsLocked = $pageant->rounds->count() > 0 && $pageant->rounds->every(fn($round) => $round->is_locked);
 
         // Get list of unlocked rounds for the warning message
-        $unlockedRounds = $pageant->rounds->filter(fn ($round) => ! $round->is_locked)->map(fn ($round) => [
+        $unlockedRounds = $pageant->rounds->filter(fn($round) => !$round->is_locked)->map(fn($round) => [
             'id' => $round->id,
             'name' => $round->name,
             'type' => $round->type,
@@ -853,7 +979,7 @@ class TabulatorController extends Controller
 
         // Filter final results based on the last final round's top_n_proceed
         $lastFinalRound = $pageant->rounds
-            ->filter(fn ($round) => $round->type === 'final')
+            ->filter(fn($round) => $round->type === 'final')
             ->sortByDesc('display_order')
             ->first();
 
@@ -862,8 +988,8 @@ class TabulatorController extends Controller
 
             // For pair pageants, filter each gender separately
             if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                $maleFinalists = $finalResults->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
-                $femaleFinalists = $finalResults->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                $maleFinalists = $finalResults->filter(fn($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                $femaleFinalists = $finalResults->filter(fn($c) => ($c['gender'] ?? '') === 'female')->take($topN);
                 $finalResults = $maleFinalists->merge($femaleFinalists)->values();
             } else {
                 $finalResults = $finalResults->take($topN);
@@ -932,9 +1058,9 @@ class TabulatorController extends Controller
             $stageResults = $stageResults->filter(function ($contestant) {
                 // Only include contestants who have at least one score for this stage
                 $scores = $contestant['scores'] ?? [];
-                $hasScores = ! empty($scores) && array_filter($scores, fn ($score) => $score !== null && $score > 0);
+                $hasScores = !empty($scores) && array_filter($scores, fn($score) => $score !== null && $score > 0);
 
-                return ! empty($hasScores);
+                return !empty($hasScores);
             });
 
             $stageResults = $markQualifiedContestants($stageResults, $roundType)->values();
@@ -945,8 +1071,8 @@ class TabulatorController extends Controller
 
                 // For pair pageants, filter each gender separately
                 if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                    $maleResults = $stageResults->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
-                    $femaleResults = $stageResults->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                    $maleResults = $stageResults->filter(fn($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                    $femaleResults = $stageResults->filter(fn($c) => ($c['gender'] ?? '') === 'female')->take($topN);
                     $stageResults = $maleResults->merge($femaleResults)->values();
                 } else {
                     $stageResults = $stageResults->take($topN);
@@ -958,7 +1084,7 @@ class TabulatorController extends Controller
 
         // Get the last final round and use it for "overall" - Print page shows ONLY final round results
         $lastFinalRound = $pageant->rounds
-            ->filter(fn ($round) => strtolower($round->type) === 'final')
+            ->filter(fn($round) => strtolower($round->type) === 'final')
             ->sortByDesc('display_order')
             ->first();
 
@@ -1020,15 +1146,15 @@ class TabulatorController extends Controller
 
         // Final Result (Top N) - Only contestants who competed in the final round
         // Filter to only those with hasQualifiedForFinal = true
-        $finalTopN = $overallTally->filter(fn ($c) => $c['hasQualifiedForFinal'] === true);
+        $finalTopN = $overallTally->filter(fn($c) => $c['hasQualifiedForFinal'] === true);
 
         // Apply top_n_proceed filter if set
         if ($lastFinalRound && $lastFinalRound->top_n_proceed !== null && $lastFinalRound->top_n_proceed > 0) {
             $topN = $lastFinalRound->top_n_proceed;
 
             if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                $maleFinalists = $finalTopN->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
-                $femaleFinalists = $finalTopN->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                $maleFinalists = $finalTopN->filter(fn($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                $femaleFinalists = $finalTopN->filter(fn($c) => ($c['gender'] ?? '') === 'female')->take($topN);
                 $finalTopN = $maleFinalists->merge($femaleFinalists)->values();
             } else {
                 $finalTopN = $finalTopN->take($topN);
@@ -1119,7 +1245,7 @@ class TabulatorController extends Controller
                 ];
             })->values();
 
-            $roundResults['round_'.$currentRound->id] = [
+            $roundResults['round_' . $currentRound->id] = [
                 'contestants' => $formattedRoundContestants,
                 'top_n_proceed' => $currentRound->top_n_proceed,
             ];
@@ -1248,7 +1374,7 @@ class TabulatorController extends Controller
             "Round '{$round->name}' is now the current round"
         );
 
-        return back()->with('success', 'Current round set to: '.$round->name);
+        return back()->with('success', 'Current round set to: ' . $round->name);
     }
 
     /**
@@ -1256,7 +1382,7 @@ class TabulatorController extends Controller
      */
     public function lockRound($pageantId, $roundId)
     {
-        if (! Auth::user()->hasPermission('tabulator_tabulate_results')) {
+        if (!Auth::user()->hasPermission('tabulator_tabulate_results')) {
             return redirect()->back()->with('error', 'You do not have permission to lock rounds.');
         }
 
@@ -1274,7 +1400,7 @@ class TabulatorController extends Controller
             "Round '{$round->name}' has been locked for editing"
         );
 
-        return back()->with('success', 'Round "'.$round->name.'" has been locked for editing.');
+        return back()->with('success', 'Round "' . $round->name . '" has been locked for editing.');
     }
 
     /**
@@ -1282,7 +1408,7 @@ class TabulatorController extends Controller
      */
     public function unlockRound($pageantId, $roundId)
     {
-        if (! Auth::user()->hasPermission('tabulator_tabulate_results')) {
+        if (!Auth::user()->hasPermission('tabulator_tabulate_results')) {
             return redirect()->back()->with('error', 'You do not have permission to unlock rounds.');
         }
 
@@ -1300,7 +1426,7 @@ class TabulatorController extends Controller
             "Round '{$round->name}' has been unlocked for editing"
         );
 
-        return back()->with('success', 'Round "'.$round->name.'" has been unlocked for editing.');
+        return back()->with('success', 'Round "' . $round->name . '" has been unlocked for editing.');
     }
 
     /**
@@ -1479,7 +1605,7 @@ class TabulatorController extends Controller
 
         // Apply search filter (search in details)
         if ($request->filled('search')) {
-            $query->where('details', 'like', '%'.$request->search.'%');
+            $query->where('details', 'like', '%' . $request->search . '%');
         }
 
         // Get pagination parameters
@@ -1516,7 +1642,7 @@ class TabulatorController extends Controller
             ->unique('id')
             ->sortBy('name')
             ->values()
-            ->map(fn ($user) => [
+            ->map(fn($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
             ]);
@@ -1689,7 +1815,7 @@ class TabulatorController extends Controller
         $contestant = Contestant::where('pageant_id', $pageantId)
             ->findOrFail($contestantId);
 
-        if (! $contestant->backed_out) {
+        if (!$contestant->backed_out) {
             return response()->json([
                 'success' => false,
                 'message' => 'This contestant is not marked as backed out.',

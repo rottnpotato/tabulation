@@ -201,6 +201,16 @@
                   >
                     {{ formatScore(contestant.totalRankSum, 1) }}
                   </span>
+                  <!-- Tie-break indicator -->
+                  <span
+                    v-if="rankingMethod === 'rank_sum' && (contestant as any).tieBreakInfo"
+                    class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-600 cursor-help"
+                    :title="(contestant as any).tieBreakInfo"
+                  >
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                  </span>
                   <span
                     v-else
                     class="text-sm font-semibold tabular-nums"
@@ -237,11 +247,11 @@
                 
                 <!-- Show the other metric as secondary info -->
                 <span 
-                  v-if="rankingMethod === 'rank_sum' && contestant.totalScore"
+                  v-if="rankingMethod === 'rank_sum' && (contestant as any).displayScore"
                   class="text-xs text-gray-400"
-                  :title="`Average Score: ${formatScore(contestant.totalScore)}`"
+                  :title="`Score: ${formatScore((contestant as any).displayScore)}`"
                 >
-                  ({{ formatScore(contestant.totalScore) }})
+                  ({{ formatScore((contestant as any).displayScore) }})
                 </span>
                 <span 
                   v-else-if="rankingMethod !== 'rank_sum' && contestant.totalRankSum"
@@ -433,6 +443,14 @@ const getFinalRankAmongFinalists = (contestant: Contestant): number => {
 // Get final score breakdown tooltip
 const getFinalScoreBreakdown = (contestant: Contestant): string => {
   const finalRoundName = getFinalRoundName()
+  
+  // For rank_sum method, show rank information instead of scores
+  if (props.rankingMethod === 'rank_sum') {
+    const rankSum = formatScore((contestant as any).totalRankSum, 1)
+    const displayScore = formatScore((contestant as any).displayTotal ?? (contestant as any).displayScore)
+    return `Rank Sum: ${rankSum} (lower is better)\\nScore: ${displayScore}`
+  }
+  
   if (!finalRoundName || !contestant.judgeRanks || !contestant.judgeRanks[finalRoundName]) {
     return `Final Score: ${formatScore(contestant.totalScore)}`
   }
