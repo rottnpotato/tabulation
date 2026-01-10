@@ -343,6 +343,8 @@ interface Contestant {
   scores: Record<string, number>
   totalScore: number
   totalRankSum?: number
+  weightedRankAvg?: number
+  perRoundRanks?: Record<string, number>
   judgeRanks?: Record<string, { scores: number[], ranks: number[], details: Array<{ judge_id: number, judge_name: string, score: number, rank: number }> }>
   qualified?: boolean
   qualification_cutoff?: number | null
@@ -457,10 +459,10 @@ const toNumber = (value: unknown): number | null => {
 const rankedContestants = computed(() => {
   return [...props.contestants].sort((a, b) => {
     if (props.rankingMethod === 'rank_sum') {
-      // Lower rank sum is better
-      const aRankSum = toNumber(a.totalRankSum) ?? Infinity
-      const bRankSum = toNumber(b.totalRankSum) ?? Infinity
-      return aRankSum - bRankSum
+      // Use weightedRankAvg (Excel formula) - lower is better
+      const aWeighted = toNumber((a as any).weightedRankAvg) ?? toNumber(a.totalRankSum) ?? Infinity
+      const bWeighted = toNumber((b as any).weightedRankAvg) ?? toNumber(b.totalRankSum) ?? Infinity
+      return aWeighted - bWeighted
     }
     // Higher score is better
     const aTotal = toNumber(a.totalScore) ?? 0
@@ -500,71 +502,95 @@ const shouldShowCutoffLine = (index: number): boolean => {
 }
 
 // Helper function to get a contestant's rank at a specific round
-// This determines if they advanced from that round based on their score in that STAGE TYPE only
+// Uses Excel formula: weight applied to RANK, not score
 const getRankAtRound = (contestant: Contestant, roundIndex: number): number => {
   const targetRound = props.rounds[roundIndex]
   
   // Get all rounds of the SAME TYPE up to and including this round
-  // Different stage types (preliminary, semi-final, final) should NOT accumulate
   const roundsOfSameType = props.rounds
     .slice(0, roundIndex + 1)
     .filter(r => r.type === targetRound.type)
   
-  // For rank sum method, use rank sum; otherwise use score average
   const useRankSum = props.rankingMethod === 'rank_sum'
   
-  // Calculate metric for this contestant in this stage type
-  let contestantMetric = 0
   if (useRankSum) {
-    // For rank sum: sum up rank sums from rounds of same type
+    // Excel formula implementation:
+    // 1. For each round, get rank sum (sum of judge ranks)
+    // 2. Rank contestants within each round by rank sum
+    // 3. Apply weight to RANK: (rank/100) * weight%
+    // 4. Average weighted ranks
+    
+    // Step 1: Calculate rank sums per round for all contestants
+    const roundRankSums: Record<string, Record<number, number>> = {}
     for (const round of roundsOfSameType) {
-      if (contestant.judgeRanks && contestant.judgeRanks[round.name]) {
-        const ranks = contestant.judgeRanks[round.name].ranks || []
-        contestantMetric += ranks.reduce((sum, rank) => sum + rank, 0)
-      }
-    }
-  } else {
-    // For score average: sum up scores from rounds of same type
-    for (const round of roundsOfSameType) {
-      const score = contestant.scores[round.name]
-      if (score !== undefined) {
-        contestantMetric += score
-      }
-    }
-  }
-  
-  // Calculate metrics for all contestants
-  const contestantsWithMetrics = props.contestants.map(c => {
-    let metric = 0
-    if (useRankSum) {
-      for (const round of roundsOfSameType) {
+      roundRankSums[round.name] = {}
+      for (const c of props.contestants) {
         if (c.judgeRanks && c.judgeRanks[round.name]) {
           const ranks = c.judgeRanks[round.name].ranks || []
-          metric += ranks.reduce((sum, rank) => sum + rank, 0)
+          roundRankSums[round.name][c.id] = ranks.reduce((sum, rank) => sum + rank, 0)
         }
       }
-    } else {
+    }
+    
+    // Step 2: Calculate per-round rank for each contestant
+    const roundRanks: Record<string, Record<number, number>> = {}
+    for (const round of roundsOfSameType) {
+      roundRanks[round.name] = {}
+      const allRankSums = Object.values(roundRankSums[round.name])
+      for (const [contestantId, rankSum] of Object.entries(roundRankSums[round.name])) {
+        // RANK.AVG equivalent - lower rank sum gets better (lower) rank
+        const betterCount = allRankSums.filter(rs => rs < rankSum).length
+        const tieCount = allRankSums.filter(rs => Math.abs(rs - rankSum) < 0.0001).length
+        const rank = betterCount + 1 + (tieCount - 1) / 2
+        roundRanks[round.name][Number(contestantId)] = rank
+      }
+    }
+    
+    // Step 3 & 4: Calculate weighted rank average for all contestants
+    const contestantsWithWeightedAvg = props.contestants.map(c => {
+      let weightedRankSum = 0
+      let roundCount = 0
+      
+      for (const round of roundsOfSameType) {
+        const roundRank = roundRanks[round.name]?.[c.id]
+        if (roundRank !== undefined) {
+          const weight = round.weight || 1
+          // Excel formula: (rank / 100) * weight%
+          weightedRankSum += (roundRank / 100) * weight
+          roundCount++
+        }
+      }
+      
+      const weightedAvg = roundCount > 0 ? weightedRankSum / roundCount : Infinity
+      return { id: c.id, weightedAvg }
+    })
+    
+    // Sort by weighted average (lower is better)
+    contestantsWithWeightedAvg.sort((a, b) => a.weightedAvg - b.weightedAvg)
+    
+    // Find the rank of current contestant
+    const rank = contestantsWithWeightedAvg.findIndex(c => c.id === contestant.id) + 1
+    return rank
+    
+  } else {
+    // For score average: sum up scores from rounds of same type
+    const contestantsWithMetrics = props.contestants.map(c => {
+      let metric = 0
       for (const round of roundsOfSameType) {
         const score = c.scores[round.name]
         if (score !== undefined) {
           metric += score
         }
       }
-    }
-    return { id: c.id, metric }
-  })
-  
-  // Sort: for rank sum ascending (lower is better), for scores descending (higher is better)
-  if (useRankSum) {
-    contestantsWithMetrics.sort((a, b) => a.metric - b.metric)
-  } else {
+      return { id: c.id, metric }
+    })
+    
+    // Sort descending (higher is better)
     contestantsWithMetrics.sort((a, b) => b.metric - a.metric)
+    
+    const rank = contestantsWithMetrics.findIndex(c => c.id === contestant.id) + 1
+    return rank
   }
-  
-  // Find the rank of the current contestant within this stage
-  const rank = contestantsWithMetrics.findIndex(c => c.id === contestant.id) + 1
-  
-  return rank
 }
 
 // Get contestant's rank within a specific round based on that round's score only

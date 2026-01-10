@@ -559,6 +559,13 @@ class ScoreCalculationService
     /**
      * Calculate comprehensive scores using rank-sum method (Excel-style).
      *
+     * Excel Formula Implementation:
+     * 1. For each round, calculate each contestant's rank sum (sum of judge ranks)
+     * 2. Rank contestants within each round by their rank sum (lower = better)
+     * 3. Apply weight to the RANK: (roundRank / 100) * weightPercent
+     * 4. Average the weighted ranks across all rounds
+     * 5. Final ranking by weighted average (ascending - lower is better)
+     *
      * @return array<int, array<string, mixed>>
      */
     public function calculateWithRankSum(Pageant $pageant, ?string $stage = null, bool $useCache = true): array
@@ -580,15 +587,41 @@ class ScoreCalculationService
                 return [];
             }
 
-            $contestants = [];
             $tieHandling = $pageant->tie_handling ?? 'average';
 
+            // Step 1: Calculate rank sum per round for ALL contestants first
+            $roundRankSums = [];
+            foreach ($rounds as $round) {
+                $roundRankSums[$round->id] = [];
+                foreach ($pageant->contestants as $contestant) {
+                    $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling);
+                    if (! empty($roundJudgeData['ranks'])) {
+                        $roundRankSums[$round->id][$contestant->id] = array_sum($roundJudgeData['ranks']);
+                    }
+                }
+            }
+
+            // Step 2: Calculate per-round RANK for each contestant (rank by rank sum within round)
+            $roundRanks = [];
+            foreach ($rounds as $round) {
+                $roundRanks[$round->id] = [];
+                $allRankSumsInRound = array_values($roundRankSums[$round->id]);
+
+                foreach ($roundRankSums[$round->id] as $contestantId => $rankSum) {
+                    // Use RANK.AVG - lower rank sum gets better (lower) rank
+                    $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allRankSumsInRound, 'asc');
+                }
+            }
+
+            // Step 3: Build contestant data with weighted ranks (Excel formula)
+            $contestants = [];
             foreach ($pageant->contestants as $contestant) {
                 $roundScores = [];
                 $judgeRanks = [];
                 $totalRankSum = 0;
-                $totalWeightedScore = 0;
-                $totalRoundWeight = 0;
+                $weightedRankSum = 0;
+                $totalWeight = 0;
+                $perRoundRanks = [];
 
                 foreach ($rounds as $round) {
                     $roundWeight = $round->weight ?? 1;
@@ -605,14 +638,23 @@ class ScoreCalculationService
                         $roundRankSum = array_sum($roundJudgeData['ranks']);
                         $totalRankSum += $roundRankSum;
 
-                        $totalWeightedScore += $roundAvgScore * $roundWeight;
-                        $totalRoundWeight += $roundWeight;
-
                         $judgeRanks[$round->name] = $roundJudgeData;
+
+                        // Get this contestant's rank within this round
+                        $contestantRoundRank = $roundRanks[$round->id][$contestant->id] ?? 0;
+                        $perRoundRanks[$round->name] = $contestantRoundRank;
+
+                        // Excel formula: (rank / 100) * weight%
+                        // e.g., rank 3 with 25% weight = (3/100)*25 = 0.75
+                        $weightedRank = ($contestantRoundRank / 100) * $roundWeight;
+                        $weightedRankSum += $weightedRank;
+                        $totalWeight += $roundWeight;
                     }
                 }
 
-                $finalScore = $totalRoundWeight > 0 ? $totalWeightedScore / $totalRoundWeight : 0;
+                // Excel formula: average of weighted ranks = sum / count (or sum / 3 for 3 rounds)
+                $roundCount = count(array_filter($perRoundRanks, fn ($r) => $r > 0));
+                $weightedRankAvg = $roundCount > 0 ? $weightedRankSum / $roundCount : 0;
 
                 $memberNames = [];
                 $memberGenders = [];
@@ -635,16 +677,19 @@ class ScoreCalculationService
                     'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
                     'scores' => $roundScores,
                     'judgeRanks' => $judgeRanks,
+                    'perRoundRanks' => $perRoundRanks,
                     'totalRankSum' => round($totalRankSum, 2),
-                    'finalScore' => round($finalScore, 2),
-                    'totalScore' => round($finalScore, 2),
+                    'weightedRankAvg' => round($weightedRankAvg, 4),
+                    'finalScore' => round($weightedRankAvg, 4),
+                    'totalScore' => round($weightedRankAvg, 4),
                 ];
             }
 
+            // Step 4: Apply final ranking by weighted average (lower is better)
             $result = $this->applyGenderSeparatedRanking(
                 $contestants,
                 $pageant,
-                'totalRankSum',
+                'weightedRankAvg',
                 'asc',
                 $tieHandling
             );
@@ -1523,7 +1568,7 @@ class ScoreCalculationService
             // Check if final round should inherit scores from previous stages
             $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
             $finalScoreInheritance = $pageant->final_score_inheritance ?? [];
-            $shouldInheritScores = $targetType === 'final' && $finalScoreMode === 'inherit' && !empty($finalScoreInheritance);
+            $shouldInheritScores = $targetType === 'final' && $finalScoreMode === 'inherit' && ! empty($finalScoreInheritance);
 
             // For Final round type, check if we should inherit or start fresh
             if ($targetType === 'final') {
@@ -1533,6 +1578,7 @@ class ScoreCalculationService
                         ->sortBy('display_order')
                         ->filter(function ($r) use ($targetRound, $finalScoreInheritance) {
                             $roundType = strtolower($r->type ?? '');
+
                             // Include this round if its type is in the inheritance config AND display_order <= target
                             return isset($finalScoreInheritance[$roundType]) && $r->display_order <= $targetRound->display_order;
                         });
@@ -1587,13 +1633,13 @@ class ScoreCalculationService
                     // Inheritance mode: calculate weighted average per stage type, then combine using inheritance percentages
                     $stageScores = [];
                     $stageWeights = [];
-                    
+
                     foreach ($roundsToUse as $round) {
                         $roundType = strtolower($round->type ?? '');
                         $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
 
                         if ($roundScore !== null) {
-                            if (!isset($stageScores[$roundType])) {
+                            if (! isset($stageScores[$roundType])) {
                                 $stageScores[$roundType] = 0;
                                 $stageWeights[$roundType] = 0;
                             }

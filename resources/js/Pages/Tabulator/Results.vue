@@ -435,10 +435,10 @@ const displayedContestants = computed(() => {
       // Ranked contestants come before unranked
       if (a.rank > 0 && b.rank === 0) return -1
       if (a.rank === 0 && b.rank > 0) return 1
-      // Both unranked - use rank sum
-      const rankSumA = a.totalRankSum ?? 999999
-      const rankSumB = b.totalRankSum ?? 999999
-      return rankSumA - rankSumB
+      // Both unranked - use weightedRankAvg (Excel formula) or fall back to rank sum
+      const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
+      const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
+      return weightedA - weightedB
     } else {
       // For score average: higher is better (descending order)
       const scoreA = a.totalScore ?? a.finalScore ?? 0
@@ -509,9 +509,9 @@ const maleContestants = computed(() => {
       if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
       if (a.rank > 0 && b.rank === 0) return -1
       if (a.rank === 0 && b.rank > 0) return 1
-      const rankSumA = a.totalRankSum ?? 999999
-      const rankSumB = b.totalRankSum ?? 999999
-      return rankSumA - rankSumB
+      const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
+      const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
+      return weightedA - weightedB
     } else {
       const scoreA = a.totalScore ?? a.finalScore ?? 0
       const scoreB = b.totalScore ?? b.finalScore ?? 0
@@ -556,9 +556,9 @@ const femaleContestants = computed(() => {
       if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
       if (a.rank > 0 && b.rank === 0) return -1
       if (a.rank === 0 && b.rank > 0) return 1
-      const rankSumA = a.totalRankSum ?? 999999
-      const rankSumB = b.totalRankSum ?? 999999
-      return rankSumA - rankSumB
+      const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
+      const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
+      return weightedA - weightedB
     } else {
       const scoreA = a.totalScore ?? a.finalScore ?? 0
       const scoreB = b.totalScore ?? b.finalScore ?? 0
