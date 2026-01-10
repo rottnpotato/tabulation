@@ -372,7 +372,7 @@ class TabulatorController extends Controller
         });
 
         // Get aggregated scores per judge per contestant per round
-        // Calculate weighted average of all criteria scores for each judge-contestant pair
+        // Calculate sum of all criteria scores for each judge-contestant pair
         $scoresQuery = Score::where('pageant_id', $pageantId)
             ->where('round_id', $roundId)
             ->with(['criteria'])
@@ -381,31 +381,20 @@ class TabulatorController extends Controller
 
         $scores = [];
         $totalScores = [];
-        $scoringSystem = $pageant->scoring_system ?? 'percentage';
 
         foreach ($scoresQuery as $contestantId => $judgeScores) {
             foreach ($judgeScores as $judgeId => $judgeScoreRecords) {
-                // Calculate weighted average for this judge's scores on this contestant
-                $totalWeightedScore = 0;
-                $totalWeight = 0;
+                // Calculate simple sum of all criteria scores for this judge-contestant pair
+                $judgeTotal = 0;
 
                 foreach ($judgeScoreRecords as $scoreRecord) {
-                    $weight = $scoreRecord->criteria->weight ?? 1; // Default weight to 1 if not set
-                    $totalWeightedScore += $scoreRecord->score * $weight;
-                    $totalWeight += $weight;
+                    $judgeTotal += $scoreRecord->score;
                 }
 
-                if ($totalWeight > 0) {
-                    $averageScore = $totalWeightedScore / $totalWeight;
-
-                    // Normalize score based on scoring system
-                    $normalizedScore = $this->normalizeScore($averageScore, $scoringSystem);
-
-                    $key = $contestantId.'-'.$judgeId.'-'.$roundId;
-                    $scores[$key] = round($normalizedScore, 2);
-                    // Store total (sum) of weighted scores for display purposes
-                    $totalScores[$key] = round($totalWeightedScore, 2);
-                }
+                $key = $contestantId.'-'.$judgeId.'-'.$roundId;
+                // Store the simple sum of scores for this judge
+                $scores[$key] = round($judgeTotal, 2);
+                $totalScores[$key] = round($judgeTotal, 2);
             }
         }
 
@@ -677,6 +666,8 @@ class TabulatorController extends Controller
                 'region' => $contestant['region'] ?? null,
                 'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
                 'scores' => $contestant['scores'] ?? [],
+                'displayScores' => $contestant['displayScores'] ?? [],
+                'displayTotal' => $contestant['displayTotal'] ?? 0,
                 'totalScore' => $totalScore,
                 'finalScore' => $totalScore,
                 'totalRankSum' => $contestant['totalRankSum'] ?? 0,
@@ -690,6 +681,24 @@ class TabulatorController extends Controller
         // Get the number of winners for overall results
         $numberOfWinners = $pageant->getNumberOfWinners();
 
+        // Calculate raw display scores (sum of all judge totals per round) for frontend display only
+        // This does NOT affect the actual ranking calculation which uses weighted averages
+        $displayScoresPerContestant = $this->calculateDisplayScores($pageant);
+
+        // Merge display scores into contestant data
+        $contestants = collect($contestants)->map(function ($contestant) use ($displayScoresPerContestant) {
+            $contestantId = $contestant['id'];
+            $displayScores = $displayScoresPerContestant[$contestantId] ?? [];
+
+            // Calculate display total (sum of all round display scores)
+            $displayTotal = array_sum($displayScores);
+
+            return array_merge($contestant, [
+                'displayScores' => $displayScores,
+                'displayTotal' => round($displayTotal, 2),
+            ]);
+        })->toArray();
+
         // Format overall contestants with qualification based on number of winners
         $contestants = collect($contestants)->map(function ($contestant) use ($formatContestantData, $numberOfWinners) {
             return $formatContestantData($contestant, $numberOfWinners);
@@ -700,8 +709,18 @@ class TabulatorController extends Controller
         foreach ($roundResults as $key => $result) {
             $topN = $result['top_n_proceed'];
             $formattedRoundResults[$key] = [
-                'contestants' => collect($result['contestants'])->map(function ($contestant) use ($formatContestantData, $topN) {
-                    return $formatContestantData($contestant, $topN);
+                'contestants' => collect($result['contestants'])->map(function ($contestant) use ($formatContestantData, $topN, $displayScoresPerContestant) {
+                    // Merge display scores into round contestant data
+                    $contestantId = $contestant['id'];
+                    $displayScores = $displayScoresPerContestant[$contestantId] ?? [];
+                    $displayTotal = array_sum($displayScores);
+
+                    $contestantWithDisplay = array_merge($contestant, [
+                        'displayScores' => $displayScores,
+                        'displayTotal' => round($displayTotal, 2),
+                    ]);
+
+                    return $formatContestantData($contestantWithDisplay, $topN);
                 })->values()->all(),
                 'top_n_proceed' => $topN,
             ];
@@ -1730,6 +1749,49 @@ class TabulatorController extends Controller
             'success' => true,
             'message' => "Contestant #{$contestant->number} has been restored.",
         ]);
+    }
+
+    /**
+     * Calculate display scores (sum of all judge totals per round) for frontend display only
+     * This does NOT affect ranking calculations - it's purely for visual display
+     */
+    private function calculateDisplayScores(Pageant $pageant): array
+    {
+        $displayScores = [];
+
+        foreach ($pageant->contestants as $contestant) {
+            $contestantScores = [];
+
+            foreach ($pageant->rounds as $round) {
+                // Get all scores for this contestant in this round
+                $scores = Score::where('pageant_id', $pageant->id)
+                    ->where('round_id', $round->id)
+                    ->where('contestant_id', $contestant->id)
+                    ->get();
+
+                if ($scores->isEmpty()) {
+                    continue;
+                }
+
+                // Group by judge and sum each judge's criteria scores
+                $judgeScores = $scores->groupBy('judge_id');
+                $totalForRound = 0;
+
+                foreach ($judgeScores as $judgeId => $judgeScoreRecords) {
+                    $judgeTotal = 0;
+                    foreach ($judgeScoreRecords as $scoreRecord) {
+                        $judgeTotal += $scoreRecord->score;
+                    }
+                    $totalForRound += $judgeTotal;
+                }
+
+                $contestantScores[$round->name] = round($totalForRound, 2);
+            }
+
+            $displayScores[$contestant->id] = $contestantScores;
+        }
+
+        return $displayScores;
     }
 
     /**

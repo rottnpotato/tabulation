@@ -279,6 +279,8 @@ interface Contestant {
   region?: string
   image: string
   scores: Record<string, number>
+  displayScores?: Record<string, number>
+  displayTotal?: number
   totalScore: number
   finalScore?: number
   totalRankSum?: number

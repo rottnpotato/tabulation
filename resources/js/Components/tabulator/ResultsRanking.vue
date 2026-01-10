@@ -140,16 +140,17 @@
               v-for="(round, roundIndex) in rounds"
               :key="round.id"
               class="whitespace-nowrap px-4 py-3"
-              :class="[getRoundCellClass(round, roundIndex), contestant.scores[round.name] !== undefined ? 'text-gray-900' : 'text-gray-300']">
+              :class="[getRoundCellClass(round, roundIndex), getDisplayScore(contestant, round.name) !== null ? 'text-gray-900' : 'text-gray-300']">
               <div class="flex flex-col items-center gap-1">
-                <!-- Score -->
-                <span v-if="contestant.scores[round.name] !== undefined" class="text-sm font-medium tabular-nums">
-                  {{ formatScore(contestant.scores[round.name]) }}
+                <!-- Score: show display score (sum of judge totals) for visual, use scores for ranking logic -->
+                <span v-if="hasValidScore(getDisplayScore(contestant, round.name))" class="text-sm font-medium tabular-nums">
+                  {{ formatScore(getDisplayScore(contestant, round.name)) }}
                 </span>
+                <span v-else-if="contestant.scores[round.name] === 0" class="text-gray-300 italic text-sm" title="Did not compete in this round">—</span>
                 <span v-else class="text-gray-300 italic text-sm">—</span>
                 
                 <!-- Advancement Badge for this round -->
-                <template v-if="contestant.scores[round.name] !== undefined">
+                <template v-if="hasValidScore(contestant.scores[round.name])">
                   <!-- Show "Top N" badge for final round -->
                   <span
                     v-if="round.type?.toLowerCase() === 'final'"
@@ -179,6 +180,13 @@
                     <span>Advanced</span>
                   </span>
                 </template>
+                <!-- Show 0 score indicator for contestants who didn't actually compete -->
+                <span 
+                  v-else-if="contestant.scores[round.name] === 0 && round.type?.toLowerCase() === 'final'"
+                  class="text-[10px] text-gray-400 italic"
+                >
+                  No score
+                </span>
               </div>
             </td>
 
@@ -196,10 +204,10 @@
                   <span
                     v-else
                     class="text-sm font-semibold tabular-nums"
-                    :class="getScoreClass(contestant.totalScore)"
+                    :class="getScoreClass(getDisplayTotal(contestant))"
                     :title="getFinalScoreBreakdown(contestant)"
                   >
-                    {{ formatScore(contestant.totalScore) }}
+                    {{ formatScore(getDisplayTotal(contestant)) }}
                   </span>
                   
                   <!-- Info icon for transparency when final round details available -->
@@ -341,6 +349,8 @@ interface Contestant {
   region?: string
   image: string
   scores: Record<string, number>
+  displayScores?: Record<string, number>
+  displayTotal?: number
   totalScore: number
   totalRankSum?: number
   weightedRankAvg?: number
@@ -454,6 +464,36 @@ const toNumber = (value: unknown): number | null => {
     return Number.isFinite(parsed) ? parsed : null
   }
   return null
+}
+
+// Helper function to check if a score is valid (not null, undefined, or 0)
+const hasValidScore = (score: unknown): boolean => {
+  if (score === null || score === undefined) return false
+  const numScore = toNumber(score)
+  return numScore !== null && numScore > 0
+}
+
+// Get display score (sum of judge totals) for a contestant in a round
+// Falls back to regular score if displayScores not available
+const getDisplayScore = (contestant: Contestant, roundName: string): number | null => {
+  // Use displayScores if available (sum of judge totals for display)
+  if (contestant.displayScores && contestant.displayScores[roundName] !== undefined) {
+    return contestant.displayScores[roundName]
+  }
+  // Fallback to regular scores (for backwards compatibility)
+  if (contestant.scores && contestant.scores[roundName] !== undefined) {
+    return contestant.scores[roundName]
+  }
+  return null
+}
+
+// Get display total (sum of all judge totals across all rounds)
+const getDisplayTotal = (contestant: Contestant): number | null => {
+  if (contestant.displayTotal !== undefined && contestant.displayTotal !== null) {
+    return contestant.displayTotal
+  }
+  // Fallback to regular totalScore
+  return contestant.totalScore ?? null
 }
 
 const rankedContestants = computed(() => {

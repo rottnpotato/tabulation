@@ -89,10 +89,10 @@
               class="px-6 py-4 whitespace-nowrap"
             >
               <span
-                v-if="getNormalizedJudgeScore(contestant.id, judge.id) !== null"
+                v-if="getTotalScore(contestant.id, judge.id) !== null"
                 class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
               >
-                {{ getNormalizedJudgeScore(contestant.id, judge.id) }}
+                {{ getTotalScore(contestant.id, judge.id) }}
               </span>
               <span v-else class=" text-right text-gray-400 text-sm">—</span>
             </td>
@@ -362,7 +362,9 @@ const getScore = (contestantId: number, judgeId: number): number | null => {
   
   const scoresMap = props.scores instanceof Map ? props.scores : new Map(Object.entries(props.scores))
   const score = scoresMap.get(key)
-  return score !== undefined ? Number(score) : null
+  if (score === undefined || score === null || score === '') return null
+  const numScore = Number(score)
+  return isNaN(numScore) ? null : numScore
 }
 
 const getTotalScore = (contestantId: number, judgeId: number): number | null => {
@@ -372,7 +374,9 @@ const getTotalScore = (contestantId: number, judgeId: number): number | null => 
   
   const totalScoresMap = props.totalScores instanceof Map ? props.totalScores : new Map(Object.entries(props.totalScores || {}))
   const score = totalScoresMap.get(key)
-  return score !== undefined ? Number(score) : null
+  if (score === undefined || score === null || score === '') return null
+  const numScore = Number(score)
+  return isNaN(numScore) ? null : numScore
 }
 
 // Get max score for a specific judge across all contestants
@@ -400,8 +404,10 @@ const getNormalizedJudgeScore = (contestantId: number, judgeId: number): number 
 
 const getDetailedScore = (contestantId: number, judgeId: number, criteriaId: number): number | null => {
   const key = `${contestantId}-${judgeId}-${criteriaId}`
-  const score = props.detailedScores[key]
-  return score?.score !== undefined ? Number(score.score) : null
+  const scoreRecord = props.detailedScores[key]
+  if (!scoreRecord || scoreRecord.score === undefined || scoreRecord.score === null) return null
+  const numScore = Number(scoreRecord.score)
+  return isNaN(numScore) ? null : numScore
 }
 
 const getContestantAverage = (contestantId: number): number | null => {
@@ -418,41 +424,22 @@ const getContestantAverage = (contestantId: number): number | null => {
 }
 
 const getContestantTotal = (contestantId: number): number | null => {
-  // Get all scores for each judge across all contestants to find max scores per judge
-  const judgeMaxScores = new Map<number, number>()
-  
-  // Calculate max score per judge across all contestants
-  props.judges.forEach(judge => {
-    let maxScore = 0
-    props.contestants.forEach(contestant => {
-      const score = getTotalScore(contestant.id, judge.id)
-      if (score !== null && score > maxScore) {
-        maxScore = score
-      }
-    })
-    judgeMaxScores.set(judge.id, maxScore)
-  })
-  
-  // Calculate normalized scores for this contestant
-  const normalizedScores: number[] = []
+  // Sum all judge totals for this contestant (no normalization)
+  const judgeTotals: number[] = []
   
   props.judges.forEach(judge => {
     const score = getTotalScore(contestantId, judge.id)
-    const maxScore = judgeMaxScores.get(judge.id)
-    
-    if (score !== null && maxScore && maxScore > 0) {
-      // Normalize score to percentage (0-100 scale)
-      const normalizedScore = (score / maxScore) * 100
-      normalizedScores.push(normalizedScore)
+    if (score !== null) {
+      judgeTotals.push(score)
     }
   })
   
-  if (normalizedScores.length === 0) {
+  if (judgeTotals.length === 0) {
     return null
   }
   
-  // Sum the normalized scores
-  const sum = normalizedScores.reduce((acc, score) => acc + score, 0)
+  // Simple sum of all judge totals
+  const sum = judgeTotals.reduce((acc, score) => acc + score, 0)
   return Number(sum.toFixed(2))
 }
 

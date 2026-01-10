@@ -357,7 +357,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Save, CheckCircle, AlertCircle, Lock, MapPin, Users, Calendar, ChevronLeft, X } from 'lucide-vue-next'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
@@ -401,6 +401,20 @@ let pageantChannel = null
 const scores = ref({ ...props.existingScores })
 const savedScores = ref({ ...props.existingScores }) // Tracks saved scores for ranking
 const notes = ref({ ...props.existingNotes })
+
+// Sync scores with props when they change (e.g., on page reload or navigation)
+watch(() => props.existingScores, (newScores) => {
+  if (newScores) {
+    scores.value = { ...newScores }
+    savedScores.value = { ...newScores }
+  }
+}, { immediate: false, deep: true })
+
+watch(() => props.existingNotes, (newNotes) => {
+  if (newNotes) {
+    notes.value = { ...newNotes }
+  }
+}, { immediate: false, deep: true })
 
 // Check if pageant is pair competition
 const isPairCompetition = computed(() => {
@@ -580,11 +594,15 @@ const handleScoreChange = (value, contestantId, criterionId, criterion) => {
 }
 
 const getContestantTotalScore = (contestantId) => {
-  const contestantScores = props.criteria.map(criterion => 
-    scores.value[`${contestantId}-${criterion.id}`] || 0
-  )
+  const contestantScores = props.criteria.map(criterion => {
+    const score = scores.value[`${contestantId}-${criterion.id}`]
+    if (score === undefined || score === null || score === '') return null
+    const numScore = Number(score)
+    return isNaN(numScore) ? null : numScore
+  })
   
-  if (contestantScores.some(score => score === 0 || score === null || score === undefined)) return '-'
+  // Return '-' if any criterion doesn't have a valid score
+  if (contestantScores.some(score => score === null)) return '-'
   
   const totalWeight = props.criteria.reduce((sum, criterion) => {
     const weight = criterion.weight || 1;
@@ -609,7 +627,9 @@ const getContestantTotalScore = (contestantId) => {
 const isContestantScoreComplete = (contestantId) => {
   return props.criteria.every(criterion => {
     const score = scores.value[`${contestantId}-${criterion.id}`]
-    return score !== undefined && score !== null
+    if (score === undefined || score === null || score === '') return false
+    const numScore = Number(score)
+    return !isNaN(numScore)
   })
 }
 

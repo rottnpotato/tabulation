@@ -165,7 +165,7 @@
               <div class="flex justify-center">
                 <input
                   type="number"
-                  :value="scores[`${contestant.id}-${criterion.id}`]"
+                  :value="getInputValue(contestant.id, criterion.id)"
                   :min="criterion.min_score"
                   :max="criterion.max_score"
                   :step="criterion.allow_decimals ? 0.1 : 1"
@@ -261,7 +261,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   contestants: { type: Array, required: true },
@@ -278,6 +278,24 @@ const props = defineProps({
 
 const emit = defineEmits(['score-change', 'submit-scores', 'view-details', 'update-notes'])
 
+// Local copy of scores for input binding - syncs with props
+const localInputValues = ref({})
+
+// Sync local values with props.scores
+watch(() => props.scores, (newScores) => {
+  Object.keys(newScores).forEach(key => {
+    if (localInputValues.value[key] !== newScores[key]) {
+      localInputValues.value[key] = newScores[key]
+    }
+  })
+}, { immediate: true, deep: true })
+
+// Get input value - uses local copy for immediate feedback
+const getInputValue = (contestantId, criterionId) => {
+  const key = `${contestantId}-${criterionId}`
+  return localInputValues.value[key] ?? props.scores[key] ?? ''
+}
+
 // State (set to true to always have ranking by default)
 const showRanking = ref(true)
 
@@ -285,11 +303,15 @@ const showRanking = ref(true)
 // Uses savedScores for ranking calculations, live scores for display
 const getNumericTotalScore = (contestantId, useSavedScores = false) => {
   const scoresSource = useSavedScores ? props.savedScores : props.scores
-  const contestantScores = props.criteria.map(criterion => 
-    scoresSource[`${contestantId}-${criterion.id}`] || 0
-  )
+  const contestantScores = props.criteria.map(criterion => {
+    const score = scoresSource[`${contestantId}-${criterion.id}`]
+    if (score === undefined || score === null || score === '') return null
+    const numScore = Number(score)
+    return isNaN(numScore) ? null : numScore
+  })
   
-  if (contestantScores.some(score => score === 0 || score === null || score === undefined)) return null
+  // Return null if any criterion doesn't have a valid score
+  if (contestantScores.some(score => score === null)) return null
   
   // Return simple sum of all scores for ranking
   const sum = contestantScores.reduce((acc, score) => acc + score, 0)
@@ -371,17 +393,24 @@ const completedCount = computed(() => {
 const isContestantComplete = (contestantId) => {
   return props.criteria.every(criterion => {
     const score = props.scores[`${contestantId}-${criterion.id}`]
-    return score !== undefined && score !== null
+    if (score === undefined || score === null || score === '') return false
+    const numScore = Number(score)
+    return !isNaN(numScore)
   })
 }
 
 // Get total score as raw sum of all criteria scores (for display)
 const getTotalScore = (contestantId) => {
-  const contestantScores = props.criteria.map(criterion => 
-    props.scores[`${contestantId}-${criterion.id}`] || 0
-  )
+  const contestantScores = props.criteria.map(criterion => {
+    const score = props.scores[`${contestantId}-${criterion.id}`]
+    // Check if score exists and is a valid number
+    if (score === undefined || score === null || score === '') return null
+    const numScore = Number(score)
+    return isNaN(numScore) ? null : numScore
+  })
   
-  if (contestantScores.some(score => score === 0 || score === null || score === undefined)) return '-'
+  // Return '-' if any criterion doesn't have a valid score
+  if (contestantScores.some(score => score === null)) return '-'
   
   // Simple sum of all scores
   const sum = contestantScores.reduce((acc, score) => acc + score, 0)
@@ -403,7 +432,11 @@ const getInputClass = (contestantId, criterion) => {
   }
   
   const numScore = Number(score)
-  const isValid = numScore >= criterion.min_score && numScore <= criterion.max_score
+  if (isNaN(numScore)) {
+    return 'border-slate-200 bg-slate-50 text-slate-400 focus:border-teal-400 focus:ring-teal-400/20'
+  }
+  
+  const isValid = numScore >= Number(criterion.min_score) && numScore <= Number(criterion.max_score)
   
   if (!isValid) {
     return 'border-red-300 bg-red-50 text-red-600 focus:border-red-400 focus:ring-red-400/20'
@@ -421,6 +454,11 @@ const getInputClass = (contestantId, criterion) => {
 
 const handleInput = (event, contestantId, criterionId, criterion) => {
   const value = event.target.value
+  const key = `${contestantId}-${criterionId}`
+  
+  // Update local value immediately for responsive UI
+  localInputValues.value[key] = value
+  
   if (value === '') return
   
   const numValue = Number(value)
@@ -431,7 +469,11 @@ const handleInput = (event, contestantId, criterionId, criterion) => {
 
 const handleBlur = (event, contestantId, criterionId, criterion) => {
   const value = event.target.value
+  const key = `${contestantId}-${criterionId}`
+  
   if (value === '' || value === null) {
+    // Sync with parent's value on blur if empty
+    localInputValues.value[key] = props.scores[key] ?? ''
     return
   }
   
@@ -439,6 +481,15 @@ const handleBlur = (event, contestantId, criterionId, criterion) => {
   if (!isNaN(numValue)) {
     emit('score-change', numValue, contestantId, criterionId, criterion)
   }
+  
+  // Sync with parent's value on blur to ensure consistency after validation
+  setTimeout(() => {
+    const parentValue = props.scores[key]
+    if (parentValue !== undefined && parentValue !== null) {
+      localInputValues.value[key] = parentValue
+      event.target.value = parentValue
+    }
+  }, 50)
 }
 </script>
 
