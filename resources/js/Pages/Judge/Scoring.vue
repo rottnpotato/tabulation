@@ -184,6 +184,7 @@
                 :contestants="femaleContestants" 
                 :criteria="criteria"
                 :scores="scores"
+                :saved-scores="savedScores"
                 :notes="notes"
                 :can-edit-scores="canEditScores"
                 :submit-loading="submitLoading"
@@ -208,6 +209,7 @@
                 :contestants="maleContestants" 
                 :criteria="criteria"
                 :scores="scores"
+                :saved-scores="savedScores"
                 :notes="notes"
                 :can-edit-scores="canEditScores"
                 :submit-loading="submitLoading"
@@ -228,6 +230,7 @@
               :contestants="sortedContestants" 
               :criteria="criteria"
               :scores="scores"
+              :saved-scores="savedScores"
               :notes="notes"
               :can-edit-scores="canEditScores"
               :submit-loading="submitLoading"
@@ -396,6 +399,7 @@ const isSubmittingAll = ref(false)
 let pageantChannel = null
 
 const scores = ref({ ...props.existingScores })
+const savedScores = ref({ ...props.existingScores }) // Tracks saved scores for ranking
 const notes = ref({ ...props.existingNotes })
 
 // Check if pageant is pair competition
@@ -661,6 +665,15 @@ const submitScores = async (contestantId, autoAdvance = false) => {
     })
     
     if (response.data.success) {
+      // Update saved scores to trigger ranking update
+      // Create a new object reference to ensure Vue reactivity triggers in child components
+      const newSavedScores = { ...savedScores.value }
+      props.criteria.forEach(criterion => {
+        const scoreKey = `${contestantId}-${criterion.id}`
+        newSavedScores[scoreKey] = contestantScores[criterion.id]
+      })
+      savedScores.value = newSavedScores
+      
       if (notificationSystem.value) {
         notificationSystem.value.success(`Scores for ${contestant?.name || 'contestant'} saved!`, {
           title: 'Success',

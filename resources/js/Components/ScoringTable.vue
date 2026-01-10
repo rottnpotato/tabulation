@@ -5,7 +5,8 @@
       <div class="flex items-center gap-3">
         <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">View Mode:</span>
         <div class="flex items-center bg-slate-100 rounded-lg p-0.5">
-          <button
+          <!-- commented out for ranking to always show regardless-->
+          <!-- <button
             @click="showRanking = false"
             class="px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5"
             :class="!showRanking ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
@@ -14,7 +15,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
             </svg>
             Default Order
-          </button>
+          </button> -->
           <button
             @click="showRanking = true"
             class="px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5"
@@ -266,6 +267,7 @@ const props = defineProps({
   contestants: { type: Array, required: true },
   criteria: { type: Array, required: true },
   scores: { type: Object, required: true },
+  savedScores: { type: Object, default: () => ({}) }, // Saved scores for ranking (only updates on save)
   notes: { type: Object, default: () => ({}) },
   canEditScores: { type: Boolean, default: true },
   submitLoading: { type: Object, default: () => ({}) },
@@ -276,46 +278,38 @@ const props = defineProps({
 
 const emit = defineEmits(['score-change', 'submit-scores', 'view-details', 'update-notes'])
 
-// State
-const showRanking = ref(false)
+// State (set to true to always have ranking by default)
+const showRanking = ref(true)
 
 // Calculate numeric total score for a contestant (returns number or null)
-const getNumericTotalScore = (contestantId) => {
+// Uses savedScores for ranking calculations, live scores for display
+const getNumericTotalScore = (contestantId, useSavedScores = false) => {
+  const scoresSource = useSavedScores ? props.savedScores : props.scores
   const contestantScores = props.criteria.map(criterion => 
-    props.scores[`${contestantId}-${criterion.id}`] || 0
+    scoresSource[`${contestantId}-${criterion.id}`] || 0
   )
   
   if (contestantScores.some(score => score === 0 || score === null || score === undefined)) return null
   
-  const totalWeight = props.criteria.reduce((sum, criterion) => {
-    const weight = criterion.weight || 1
-    return sum + Math.max(weight, 0)
-  }, 0)
-  
-  if (totalWeight === 0) return null
-  
-  const weightedSum = contestantScores.reduce((sum, score, index) => {
-    const weight = props.criteria[index].weight || 1
-    const safeWeight = Math.max(weight, 0)
-    return sum + (score * safeWeight / Math.max(totalWeight, 1))
-  }, 0)
-  
-  return weightedSum
+  // Return simple sum of all scores for ranking
+  const sum = contestantScores.reduce((acc, score) => acc + score, 0)
+  return sum
 }
 
 // Computed: contestants with ranking info, sorted if showRanking is true
+// Uses savedScores for ranking calculations
 const sortedContestants = computed(() => {
-  // Get all contestants with their scores
+  // Get all contestants with their saved scores (for ranking)
   const contestantsWithScores = props.contestants.map(c => ({
     ...c,
-    numericScore: getNumericTotalScore(c.id)
+    numericScore: getNumericTotalScore(c.id, true) // Use saved scores for ranking
   }))
 
   if (!showRanking.value) {
     return contestantsWithScores
   }
 
-  // Sort by score (highest first), contestants without scores go to bottom
+  // Sort by saved score (highest first), contestants without scores go to bottom
   return [...contestantsWithScores].sort((a, b) => {
     // Backed out contestants always go to the end
     if (a.backed_out && !b.backed_out) return 1
@@ -334,18 +328,18 @@ const sortedContestants = computed(() => {
   })
 })
 
-// Calculate ranks based on scores
+// Calculate ranks based on SAVED scores (only updates on save)
 const contestantRanks = computed(() => {
   const ranks = {}
   const scored = sortedContestants.value
-    .filter(c => getNumericTotalScore(c.id) !== null && !c.backed_out)
-    .sort((a, b) => getNumericTotalScore(b.id) - getNumericTotalScore(a.id))
+    .filter(c => getNumericTotalScore(c.id, true) !== null && !c.backed_out)
+    .sort((a, b) => getNumericTotalScore(b.id, true) - getNumericTotalScore(a.id, true))
   
   let currentRank = 1
   let prevScore = null
   
   scored.forEach((c, index) => {
-    const score = getNumericTotalScore(c.id)
+    const score = getNumericTotalScore(c.id, true) // Use saved scores
     if (prevScore !== null && score < prevScore) {
       currentRank = index + 1
     }
@@ -381,6 +375,7 @@ const isContestantComplete = (contestantId) => {
   })
 }
 
+// Get total score as raw sum of all criteria scores (for display)
 const getTotalScore = (contestantId) => {
   const contestantScores = props.criteria.map(criterion => 
     props.scores[`${contestantId}-${criterion.id}`] || 0
@@ -388,21 +383,12 @@ const getTotalScore = (contestantId) => {
   
   if (contestantScores.some(score => score === 0 || score === null || score === undefined)) return '-'
   
-  const totalWeight = props.criteria.reduce((sum, criterion) => {
-    const weight = criterion.weight || 1
-    return sum + Math.max(weight, 0)
-  }, 0)
-  
-  if (totalWeight === 0) return '-'
-  
-  const weightedSum = contestantScores.reduce((sum, score, index) => {
-    const weight = props.criteria[index].weight || 1
-    const safeWeight = Math.max(weight, 0)
-    return sum + (score * safeWeight / Math.max(totalWeight, 1))
-  }, 0)
+  // Simple sum of all scores
+  const sum = contestantScores.reduce((acc, score) => acc + score, 0)
   
   try {
-    return Number(weightedSum).toFixed(1)
+    // Return as integer if whole number, otherwise 2 decimal places
+    return Number.isInteger(sum) ? sum.toString() : Number(sum).toFixed(2)
   } catch (error) {
     return '-'
   }

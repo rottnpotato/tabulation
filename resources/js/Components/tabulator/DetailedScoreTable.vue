@@ -89,10 +89,10 @@
               class="px-6 py-4 whitespace-nowrap"
             >
               <span
-                v-if="getTotalScore(contestant.id, judge.id) !== null"
+                v-if="getNormalizedJudgeScore(contestant.id, judge.id) !== null"
                 class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
               >
-                {{ getTotalScore(contestant.id, judge.id) }}
+                {{ getNormalizedJudgeScore(contestant.id, judge.id) }}
               </span>
               <span v-else class=" text-right text-gray-400 text-sm">—</span>
             </td>
@@ -375,6 +375,29 @@ const getTotalScore = (contestantId: number, judgeId: number): number | null => 
   return score !== undefined ? Number(score) : null
 }
 
+// Get max score for a specific judge across all contestants
+const getJudgeMaxScore = (judgeId: number): number => {
+  let maxScore = 0
+  props.contestants.forEach(contestant => {
+    const score = getTotalScore(contestant.id, judgeId)
+    if (score !== null && score > maxScore) {
+      maxScore = score
+    }
+  })
+  return maxScore
+}
+
+// Get normalized score for a specific judge (0-100 scale)
+const getNormalizedJudgeScore = (contestantId: number, judgeId: number): number | null => {
+  const score = getTotalScore(contestantId, judgeId)
+  if (score === null) return null
+  
+  const maxScore = getJudgeMaxScore(judgeId)
+  if (maxScore === 0) return null
+  
+  return Number(((score / maxScore) * 100).toFixed(2))
+}
+
 const getDetailedScore = (contestantId: number, judgeId: number, criteriaId: number): number | null => {
   const key = `${contestantId}-${judgeId}-${criteriaId}`
   const score = props.detailedScores[key]
@@ -395,15 +418,41 @@ const getContestantAverage = (contestantId: number): number | null => {
 }
 
 const getContestantTotal = (contestantId: number): number | null => {
-  const judgeTotalScores = props.judges
-    .map(judge => getTotalScore(contestantId, judge.id))
-    .filter(score => score !== null) as number[]
+  // Get all scores for each judge across all contestants to find max scores per judge
+  const judgeMaxScores = new Map<number, number>()
   
-  if (judgeTotalScores.length === 0) {
+  // Calculate max score per judge across all contestants
+  props.judges.forEach(judge => {
+    let maxScore = 0
+    props.contestants.forEach(contestant => {
+      const score = getTotalScore(contestant.id, judge.id)
+      if (score !== null && score > maxScore) {
+        maxScore = score
+      }
+    })
+    judgeMaxScores.set(judge.id, maxScore)
+  })
+  
+  // Calculate normalized scores for this contestant
+  const normalizedScores: number[] = []
+  
+  props.judges.forEach(judge => {
+    const score = getTotalScore(contestantId, judge.id)
+    const maxScore = judgeMaxScores.get(judge.id)
+    
+    if (score !== null && maxScore && maxScore > 0) {
+      // Normalize score to percentage (0-100 scale)
+      const normalizedScore = (score / maxScore) * 100
+      normalizedScores.push(normalizedScore)
+    }
+  })
+  
+  if (normalizedScores.length === 0) {
     return null
   }
   
-  const sum = judgeTotalScores.reduce((acc, score) => acc + score, 0)
+  // Sum the normalized scores
+  const sum = normalizedScores.reduce((acc, score) => acc + score, 0)
   return Number(sum.toFixed(2))
 }
 

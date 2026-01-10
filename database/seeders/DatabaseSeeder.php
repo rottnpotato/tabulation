@@ -14,10 +14,10 @@ class DatabaseSeeder extends Seeder
     {
         // Call our UserSeeder to create test accounts
         $this->call([
-            UserSeeder::class,
-            PageantSeeder::class,
-            DetailedPageantSeeder::class,
-            CriteriaSeeder::class,
+            // UserSeeder::class,
+            // PageantSeeder::class,
+            // DetailedPageantSeeder::class,
+            // CriteriaSeeder::class,
             RolePermissionSeeder::class,
         ]);
     }
