@@ -695,6 +695,8 @@ class OrganizerController extends Controller
             'logo' => $pageant->logo,
             'scoring_system' => $pageant->scoring_system,
             'ranking_method' => $pageant->ranking_method,
+            'final_score_mode' => $pageant->final_score_mode,
+            'final_score_inheritance' => $pageant->final_score_inheritance,
             'contestants_count' => $pageant->contestants->count(),
             'criteria_count' => $pageant->criteria->count(),
             'judges_count' => $pageant->judges->count(),
@@ -1395,8 +1397,8 @@ class OrganizerController extends Controller
         // Update the pageant
         $pageant->update([
             'final_score_mode' => $validated['final_score_mode'],
-            'final_score_inheritance' => $validated['final_score_mode'] === 'inherit' 
-                ? $validated['final_score_inheritance'] 
+            'final_score_inheritance' => $validated['final_score_mode'] === 'inherit'
+                ? $validated['final_score_inheritance']
                 : null,
         ]);
 
