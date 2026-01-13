@@ -35,7 +35,7 @@
               {{ topThree[0].member_names?.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-xs font-bold text-amber-700 mt-1">
-              {{ isRankSumMethod ? `Rank Sum: ${topThree[0].totalRankSum ?? topThree[0].final_score}` : `${formatScore(topThree[0].final_score)} pts` }}
+              {{ isRankSumMethod ? `Rank Sum: ${topThree[0].totalRankSum ?? topThree[0].final_score}` : `${formatScore(getDisplayTotal(topThree[0]))} pts` }}
             </div>
           </div>
         </div>
@@ -51,7 +51,7 @@
                 {{ topThree[1].member_names?.map(n => capitalizeName(n)).join(' & ') }}
               </div>
               <div class="text-[10px] text-gray-600">
-                {{ isRankSumMethod ? `Rank Sum: ${topThree[1].totalRankSum ?? topThree[1].final_score}` : `${formatScore(topThree[1].final_score)} pts` }}
+                {{ isRankSumMethod ? `Rank Sum: ${topThree[1].totalRankSum ?? topThree[1].final_score}` : `${formatScore(getDisplayTotal(topThree[1]))} pts` }}
               </div>
             </div>
           </div>
@@ -65,7 +65,7 @@
                 {{ topThree[2].member_names?.map(n => capitalizeName(n)).join(' & ') }}
               </div>
               <div class="text-[10px] text-gray-600">
-                {{ isRankSumMethod ? `Rank Sum: ${topThree[2].totalRankSum ?? topThree[2].final_score}` : `${formatScore(topThree[2].final_score)} pts` }}
+                {{ isRankSumMethod ? `Rank Sum: ${topThree[2].totalRankSum ?? topThree[2].final_score}` : `${formatScore(getDisplayTotal(topThree[2]))} pts` }}
               </div>
             </div>
           </div>
@@ -78,7 +78,7 @@
               <div class="text-sm font-bold">#{{ result.number }}</div>
               <div class="text-[10px] font-medium text-gray-700">{{ capitalizeName(result.name) }}</div>
               <div class="text-[9px] text-gray-500">
-                {{ isRankSumMethod ? `Rank Sum: ${result.totalRankSum ?? result.final_score}` : `${formatScore(result.final_score)} pts` }}
+                {{ isRankSumMethod ? `Rank Sum: ${result.totalRankSum ?? result.final_score}` : `${formatScore(getDisplayTotal(result))} pts` }}
               </div>
             </div>
           </div>
@@ -99,7 +99,7 @@
               {{ topThree[1].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-sm font-semibold text-gray-700">
-              {{ isRankSumMethod ? `Rank Sum: ${topThree[1].totalRankSum ?? topThree[1].final_score}` : `${formatScore(topThree[1].final_score)} pts` }}
+              {{ isRankSumMethod ? `Rank Sum: ${topThree[1].totalRankSum ?? topThree[1].final_score}` : `${formatScore(getDisplayTotal(topThree[1]))} pts` }}
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@
               {{ topThree[0].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-base font-bold text-amber-700">
-              {{ isRankSumMethod ? `Rank Sum: ${topThree[0].totalRankSum ?? topThree[0].final_score}` : `${formatScore(topThree[0].final_score)} pts` }}
+              {{ isRankSumMethod ? `Rank Sum: ${topThree[0].totalRankSum ?? topThree[0].final_score}` : `${formatScore(getDisplayTotal(topThree[0]))} pts` }}
             </div>
           </div>
         </div>
@@ -129,7 +129,7 @@
               {{ topThree[2].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-sm font-semibold text-gray-700">
-              {{ isRankSumMethod ? `Rank Sum: ${topThree[2].totalRankSum ?? topThree[2].final_score}` : `${formatScore(topThree[2].final_score)} pts` }}
+              {{ isRankSumMethod ? `Rank Sum: ${topThree[2].totalRankSum ?? topThree[2].final_score}` : `${formatScore(getDisplayTotal(topThree[2]))} pts` }}
             </div>
           </div>
         </div>
@@ -146,7 +146,7 @@
               {{ result.member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-xs text-gray-600">
-              {{ isRankSumMethod ? `Rank Sum: ${result.totalRankSum ?? result.final_score}` : `${formatScore(result.final_score)} pts` }}
+              {{ isRankSumMethod ? `Rank Sum: ${result.totalRankSum ?? result.final_score}` : `${formatScore(getDisplayTotal(result))} pts` }}
             </div>
           </div>
         </div>
@@ -215,14 +215,22 @@
                 v-for="round in rounds" 
                 :key="round.id"
                 class="py-1 px-1 text-center tabular-nums border-l border-gray-300"
-                :class="result.scores[round.name] !== undefined ? 'text-gray-900' : 'text-gray-300'"
+                :class="getDisplayScore(result, round.name) !== null ? 'text-gray-900' : 'text-gray-300'"
               >
-                <span v-if="result.scores[round.name] !== undefined">{{ formatScore(result.scores[round.name]) }}</span>
+                <span v-if="hasValidScore(getDisplayScore(result, round.name))">{{ formatScore(getDisplayScore(result, round.name)!) }}</span>
+                <span v-else-if="result.scores[round.name] === 0" class="italic text-gray-300" title="Did not compete in this round">—</span>
                 <span v-else class="italic">—</span>
               </td>
             </template>
             <td class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
-              {{ isRankSumMethod ? (result.totalRankSum ?? result.final_score) : formatScore(result.final_score) }}
+              <template v-if="isRankSumMethod">
+                <span v-if="result.hasQualifiedForFinal !== false && (result.totalRankSum || result.final_score)">{{ result.totalRankSum ?? result.final_score }}</span>
+                <span v-else class="text-gray-300">—</span>
+              </template>
+              <template v-else>
+                <span v-if="result.hasQualifiedForFinal !== false">{{ formatScore(getDisplayTotal(result)) }}</span>
+                <span v-else class="text-gray-300">—</span>
+              </template>
             </td>
           </tr>
         </tbody>
@@ -274,8 +282,15 @@ interface Result {
   member_genders?: string[]
   image: string
   scores: Record<string, number>
+  displayScores?: Record<string, number>
+  displayTotal?: number
   final_score: number
+  totalScore?: number
   totalRankSum?: number
+  rank?: number
+  qualified?: boolean
+  qualification_cutoff?: number | null
+  hasQualifiedForFinal?: boolean
 }
 
 interface Pageant {
@@ -447,6 +462,36 @@ const getScoreHeaders = () => {
 
 const formatScore = (score: number): string => {
   return score.toFixed(2)
+}
+
+// Helper function to check if a score is valid (not null, undefined, or 0)
+const hasValidScore = (score: unknown): boolean => {
+  if (score === null || score === undefined) return false
+  const numScore = typeof score === 'number' ? score : Number(score)
+  return !isNaN(numScore) && numScore > 0
+}
+
+// Get display score (sum of judge totals) for a result in a round
+// Falls back to regular score if displayScores not available
+const getDisplayScore = (result: Result, roundName: string): number | null => {
+  // Use displayScores if available (sum of judge totals for display)
+  if (result.displayScores && result.displayScores[roundName] !== undefined) {
+    return result.displayScores[roundName]
+  }
+  // Fallback to regular scores (for backwards compatibility)
+  if (result.scores && result.scores[roundName] !== undefined) {
+    return result.scores[roundName]
+  }
+  return null
+}
+
+// Get display total (sum of all judge totals across all rounds)
+const getDisplayTotal = (result: Result): number => {
+  if (result.displayTotal !== undefined && result.displayTotal !== null) {
+    return result.displayTotal
+  }
+  // Fallback to totalScore then final_score
+  return result.totalScore ?? result.final_score ?? 0
 }
 
 const capitalizeName = (name: string): string => {

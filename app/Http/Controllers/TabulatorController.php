@@ -1173,7 +1173,11 @@ class TabulatorController extends Controller
                     'member_genders' => $memberGenders,
                     'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
                     'scores' => $contestant['scores'] ?? [],
+                    'displayScores' => $contestant['displayScores'] ?? $contestant['scores'] ?? [],
+                    'displayTotal' => $contestant['displayTotal'] ?? $contestant['finalScore'] ?? 0,
                     'final_score' => $contestant['finalScore'] ?? 0,
+                    'totalScore' => $contestant['finalScore'] ?? 0,
+                    'totalRankSum' => $contestant['totalRankSum'] ?? 0,
                     'rank' => $contestant['rank'] ?? 0,
                 ];
             });
@@ -1239,8 +1243,14 @@ class TabulatorController extends Controller
             );
         }
 
-        // Format overall tally results for frontend
-        $overallTally = collect($overallTallyContestants)->map(function ($contestant) use ($pageant) {
+        // Calculate raw display scores (sum of all judge totals per round) for frontend display only
+        // Same as Results page for consistent score display
+        $displayScoresPerContestant = $this->calculateDisplayScores($pageant);
+        $rankingMethod = $pageant->ranking_method ?? 'score_average';
+        $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
+
+        // Format overall tally results for frontend with displayScores
+        $overallTally = collect($overallTallyContestants)->map(function ($contestant) use ($pageant, $displayScoresPerContestant, $lastFinalRound, $rankingMethod, $finalScoreMode) {
             $contestantModel = $pageant->contestants->firstWhere('id', $contestant['id']);
             $memberNames = [];
             $memberGenders = [];
@@ -1250,6 +1260,25 @@ class TabulatorController extends Controller
                     $memberNames[] = $member->name;
                     $memberGenders[] = $member->gender;
                 }
+            }
+
+            // Get display scores for this contestant
+            $contestantId = $contestant['id'];
+            $displayScores = $displayScoresPerContestant[$contestantId] ?? [];
+
+            // Calculate display total based on fresh_start vs inherit mode
+            if ($rankingMethod === 'rank_sum' && $lastFinalRound) {
+                $hasFinalScore = $contestant['hasQualifiedForFinal'] ?? false;
+
+                if ($finalScoreMode === 'inherit') {
+                    $displayTotal = $hasFinalScore ? array_sum($displayScores) : 0;
+                } else {
+                    $displayTotal = $hasFinalScore
+                        ? ($displayScores[$lastFinalRound->name] ?? 0)
+                        : 0;
+                }
+            } else {
+                $displayTotal = array_sum($displayScores);
             }
 
             return [
@@ -1262,7 +1291,11 @@ class TabulatorController extends Controller
                 'member_genders' => $memberGenders,
                 'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
                 'scores' => $contestant['scores'] ?? [],
+                'displayScores' => $displayScores,
+                'displayTotal' => round($displayTotal, 2),
                 'final_score' => $contestant['finalScore'] ?? 0,
+                'totalScore' => $contestant['finalScore'] ?? 0,
+                'totalRankSum' => $contestant['totalRankSum'] ?? 0,
                 'rank' => $contestant['rank'] ?? 0,
                 'hasQualifiedForFinal' => $contestant['hasQualifiedForFinal'] ?? false,
             ];
@@ -1361,6 +1394,8 @@ class TabulatorController extends Controller
                     'member_genders' => $memberGenders,
                     'image' => $contestant['image'] ?? '/images/placeholders/contestant-placeholder.jpg',
                     'scores' => $contestant['scores'] ?? [],
+                    'displayScores' => $contestant['displayScores'] ?? $contestant['scores'] ?? [],
+                    'displayTotal' => $contestant['displayTotal'] ?? $contestant['totalScore'] ?? $contestant['finalScore'] ?? 0,
                     'totalScore' => $contestant['totalScore'] ?? $contestant['finalScore'] ?? 0,
                     'final_score' => $contestant['totalScore'] ?? $contestant['finalScore'] ?? 0,
                     'totalRankSum' => $contestant['totalRankSum'] ?? 0,

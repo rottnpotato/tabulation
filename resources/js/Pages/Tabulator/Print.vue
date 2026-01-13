@@ -1061,6 +1061,10 @@ interface Result {
   scores: Record<string, number>
   final_score: number
   totalRankSum?: number
+  rank?: number
+  qualified?: boolean
+  qualification_cutoff?: number | null
+  hasQualifiedForFinal?: boolean
 }
 
 interface Pageant {
@@ -1153,6 +1157,14 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const isRankSumMethod = computed(() => {
+  return props.pageant?.ranking_method === 'rank_sum'
+})
+
+const isOrdinalMethod = computed(() => {
+  return props.pageant?.ranking_method === 'ordinal'
+})
+
 const printArea = ref<HTMLElement | null>(null)
 const showStageDropdown = ref(false)
 const showPaperSizeDropdown = ref(false)
@@ -1227,53 +1239,241 @@ const stageLabels = computed<Record<string, string>>(() => {
 })
 
 const resultsToShow = computed<Result[]>(() => {
+  let baseList: Result[] = []
+  let topNProceed: number | null = null
+  
   // Handle 'overall' - Same as Overall Tally in Results page
   if (selectedStage.value === 'overall') {
-    return Array.isArray(props.overallTally) ? props.overallTally : (Array.isArray(props.resultsOverall) ? props.resultsOverall : [])
-  }
-  
-  // Try to get results from individual round data FIRST (same as Results.vue)
-  // Check if selectedStage is a round ID (numeric string)
-  if (props.roundResults && /^\d+$/.test(selectedStage.value)) {
+    baseList = Array.isArray(props.overallTally) ? props.overallTally : (Array.isArray(props.resultsOverall) ? props.resultsOverall : [])
+    topNProceed = props.pageant?.number_of_winners || null
+  } else if (props.roundResults && /^\d+$/.test(selectedStage.value)) {
+    // Try to get results from individual round data FIRST (same as Results.vue)
     const roundKey = `round_${selectedStage.value}`
     const roundResult = props.roundResults[roundKey]
     if (roundResult && roundResult.contestants) {
-      return Array.isArray(roundResult.contestants) ? roundResult.contestants : []
+      baseList = Array.isArray(roundResult.contestants) ? roundResult.contestants : []
+      topNProceed = roundResult.top_n_proceed || null
+    }
+  } else if (props.resultsByRoundType && selectedStage.value in props.resultsByRoundType) {
+    // Try to get results from the dynamic resultsByRoundType
+    const results = props.resultsByRoundType[selectedStage.value]
+    baseList = Array.isArray(results) ? results : []
+  } else if (selectedStage.value.toLowerCase() === 'final') {
+    // Handle 'final' - Use finalTopN (only contestants who competed in final round)
+    baseList = Array.isArray(props.finalTopN) ? props.finalTopN : (Array.isArray(props.resultsFinal) ? props.resultsFinal : [])
+  } else {
+    // Fallback to legacy props for backward compatibility
+    switch (selectedStage.value) {
+      case 'semi-final':
+        baseList = Array.isArray(props.resultsSemiFinal) ? props.resultsSemiFinal : []
+        break
+      default:
+        baseList = Array.isArray(props.overallTally) ? props.overallTally : (Array.isArray(props.resultsOverall) ? props.resultsOverall : [])
     }
   }
-  
-  // Try to get results from the dynamic resultsByRoundType (for round types like 'final', 'semi-final')
-  if (props.resultsByRoundType && selectedStage.value in props.resultsByRoundType) {
-    const results = props.resultsByRoundType[selectedStage.value]
-    return Array.isArray(results) ? results : []
-  }
-  
-  // Handle 'final' - Use finalTopN (only contestants who competed in final round)
-  if (selectedStage.value.toLowerCase() === 'final') {
-    return Array.isArray(props.finalTopN) ? props.finalTopN : (Array.isArray(props.resultsFinal) ? props.resultsFinal : [])
-  }
-  
-  // Fallback to legacy props for backward compatibility
-  switch (selectedStage.value) {
-    case 'semi-final':
-      return Array.isArray(props.resultsSemiFinal) ? props.resultsSemiFinal : []
-    default:
-      return Array.isArray(props.overallTally) ? props.overallTally : (Array.isArray(props.resultsOverall) ? props.resultsOverall : [])
-  }
+
+  // Deduplicate by contestant ID (keep first occurrence)
+  const seenIds = new Set<number>()
+  const deduplicated = baseList.filter(contestant => {
+    if (seenIds.has(contestant.id)) {
+      return false
+    }
+    seenIds.add(contestant.id)
+    return true
+  })
+
+  const rankingMethod = props.pageant?.ranking_method || 'score_average'
+
+  // Sort contestants: same logic as Results.vue displayedContestants
+  const sorted = [...deduplicated].sort((a, b) => {
+    // For overall view with rank_sum method, sort by totalRankSum (lower is better)
+    // Contestants with final scores come first, then those without
+    if (selectedStage.value === 'overall') {
+      const aHasFinal = a.hasQualifiedForFinal === true
+      const bHasFinal = b.hasQualifiedForFinal === true
+      
+      // Contestants with final round scores come first
+      if (aHasFinal && !bHasFinal) return -1
+      if (!aHasFinal && bHasFinal) return 1
+      
+      // Both have final scores - sort by rank or totalRankSum
+      if (aHasFinal && bHasFinal) {
+        if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+          // For rank_sum: lower totalRankSum is better
+          const rankSumA = a.totalRankSum ?? 999999
+          const rankSumB = b.totalRankSum ?? 999999
+          return rankSumA - rankSumB
+        } else {
+          // Both have positive ranks - sort by rank ascending
+          if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
+            return (a.rank ?? 0) - (b.rank ?? 0)
+          }
+        }
+      }
+      
+      // Both don't have final scores - sort by contestant number
+      return (a.number ?? 0) - (b.number ?? 0)
+    }
+    
+    // For round-specific views, check ranking method
+    if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+      if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
+        return (a.rank ?? 0) - (b.rank ?? 0)
+      }
+      if ((a.rank ?? 0) > 0 && (b.rank ?? 0) === 0) return -1
+      if ((a.rank ?? 0) === 0 && (b.rank ?? 0) > 0) return 1
+      const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
+      const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
+      return weightedA - weightedB
+    } else {
+      // For score average: higher is better (descending order)
+      const scoreA = a.final_score ?? 0
+      const scoreB = b.final_score ?? 0
+      return scoreB - scoreA
+    }
+  })
+
+  // Update qualified status based on position
+  return sorted.map((contestant, index) => {
+    const currentRank = (contestant.rank ?? 0) > 0 ? contestant.rank : index + 1
+    const qualified = topNProceed === null || currentRank <= topNProceed
+    
+    return {
+      ...contestant,
+      rank: currentRank,
+      qualified,
+      qualification_cutoff: topNProceed
+    }
+  })
 })
 
 const isPairPageant = computed(() => {
   return props.pageant?.contestant_type === 'pairs' || props.pageant?.contestant_type === 'both'
 })
 
+// Get the current qualification cutoff for the active stage
+const currentQualificationCutoff = computed(() => {
+  if (selectedStage.value === 'overall') {
+    return props.pageant?.number_of_winners || null
+  }
+  if (props.roundResults && /^\d+$/.test(selectedStage.value)) {
+    const roundKey = `round_${selectedStage.value}`
+    const roundResult = props.roundResults[roundKey]
+    return roundResult?.top_n_proceed || null
+  }
+  return null
+})
+
 const maleResults = computed(() => {
   if (!isPairPageant.value) return []
-  return resultsToShow.value.filter(r => r.gender === 'male')
+  
+  const males = resultsToShow.value.filter(r => r.gender === 'male')
+  const rankingMethod = props.pageant?.ranking_method || 'score_average'
+  
+  // Sort: same logic as resultsToShow
+  const sorted = [...males].sort((a, b) => {
+    if (selectedStage.value === 'overall') {
+      const aHasFinal = a.hasQualifiedForFinal === true
+      const bHasFinal = b.hasQualifiedForFinal === true
+      
+      if (aHasFinal && !bHasFinal) return -1
+      if (!aHasFinal && bHasFinal) return 1
+      
+      if (aHasFinal && bHasFinal) {
+        if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+          const rankSumA = a.totalRankSum ?? 999999
+          const rankSumB = b.totalRankSum ?? 999999
+          return rankSumA - rankSumB
+        } else {
+          if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
+            return (a.rank ?? 0) - (b.rank ?? 0)
+          }
+        }
+      }
+      return (a.number ?? 0) - (b.number ?? 0)
+    }
+    
+    if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+      if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) return (a.rank ?? 0) - (b.rank ?? 0)
+      if ((a.rank ?? 0) > 0 && (b.rank ?? 0) === 0) return -1
+      if ((a.rank ?? 0) === 0 && (b.rank ?? 0) > 0) return 1
+      const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
+      const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
+      return weightedA - weightedB
+    } else {
+      const scoreA = a.final_score ?? 0
+      const scoreB = b.final_score ?? 0
+      return scoreB - scoreA
+    }
+  })
+  
+  // Recompute rank and qualified status within male group
+  const topN = currentQualificationCutoff.value
+  return sorted.map((contestant, index) => {
+    const genderRank = (contestant.rank ?? 0) > 0 ? contestant.rank : index + 1
+    return {
+      ...contestant,
+      rank: genderRank,
+      qualified: topN === null || genderRank <= topN,
+      qualification_cutoff: topN
+    }
+  })
 })
 
 const femaleResults = computed(() => {
   if (!isPairPageant.value) return []
-  return resultsToShow.value.filter(r => r.gender === 'female')
+  
+  const females = resultsToShow.value.filter(r => r.gender === 'female')
+  const rankingMethod = props.pageant?.ranking_method || 'score_average'
+  
+  // Sort: same logic as resultsToShow
+  const sorted = [...females].sort((a, b) => {
+    if (selectedStage.value === 'overall') {
+      const aHasFinal = a.hasQualifiedForFinal === true
+      const bHasFinal = b.hasQualifiedForFinal === true
+      
+      if (aHasFinal && !bHasFinal) return -1
+      if (!aHasFinal && bHasFinal) return 1
+      
+      if (aHasFinal && bHasFinal) {
+        if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+          const rankSumA = a.totalRankSum ?? 999999
+          const rankSumB = b.totalRankSum ?? 999999
+          return rankSumA - rankSumB
+        } else {
+          if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
+            return (a.rank ?? 0) - (b.rank ?? 0)
+          }
+        }
+      }
+      return (a.number ?? 0) - (b.number ?? 0)
+    }
+    
+    if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+      if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) return (a.rank ?? 0) - (b.rank ?? 0)
+      if ((a.rank ?? 0) > 0 && (b.rank ?? 0) === 0) return -1
+      if ((a.rank ?? 0) === 0 && (b.rank ?? 0) > 0) return 1
+      const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
+      const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
+      return weightedA - weightedB
+    } else {
+      const scoreA = a.final_score ?? 0
+      const scoreB = b.final_score ?? 0
+      return scoreB - scoreA
+    }
+  })
+  
+  // Recompute rank and qualified status within female group
+  const topN = currentQualificationCutoff.value
+  return sorted.map((contestant, index) => {
+    const genderRank = (contestant.rank ?? 0) > 0 ? contestant.rank : index + 1
+    return {
+      ...contestant,
+      rank: genderRank,
+      qualified: topN === null || genderRank <= topN,
+      qualification_cutoff: topN
+    }
+  })
 })
 
 const reportTitle = computed(() => stageLabels.value[selectedStage.value])
