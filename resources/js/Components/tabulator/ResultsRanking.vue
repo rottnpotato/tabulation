@@ -261,12 +261,13 @@
                     {{ formatScore(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant)) }}
                   </span>
                   <!-- Inherit mode: only show score for tie-breaker display -->
+                  <!-- For rank_sum method, show weightedRawTotal (actual score) as tie-breaker, not totalScore (which is rank sum) -->
                   <span
                     v-else-if="hasScoreTie(contestant)"
                     class="text-sm font-semibold tabular-nums text-emerald-600"
-                    :title="`Tie-breaker score: ${formatScore(contestant.totalScore)}`"
+                    :title="`Tie-breaker score: ${formatScore(rankingMethod === 'rank_sum' ? getWeightedRawTotal(contestant) : contestant.totalScore)}`"
                   >
-                    {{ formatScore(contestant.totalScore) }}
+                    {{ formatScore(rankingMethod === 'rank_sum' ? getWeightedRawTotal(contestant) : contestant.totalScore) }}
                   </span>
                   
                   <!-- Info icon for transparency when inheritance breakdown available -->
@@ -554,10 +555,28 @@ const hasValidScore = (score: unknown): boolean => {
   return numScore !== null && numScore > 0
 }
 
-// Check if contestant has a score tie with another finalist (for tie-breaker display)
+// Check if contestant has a tie with another finalist (for tie-breaker display)
+// For rank_sum method: check if rank sums are tied
+// For score_average method: check if total scores are tied
 const hasScoreTie = (contestant: Contestant): boolean => {
   if (!hasValidFinalScore(contestant)) return false
   
+  // For rank_sum method, check if rank sums are tied
+  if (props.rankingMethod === 'rank_sum') {
+    const contestantRankSum = contestant.totalRankSum
+    if (contestantRankSum === null || contestantRankSum === undefined) return false
+    
+    // Find other finalists with the same rank sum
+    const finalistsWithSameRankSum = props.contestants.filter(c => {
+      if (c.id === contestant.id) return false
+      if (!hasValidFinalScore(c)) return false
+      return c.totalRankSum === contestantRankSum
+    })
+    
+    return finalistsWithSameRankSum.length > 0
+  }
+  
+  // For score_average method, check total scores
   const contestantScore = contestant.totalScore
   if (contestantScore === null || contestantScore === undefined) return false
   
