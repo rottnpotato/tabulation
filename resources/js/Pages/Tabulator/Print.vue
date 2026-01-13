@@ -535,6 +535,7 @@
                           :show-all-rounds="selectedStage === 'overall'"
                           :selected-stage="selectedStage"
                           :ranking-method="pageant?.ranking_method || 'score_average'"
+                          :final-score-mode="pageant?.final_score_mode || 'fresh'"
                         />
                       </div>
                       
@@ -559,6 +560,7 @@
                           :show-all-rounds="selectedStage === 'overall'"
                           :selected-stage="selectedStage"
                           :ranking-method="pageant?.ranking_method || 'score_average'"
+                          :final-score-mode="pageant?.final_score_mode || 'fresh'"
                         />
                       </div>
                     </div>
@@ -614,6 +616,7 @@
                         :number-of-winners="pageant?.number_of_winners || 3"
                         :show-all-rounds="selectedStage === 'overall'"
                         :selected-stage="selectedStage"
+                        :final-score-mode="pageant?.final_score_mode || 'fresh'"
                       />
                     </div>
                     
@@ -635,6 +638,7 @@
                         :number-of-winners="pageant?.number_of_winners || 3"
                         :show-all-rounds="selectedStage === 'overall'"
                         :selected-stage="selectedStage"
+                        :final-score-mode="pageant?.final_score_mode || 'fresh'"
                       />
                     </div>
                   </template>
@@ -653,6 +657,7 @@
                     :show-all-rounds="selectedStage === 'overall'"
                     :selected-stage="selectedStage"
                     :ranking-method="pageant?.ranking_method || 'score_average'"
+                    :final-score-mode="pageant?.final_score_mode || 'fresh'"
                   />
                   </template>
                 </div>
@@ -920,6 +925,7 @@
               :show-all-rounds="selectedStage === 'overall'"
               :selected-stage="selectedStage"
               :ranking-method="pageant?.ranking_method || 'score_average'"
+              :final-score-mode="pageant?.final_score_mode || 'fresh'"
             />
           </div>
           
@@ -944,6 +950,7 @@
               :show-all-rounds="selectedStage === 'overall'"
               :selected-stage="selectedStage"
               :ranking-method="pageant?.ranking_method || 'score_average'"
+              :final-score-mode="pageant?.final_score_mode || 'fresh'"
             />
           </div>
         </div>
@@ -997,6 +1004,7 @@
             :show-all-rounds="selectedStage === 'overall'"
             :selected-stage="selectedStage"
             :ranking-method="pageant?.ranking_method || 'score_average'"
+            :final-score-mode="pageant?.final_score_mode || 'fresh'"
           />
         </div>
         
@@ -1016,6 +1024,7 @@
             :show-all-rounds="selectedStage === 'overall'"
             :selected-stage="selectedStage"
             :ranking-method="pageant?.ranking_method || 'score_average'"
+            :final-score-mode="pageant?.final_score_mode || 'fresh'"
           />
         </div>
       </template>
@@ -1034,6 +1043,7 @@
         :show-all-rounds="selectedStage === 'overall'"
         :selected-stage="selectedStage"
         :ranking-method="pageant?.ranking_method || 'score_average'"
+        :final-score-mode="pageant?.final_score_mode || 'fresh'"
       />
       </template>
     </div>
@@ -1077,6 +1087,8 @@ interface Pageant {
   number_of_winners?: number
   logo?: string
   ranking_method?: 'score_average' | 'rank_sum' | 'ordinal'
+  final_score_mode?: 'fresh' | 'inherit'
+  final_score_inheritance?: Record<string, number>
 }
 
 interface Judge {

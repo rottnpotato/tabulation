@@ -176,7 +176,9 @@
             </template>
             <th class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
-              <span v-else>{{ isRankSumMethod ? 'Total Rank' : 'Final Score' }}</span>
+              <span v-else-if="isRankSumMethod">Total Rank</span>
+              <span v-else-if="finalScoreMode === 'inherit'">Weighted Total</span>
+              <span v-else>Final Score</span>
             </th>
           </tr>
         </thead>
@@ -329,6 +331,7 @@ interface Props {
   showAllRounds?: boolean
   selectedStage?: string
   rankingMethod?: 'score_average' | 'rank_sum' | 'sum_of_ranks'
+  finalScoreMode?: 'fresh' | 'inherit'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -336,11 +339,16 @@ const props = withDefaults(defineProps<Props>(), {
   hideRankColumn: false,
   showAllRounds: false,
   selectedStage: '',
-  rankingMethod: 'score_average'
+  rankingMethod: 'score_average',
+  finalScoreMode: 'fresh'
 })
 
 const isRankSumMethod = computed(() => {
   return props.rankingMethod === 'sum_of_ranks' || props.rankingMethod === 'rank_sum'
+})
+
+const finalScoreMode = computed(() => {
+  return props.finalScoreMode || 'fresh'
 })
 
 // Get pageant logo URL
@@ -486,7 +494,14 @@ const getDisplayScore = (result: Result, roundName: string): number | null => {
 }
 
 // Get display total (sum of all judge totals across all rounds)
+// In inherit mode, use totalScore which includes weighted inheritance from previous stages
 const getDisplayTotal = (result: Result): number => {
+  // In inherit mode, use totalScore which has the weighted inheritance calculation
+  if (props.finalScoreMode === 'inherit') {
+    return result.totalScore ?? result.final_score ?? 0
+  }
+  
+  // In fresh mode, use displayTotal (sum of judge averages)
   if (result.displayTotal !== undefined && result.displayTotal !== null) {
     return result.displayTotal
   }

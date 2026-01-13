@@ -1420,6 +1420,8 @@ class TabulatorController extends Controller
                 'location' => $pageant->location,
                 'number_of_winners' => $pageant->getNumberOfWinners(),
                 'ranking_method' => $pageant->ranking_method ?? 'score_average',
+                'final_score_mode' => $pageant->final_score_mode ?? 'fresh',
+                'final_score_inheritance' => $pageant->final_score_inheritance ?? [],
             ],
             'rounds' => $rounds,
             'roundTypes' => $uniqueRoundTypes,
