@@ -183,6 +183,7 @@
                   :ranking-method="pageant?.ranking_method || 'score_average'"
                   :hide-rank-column="activeRound === 'overall'"
                   :is-last-final-round="shouldShowWinners"
+                  :final-score-mode="pageant?.final_score_mode || 'fresh'"
                 />
               </div>
             </div>
@@ -208,6 +209,7 @@
                   :ranking-method="pageant?.ranking_method || 'score_average'"
                   :hide-rank-column="activeRound === 'overall'"
                   :is-last-final-round="shouldShowWinners"
+                  :final-score-mode="pageant?.final_score_mode || 'fresh'"
                 />
               </div>
             </div>
@@ -229,6 +231,7 @@
                 :ranking-method="pageant?.ranking_method || 'score_average'"
                 :hide-rank-column="activeRound === 'overall'"
                 :is-last-final-round="shouldShowWinners"
+                :final-score-mode="pageant?.final_score_mode || 'fresh'"
               />
             </div>
           </div>
@@ -272,6 +275,13 @@ interface Round {
   is_last_of_type?: boolean
 }
 
+interface InheritanceBreakdownItem {
+  stageType: string
+  percentage: number
+  stageAverage: number
+  contribution: number
+}
+
 interface Contestant {
   id: number
   number: number
@@ -287,6 +297,7 @@ interface Contestant {
   judgeRanks?: Record<string, { scores: number[], ranks: number[], details: Array<{ judge_id: number, judge_name: string, score: number, rank: number }> }>
   rank?: number
   gender?: string
+  inheritanceBreakdown?: Record<string, InheritanceBreakdownItem>
 }
 
 interface RoundResult {
@@ -301,6 +312,8 @@ interface Pageant {
   number_of_winners?: number
   ranking_method?: 'score_average' | 'rank_sum' | 'ordinal'
   tie_handling?: 'sequential' | 'average' | 'minimum'
+  final_score_mode?: 'fresh' | 'inherit'
+  final_score_inheritance?: Record<string, number>
 }
 
 interface Props {

@@ -194,6 +194,7 @@
             <td class="whitespace-nowrap px-4 py-3 text-right">
               <div class="flex flex-col items-end gap-1">
                 <div class="flex items-center gap-2">
+                  <!-- Rank Sum method: show rank sum -->
                   <span
                     v-if="rankingMethod === 'rank_sum'"
                     class="text-sm font-semibold tabular-nums text-purple-700"
@@ -201,7 +202,7 @@
                   >
                     {{ formatScore(contestant.totalRankSum, 1) }}
                   </span>
-                  <!-- Tie-break indicator -->
+                  <!-- Tie-break indicator for rank_sum -->
                   <span
                     v-if="rankingMethod === 'rank_sum' && (contestant as any).tieBreakInfo"
                     class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-600 cursor-help"
@@ -211,21 +212,22 @@
                       <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
                     </svg>
                   </span>
+                  <!-- Score Average method: show computed score (finalScore for inherit mode, displayTotal otherwise) -->
                   <span
                     v-else
                     class="text-sm font-semibold tabular-nums"
-                    :class="getScoreClass(getDisplayTotal(contestant))"
+                    :class="getScoreClass(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant))"
                     :title="getFinalScoreBreakdown(contestant)"
                   >
-                    {{ formatScore(getDisplayTotal(contestant)) }}
+                    {{ formatScore(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant)) }}
                   </span>
                   
-                  <!-- Info icon for transparency when final round details available -->
+                  <!-- Info icon for transparency when inheritance breakdown available -->
                   <button
-                    v-if="isLastFinalRound && contestant.judgeRanks && getFinalRoundName()"
+                    v-if="finalScoreMode === 'inherit' && contestant.inheritanceBreakdown"
                     @click="toggleScoreBreakdown(contestant.id)"
-                    class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors cursor-pointer"
-                    :title="'Click to see judge breakdown'"
+                    class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors cursor-pointer"
+                    title="Click to see inheritance breakdown"
                   >
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -245,56 +247,59 @@
                   </span>
                 </div>
                 
-                <!-- Show the other metric as secondary info -->
+                <!-- Show secondary metric ONLY when there's a tie (tieBreakInfo exists) -->
                 <span 
-                  v-if="rankingMethod === 'rank_sum' && (contestant as any).displayScore"
+                  v-if="rankingMethod === 'rank_sum' && (contestant as any).tieBreakInfo && (contestant as any).displayScore"
                   class="text-xs text-gray-400"
-                  :title="`Score: ${formatScore((contestant as any).displayScore)}`"
+                  :title="`Score: ${formatScore((contestant as any).displayScore)} (tie-breaker)`"
                 >
                   ({{ formatScore((contestant as any).displayScore) }})
-                </span>
-                <span 
-                  v-else-if="rankingMethod !== 'rank_sum' && contestant.totalRankSum"
-                  class="text-xs text-gray-400"
-                  :title="`Rank Sum: ${formatScore(contestant.totalRankSum, 1)}`"
-                >
-                  Σ{{ formatScore(contestant.totalRankSum, 1) }}
                 </span>
               </div>
             </td>
           </tr>
           
-          <!-- Judge Score Breakdown Expandable Row -->
+          <!-- Score Breakdown Expandable Row (Inheritance Only) -->
           <tr
-            v-if="expandedBreakdowns.has(contestant.id) && isLastFinalRound && contestant.judgeRanks && getFinalRoundName()"
-            class="bg-blue-50 border-t border-blue-200"
+            v-if="expandedBreakdowns.has(contestant.id) && finalScoreMode === 'inherit' && contestant.inheritanceBreakdown"
+            class="bg-emerald-50 border-t border-emerald-200"
           >
             <td :colspan="hideRankColumn ? rounds.length + 2 : rounds.length + 3" class="px-4 py-4">
               <div class="space-y-3">
+                <!-- Inheritance Breakdown -->
                 <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                   </svg>
-                  Final Round Judge Scores Breakdown
+                  Inheritance Score Breakdown
                 </h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   <div
-                    v-for="judge in getJudgeBreakdown(contestant)"
-                    :key="judge.id"
-                    class="flex items-center justify-between p-3 bg-white rounded-lg border border-blue-200 shadow-sm"
+                    v-for="(breakdown, stageKey) in contestant.inheritanceBreakdown"
+                    :key="stageKey"
+                    class="flex flex-col p-3 bg-white rounded-lg border border-emerald-200 shadow-sm"
                   >
-                    <div class="flex items-center gap-2">
-                      <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                        {{ judge.initials }}
-                      </div>
-                      <span class="text-sm font-medium text-gray-700">{{ judge.name }}</span>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-sm font-medium text-gray-700">{{ breakdown.stageType }}</span>
+                      <span class="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        {{ breakdown.percentage }}%
+                      </span>
                     </div>
-                    <span class="text-sm font-bold text-blue-700 tabular-nums">{{ formatScore(judge.score) }}</span>
+                    <div class="text-xs text-gray-500 space-y-1">
+                      <div class="flex justify-between">
+                        <span>{{ rankingMethod === 'rank_sum' ? 'Stage Score:' : 'Stage Average:' }}</span>
+                        <span class="font-medium tabular-nums">{{ formatScore(breakdown.stageAverage) }}</span>
+                      </div>
+                      <div class="flex justify-between text-emerald-700 font-medium">
+                        <span>{{ rankingMethod === 'rank_sum' ? 'Rank Sum:' : 'Contribution:' }}</span>
+                        <span class="tabular-nums">{{ formatScore(breakdown.contribution) }}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="flex items-center justify-between pt-3 border-t border-blue-200">
-                  <span class="text-sm font-semibold text-gray-700">Average Score:</span>
-                  <span class="text-lg font-bold text-blue-700 tabular-nums">{{ formatScore(contestant.totalScore) }}</span>
+                <div class="flex items-center justify-between pt-3 border-t border-emerald-200">
+                  <span class="text-sm font-semibold text-gray-700">{{ rankingMethod === 'rank_sum' ? 'Total Rank Sum:' : 'Final Weighted Score:' }}</span>
+                  <span class="text-lg font-bold text-emerald-700 tabular-nums">{{ formatScore(rankingMethod === 'rank_sum' ? contestant.totalRankSum : contestant.totalScore) }}</span>
                 </div>
               </div>
             </td>
@@ -348,6 +353,13 @@ interface Round {
   is_last_of_type?: boolean
 }
 
+interface InheritanceBreakdownItem {
+  stageType: string
+  percentage: number
+  stageAverage: number
+  contribution: number
+}
+
 interface Contestant {
   id: number
   name: string
@@ -368,6 +380,7 @@ interface Contestant {
   judgeRanks?: Record<string, { scores: number[], ranks: number[], details: Array<{ judge_id: number, judge_name: string, score: number, rank: number }> }>
   qualified?: boolean
   qualification_cutoff?: number | null
+  inheritanceBreakdown?: Record<string, InheritanceBreakdownItem>
 }
 
 interface Props {
@@ -377,9 +390,10 @@ interface Props {
   isUpdating?: boolean
   numberOfWinners?: number
   showWinners?: boolean
-  rankingMethod?: 'score_average' | 'rank_sum'
+  rankingMethod?: 'score_average' | 'rank_sum' | 'ordinal'
   hideRankColumn?: boolean
   isLastFinalRound?: boolean
+  finalScoreMode?: 'fresh' | 'inherit'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -388,7 +402,8 @@ const props = withDefaults(defineProps<Props>(), {
   showWinners: false,
   rankingMethod: 'score_average',
   hideRankColumn: false,
-  isLastFinalRound: false
+  isLastFinalRound: false,
+  finalScoreMode: 'fresh'
 })
 
 // Track previous rankings for animation
