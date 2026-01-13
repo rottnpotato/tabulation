@@ -36,7 +36,7 @@ class TabulatorController extends Controller
         $tabulator = Auth::user();
 
         // If no pageant specified, get all pageants this tabulator is assigned to
-        if (!$pageantId) {
+        if (! $pageantId) {
             $pageants = Pageant::whereHas('tabulators', function ($query) use ($tabulator) {
                 $query->where('user_id', $tabulator->id);
             })->with(['contestants', 'judges', 'rounds.criteria'])->get();
@@ -97,7 +97,7 @@ class TabulatorController extends Controller
      */
     public function judges($pageantId)
     {
-        if (!Auth::user()->hasPermission('tabulator_view_judges')) {
+        if (! Auth::user()->hasPermission('tabulator_view_judges')) {
             return redirect()->back()->with('error', 'You do not have permission to view judge information.');
         }
 
@@ -190,7 +190,7 @@ class TabulatorController extends Controller
 
         $judge = $pageant->judges()->where('user_id', $judgeId)->first();
         if ($judge) {
-            $newStatus = !$judge->pivot->active;
+            $newStatus = ! $judge->pivot->active;
             $pageant->judges()->updateExistingPivot($judgeId, ['active' => $newStatus]);
 
             return back()->with('success', 'Judge status updated successfully.');
@@ -270,7 +270,7 @@ class TabulatorController extends Controller
         $judge = User::findOrFail($judgeId);
 
         // Verify judge is assigned to this pageant
-        if (!$pageant->judges()->where('user_id', $judgeId)->exists()) {
+        if (! $pageant->judges()->where('user_id', $judgeId)->exists()) {
             return back()->withErrors(['message' => 'Judge not found for this pageant.']);
         }
 
@@ -283,7 +283,7 @@ class TabulatorController extends Controller
             'email' => $validated['email'] ?? null,
         ];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $updateData['password'] = $validated['password'];
         }
 
@@ -319,13 +319,13 @@ class TabulatorController extends Controller
         });
 
         // If no round specified, use first round
-        if (!$roundId && $rounds->count() > 0) {
+        if (! $roundId && $rounds->count() > 0) {
             $roundId = $rounds->first()['id'];
         }
 
         $currentRound = $pageant->rounds->find($roundId);
 
-        if (!$currentRound) {
+        if (! $currentRound) {
             return Inertia::render('Tabulator/Scores', [
                 'pageant' => [
                     'id' => $pageant->id,
@@ -391,7 +391,7 @@ class TabulatorController extends Controller
                     $judgeTotal += $scoreRecord->score;
                 }
 
-                $key = $contestantId . '-' . $judgeId . '-' . $roundId;
+                $key = $contestantId.'-'.$judgeId.'-'.$roundId;
                 // Store the simple sum of scores for this judge
                 $scores[$key] = round($judgeTotal, 2);
                 $totalScores[$key] = round($judgeTotal, 2);
@@ -520,7 +520,7 @@ class TabulatorController extends Controller
 
             // Find the last final round for ordinal ranking
             $lastFinalRound = $pageant->rounds
-                ->filter(fn($round) => strtolower($round->type) === 'final')
+                ->filter(fn ($round) => strtolower($round->type) === 'final')
                 ->sortByDesc('display_order')
                 ->first();
 
@@ -558,10 +558,10 @@ class TabulatorController extends Controller
                     $bIsFinalist = ($b['rank'] ?? 0) > 0;
 
                     // Finalists come first
-                    if ($aIsFinalist && !$bIsFinalist) {
+                    if ($aIsFinalist && ! $bIsFinalist) {
                         return -1;
                     }
-                    if (!$aIsFinalist && $bIsFinalist) {
+                    if (! $aIsFinalist && $bIsFinalist) {
                         return 1;
                     }
 
@@ -580,7 +580,7 @@ class TabulatorController extends Controller
 
             // Find the last final round to use for ranking
             $lastFinalRound = $pageant->rounds
-                ->filter(fn($round) => strtolower($round->type) === 'final')
+                ->filter(fn ($round) => strtolower($round->type) === 'final')
                 ->sortByDesc('display_order')
                 ->first();
 
@@ -600,6 +600,7 @@ class TabulatorController extends Controller
                             $finalScoreInheritance = $pageant->final_score_inheritance ?? [];
                             $totalRankSum = 0;
                             $rawScoreSum = 0;
+                            $weightedRawTotal = 0; // Sum of (stage raw total × stage percentage)
                             $inheritanceBreakdown = [];
                             $stageRankSums = [];
                             $stageScoreSums = [];
@@ -614,7 +615,7 @@ class TabulatorController extends Controller
                                         $round = $pageant->rounds->firstWhere('name', $roundName);
                                         $roundType = strtolower($round->type ?? 'preliminary');
 
-                                        if (!isset($stageRankSums[$roundType])) {
+                                        if (! isset($stageRankSums[$roundType])) {
                                             $stageRankSums[$roundType] = 0;
                                         }
                                         $stageRankSums[$roundType] += $roundRankSum;
@@ -631,7 +632,7 @@ class TabulatorController extends Controller
                                         $round = $pageant->rounds->firstWhere('name', $roundName);
                                         $roundType = strtolower($round->type ?? 'preliminary');
 
-                                        if (!isset($stageScoreSums[$roundType])) {
+                                        if (! isset($stageScoreSums[$roundType])) {
                                             $stageScoreSums[$roundType] = 0;
                                         }
                                         $stageScoreSums[$roundType] += $score;
@@ -639,13 +640,21 @@ class TabulatorController extends Controller
                                 }
                             }
 
-                            // Build inheritance breakdown for display
-                            foreach ($stageRankSums as $stageType => $rankSum) {
+                            // Build inheritance breakdown and calculate weightedRawTotal
+                            foreach ($stageScoreSums as $stageType => $stageScore) {
                                 $percentage = $finalScoreInheritance[$stageType] ?? 0;
-                                $stageScore = $stageScoreSums[$stageType] ?? 0;
+                                $inheritancePercentage = $percentage / 100;
+                                $rankSum = $stageRankSums[$stageType] ?? 0;
+
+                                // Calculate weighted raw total: stage raw score × percentage
+                                $rawContribution = $stageScore * $inheritancePercentage;
+                                $weightedRawTotal += $rawContribution;
+
                                 $inheritanceBreakdown[$stageType] = [
                                     'stageType' => ucwords(str_replace('-', ' ', $stageType)),
                                     'percentage' => $percentage,
+                                    'stageRawTotal' => round($stageScore, 2),
+                                    'rawContribution' => round($rawContribution, 2),
                                     'stageAverage' => round($stageScore, 2), // Raw score for display
                                     'contribution' => round($rankSum, 2), // Rank sum per stage
                                 ];
@@ -656,9 +665,10 @@ class TabulatorController extends Controller
                                 'totalScore' => $hasFinalScore ? $totalRankSum : null,
                                 'totalRankSum' => $hasFinalScore ? $totalRankSum : 0,
                                 'rawScore' => $rawScoreSum,
+                                'weightedRawTotal' => $hasFinalScore ? round($weightedRawTotal, 2) : null,
                                 'displayScore' => $rawScoreSum, // Shows cumulative score for Inherit mode
                                 'hasQualifiedForFinal' => $hasFinalScore,
-                                'inheritanceBreakdown' => !empty($inheritanceBreakdown) ? $inheritanceBreakdown : null,
+                                'inheritanceBreakdown' => ! empty($inheritanceBreakdown) ? $inheritanceBreakdown : null,
                             ]);
                         } else {
                             // Fresh Start mode: only final round's rank sum
@@ -693,6 +703,7 @@ class TabulatorController extends Controller
 
                         $rawScoreA = $a['rawScore'] ?? 0;
                         $rawScoreB = $b['rawScore'] ?? 0;
+
                         return $rawScoreB <=> $rawScoreA;
                     });
 
@@ -731,7 +742,7 @@ class TabulatorController extends Controller
                     $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
                     $finalScoreInheritance = $pageant->final_score_inheritance ?? [];
 
-                    if ($finalScoreMode === 'inherit' && !empty($finalScoreInheritance)) {
+                    if ($finalScoreMode === 'inherit' && ! empty($finalScoreInheritance)) {
                         // Inherit mode with percentages: calculate weighted average per stage, then apply inheritance percentages
                         $contestants = collect($contestants)->map(function ($contestant) use ($pageant, $lastFinalRound, $finalScoreInheritance) {
                             $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
@@ -739,6 +750,7 @@ class TabulatorController extends Controller
                             // Calculate score per stage type
                             $stageScores = [];
                             $stageWeights = [];
+                            $stageRawTotals = []; // Sum of raw scores per stage (for weightedRawTotal calculation)
                             $inheritanceBreakdown = [];
 
                             foreach ($pageant->rounds as $round) {
@@ -746,21 +758,25 @@ class TabulatorController extends Controller
                                 $roundScore = $contestant['scores'][$round->name] ?? null;
 
                                 if ($roundScore !== null && isset($finalScoreInheritance[$roundType])) {
-                                    if (!isset($stageScores[$roundType])) {
+                                    if (! isset($stageScores[$roundType])) {
                                         $stageScores[$roundType] = 0;
                                         $stageWeights[$roundType] = 0;
+                                        $stageRawTotals[$roundType] = 0;
                                     }
                                     $roundWeight = $round->weight ?? 1;
                                     if ($roundWeight <= 0) {
                                         $roundWeight = 1;
                                     }
-                                    $stageScores[$roundType] += $roundScore * $roundWeight;
+                                    $weightedRoundScore = $roundScore * $roundWeight;
+                                    $stageScores[$roundType] += $weightedRoundScore;
                                     $stageWeights[$roundType] += $roundWeight;
+                                    $stageRawTotals[$roundType] += $roundScore; // Sum raw scores per stage
                                 }
                             }
 
                             // Apply inheritance percentages to stage averages
                             $finalScore = 0;
+                            $weightedRawTotal = 0; // Sum of (stage raw total × stage percentage)
                             foreach ($stageScores as $stageType => $weightedSum) {
                                 if ($stageWeights[$stageType] > 0) {
                                     $stageAverage = $weightedSum / $stageWeights[$stageType];
@@ -768,11 +784,18 @@ class TabulatorController extends Controller
                                     $contribution = $stageAverage * $inheritancePercentage;
                                     $finalScore += $contribution;
 
+                                    // Calculate weighted raw total: stage raw score × percentage
+                                    $stageRawTotal = $stageRawTotals[$stageType] ?? 0;
+                                    $rawContribution = $stageRawTotal * $inheritancePercentage;
+                                    $weightedRawTotal += $rawContribution;
+
                                     // Store breakdown for display
                                     $inheritanceBreakdown[$stageType] = [
                                         'stageType' => ucwords(str_replace('-', ' ', $stageType)),
                                         'percentage' => $finalScoreInheritance[$stageType] ?? 0,
                                         'stageAverage' => round($stageAverage, 2),
+                                        'stageRawTotal' => round($stageRawTotal, 2),
+                                        'rawContribution' => round($rawContribution, 2),
                                         'contribution' => round($contribution, 2),
                                     ];
                                 }
@@ -781,6 +804,7 @@ class TabulatorController extends Controller
                             return array_merge($contestant, [
                                 'finalScore' => $hasFinalScore ? round($finalScore, 2) : null,
                                 'totalScore' => $hasFinalScore ? round($finalScore, 2) : null,
+                                'weightedRawTotal' => $hasFinalScore ? round($weightedRawTotal, 2) : null,
                                 'hasQualifiedForFinal' => $hasFinalScore,
                                 'inheritanceBreakdown' => $inheritanceBreakdown,
                             ]);
@@ -823,7 +847,7 @@ class TabulatorController extends Controller
             // This allows advancement badges to show for any round that has top_n_proceed set
             $roundTopN = $currentRound->top_n_proceed;
 
-            $roundResults['round_' . $currentRound->id] = [
+            $roundResults['round_'.$currentRound->id] = [
                 'contestants' => $roundContestants,
                 'top_n_proceed' => $roundTopN,
             ];
@@ -888,7 +912,7 @@ class TabulatorController extends Controller
 
         // Find the last final round for Fresh Start mode
         $lastFinalRound = $pageant->rounds
-            ->filter(fn($round) => strtolower($round->type) === 'final')
+            ->filter(fn ($round) => strtolower($round->type) === 'final')
             ->sortByDesc('display_order')
             ->first();
         $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
@@ -981,10 +1005,10 @@ class TabulatorController extends Controller
         $pageant = $this->getPageantForTabulator($pageantId, $tabulator->id);
 
         // Check if all rounds are locked
-        $allRoundsLocked = $pageant->rounds->count() > 0 && $pageant->rounds->every(fn($round) => $round->is_locked);
+        $allRoundsLocked = $pageant->rounds->count() > 0 && $pageant->rounds->every(fn ($round) => $round->is_locked);
 
         // Get list of unlocked rounds for the warning message
-        $unlockedRounds = $pageant->rounds->filter(fn($round) => !$round->is_locked)->map(fn($round) => [
+        $unlockedRounds = $pageant->rounds->filter(fn ($round) => ! $round->is_locked)->map(fn ($round) => [
             'id' => $round->id,
             'name' => $round->name,
             'type' => $round->type,
@@ -1079,7 +1103,7 @@ class TabulatorController extends Controller
 
         // Filter final results based on the last final round's top_n_proceed
         $lastFinalRound = $pageant->rounds
-            ->filter(fn($round) => $round->type === 'final')
+            ->filter(fn ($round) => $round->type === 'final')
             ->sortByDesc('display_order')
             ->first();
 
@@ -1088,8 +1112,8 @@ class TabulatorController extends Controller
 
             // For pair pageants, filter each gender separately
             if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                $maleFinalists = $finalResults->filter(fn($c) => ($c['gender'] ?? '') === 'male')->take($topN);
-                $femaleFinalists = $finalResults->filter(fn($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                $maleFinalists = $finalResults->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                $femaleFinalists = $finalResults->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
                 $finalResults = $maleFinalists->merge($femaleFinalists)->values();
             } else {
                 $finalResults = $finalResults->take($topN);
@@ -1158,9 +1182,9 @@ class TabulatorController extends Controller
             $stageResults = $stageResults->filter(function ($contestant) {
                 // Only include contestants who have at least one score for this stage
                 $scores = $contestant['scores'] ?? [];
-                $hasScores = !empty($scores) && array_filter($scores, fn($score) => $score !== null && $score > 0);
+                $hasScores = ! empty($scores) && array_filter($scores, fn ($score) => $score !== null && $score > 0);
 
-                return !empty($hasScores);
+                return ! empty($hasScores);
             });
 
             $stageResults = $markQualifiedContestants($stageResults, $roundType)->values();
@@ -1171,8 +1195,8 @@ class TabulatorController extends Controller
 
                 // For pair pageants, filter each gender separately
                 if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                    $maleResults = $stageResults->filter(fn($c) => ($c['gender'] ?? '') === 'male')->take($topN);
-                    $femaleResults = $stageResults->filter(fn($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                    $maleResults = $stageResults->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                    $femaleResults = $stageResults->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
                     $stageResults = $maleResults->merge($femaleResults)->values();
                 } else {
                     $stageResults = $stageResults->take($topN);
@@ -1184,7 +1208,7 @@ class TabulatorController extends Controller
 
         // Get the last final round and use it for "overall" - Print page shows ONLY final round results
         $lastFinalRound = $pageant->rounds
-            ->filter(fn($round) => strtolower($round->type) === 'final')
+            ->filter(fn ($round) => strtolower($round->type) === 'final')
             ->sortByDesc('display_order')
             ->first();
 
@@ -1246,15 +1270,15 @@ class TabulatorController extends Controller
 
         // Final Result (Top N) - Only contestants who competed in the final round
         // Filter to only those with hasQualifiedForFinal = true
-        $finalTopN = $overallTally->filter(fn($c) => $c['hasQualifiedForFinal'] === true);
+        $finalTopN = $overallTally->filter(fn ($c) => $c['hasQualifiedForFinal'] === true);
 
         // Apply top_n_proceed filter if set
         if ($lastFinalRound && $lastFinalRound->top_n_proceed !== null && $lastFinalRound->top_n_proceed > 0) {
             $topN = $lastFinalRound->top_n_proceed;
 
             if ($pageant->isPairsOnly() || $pageant->allowsBothTypes()) {
-                $maleFinalists = $finalTopN->filter(fn($c) => ($c['gender'] ?? '') === 'male')->take($topN);
-                $femaleFinalists = $finalTopN->filter(fn($c) => ($c['gender'] ?? '') === 'female')->take($topN);
+                $maleFinalists = $finalTopN->filter(fn ($c) => ($c['gender'] ?? '') === 'male')->take($topN);
+                $femaleFinalists = $finalTopN->filter(fn ($c) => ($c['gender'] ?? '') === 'female')->take($topN);
                 $finalTopN = $maleFinalists->merge($femaleFinalists)->values();
             } else {
                 $finalTopN = $finalTopN->take($topN);
@@ -1345,7 +1369,7 @@ class TabulatorController extends Controller
                 ];
             })->values();
 
-            $roundResults['round_' . $currentRound->id] = [
+            $roundResults['round_'.$currentRound->id] = [
                 'contestants' => $formattedRoundContestants,
                 'top_n_proceed' => $currentRound->top_n_proceed,
             ];
@@ -1474,7 +1498,7 @@ class TabulatorController extends Controller
             "Round '{$round->name}' is now the current round"
         );
 
-        return back()->with('success', 'Current round set to: ' . $round->name);
+        return back()->with('success', 'Current round set to: '.$round->name);
     }
 
     /**
@@ -1482,7 +1506,7 @@ class TabulatorController extends Controller
      */
     public function lockRound($pageantId, $roundId)
     {
-        if (!Auth::user()->hasPermission('tabulator_tabulate_results')) {
+        if (! Auth::user()->hasPermission('tabulator_tabulate_results')) {
             return redirect()->back()->with('error', 'You do not have permission to lock rounds.');
         }
 
@@ -1500,7 +1524,7 @@ class TabulatorController extends Controller
             "Round '{$round->name}' has been locked for editing"
         );
 
-        return back()->with('success', 'Round "' . $round->name . '" has been locked for editing.');
+        return back()->with('success', 'Round "'.$round->name.'" has been locked for editing.');
     }
 
     /**
@@ -1508,7 +1532,7 @@ class TabulatorController extends Controller
      */
     public function unlockRound($pageantId, $roundId)
     {
-        if (!Auth::user()->hasPermission('tabulator_tabulate_results')) {
+        if (! Auth::user()->hasPermission('tabulator_tabulate_results')) {
             return redirect()->back()->with('error', 'You do not have permission to unlock rounds.');
         }
 
@@ -1526,7 +1550,7 @@ class TabulatorController extends Controller
             "Round '{$round->name}' has been unlocked for editing"
         );
 
-        return back()->with('success', 'Round "' . $round->name . '" has been unlocked for editing.');
+        return back()->with('success', 'Round "'.$round->name.'" has been unlocked for editing.');
     }
 
     /**
@@ -1705,7 +1729,7 @@ class TabulatorController extends Controller
 
         // Apply search filter (search in details)
         if ($request->filled('search')) {
-            $query->where('details', 'like', '%' . $request->search . '%');
+            $query->where('details', 'like', '%'.$request->search.'%');
         }
 
         // Get pagination parameters
@@ -1742,7 +1766,7 @@ class TabulatorController extends Controller
             ->unique('id')
             ->sortBy('name')
             ->values()
-            ->map(fn($user) => [
+            ->map(fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
             ]);
@@ -1915,7 +1939,7 @@ class TabulatorController extends Controller
         $contestant = Contestant::where('pageant_id', $pageantId)
             ->findOrFail($contestantId);
 
-        if (!$contestant->backed_out) {
+        if (! $contestant->backed_out) {
             return response()->json([
                 'success' => false,
                 'message' => 'This contestant is not marked as backed out.',
