@@ -162,26 +162,10 @@
                 
                 <!-- Advancement Badge for this round -->
                 <template v-if="hasValidScore(contestant.scores[round.name])">
-                  <!-- Show "Top N" badge for final round - only in fresh mode (inherit mode uses FINAL RESULT column for ranking) -->
+                  <!-- Show "Finalist" badge for final round (both fresh and inherit modes) -->
+                  <!-- Ranking is shown in the Final Result column to avoid redundancy -->
                   <span
-                    v-if="round.type?.toLowerCase() === 'final' && finalScoreMode !== 'inherit'"
-                    class="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white border"
-                    :class="getRankInRound(contestant, round) <= numberOfWinners ? 'bg-amber-500 border-amber-600' : 'bg-blue-500 border-blue-600'"
-                    :title="getRankInRound(contestant, round) <= numberOfWinners ? `Winner - Top ${numberOfWinners}` : 'Finalist'"
-                  >
-                    <svg v-if="getRankInRound(contestant, round) <= numberOfWinners" class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    <svg v-else class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    <span v-if="getRankInRound(contestant, round) <= numberOfWinners">Top {{ getRankInRound(contestant, round) }}</span>
-                    <span v-else>Finalist</span>
-                  </span>
-                  
-                  <!-- Show "Finalist" badge for final round in inherit mode (no ranking, just indicates participation) -->
-                  <span
-                    v-else-if="round.type?.toLowerCase() === 'final' && finalScoreMode === 'inherit'"
+                    v-if="round.type?.toLowerCase() === 'final'"
                     class="inline-flex items-center gap-0.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-indigo-600"
                     title="Competed in Final Round"
                   >
