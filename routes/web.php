@@ -263,3 +263,6 @@ Route::middleware(['auth', 'verified', 'check_role:tabulator'])->prefix('tabulat
     Route::post('/{pageantId}/contestants/{contestantId}/back-out', [TabulatorController::class, 'markBackedOut'])->name('tabulator.contestants.back-out');
     Route::post('/{pageantId}/contestants/{contestantId}/undo-back-out', [TabulatorController::class, 'undoBackedOut'])->name('tabulator.contestants.undo-back-out');
 });
+
+// Temporary debug route - DELETE AFTER TESTING
+require __DIR__.'/debug-fresh-mode.php';

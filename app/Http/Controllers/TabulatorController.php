@@ -381,20 +381,27 @@ class TabulatorController extends Controller
 
         $scores = [];
         $totalScores = [];
+        $weightedScores = [];
 
         foreach ($scoresQuery as $contestantId => $judgeScores) {
             foreach ($judgeScores as $judgeId => $judgeScoreRecords) {
-                // Calculate simple sum of all criteria scores for this judge-contestant pair
+                // Calculate simple sum and weighted sum of all criteria scores
                 $judgeTotal = 0;
+                $weightedTotal = 0;
 
                 foreach ($judgeScoreRecords as $scoreRecord) {
                     $judgeTotal += $scoreRecord->score;
+                    // Calculate weighted score: score * weight / 100
+                    $weight = $scoreRecord->criteria->weight ?? 0;
+                    $weightedTotal += ($scoreRecord->score * $weight / 100);
                 }
 
                 $key = $contestantId.'-'.$judgeId.'-'.$roundId;
-                // Store the simple sum of scores for this judge
+                // Store the simple sum of scores for this judge (raw display)
                 $scores[$key] = round($judgeTotal, 2);
                 $totalScores[$key] = round($judgeTotal, 2);
+                // Store the weighted score (for ranking and tie explanation)
+                $weightedScores[$key] = round($weightedTotal, 2);
             }
         }
 
@@ -446,6 +453,7 @@ class TabulatorController extends Controller
             'judges' => $judges,
             'scores' => $scores,
             'totalScores' => $totalScores,
+            'weightedScores' => $weightedScores,
             'criteria' => $criteria,
             'detailedScores' => $detailedScores,
         ]);

@@ -88,12 +88,21 @@
               :key="judge.id"
               class="px-6 py-4 whitespace-nowrap"
             >
-              <span
-                v-if="getTotalScore(contestant.id, judge.id) !== null"
-                class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
-              >
-                {{ getTotalScore(contestant.id, judge.id) }}
-              </span>
+              <div v-if="getTotalScore(contestant.id, judge.id) !== null" class="flex flex-col items-center">
+                <span
+                  class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
+                >
+                  {{ getTotalScore(contestant.id, judge.id) }}
+                </span>
+                <!-- Show weighted score when there's a tie (same raw score but different weighted) -->
+                <span 
+                  v-if="hasTieForJudge(contestant.id, judge.id)"
+                  class="text-xs text-amber-600 mt-1"
+                  :title="`Weighted score: ${getWeightedScore(contestant.id, judge.id)} (used for ranking when raw scores are tied)`"
+                >
+                  ({{ getWeightedScore(contestant.id, judge.id) }})
+                </span>
+              </div>
               <span v-else class=" text-right text-gray-400 text-sm">—</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/30' : 'bg-teal-50'">
@@ -325,6 +334,7 @@ interface Props {
   judges: Judge[]
   scores: Map<string, number> | Record<string, number>
   totalScores?: Map<string, number> | Record<string, number>
+  weightedScores?: Map<string, number> | Record<string, number>
   criteria?: Criteria[]
   detailedScores?: Record<string, any>
   scoreKey?: string
@@ -338,6 +348,7 @@ const props = withDefaults(defineProps<Props>(), {
   criteria: () => [],
   detailedScores: () => ({}),
   totalScores: () => ({}),
+  weightedScores: () => ({}),
   emptyTitle: 'No Scores Yet',
   emptyMessage: 'Scores will appear here once judges start submitting.',
   showToggle: true,
@@ -377,6 +388,41 @@ const getTotalScore = (contestantId: number, judgeId: number): number | null => 
   if (score === undefined || score === null || score === '') return null
   const numScore = Number(score)
   return isNaN(numScore) ? null : numScore
+}
+
+// Get weighted score for a contestant-judge pair
+const getWeightedScore = (contestantId: number, judgeId: number): number | null => {
+  const key = props.scoreKey 
+    ? `${contestantId}-${judgeId}-${props.scoreKey}`
+    : `${contestantId}-${judgeId}`
+  
+  const weightedScoresMap = props.weightedScores instanceof Map ? props.weightedScores : new Map(Object.entries(props.weightedScores || {}))
+  const score = weightedScoresMap.get(key)
+  if (score === undefined || score === null || score === '') return null
+  const numScore = Number(score)
+  return isNaN(numScore) ? null : numScore
+}
+
+// Check if there's a tie for a judge's raw score (same raw score but different weighted score)
+const hasTieForJudge = (contestantId: number, judgeId: number): boolean => {
+  const rawScore = getTotalScore(contestantId, judgeId)
+  if (rawScore === null) return false
+  
+  // Find other contestants with the same raw score from this judge
+  const contestantsWithSameRawScore = props.contestants.filter(c => {
+    if (c.id === contestantId || c.backed_out) return false
+    const otherRawScore = getTotalScore(c.id, judgeId)
+    return otherRawScore === rawScore
+  })
+  
+  if (contestantsWithSameRawScore.length === 0) return false
+  
+  // Check if any of them have different weighted scores
+  const myWeighted = getWeightedScore(contestantId, judgeId)
+  return contestantsWithSameRawScore.some(c => {
+    const otherWeighted = getWeightedScore(c.id, judgeId)
+    return myWeighted !== otherWeighted
+  })
 }
 
 // Get max score for a specific judge across all contestants

@@ -161,6 +161,7 @@
               :judges="judges"
               :scores="localScores"
               :total-scores="localTotalScores"
+              :weighted-scores="localWeightedScores"
               :criteria="criteria"
               :detailed-scores="detailedScores"
               :score-key="currentRound?.id.toString()"
@@ -190,6 +191,7 @@
               :judges="judges"
               :scores="localScores"
               :total-scores="localTotalScores"
+              :weighted-scores="localWeightedScores"
               :criteria="criteria"
               :detailed-scores="detailedScores"
               :score-key="currentRound?.id.toString()"
@@ -210,6 +212,7 @@
             :judges="judges"
             :scores="localScores"
             :total-scores="localTotalScores"
+            :weighted-scores="localWeightedScores"
             :criteria="criteria"
             :detailed-scores="detailedScores"
             :score-key="currentRound?.id.toString()"
@@ -320,6 +323,7 @@ interface Props {
   judges: Judge[]
   scores: Record<string, number> | Map<string, number>
   totalScores: Record<string, number> | Map<string, number>
+  weightedScores?: Record<string, number> | Map<string, number>
   criteria: Criteria[]
   detailedScores: Record<string, any>
 }
@@ -328,6 +332,7 @@ const props = defineProps<Props>()
 
 const localScores = ref(props.scores ? new Map(Object.entries(props.scores)) : new Map())
 const localTotalScores = ref(props.totalScores ? new Map(Object.entries(props.totalScores)) : new Map())
+const localWeightedScores = ref(props.weightedScores ? new Map(Object.entries(props.weightedScores)) : new Map())
 const criteria = ref(props.criteria || [])
 const detailedScores = ref(props.detailedScores || {})
 // Ensure currentRoundId is a string to match the option values in CustomSelect
