@@ -1074,13 +1074,21 @@ interface Result {
   gender?: string
   image: string
   scores: Record<string, number>
+  displayScores?: Record<string, number>
+  displayTotal?: number
+  totalScore?: number
   final_score: number
   totalRankSum?: number
+  weightedRawTotal?: number
   judgeRanks?: Record<string, JudgeRankData>
   rank?: number
   qualified?: boolean
   qualification_cutoff?: number | null
   hasQualifiedForFinal?: boolean
+  is_pair?: boolean
+  member_names?: string[]
+  member_genders?: string[]
+  inheritanceBreakdown?: Record<string, { stageType: string; percentage: number; stageAverage: number; contribution: number }>
 }
 
 interface Pageant {
@@ -1301,35 +1309,41 @@ const resultsToShow = computed<Result[]>(() => {
   })
 
   const rankingMethod = props.pageant?.ranking_method || 'score_average'
+  const finalScoreMode = props.pageant?.final_score_mode || 'fresh'
 
-  // Sort contestants: same logic as Results.vue displayedContestants
+  // Sort contestants: for inherit mode, trust backend order; for fresh mode, compute locally
   const sorted = [...deduplicated].sort((a, b) => {
-    // For overall view with rank_sum method, sort by totalRankSum (lower is better)
-    // Contestants with final scores come first, then those without
     if (selectedStage.value === 'overall') {
+      // For inherit mode, trust the backend-computed rank completely
+      // Backend already computes correct ranking including weighted inherit calculations
+      if (finalScoreMode === 'inherit') {
+        if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
+          return (a.rank ?? 0) - (b.rank ?? 0)
+        }
+        if ((a.rank ?? 0) > 0 && (b.rank ?? 0) === 0) return -1
+        if ((a.rank ?? 0) === 0 && (b.rank ?? 0) > 0) return 1
+        return (a.number ?? 0) - (b.number ?? 0)
+      }
+      
+      // For fresh mode, sort by hasQualifiedForFinal and then by ranking metric
       const aHasFinal = a.hasQualifiedForFinal === true
       const bHasFinal = b.hasQualifiedForFinal === true
       
-      // Contestants with final round scores come first
       if (aHasFinal && !bHasFinal) return -1
       if (!aHasFinal && bHasFinal) return 1
       
-      // Both have final scores - sort by rank or totalRankSum
       if (aHasFinal && bHasFinal) {
         if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
-          // For rank_sum: lower totalRankSum is better
           const rankSumA = a.totalRankSum ?? 999999
           const rankSumB = b.totalRankSum ?? 999999
           return rankSumA - rankSumB
         } else {
-          // Both have positive ranks - sort by rank ascending
           if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
             return (a.rank ?? 0) - (b.rank ?? 0)
           }
         }
       }
       
-      // Both don't have final scores - sort by contestant number
       return (a.number ?? 0) - (b.number ?? 0)
     }
     
@@ -1345,8 +1359,8 @@ const resultsToShow = computed<Result[]>(() => {
       return weightedA - weightedB
     } else {
       // For score average: higher is better (descending order)
-      const scoreA = a.final_score ?? 0
-      const scoreB = b.final_score ?? 0
+      const scoreA = (a as any).totalScore ?? a.final_score ?? 0
+      const scoreB = (b as any).totalScore ?? b.final_score ?? 0
       return scoreB - scoreA
     }
   })
@@ -1387,10 +1401,22 @@ const maleResults = computed(() => {
   
   const males = resultsToShow.value.filter(r => r.gender === 'male')
   const rankingMethod = props.pageant?.ranking_method || 'score_average'
+  const finalScoreMode = props.pageant?.final_score_mode || 'fresh'
   
-  // Sort: same logic as resultsToShow
+  // Sort: trust backend rank for inherit mode, compute locally for fresh mode
   const sorted = [...males].sort((a, b) => {
     if (selectedStage.value === 'overall') {
+      // For inherit mode, trust backend-computed rank
+      if (finalScoreMode === 'inherit') {
+        if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
+          return (a.rank ?? 0) - (b.rank ?? 0)
+        }
+        if ((a.rank ?? 0) > 0 && (b.rank ?? 0) === 0) return -1
+        if ((a.rank ?? 0) === 0 && (b.rank ?? 0) > 0) return 1
+        return (a.number ?? 0) - (b.number ?? 0)
+      }
+      
+      // For fresh mode
       const aHasFinal = a.hasQualifiedForFinal === true
       const bHasFinal = b.hasQualifiedForFinal === true
       
@@ -1443,10 +1469,22 @@ const femaleResults = computed(() => {
   
   const females = resultsToShow.value.filter(r => r.gender === 'female')
   const rankingMethod = props.pageant?.ranking_method || 'score_average'
+  const finalScoreMode = props.pageant?.final_score_mode || 'fresh'
   
-  // Sort: same logic as resultsToShow
+  // Sort: trust backend rank for inherit mode, compute locally for fresh mode
   const sorted = [...females].sort((a, b) => {
     if (selectedStage.value === 'overall') {
+      // For inherit mode, trust backend-computed rank
+      if (finalScoreMode === 'inherit') {
+        if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
+          return (a.rank ?? 0) - (b.rank ?? 0)
+        }
+        if ((a.rank ?? 0) > 0 && (b.rank ?? 0) === 0) return -1
+        if ((a.rank ?? 0) === 0 && (b.rank ?? 0) > 0) return 1
+        return (a.number ?? 0) - (b.number ?? 0)
+      }
+      
+      // For fresh mode
       const aHasFinal = a.hasQualifiedForFinal === true
       const bHasFinal = b.hasQualifiedForFinal === true
       

@@ -325,6 +325,7 @@ interface Result {
   final_score: number
   totalScore?: number
   totalRankSum?: number
+  weightedRawTotal?: number
   judgeRanks?: Record<string, JudgeRankData>
   rank?: number
   qualified?: boolean
@@ -595,6 +596,15 @@ const getRoundRankSum = (result: Result, roundName: string): string => {
     return rankSum.toFixed(1)
   }
   return '—'
+}
+
+// Get weighted raw total (sum of score × round weight) for inherit mode
+const getWeightedRawTotal = (result: Result): number | null => {
+  if (result.weightedRawTotal !== undefined && result.weightedRawTotal !== null) {
+    return result.weightedRawTotal
+  }
+  // Fallback to displayTotal if weightedRawTotal not available
+  return getDisplayTotal(result)
 }
 
 // Get display total (sum of all judge totals across all rounds)
