@@ -1062,6 +1062,11 @@ defineOptions({
   layout: TabulatorLayout
 })
 
+interface JudgeRankData {
+  ranks: number[]
+  scores?: number[]
+}
+
 interface Result {
   id: number
   number: number
@@ -1071,6 +1076,7 @@ interface Result {
   scores: Record<string, number>
   final_score: number
   totalRankSum?: number
+  judgeRanks?: Record<string, JudgeRankData>
   rank?: number
   qualified?: boolean
   qualification_cutoff?: number | null

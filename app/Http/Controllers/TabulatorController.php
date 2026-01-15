@@ -1228,34 +1228,62 @@ class TabulatorController extends Controller
         // Shows ALL contestants with ALL round scores, ranked by final round score
         $overallTallyContestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant);
 
+        $rankingMethod = $pageant->ranking_method ?? 'score_average';
+        $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
+
         if ($lastFinalRound) {
             // Replace the cumulative finalScore with just the final round score for ranking
-            $overallTallyContestants = collect($overallTallyContestants)->map(function ($contestant) use ($lastFinalRound) {
+            $overallTallyContestants = collect($overallTallyContestants)->map(function ($contestant) use ($lastFinalRound, $rankingMethod) {
                 $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
                 $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
 
-                return array_merge($contestant, [
+                $updates = [
                     'finalScore' => $finalRoundScore,
                     'totalScore' => $finalRoundScore,
                     'hasQualifiedForFinal' => $hasFinalScore,
-                ]);
+                ];
+
+                // For rank_sum method with fresh mode, update totalRankSum to only the final round's rank sum
+                if ($rankingMethod === 'rank_sum' && $hasFinalScore) {
+                    // Get the rank sum from the final round only (sum of judge ranks for this contestant in final round)
+                    $finalRoundRankSum = 0;
+                    if (isset($contestant['judgeRanks'][$lastFinalRound->name]['ranks'])) {
+                        $finalRoundRankSum = array_sum($contestant['judgeRanks'][$lastFinalRound->name]['ranks']);
+                    }
+                    $updates['totalRankSum'] = $finalRoundRankSum;
+                } elseif ($rankingMethod === 'rank_sum' && ! $hasFinalScore) {
+                    // Non-finalists get a very high rank sum so they sort last
+                    $updates['totalRankSum'] = 999999;
+                }
+
+                return array_merge($contestant, $updates);
             })->toArray();
 
-            // Re-rank contestants based on final round score only
-            $overallTallyContestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
-                $overallTallyContestants,
-                $pageant,
-                'finalScore',
-                'desc',
-                $pageant->tie_handling ?? 'average'
-            );
+            // Re-rank contestants based on ranking method
+            if ($rankingMethod === 'rank_sum') {
+                // For rank_sum: lower totalRankSum is better (asc)
+                $overallTallyContestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
+                    $overallTallyContestants,
+                    $pageant,
+                    'totalRankSum',
+                    'asc',
+                    $pageant->tie_handling ?? 'average'
+                );
+            } else {
+                // For score_average: higher score is better (desc)
+                $overallTallyContestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
+                    $overallTallyContestants,
+                    $pageant,
+                    'finalScore',
+                    'desc',
+                    $pageant->tie_handling ?? 'average'
+                );
+            }
         }
 
         // Calculate raw display scores (sum of all judge totals per round) for frontend display only
         // Same as Results page for consistent score display
         $displayScoresPerContestant = $this->calculateDisplayScores($pageant);
-        $rankingMethod = $pageant->ranking_method ?? 'score_average';
-        $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
 
         // Format overall tally results for frontend with displayScores
         $overallTally = collect($overallTallyContestants)->map(function ($contestant) use ($pageant, $displayScoresPerContestant, $lastFinalRound, $rankingMethod, $finalScoreMode) {
@@ -1304,6 +1332,7 @@ class TabulatorController extends Controller
                 'final_score' => $contestant['finalScore'] ?? 0,
                 'totalScore' => $contestant['finalScore'] ?? 0,
                 'totalRankSum' => $contestant['totalRankSum'] ?? 0,
+                'judgeRanks' => $contestant['judgeRanks'] ?? [],
                 'rank' => $contestant['rank'] ?? 0,
                 'hasQualifiedForFinal' => $contestant['hasQualifiedForFinal'] ?? false,
             ];

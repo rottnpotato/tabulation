@@ -97,14 +97,35 @@ class ScoreCalculationService
             return $contestants;
         }
 
-        // Sort contestants
+        // Sort contestants with tie-breaker
         usort($contestants, function ($a, $b) use ($scoreField, $direction) {
             $aVal = $a[$scoreField] ?? 0;
             $bVal = $b[$scoreField] ?? 0;
 
-            return $direction === 'desc'
+            // Primary comparison by score field
+            $primaryCompare = $direction === 'desc'
                 ? $bVal <=> $aVal
                 : $aVal <=> $bVal;
+
+            // If tied, use tie-breaker: for rank_sum (asc), higher finalScore wins
+            // For score_average (desc), lower totalRankSum wins
+            if ($primaryCompare === 0) {
+                if ($direction === 'asc') {
+                    // rank_sum method: tie-break by higher score (finalScore or displayTotal)
+                    $aScore = $a['finalScore'] ?? $a['displayTotal'] ?? 0;
+                    $bScore = $b['finalScore'] ?? $b['displayTotal'] ?? 0;
+
+                    return $bScore <=> $aScore; // Higher score wins
+                } else {
+                    // score_average method: tie-break by lower rank sum
+                    $aRankSum = $a['totalRankSum'] ?? 0;
+                    $bRankSum = $b['totalRankSum'] ?? 0;
+
+                    return $aRankSum <=> $bRankSum; // Lower rank sum wins
+                }
+            }
+
+            return $primaryCompare;
         });
 
         // Extract values for RANK.AVG calculation
