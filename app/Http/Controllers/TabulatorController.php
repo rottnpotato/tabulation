@@ -1232,28 +1232,96 @@ class TabulatorController extends Controller
         $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
 
         if ($lastFinalRound) {
-            // Replace the cumulative finalScore with just the final round score for ranking
-            $overallTallyContestants = collect($overallTallyContestants)->map(function ($contestant) use ($lastFinalRound, $rankingMethod) {
+            // Handle scoring differently based on final_score_mode
+            $overallTallyContestants = collect($overallTallyContestants)->map(function ($contestant) use ($lastFinalRound, $rankingMethod, $finalScoreMode, $pageant) {
                 $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
                 $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
 
                 $updates = [
-                    'finalScore' => $finalRoundScore,
-                    'totalScore' => $finalRoundScore,
                     'hasQualifiedForFinal' => $hasFinalScore,
                 ];
 
-                // For rank_sum method with fresh mode, update totalRankSum to only the final round's rank sum
-                if ($rankingMethod === 'rank_sum' && $hasFinalScore) {
-                    // Get the rank sum from the final round only (sum of judge ranks for this contestant in final round)
-                    $finalRoundRankSum = 0;
-                    if (isset($contestant['judgeRanks'][$lastFinalRound->name]['ranks'])) {
-                        $finalRoundRankSum = array_sum($contestant['judgeRanks'][$lastFinalRound->name]['ranks']);
+                if ($rankingMethod === 'rank_sum') {
+                    if ($finalScoreMode === 'inherit') {
+                        // Inherit mode: use cumulative totalRankSum from all rounds
+                        // Calculate total rank sum from all rounds (same as Results controller)
+                        $totalRankSum = 0;
+                        $rawScoreSum = 0;
+                        $weightedRawTotal = 0;
+                        $inheritanceBreakdown = [];
+                        $stageRankSums = [];
+                        $stageScoreSums = [];
+                        $finalScoreInheritance = $pageant->final_score_inheritance ?? [];
+
+                        if (isset($contestant['judgeRanks']) && is_array($contestant['judgeRanks'])) {
+                            foreach ($contestant['judgeRanks'] as $roundName => $roundData) {
+                                if (isset($roundData['ranks']) && is_array($roundData['ranks'])) {
+                                    $roundRankSum = array_sum($roundData['ranks']);
+                                    $totalRankSum += $roundRankSum;
+
+                                    $round = $pageant->rounds->firstWhere('name', $roundName);
+                                    $roundType = strtolower($round->type ?? 'preliminary');
+
+                                    if (! isset($stageRankSums[$roundType])) {
+                                        $stageRankSums[$roundType] = 0;
+                                    }
+                                    $stageRankSums[$roundType] += $roundRankSum;
+                                }
+                            }
+                        }
+
+                        if (isset($contestant['scores']) && is_array($contestant['scores'])) {
+                            foreach ($contestant['scores'] as $roundName => $score) {
+                                if ($score !== null) {
+                                    $rawScoreSum += $score;
+                                    $round = $pageant->rounds->firstWhere('name', $roundName);
+                                    $roundType = strtolower($round->type ?? 'preliminary');
+
+                                    if (! isset($stageScoreSums[$roundType])) {
+                                        $stageScoreSums[$roundType] = 0;
+                                    }
+                                    $stageScoreSums[$roundType] += $score;
+                                }
+                            }
+                        }
+
+                        foreach ($stageScoreSums as $stageType => $stageScore) {
+                            $percentage = $finalScoreInheritance[$stageType] ?? 0;
+                            $inheritancePercentage = $percentage / 100;
+                            $rankSum = $stageRankSums[$stageType] ?? 0;
+                            $rawContribution = $stageScore * $inheritancePercentage;
+                            $weightedRawTotal += $rawContribution;
+
+                            $inheritanceBreakdown[$stageType] = [
+                                'stageType' => ucwords(str_replace('-', ' ', $stageType)),
+                                'percentage' => $percentage,
+                                'stageRawTotal' => round($stageScore, 2),
+                                'rawContribution' => round($rawContribution, 2),
+                                'stageAverage' => round($stageScore, 2),
+                                'contribution' => round($rankSum, 2),
+                            ];
+                        }
+
+                        $updates['finalScore'] = $hasFinalScore ? $totalRankSum : null;
+                        $updates['totalScore'] = $hasFinalScore ? $totalRankSum : null;
+                        $updates['totalRankSum'] = $hasFinalScore ? $totalRankSum : 999999;
+                        $updates['rawScore'] = $rawScoreSum;
+                        $updates['weightedRawTotal'] = $hasFinalScore ? round($weightedRawTotal, 2) : null;
+                        $updates['inheritanceBreakdown'] = ! empty($inheritanceBreakdown) ? $inheritanceBreakdown : null;
+                    } else {
+                        // Fresh mode: use only final round's rank sum
+                        $finalRoundRankSum = 0;
+                        if ($hasFinalScore && isset($contestant['judgeRanks'][$lastFinalRound->name]['ranks'])) {
+                            $finalRoundRankSum = array_sum($contestant['judgeRanks'][$lastFinalRound->name]['ranks']);
+                        }
+                        $updates['finalScore'] = $finalRoundScore;
+                        $updates['totalScore'] = $finalRoundScore;
+                        $updates['totalRankSum'] = $hasFinalScore ? $finalRoundRankSum : 999999;
                     }
-                    $updates['totalRankSum'] = $finalRoundRankSum;
-                } elseif ($rankingMethod === 'rank_sum' && ! $hasFinalScore) {
-                    // Non-finalists get a very high rank sum so they sort last
-                    $updates['totalRankSum'] = 999999;
+                } else {
+                    // Score average method
+                    $updates['finalScore'] = $finalRoundScore;
+                    $updates['totalScore'] = $finalRoundScore;
                 }
 
                 return array_merge($contestant, $updates);
@@ -1332,6 +1400,8 @@ class TabulatorController extends Controller
                 'final_score' => $contestant['finalScore'] ?? 0,
                 'totalScore' => $contestant['finalScore'] ?? 0,
                 'totalRankSum' => $contestant['totalRankSum'] ?? 0,
+                'weightedRawTotal' => $contestant['weightedRawTotal'] ?? null,
+                'inheritanceBreakdown' => $contestant['inheritanceBreakdown'] ?? null,
                 'judgeRanks' => $contestant['judgeRanks'] ?? [],
                 'rank' => $contestant['rank'] ?? 0,
                 'hasQualifiedForFinal' => $contestant['hasQualifiedForFinal'] ?? false,
