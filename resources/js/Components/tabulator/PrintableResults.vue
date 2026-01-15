@@ -183,7 +183,7 @@
             </template>
             <th class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
-              <span v-else-if="isRankSumMethod && isFreshOverall">Final Rank</span>
+              <span v-else-if="isRankSumMethod && isOverallTally">Final Rank</span>
               <span v-else-if="isRankSumMethod">Total Rank</span>
               <span v-else-if="finalScoreMode === 'inherit'">Weighted Total</span>
               <span v-else>Final Score</span>
@@ -249,12 +249,13 @@
             </template>
             <td class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
               <template v-if="isRankSumMethod">
-                <!-- Fresh start mode on overall tally: show position in the sorted list (already sorted by final rank) -->
-                <template v-if="isFreshOverall">
+                <!-- Overall tally (both fresh and inherit): show final rank position -->
+                <!-- Backend computes correct ranking including weighted inheritance calculations -->
+                <template v-if="isOverallTally">
                   <span v-if="result.hasQualifiedForFinal !== false">{{ getFinalRankPosition(result, index) }}</span>
                   <span v-else class="text-gray-300">—</span>
                 </template>
-                <!-- Inherit mode or other stages: show total rank sum -->
+                <!-- Individual round stages: show total rank sum -->
                 <template v-else>
                   <span v-if="result.hasQualifiedForFinal !== false && (result.totalRankSum || result.final_score)">{{ result.totalRankSum ?? result.final_score }}</span>
                   <span v-else class="text-gray-300">—</span>
@@ -400,21 +401,34 @@ const finalScoreMode = computed(() => {
   return props.finalScoreMode || 'fresh'
 })
 
-// Check if we're in fresh start mode on overall tally (show final rank only)
+// Check if we're on overall tally (both fresh and inherit modes should show rank position)
+// Because backend computes correct ranking including weighted inheritance calculations
+const isOverallTally = computed(() => {
+  return props.selectedStage === 'overall'
+})
+
+// Check if we're in fresh start mode on overall tally
 const isFreshOverall = computed(() => {
   return finalScoreMode.value === 'fresh' && props.selectedStage === 'overall'
 })
 
-// Get the rank display value for a result (final rank for fresh mode, total rank sum otherwise)
-// For podium displays, we can pass the position directly since topThree is already filtered/sorted
+// Check if we're in inherit mode on overall tally
+const isInheritOverall = computed(() => {
+  return finalScoreMode.value === 'inherit' && props.selectedStage === 'overall'
+})
+
+// Get the rank display value for a result
+// For overall tally (both fresh and inherit), show rank position since backend computes correct ranking
+// For individual rounds, show total rank sum
 const getRankDisplayValue = (result: Result, position?: number): string => {
-  if (isFreshOverall.value) {
-    // For fresh mode, show the position among finalists
+  // For overall tally in both modes, show the rank position
+  if (isOverallTally.value) {
     if (position !== undefined) {
       return `Rank: ${position + 1}`
     }
     return result.rank ? `Rank: ${result.rank}` : '—'
   }
+  // For individual rounds, show rank sum
   return `Rank Sum: ${result.totalRankSum ?? result.final_score}`
 }
 
