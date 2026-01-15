@@ -19,11 +19,11 @@
         <div class="mt-6">
           <h2 class="text-xl font-bold text-black">{{ reportTitle || 'Final Results' }}</h2>
           <div class="text-xs text-gray-500 mt-1">
-            <span class="uppercase tracking-wide">Scoring Mode: </span>
+            <!-- <span class="uppercase tracking-wide">Scoring Mode: </span>
             <span class="font-semibold">{{ finalScoreMode === 'fresh' ? 'Fresh Start' : 'Inherit Computation' }}</span>
             <span class="mx-2">•</span>
             <span class="uppercase tracking-wide">Ranking Method: </span>
-            <span class="font-semibold">{{ rankingMethodLabel }}</span>
+            <span class="font-semibold">{{ rankingMethodLabel }}</span> -->
           </div>
         </div>
       </div>
