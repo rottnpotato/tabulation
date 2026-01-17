@@ -81,16 +81,16 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 bg-white">
-          <template v-for="(contestant, index) in rankedContestants" :key="contestant.id">
+          <template v-for="contestant in displayContestants" :key="contestant.id">
             <tr
               class="hover:bg-gray-50/80 transition-all duration-500 ease-out"
               :class="[
                 {
                   'bg-emerald-50/40 border-l-4 border-l-emerald-500': !hideRankColumn && contestant.qualified && contestant.qualification_cutoff,
                   'opacity-50 border-l-4 border-l-slate-300': !hideRankColumn && !contestant.qualified && contestant.qualification_cutoff !== null && contestant.qualification_cutoff !== undefined,
-                  'animate-rank-up': getRankChange(contestant.id, index + 1) === 'up',
-                  'animate-rank-down': getRankChange(contestant.id, index + 1) === 'down',
-                  'animate-pulse-subtle': isUpdating && getRankChange(contestant.id, index + 1) === 'same'
+                  'animate-rank-up': getRankChange(contestant.id, getRankPosition(contestant.id)) === 'up',
+                  'animate-rank-down': getRankChange(contestant.id, getRankPosition(contestant.id)) === 'down',
+                  'animate-pulse-subtle': isUpdating && getRankChange(contestant.id, getRankPosition(contestant.id)) === 'same'
                 }
               ]"
             >
@@ -100,22 +100,22 @@
                 <div class="relative">
                   <span
                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-all duration-300"
-                    :class="getRankBadgeClass(index + 1, contestant.qualified)"
+                    :class="getRankBadgeClass(getRankPosition(contestant.id), contestant.qualified)"
                   >
-                    <span class="mr-1 tabular-nums">{{ index + 1 }}</span>
-                    <span v-if="showWinners && index < numberOfWinners">{{ getRankDisplay(index + 1) }}</span>
-                    <span v-else-if="!showWinners && index < 3">{{ getRankDisplay(index + 1) }}</span>
+                    <span class="mr-1 tabular-nums">{{ getRankPosition(contestant.id) }}</span>
+                    <span v-if="showWinners && getRankPosition(contestant.id) <= numberOfWinners">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
+                    <span v-else-if="!showWinners && getRankPosition(contestant.id) <= 3">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
                   </span>
                   <!-- Rank change indicator -->
                   <transition name="rank-indicator">
                     <span
-                      v-if="isUpdating && getRankChange(contestant.id, index + 1) === 'up'"
+                      v-if="isUpdating && getRankChange(contestant.id, getRankPosition(contestant.id)) === 'up'"
                       class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white text-[10px] font-bold shadow-lg"
                     >
                       ↑
                     </span>
                     <span
-                      v-else-if="isUpdating && getRankChange(contestant.id, index + 1) === 'down'"
+                      v-else-if="isUpdating && getRankChange(contestant.id, getRankPosition(contestant.id)) === 'down'"
                       class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold shadow-lg"
                     >
                       ↓
@@ -239,13 +239,13 @@
 
             <!-- Total Score / Rank Sum -->
             <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
-              <span v-if="getTotalAverageRankSum(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
+              <span v-if="shouldShowRankStats(contestant) && getTotalAverageRankSum(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
                 {{ formatScore(getTotalAverageRankSum(contestant), 2) }}
               </span>
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
             <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
-              <span v-if="getAverageRank(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
+              <span v-if="shouldShowRankStats(contestant) && getAverageRank(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
                 {{ formatScore(getAverageRank(contestant), 2) }}
               </span>
               <span v-else class="text-gray-300 italic text-sm">—</span>
@@ -363,7 +363,7 @@
           
           <!-- Qualification Cutoff Line (hidden in overall tally view) -->
           <tr 
-            v-if="!hideRankColumn && shouldShowCutoffLine(index)"
+            v-if="!hideRankColumn && shouldShowCutoffLine(contestant)"
             class="bg-slate-100 border-t-2 border-b-2 border-slate-400"
           >
             <td :colspan="getColspanForBreakdown()" class="px-4 py-2">
@@ -503,6 +503,18 @@ const hasValidFinalScore = (contestant: Contestant): boolean => {
   if (!contestant.scores) return false
   
   return finalRoundName in contestant.scores
+}
+
+const shouldShowRankStats = (contestant: Contestant): boolean => {
+  if (contestant.qualification_cutoff === null || contestant.qualification_cutoff === undefined) {
+    return true
+  }
+
+  if (contestant.qualified === true) {
+    return true
+  }
+
+  return hasValidFinalScore(contestant)
 }
 
 // Get the rank of a contestant among only those who competed in the final round
@@ -794,6 +806,25 @@ const rankedContestants = computed(() => {
   })
 })
 
+const displayContestants = computed(() => {
+  return [...props.contestants].sort((a, b) => {
+    const aNumber = toNumber(a.number) ?? Infinity
+    const bNumber = toNumber(b.number) ?? Infinity
+    if (aNumber !== bNumber) {
+      return aNumber - bNumber
+    }
+    return a.id - b.id
+  })
+})
+
+const rankPositionMap = computed(() => {
+  const map = new Map<number, number>()
+  rankedContestants.value.forEach((contestant, index) => {
+    map.set(contestant.id, index + 1)
+  })
+  return map
+})
+
 // Watch for ranking changes and update previous map
 watch(
   () => rankedContestants.value,
@@ -811,17 +842,14 @@ watch(
 )
 
 // Helper function to determine if cutoff line should be shown after this contestant
-const shouldShowCutoffLine = (index: number): boolean => {
-  const currentContestant = rankedContestants.value[index]
-  const nextContestant = rankedContestants.value[index + 1]
-  
-  // Only show cutoff line if there's a qualification cutoff defined
-  if (!currentContestant.qualification_cutoff) {
+const shouldShowCutoffLine = (contestant: Contestant): boolean => {
+  const cutoff = contestant.qualification_cutoff
+  if (!cutoff || cutoff <= 0) {
     return false
   }
-  
-  // Show line after the last qualified contestant (before first non-qualified)
-  return !!(currentContestant.qualified && nextContestant && !nextContestant.qualified)
+
+  const rank = getRankPosition(contestant.id)
+  return rank === cutoff
 }
 
 // Helper function to get a contestant's rank at a specific round
@@ -933,6 +961,10 @@ const getRankInRound = (contestant: Contestant, round: Round): number => {
 }
 
 const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down' | 'same' | 'new' => {
+  if (currentRank <= 0) {
+    return 'same'
+  }
+
   const prevRank = previousRankMap.value.get(contestantId)
   
   if (prevRank === undefined) {
@@ -946,6 +978,10 @@ const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down'
   }
   
   return 'same'
+}
+
+const getRankPosition = (contestantId: number): number => {
+  return rankPositionMap.value.get(contestantId) ?? -1
 }
 
 const getRankDisplay = (rank: number): string => {
