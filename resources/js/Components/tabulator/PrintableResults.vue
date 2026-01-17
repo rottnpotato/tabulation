@@ -233,24 +233,22 @@
                 class="py-1 px-1 text-center tabular-nums border-l border-gray-300"
                 :class="getDisplayScore(result, round.name) !== null ? 'text-gray-900' : 'text-gray-300'"
               >
-                <template v-if="hasValidScore(getDisplayScore(result, round.name))">
-                  <!-- For rank_sum method, show rank sum only -->
-                  <template v-if="isRankSumMethod">
-                    <div v-if="getRoundRankSumValue(result, round.name) !== null" class="font-semibold">
-                      {{ formatScore(getRoundRankSumValue(result, round.name)!, 1) }}
-                    </div>
-                    <div v-else class="italic text-gray-300">—</div>
-                  </template>
-                  <!-- For score_average method, show computed score with raw score below -->
-                  <template v-else>
+                <template v-if="isRankSumMethod">
+                  <div v-if="getRoundAverageRank(result, round.name) !== null" class="font-semibold">
+                    {{ formatScore(getRoundAverageRank(result, round.name)!, 2) }}
+                  </div>
+                  <div v-else class="italic text-gray-300">—</div>
+                </template>
+                <template v-else>
+                  <template v-if="hasValidScore(getDisplayScore(result, round.name))">
                     <div class="font-semibold">{{ formatScore(getDisplayScore(result, round.name)!) }}</div>
                     <div v-if="hasRawScore(result, round.name) && getRawScore(result, round.name) !== getDisplayScore(result, round.name)" class="text-[8px] text-gray-500">
                       (Raw: {{ formatScore(getRawScore(result, round.name)!) }})
                     </div>
                   </template>
+                  <span v-else-if="result.scores[round.name] === 0" class="italic text-gray-300" title="Did not compete in this round">—</span>
+                  <span v-else class="italic">—</span>
                 </template>
-                <span v-else-if="result.scores[round.name] === 0" class="italic text-gray-300" title="Did not compete in this round">—</span>
-                <span v-else class="italic">—</span>
               </td>
             </template>
             <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
