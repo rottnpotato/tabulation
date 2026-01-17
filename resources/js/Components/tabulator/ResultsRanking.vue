@@ -498,22 +498,29 @@ const hasValidFinalScore = (contestant: Contestant): boolean => {
   const finalRoundName = getFinalRoundName()
   if (!finalRoundName) return false
   
-  const finalScore = getDisplayScore(contestant, finalRoundName)
-  return hasValidScore(finalScore)
-}
-
-const isQualifiedByRank = (contestant: Contestant): boolean => {
-  const cutoff = contestant.qualification_cutoff
-  if (!cutoff || cutoff <= 0) {
-    return false
-  }
-
-  const rank = getRankPosition(contestant.id)
-  return rank > 0 && rank <= cutoff
+  // Check if the contestant has a score entry for the final round
+  // Using 'in' operator to check if the key exists, regardless of value
+  if (!contestant.scores) return false
+  
+  return finalRoundName in contestant.scores
 }
 
 const shouldShowRankStats = (contestant: Contestant): boolean => {
-  return isQualifiedByRank(contestant) || hasValidFinalScore(contestant)
+  // For final rounds (Overall Tally view), only show rank stats for finalists
+  if (props.isLastFinalRound) {
+    return hasValidFinalScore(contestant)
+  }
+  
+  // For non-final rounds, show stats if no qualification cutoff is set
+  if (contestant.qualification_cutoff === null || contestant.qualification_cutoff === undefined) {
+    return true
+  }
+
+  if (contestant.qualified === true) {
+    return true
+  }
+
+  return hasValidFinalScore(contestant)
 }
 
 // Get the rank of a contestant among only those who competed in the final round
