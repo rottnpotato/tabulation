@@ -481,9 +481,15 @@ const toggleScoreBreakdown = (contestantId: number) => {
 }
 
 // Get the final round name
+// const getFinalRoundName = (): string | null => {
+//   const finalRound = props.rounds.find(r => r.type?.toLowerCase() === 'final')
+//   return finalRound?.name || null
+// }
+
 const getFinalRoundName = (): string | null => {
-  const finalRound = props.rounds.find(r => r.type?.toLowerCase() === 'final')
-  return finalRound?.name || null
+  const finalRounds = props.rounds.filter(round => round.type?.toLowerCase() === 'final')
+  if (finalRounds.length === 0) return null
+  return finalRounds[finalRounds.length - 1].name
 }
 
 // Check if contestant has participated in the final round
@@ -623,11 +629,11 @@ const getDisplayTotal = (contestant: Contestant): number | null => {
   return contestant.totalScore ?? null
 }
 
-const getFinalRoundName = (): string | null => {
-  const finalRounds = props.rounds.filter(round => round.type?.toLowerCase() === 'final')
-  if (finalRounds.length === 0) return null
-  return finalRounds[finalRounds.length - 1].name
-}
+// const getFinalRoundName = (): string | null => {
+//   const finalRounds = props.rounds.filter(round => round.type?.toLowerCase() === 'final')
+//   if (finalRounds.length === 0) return null
+//   return finalRounds[finalRounds.length - 1].name
+// }
 
 const rankSumRounds = computed(() => {
   if (!isRankSumMethod.value) return []
