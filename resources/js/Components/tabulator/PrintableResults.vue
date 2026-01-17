@@ -775,18 +775,11 @@ const getWeightedRawTotal = (result: Result): number | null => {
 }
 
 // Get display total (sum of all judge totals across all rounds)
-// In inherit mode, use totalScore which includes weighted inheritance from previous stages
 const getDisplayTotal = (result: Result): number => {
-  // In inherit mode, use totalScore which has the weighted inheritance calculation
-  if (props.finalScoreMode === 'inherit') {
-    return result.totalScore ?? result.final_score ?? 0
-  }
-  
-  // In fresh mode, use displayTotal (sum of judge averages)
   if (result.displayTotal !== undefined && result.displayTotal !== null) {
     return result.displayTotal
   }
-  // Fallback to totalScore then final_score
+
   return result.totalScore ?? result.final_score ?? 0
 }
 
