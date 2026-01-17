@@ -76,6 +76,7 @@
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
+              <span v-else-if="isScoreAverageMethod">Total Score</span>
               <span v-else>Total</span>
             </th>
           </tr>
@@ -273,18 +274,18 @@
                   <span
                     v-if="finalScoreMode !== 'inherit' || !isLastFinalRound"
                     class="text-sm font-semibold tabular-nums"
-                    :class="getScoreClass(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant))"
+                    :class="getScoreClass(getNonRankSumTotal(contestant))"
                     :title="getFinalScoreBreakdown(contestant)"
                   >
-                    {{ formatScore(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant)) }}
+                    {{ formatScore(getNonRankSumTotal(contestant)) }}
                   </span>
                   <!-- Inherit mode: only show score for tie-breaker display -->
                   <span
                     v-else-if="hasScoreTie(contestant)"
                     class="text-sm font-semibold tabular-nums text-emerald-600"
-                    :title="`Tie-breaker score: ${formatScore(contestant.totalScore)}`"
+                    :title="`Tie-breaker score: ${formatScore(getNonRankSumTotal(contestant))}`"
                   >
-                    {{ formatScore(contestant.totalScore) }}
+                    {{ formatScore(getNonRankSumTotal(contestant)) }}
                   </span>
                   
                   <!-- Info icon for transparency when inheritance breakdown available -->
@@ -464,6 +465,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const isRankSumMethod = computed(() => props.rankingMethod === 'rank_sum')
+const isScoreAverageMethod = computed(() => props.rankingMethod === 'score_average')
 
 // Track previous rankings for animation
 const previousRankMap = ref<Map<number, number>>(new Map())
@@ -550,16 +552,16 @@ const getFinalScoreBreakdown = (contestant: Contestant): string => {
   }
   
   if (!finalRoundName || !contestant.judgeRanks || !contestant.judgeRanks[finalRoundName]) {
-    return `Final Score: ${formatScore(contestant.totalScore)}`
+    return `Final Score: ${formatScore(getNonRankSumTotal(contestant))}`
   }
   
   const judgeData = contestant.judgeRanks[finalRoundName]
   if (!judgeData.details || judgeData.details.length === 0) {
-    return `Final Score: ${formatScore(contestant.totalScore)}`
+    return `Final Score: ${formatScore(getNonRankSumTotal(contestant))}`
   }
   
   const judgeScores = judgeData.details.map(d => formatScore(d.score)).join(', ')
-  const average = formatScore(contestant.totalScore)
+  const average = formatScore(getNonRankSumTotal(contestant))
   return `Judge Scores: [${judgeScores}]\\nAverage: ${average}`
 }
 
@@ -611,14 +613,14 @@ const hasScoreTie = (contestant: Contestant): boolean => {
   }
   
   // For score_average method, check total scores
-  const contestantScore = contestant.totalScore
+  const contestantScore = getNonRankSumTotal(contestant)
   if (contestantScore === null || contestantScore === undefined) return false
   
   // Find other finalists with the same score
   const finalistsWithSameScore = props.contestants.filter(c => {
     if (c.id === contestant.id) return false
     if (!hasValidFinalScore(c)) return false
-    return c.totalScore === contestantScore
+    return getNonRankSumTotal(c) === contestantScore
   })
   
   return finalistsWithSameScore.length > 0
@@ -645,6 +647,36 @@ const getDisplayTotal = (contestant: Contestant): number | null => {
   }
   // Fallback to regular totalScore
   return contestant.totalScore ?? null
+}
+
+const getScoreAverageTotal = (contestant: Contestant): number => {
+  const scores = contestant.scores ?? {}
+
+  if (props.finalScoreMode === 'inherit') {
+    const sum = Object.values(scores).reduce((total, score) => {
+      const numeric = toNumber(score)
+      return numeric !== null ? total + numeric : total
+    }, 0)
+
+    if (sum > 0 || Object.keys(scores).length > 0) {
+      return sum
+    }
+  }
+
+  const finalRoundName = getFinalRoundName()
+  if (finalRoundName && scores[finalRoundName] !== undefined) {
+    return toNumber(scores[finalRoundName]) ?? 0
+  }
+
+  return toNumber(contestant.totalScore) ?? 0
+}
+
+const getNonRankSumTotal = (contestant: Contestant): number => {
+  if (isScoreAverageMethod.value) {
+    return getScoreAverageTotal(contestant)
+  }
+
+  return getDisplayTotal(contestant) ?? 0
 }
 
 // const getFinalRoundName = (): string | null => {
@@ -806,8 +838,8 @@ const rankedContestants = computed(() => {
       return aWeighted - bWeighted
     }
     // Higher score is better
-    const aTotal = toNumber(a.totalScore) ?? 0
-    const bTotal = toNumber(b.totalScore) ?? 0
+    const aTotal = getNonRankSumTotal(a)
+    const bTotal = getNonRankSumTotal(b)
     return bTotal - aTotal
   })
 })

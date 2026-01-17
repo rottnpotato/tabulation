@@ -1266,6 +1266,38 @@ const stageLabels = computed<Record<string, string>>(() => {
   return labels
 })
 
+const getFinalRoundName = (): string | null => {
+  if (!props.rounds || props.rounds.length === 0) return null
+  const finalRounds = props.rounds.filter(round => round.type?.toLowerCase() === 'final')
+  if (finalRounds.length === 0) return null
+  return finalRounds[finalRounds.length - 1].name
+}
+
+const getScoreAverageTotal = (result: Result): number => {
+  const finalScoreMode = props.pageant?.final_score_mode || 'fresh'
+  const scores = result.scores ?? {}
+
+  if (finalScoreMode === 'inherit') {
+    const sum = Object.values(scores).reduce((total, score) => {
+      const numeric = typeof score === 'number' ? score : Number(score)
+      return Number.isFinite(numeric) ? total + numeric : total
+    }, 0)
+
+    if (sum > 0 || Object.keys(scores).length > 0) {
+      return sum
+    }
+  }
+
+  const finalRoundName = getFinalRoundName()
+  if (finalRoundName && scores[finalRoundName] !== undefined) {
+    const finalRoundScore = scores[finalRoundName]
+    const numeric = typeof finalRoundScore === 'number' ? finalRoundScore : Number(finalRoundScore)
+    return Number.isFinite(numeric) ? numeric : 0
+  }
+
+  return result.totalScore ?? result.final_score ?? 0
+}
+
 const resultsToShow = computed<Result[]>(() => {
   let baseList: Result[] = []
   let topNProceed: number | null = null
@@ -1316,6 +1348,13 @@ const resultsToShow = computed<Result[]>(() => {
   // Sort contestants: for inherit mode, trust backend order; for fresh mode, compute locally
   const sorted = [...deduplicated].sort((a, b) => {
     if (selectedStage.value === 'overall') {
+      if (rankingMethod === 'score_average') {
+        const scoreA = getScoreAverageTotal(a)
+        const scoreB = getScoreAverageTotal(b)
+        if (scoreB !== scoreA) return scoreB - scoreA
+        return (a.number ?? 0) - (b.number ?? 0)
+      }
+
       // For inherit mode, trust the backend-computed rank completely
       // Backend already computes correct ranking including weighted inherit calculations
       if (finalScoreMode === 'inherit') {
@@ -1339,13 +1378,13 @@ const resultsToShow = computed<Result[]>(() => {
           const rankSumA = a.totalRankSum ?? 999999
           const rankSumB = b.totalRankSum ?? 999999
           return rankSumA - rankSumB
-        } else {
-          if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
-            return (a.rank ?? 0) - (b.rank ?? 0)
-          }
         }
+
+        const scoreA = getScoreAverageTotal(a)
+        const scoreB = getScoreAverageTotal(b)
+        if (scoreB !== scoreA) return scoreB - scoreA
       }
-      
+
       return (a.number ?? 0) - (b.number ?? 0)
     }
     
@@ -1359,12 +1398,11 @@ const resultsToShow = computed<Result[]>(() => {
       const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
       const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
       return weightedA - weightedB
-    } else {
-      // For score average: higher is better (descending order)
-      const scoreA = (a as any).totalScore ?? a.final_score ?? 0
-      const scoreB = (b as any).totalScore ?? b.final_score ?? 0
-      return scoreB - scoreA
     }
+
+    const scoreA = getScoreAverageTotal(a)
+    const scoreB = getScoreAverageTotal(b)
+    return scoreB - scoreA
   })
 
   // Update qualified status based on position
@@ -1408,6 +1446,13 @@ const maleResults = computed(() => {
   // Sort: trust backend rank for inherit mode, compute locally for fresh mode
   const sorted = [...males].sort((a, b) => {
     if (selectedStage.value === 'overall') {
+      if (rankingMethod === 'score_average') {
+        const scoreA = getScoreAverageTotal(a)
+        const scoreB = getScoreAverageTotal(b)
+        if (scoreB !== scoreA) return scoreB - scoreA
+        return (a.number ?? 0) - (b.number ?? 0)
+      }
+
       // For inherit mode, trust backend-computed rank
       if (finalScoreMode === 'inherit') {
         if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
@@ -1430,11 +1475,11 @@ const maleResults = computed(() => {
           const rankSumA = a.totalRankSum ?? 999999
           const rankSumB = b.totalRankSum ?? 999999
           return rankSumA - rankSumB
-        } else {
-          if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
-            return (a.rank ?? 0) - (b.rank ?? 0)
-          }
         }
+
+        const scoreA = getScoreAverageTotal(a)
+        const scoreB = getScoreAverageTotal(b)
+        if (scoreB !== scoreA) return scoreB - scoreA
       }
       return (a.number ?? 0) - (b.number ?? 0)
     }
@@ -1446,11 +1491,11 @@ const maleResults = computed(() => {
       const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
       const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
       return weightedA - weightedB
-    } else {
-      const scoreA = a.final_score ?? 0
-      const scoreB = b.final_score ?? 0
-      return scoreB - scoreA
     }
+
+    const scoreA = getScoreAverageTotal(a)
+    const scoreB = getScoreAverageTotal(b)
+    return scoreB - scoreA
   })
   
   // Recompute rank and qualified status within male group
@@ -1476,6 +1521,13 @@ const femaleResults = computed(() => {
   // Sort: trust backend rank for inherit mode, compute locally for fresh mode
   const sorted = [...females].sort((a, b) => {
     if (selectedStage.value === 'overall') {
+      if (rankingMethod === 'score_average') {
+        const scoreA = getScoreAverageTotal(a)
+        const scoreB = getScoreAverageTotal(b)
+        if (scoreB !== scoreA) return scoreB - scoreA
+        return (a.number ?? 0) - (b.number ?? 0)
+      }
+
       // For inherit mode, trust backend-computed rank
       if (finalScoreMode === 'inherit') {
         if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
@@ -1498,11 +1550,11 @@ const femaleResults = computed(() => {
           const rankSumA = a.totalRankSum ?? 999999
           const rankSumB = b.totalRankSum ?? 999999
           return rankSumA - rankSumB
-        } else {
-          if ((a.rank ?? 0) > 0 && (b.rank ?? 0) > 0) {
-            return (a.rank ?? 0) - (b.rank ?? 0)
-          }
         }
+
+        const scoreA = getScoreAverageTotal(a)
+        const scoreB = getScoreAverageTotal(b)
+        if (scoreB !== scoreA) return scoreB - scoreA
       }
       return (a.number ?? 0) - (b.number ?? 0)
     }
@@ -1514,11 +1566,11 @@ const femaleResults = computed(() => {
       const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
       const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
       return weightedA - weightedB
-    } else {
-      const scoreA = a.final_score ?? 0
-      const scoreB = b.final_score ?? 0
-      return scoreB - scoreA
     }
+
+    const scoreA = getScoreAverageTotal(a)
+    const scoreB = getScoreAverageTotal(b)
+    return scoreB - scoreA
   })
   
   // Recompute rank and qualified status within female group
