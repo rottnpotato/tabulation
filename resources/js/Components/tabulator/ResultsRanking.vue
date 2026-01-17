@@ -251,54 +251,18 @@
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
             <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
-              <div class="flex flex-col items-end gap-1">
-                <div class="flex items-center gap-2">
-                  <span
-                    class="text-sm font-semibold tabular-nums text-purple-700"
-                    :title="`Rank Sum: ${formatScore(contestant.totalRankSum, 1)} (lower is better)`"
-                  >
-                    {{ formatScore(contestant.totalRankSum, 1) }}
-                  </span>
-                  <span
-                    v-if="rankingMethod === 'rank_sum' && (contestant as any).tieBreakInfo"
-                    class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-600 cursor-help"
-                    :title="(contestant as any).tieBreakInfo"
-                  >
-                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                    </svg>
-                  </span>
-                  
-                  <button
-                    v-if="finalScoreMode === 'inherit' && contestant.inheritanceBreakdown"
-                    @click="toggleScoreBreakdown(contestant.id)"
-                    class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors cursor-pointer"
-                    title="Click to see inheritance breakdown"
-                  >
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                  </button>
-                  
-                  <span
-                    v-if="isLastFinalRound && showWinners && hasValidFinalScore(contestant) && getFinalRankAmongFinalists(contestant) <= numberOfWinners"
-                    class="inline-flex items-center gap-0.5 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white border border-amber-600 whitespace-nowrap"
-                    :title="`Winner - Top ${numberOfWinners}`"
-                  >
-                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    <span>Top {{ getFinalRankAmongFinalists(contestant) }}</span>
-                  </span>
-                </div>
-                
-                <span 
-                  v-if="rankingMethod === 'rank_sum' && (contestant as any).tieBreakInfo && (contestant as any).displayScore"
-                  class="text-xs text-gray-400"
-                  :title="`Score: ${formatScore((contestant as any).displayScore)} (tie-breaker)`"
+              <div class="flex items-center justify-end">
+                <span
+                  v-if="isLastFinalRound && showWinners && hasValidFinalScore(contestant) && getFinalRankAmongFinalists(contestant) <= numberOfWinners"
+                  class="inline-flex items-center gap-0.5 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white border border-amber-600 whitespace-nowrap"
+                  :title="`Winner - Top ${numberOfWinners}`"
                 >
-                  ({{ formatScore((contestant as any).displayScore) }})
+                  <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  <span>Top {{ getFinalRankAmongFinalists(contestant) }}</span>
                 </span>
+                <span v-else class="text-gray-300 italic text-sm">—</span>
               </div>
             </td>
             <td v-else class="whitespace-nowrap px-4 py-3 text-right">
@@ -659,13 +623,75 @@ const getDisplayTotal = (contestant: Contestant): number | null => {
   return contestant.totalScore ?? null
 }
 
-const getRoundAverageRank = (contestant: Contestant, roundName: string): number | null => {
-  const ranks = contestant.judgeRanks?.[roundName]?.ranks
-  if (!ranks || ranks.length === 0) {
-    return null
+const roundAverageRankMap = computed(() => {
+  const map = new Map<string, Map<number, number>>()
+
+  if (!isRankSumMethod.value || props.rounds.length === 0 || props.contestants.length === 0) {
+    return map
   }
-  const sum = ranks.reduce((total, rank) => total + rank, 0)
-  return Number((sum / ranks.length).toFixed(2))
+
+  props.rounds.forEach(round => {
+    const roundName = round.name
+    const judgeScores = new Map<number, Array<{ contestantId: number; score: number }>>()
+
+    props.contestants.forEach(contestant => {
+      const details = contestant.judgeRanks?.[roundName]?.details
+      if (!details || details.length === 0) return
+
+      details.forEach(detail => {
+        const score = typeof detail.score === 'number' ? detail.score : Number(detail.score)
+        if (!Number.isFinite(score)) return
+
+        const entries = judgeScores.get(detail.judge_id) ?? []
+        entries.push({ contestantId: contestant.id, score })
+        judgeScores.set(detail.judge_id, entries)
+      })
+    })
+
+    const roundRanks = new Map<number, { sum: number; count: number }>()
+
+    judgeScores.forEach(entries => {
+      const sorted = [...entries].sort((a, b) => b.score - a.score)
+      let index = 0
+      let betterCount = 0
+
+      while (index < sorted.length) {
+        const currentScore = sorted[index].score
+        const sameScoreGroup: typeof sorted = []
+        while (index < sorted.length && sorted[index].score === currentScore) {
+          sameScoreGroup.push(sorted[index])
+          index += 1
+        }
+
+        const rank = betterCount + 1
+        sameScoreGroup.forEach(entry => {
+          const current = roundRanks.get(entry.contestantId) ?? { sum: 0, count: 0 }
+          roundRanks.set(entry.contestantId, {
+            sum: current.sum + rank,
+            count: current.count + 1
+          })
+        })
+
+        betterCount += sameScoreGroup.length
+      }
+    })
+
+    const roundMap = new Map<number, number>()
+    roundRanks.forEach((value, contestantId) => {
+      if (value.count > 0) {
+        roundMap.set(contestantId, Number((value.sum / value.count).toFixed(2)))
+      }
+    })
+
+    map.set(roundName, roundMap)
+  })
+
+  return map
+})
+
+const getRoundAverageRank = (contestant: Contestant, roundName: string): number | null => {
+  if (!isRankSumMethod.value) return null
+  return roundAverageRankMap.value.get(roundName)?.get(contestant.id) ?? null
 }
 
 const getRoundAverageCount = (contestant: Contestant): number => {
