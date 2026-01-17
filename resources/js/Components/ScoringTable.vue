@@ -318,35 +318,23 @@ const getNumericTotalScore = (contestantId, useSavedScores = false) => {
   return sum
 }
 
-// Computed: contestants with ranking info, sorted if showRanking is true
-// Uses savedScores for ranking calculations
+// Computed: keep display order stable by contestant number
 const sortedContestants = computed(() => {
-  // Get all contestants with their saved scores (for ranking)
-  const contestantsWithScores = props.contestants.map(c => ({
-    ...c,
-    numericScore: getNumericTotalScore(c.id, true) // Use saved scores for ranking
-  }))
+  return [...props.contestants].sort((a, b) => {
+    const numA = Number.parseInt(String(a.number ?? ''), 10)
+    const numB = Number.parseInt(String(b.number ?? ''), 10)
 
-  if (!showRanking.value) {
-    return contestantsWithScores
-  }
+    const aIsValid = Number.isFinite(numA)
+    const bIsValid = Number.isFinite(numB)
 
-  // Sort by saved score (highest first), contestants without scores go to bottom
-  return [...contestantsWithScores].sort((a, b) => {
-    // Backed out contestants always go to the end
-    if (a.backed_out && !b.backed_out) return 1
-    if (!a.backed_out && b.backed_out) return -1
-    
-    // Both have scores
-    if (a.numericScore !== null && b.numericScore !== null) {
-      return b.numericScore - a.numericScore
+    if (aIsValid && bIsValid && numA !== numB) {
+      return numA - numB
     }
-    // Only b has score
-    if (a.numericScore === null && b.numericScore !== null) return 1
-    // Only a has score
-    if (a.numericScore !== null && b.numericScore === null) return -1
-    // Both no score - maintain original order by number
-    return parseInt(a.number || 0) - parseInt(b.number || 0)
+
+    if (aIsValid && !bIsValid) return -1
+    if (!aIsValid && bIsValid) return 1
+
+    return a.id - b.id
   })
 })
 
