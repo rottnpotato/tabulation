@@ -623,6 +623,22 @@ const getDisplayTotal = (contestant: Contestant): number | null => {
   return contestant.totalScore ?? null
 }
 
+const getFinalRoundName = (): string | null => {
+  const finalRounds = props.rounds.filter(round => round.type?.toLowerCase() === 'final')
+  if (finalRounds.length === 0) return null
+  return finalRounds[finalRounds.length - 1].name
+}
+
+const rankSumRounds = computed(() => {
+  if (!isRankSumMethod.value) return []
+  if (props.finalScoreMode === 'fresh') {
+    const finalRoundName = getFinalRoundName()
+    if (!finalRoundName) return props.rounds
+    return props.rounds.filter(round => round.name === finalRoundName)
+  }
+  return props.rounds
+})
+
 const roundAverageRankMap = computed(() => {
   const map = new Map<string, Map<number, number>>()
 
@@ -695,20 +711,20 @@ const getRoundAverageRank = (contestant: Contestant, roundName: string): number 
 }
 
 const getRoundAverageCount = (contestant: Contestant): number => {
-  if (!contestant.judgeRanks || props.rounds.length === 0) return 0
-  return props.rounds.reduce((total, round) => {
+  if (!contestant.judgeRanks || rankSumRounds.value.length === 0) return 0
+  return rankSumRounds.value.reduce((total, round) => {
     return getRoundAverageRank(contestant, round.name) !== null ? total + 1 : total
   }, 0)
 }
 
 const getTotalAverageRankSum = (contestant: Contestant): number | null => {
   if (!isRankSumMethod.value) return null
-  if (!contestant.judgeRanks || props.rounds.length === 0) return null
+  if (!contestant.judgeRanks || rankSumRounds.value.length === 0) return null
 
   let sum = 0
   let hasAny = false
 
-  props.rounds.forEach(round => {
+  rankSumRounds.value.forEach(round => {
     const roundAverage = getRoundAverageRank(contestant, round.name)
     if (roundAverage !== null) {
       sum += roundAverage
