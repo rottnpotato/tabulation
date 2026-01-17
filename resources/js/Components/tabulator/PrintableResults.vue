@@ -42,7 +42,7 @@
               {{ topThree[0].member_names?.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-xs font-bold text-amber-700 mt-1">
-              {{ isRankSumMethod ? getRankDisplayValue(topThree[0], 0) : `${formatScore(getDisplayTotal(topThree[0]))} pts` }}
+              {{ isRankSumMethod ? getRankDisplayValue(topThree[0], 0) : `${formatScore(getNonRankSumTotal(topThree[0]))} pts` }}
             </div>
           </div>
         </div>
@@ -58,7 +58,7 @@
                 {{ topThree[1].member_names?.map(n => capitalizeName(n)).join(' & ') }}
               </div>
               <div class="text-[10px] text-gray-600">
-                {{ isRankSumMethod ? getRankDisplayValue(topThree[1], 1) : `${formatScore(getDisplayTotal(topThree[1]))} pts` }}
+                {{ isRankSumMethod ? getRankDisplayValue(topThree[1], 1) : `${formatScore(getNonRankSumTotal(topThree[1]))} pts` }}
               </div>
             </div>
           </div>
@@ -72,7 +72,7 @@
                 {{ topThree[2].member_names?.map(n => capitalizeName(n)).join(' & ') }}
               </div>
               <div class="text-[10px] text-gray-600">
-                {{ isRankSumMethod ? getRankDisplayValue(topThree[2], 2) : `${formatScore(getDisplayTotal(topThree[2]))} pts` }}
+                {{ isRankSumMethod ? getRankDisplayValue(topThree[2], 2) : `${formatScore(getNonRankSumTotal(topThree[2]))} pts` }}
               </div>
             </div>
           </div>
@@ -85,7 +85,7 @@
               <div class="text-sm font-bold">#{{ result.number }}</div>
               <div class="text-[10px] font-medium text-gray-700">{{ capitalizeName(result.name) }}</div>
               <div class="text-[9px] text-gray-500">
-                {{ isRankSumMethod ? getRankDisplayValue(result, idx + 3) : `${formatScore(getDisplayTotal(result))} pts` }}
+                {{ isRankSumMethod ? getRankDisplayValue(result, idx + 3) : `${formatScore(getNonRankSumTotal(result))} pts` }}
               </div>
             </div>
           </div>
@@ -106,7 +106,7 @@
               {{ topThree[1].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-sm font-semibold text-gray-700">
-              {{ isRankSumMethod ? getRankDisplayValue(topThree[1], 1) : `${formatScore(getDisplayTotal(topThree[1]))} pts` }}
+              {{ isRankSumMethod ? getRankDisplayValue(topThree[1], 1) : `${formatScore(getNonRankSumTotal(topThree[1]))} pts` }}
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@
               {{ topThree[0].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-base font-bold text-amber-700">
-              {{ isRankSumMethod ? getRankDisplayValue(topThree[0], 0) : `${formatScore(getDisplayTotal(topThree[0]))} pts` }}
+              {{ isRankSumMethod ? getRankDisplayValue(topThree[0], 0) : `${formatScore(getNonRankSumTotal(topThree[0]))} pts` }}
             </div>
           </div>
         </div>
@@ -136,7 +136,7 @@
               {{ topThree[2].member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-sm font-semibold text-gray-700">
-              {{ isRankSumMethod ? getRankDisplayValue(topThree[2], 2) : `${formatScore(getDisplayTotal(topThree[2]))} pts` }}
+              {{ isRankSumMethod ? getRankDisplayValue(topThree[2], 2) : `${formatScore(getNonRankSumTotal(topThree[2]))} pts` }}
             </div>
           </div>
         </div>
@@ -153,7 +153,7 @@
               {{ result.member_names.map(n => capitalizeName(n)).join(' & ') }}
             </div>
             <div class="text-xs text-gray-600">
-              {{ isRankSumMethod ? getRankDisplayValue(result, idx + 3) : `${formatScore(getDisplayTotal(result))} pts` }}
+              {{ isRankSumMethod ? getRankDisplayValue(result, idx + 3) : `${formatScore(getNonRankSumTotal(result))} pts` }}
             </div>
           </div>
         </div>
@@ -191,6 +191,7 @@
             </th>
             <th v-else class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
+              <span v-else-if="finalScoreMode === 'inherit' && isScoreAverageMethod">Total Score</span>
               <span v-else-if="finalScoreMode === 'inherit'">Weighted Total</span>
               <span v-else>Final Score</span>
             </th>
@@ -268,7 +269,7 @@
               <span v-else class="text-gray-300">—</span>
             </td>
             <td v-else class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
-              <span v-if="result.hasQualifiedForFinal !== false">{{ formatScore(getDisplayTotal(result)) }}</span>
+              <span v-if="result.hasQualifiedForFinal !== false">{{ formatScore(getNonRankSumTotal(result)) }}</span>
               <span v-else class="text-gray-300">—</span>
             </td>
           </tr>
@@ -389,6 +390,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const isRankSumMethod = computed(() => {
   return props.rankingMethod === 'sum_of_ranks' || props.rankingMethod === 'rank_sum'
+})
+
+const isScoreAverageMethod = computed(() => {
+  return props.rankingMethod === 'score_average'
 })
 
 const rankingMethodLabel = computed(() => {
@@ -771,6 +776,30 @@ const getWeightedRawTotal = (result: Result): number | null => {
     return result.weightedRawTotal
   }
   // Fallback to displayTotal if weightedRawTotal not available
+  return getDisplayTotal(result)
+}
+
+const getScoreAverageTotal = (result: Result): number => {
+  if (finalScoreMode.value === 'inherit') {
+    return Object.values(result.scores ?? {}).reduce((sum, score) => {
+      const numeric = toNumber(score)
+      return numeric !== null ? sum + numeric : sum
+    }, 0)
+  }
+
+  const finalRoundName = getFinalRoundName()
+  if (finalRoundName && result.scores && result.scores[finalRoundName] !== undefined) {
+    return toNumber(result.scores[finalRoundName]) ?? 0
+  }
+
+  return toNumber(result.totalScore ?? result.final_score) ?? 0
+}
+
+const getNonRankSumTotal = (result: Result): number => {
+  if (isScoreAverageMethod.value) {
+    return getScoreAverageTotal(result)
+  }
+
   return getDisplayTotal(result)
 }
 
