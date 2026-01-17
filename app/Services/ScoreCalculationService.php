@@ -1832,4 +1832,405 @@ class ScoreCalculationService
             return [];
         }
     }
+
+    // ========================================================================
+    // SCORE AVERAGE METHOD - NEW CALCULATION LOGIC
+    // ========================================================================
+
+    /**
+     * Calculate the raw sum of all criteria scores for a judge-contestant-round.
+     * This does NOT apply criteria weights (assumes weights are already considered by judges).
+     *
+     * @return float|null The sum of raw scores, or null if no scores found
+     */
+    public function calculateJudgeRawScoreSum(int $judgeId, int $contestantId, int $roundId, int $pageantId): ?float
+    {
+        try {
+            $scores = Score::where('pageant_id', $pageantId)
+                ->where('round_id', $roundId)
+                ->where('judge_id', $judgeId)
+                ->where('contestant_id', $contestantId)
+                ->get();
+
+            if ($scores->isEmpty()) {
+                return null;
+            }
+
+            $rawSum = 0;
+            $hasValidScore = false;
+
+            foreach ($scores as $score) {
+                if (is_numeric($score->score)) {
+                    $rawSum += $score->score;
+                    $hasValidScore = true;
+                }
+            }
+
+            return $hasValidScore ? $rawSum : null;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating judge raw score sum: '.$e->getMessage(), [
+                'judge_id' => $judgeId,
+                'contestant_id' => $contestantId,
+                'round_id' => $roundId,
+                'pageant_id' => $pageantId,
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Calculate judge's weighted round score for score_average method.
+     * Formula: Σ(raw criteria scores) × round_weight_percent
+     *
+     * @param  float  $roundWeightPercent  Round weight as decimal (e.g., 0.30 for 30%)
+     * @return float|null The weighted score, or null if no scores found
+     */
+    public function calculateJudgeWeightedRoundScore(
+        int $judgeId,
+        int $contestantId,
+        int $roundId,
+        int $pageantId,
+        float $roundWeightPercent
+    ): ?float {
+        $rawSum = $this->calculateJudgeRawScoreSum($judgeId, $contestantId, $roundId, $pageantId);
+
+        if ($rawSum === null) {
+            return null;
+        }
+
+        return $rawSum * $roundWeightPercent;
+    }
+
+    /**
+     * Calculate round average for score_average method.
+     * Formula: Σ(judge weighted round scores) / judge_count
+     *
+     * @return array{average: float|null, judgeScores: array<int, float>}
+     */
+    public function calculateScoreAverageRoundAverage(
+        Contestant $contestant,
+        Round $round,
+        Pageant $pageant
+    ): array {
+        $judgeScores = [];
+        $roundWeight = $round->weight ?? 100;
+
+        // Convert weight to decimal (e.g., 30 -> 0.30)
+        $roundWeightPercent = $roundWeight / 100;
+
+        foreach ($pageant->judges as $judge) {
+            $weightedScore = $this->calculateJudgeWeightedRoundScore(
+                $judge->id,
+                $contestant->id,
+                $round->id,
+                $pageant->id,
+                $roundWeightPercent
+            );
+
+            if ($weightedScore !== null) {
+                $judgeScores[$judge->id] = round($weightedScore, 2);
+            }
+        }
+
+        $average = null;
+        if (! empty($judgeScores)) {
+            $average = array_sum($judgeScores) / count($judgeScores);
+        }
+
+        return [
+            'average' => $average !== null ? round($average, 2) : null,
+            'judgeScores' => $judgeScores,
+            'roundWeight' => $roundWeight,
+            'roundWeightPercent' => $roundWeightPercent,
+        ];
+    }
+
+    /**
+     * Calculate stage totals for score_average method.
+     * Groups rounds by type and sums their averages.
+     *
+     * @return array<string, array{total: float, rounds: array}>
+     */
+    public function calculateScoreAverageStageTotals(
+        Contestant $contestant,
+        Pageant $pageant
+    ): array {
+        $stageTotals = [];
+
+        foreach ($pageant->rounds as $round) {
+            $roundType = strtolower($round->type ?? 'preliminary');
+            $roundData = $this->calculateScoreAverageRoundAverage($contestant, $round, $pageant);
+
+            if ($roundData['average'] === null) {
+                continue;
+            }
+
+            if (! isset($stageTotals[$roundType])) {
+                $stageTotals[$roundType] = [
+                    'total' => 0,
+                    'rounds' => [],
+                ];
+            }
+
+            $stageTotals[$roundType]['total'] += $roundData['average'];
+            $stageTotals[$roundType]['rounds'][$round->name] = [
+                'average' => $roundData['average'],
+                'weight' => $roundData['roundWeight'],
+                'judgeScores' => $roundData['judgeScores'],
+            ];
+        }
+
+        // Round the totals
+        foreach ($stageTotals as $type => &$data) {
+            $data['total'] = round($data['total'], 2);
+        }
+
+        return $stageTotals;
+    }
+
+    /**
+     * Calculate final score for score_average method.
+     *
+     * Fresh Mode: Only uses the last final round's average
+     * Inherit Mode: Applies inheritance percentages to stage totals
+     *
+     * @return array{finalScore: float, breakdown: array, mode: string}
+     */
+    public function calculateScoreAverageFinalScore(
+        Contestant $contestant,
+        Pageant $pageant
+    ): array {
+        $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
+        $stageTotals = $this->calculateScoreAverageStageTotals($contestant, $pageant);
+
+        if ($finalScoreMode === 'fresh') {
+            // Fresh mode: Only last final round average
+            $lastFinalRound = $pageant->rounds
+                ->filter(fn ($r) => strtolower($r->type ?? '') === 'final')
+                ->sortByDesc('display_order')
+                ->first();
+
+            if (! $lastFinalRound) {
+                // No final round, sum all stage totals
+                $finalScore = array_sum(array_column($stageTotals, 'total'));
+
+                return [
+                    'finalScore' => round($finalScore, 2),
+                    'breakdown' => $stageTotals,
+                    'mode' => 'fresh',
+                    'note' => 'No final round found, using sum of all stages',
+                ];
+            }
+
+            // Get the last final round's average only
+            $roundData = $this->calculateScoreAverageRoundAverage($contestant, $lastFinalRound, $pageant);
+            $finalScore = $roundData['average'] ?? 0;
+
+            return [
+                'finalScore' => round($finalScore, 2),
+                'breakdown' => [
+                    'final' => [
+                        'total' => $roundData['average'] ?? 0,
+                        'rounds' => [
+                            $lastFinalRound->name => [
+                                'average' => $roundData['average'],
+                                'weight' => $roundData['roundWeight'],
+                                'judgeScores' => $roundData['judgeScores'],
+                            ],
+                        ],
+                    ],
+                ],
+                'mode' => 'fresh',
+                'lastFinalRound' => $lastFinalRound->name,
+            ];
+        }
+
+        // Inherit mode: Apply inheritance percentages
+        $inheritanceConfig = $pageant->final_score_inheritance ?? [];
+        $finalScore = 0;
+        $inheritanceBreakdown = [];
+
+        foreach ($stageTotals as $stageType => $stageData) {
+            $inheritPercent = $inheritanceConfig[$stageType] ?? 0;
+            $inheritDecimal = $inheritPercent / 100;
+            $stageContribution = $stageData['total'] * $inheritDecimal;
+
+            $inheritanceBreakdown[$stageType] = [
+                'stageType' => ucwords(str_replace('-', ' ', $stageType)),
+                'percentage' => $inheritPercent,
+                'stageAverage' => $stageData['total'],
+                'contribution' => round($stageContribution, 2),
+            ];
+
+            $finalScore += $stageContribution;
+        }
+
+        return [
+            'finalScore' => round($finalScore, 2),
+            'breakdown' => $stageTotals,
+            'inheritanceBreakdown' => $inheritanceBreakdown,
+            'mode' => 'inherit',
+        ];
+    }
+
+    /**
+     * Calculate all contestants' scores using the score_average method.
+     * This is the main entry point for the new score_average calculation.
+     */
+    public function calculateWithScoreAverage(Pageant $pageant, ?string $stage = null, bool $useCache = true): array
+    {
+        try {
+            $cacheKey = "score_average_results_{$pageant->id}".($stage ? "_{$stage}" : '');
+
+            if ($useCache && Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            $contestants = [];
+            $tieHandling = $pageant->tie_handling ?? 'average';
+
+            // Determine which rounds to consider based on stage filter
+            $roundsToConsider = $pageant->rounds;
+            if ($stage !== null) {
+                $roundsToConsider = $pageant->rounds->filter(
+                    fn ($r) => strtolower($r->type ?? '') === strtolower($stage)
+                );
+            }
+
+            foreach ($pageant->contestants as $contestant) {
+                $scoreResult = $this->calculateScoreAverageFinalScore($contestant, $pageant);
+                $stageTotals = $this->calculateScoreAverageStageTotals($contestant, $pageant);
+
+                // Build round scores for display (the round averages)
+                $roundScores = [];
+                $judgeRanks = []; // For compatibility with existing structure
+
+                foreach ($pageant->rounds as $round) {
+                    $roundData = $this->calculateScoreAverageRoundAverage($contestant, $round, $pageant);
+
+                    if ($roundData['average'] !== null) {
+                        $roundScores[$round->name] = $roundData['average'];
+
+                        // Build judge ranks structure for compatibility
+                        $judgeDetails = [];
+                        foreach ($roundData['judgeScores'] as $judgeId => $judgeScore) {
+                            $judge = $pageant->judges->firstWhere('id', $judgeId);
+                            $judgeDetails[] = [
+                                'judge_id' => $judgeId,
+                                'judge_name' => $judge->name ?? "Judge {$judgeId}",
+                                'score' => $judgeScore,
+                                'rank' => 0, // Will be calculated later if needed
+                            ];
+                        }
+
+                        $judgeRanks[$round->name] = [
+                            'scores' => array_values($roundData['judgeScores']),
+                            'ranks' => [], // Not used in score_average
+                            'details' => $judgeDetails,
+                        ];
+                    }
+                }
+
+                $memberNames = [];
+                $memberGenders = [];
+                if ($contestant->is_pair && $contestant->members && $contestant->members->isNotEmpty()) {
+                    foreach ($contestant->members as $member) {
+                        $memberNames[] = $member->name;
+                        $memberGenders[] = $member->gender;
+                    }
+                }
+
+                $contestants[] = [
+                    'id' => $contestant->id,
+                    'number' => $contestant->number,
+                    'name' => $contestant->name,
+                    'gender' => $contestant->gender,
+                    'region' => $contestant->origin,
+                    'is_pair' => $contestant->is_pair ?? false,
+                    'member_names' => $memberNames,
+                    'member_genders' => $memberGenders,
+                    'image' => $contestant->photo ?? '/images/placeholders/contestant.jpg',
+                    'scores' => $roundScores,
+                    'judgeRanks' => $judgeRanks,
+                    'stageTotals' => $stageTotals,
+                    'finalScore' => $scoreResult['finalScore'],
+                    'totalScore' => $scoreResult['finalScore'],
+                    'totalRankSum' => 0, // Not used in score_average
+                    'inheritanceBreakdown' => $scoreResult['inheritanceBreakdown'] ?? null,
+                    'scoreMode' => $scoreResult['mode'],
+                ];
+            }
+
+            // Apply ranking (highest score wins)
+            $result = $this->applyGenderSeparatedRanking(
+                $contestants,
+                $pageant,
+                'finalScore',
+                'desc',
+                $tieHandling
+            );
+
+            Cache::put($cacheKey, $result, now()->addMinutes(30));
+
+            return $result;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating with score_average method: '.$e->getMessage(), [
+                'pageant_id' => $pageant->id,
+                'stage' => $stage,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [];
+        }
+    }
+
+    /**
+     * Get detailed judge scores for a contestant in a round (for Scores.vue display).
+     * Returns raw sums and weighted scores per judge.
+     */
+    public function getScoreAverageJudgeDetails(
+        Contestant $contestant,
+        Round $round,
+        Pageant $pageant
+    ): array {
+        $roundWeight = $round->weight ?? 100;
+        $roundWeightPercent = $roundWeight / 100;
+
+        $judgeDetails = [];
+
+        foreach ($pageant->judges as $judge) {
+            $rawSum = $this->calculateJudgeRawScoreSum(
+                $judge->id,
+                $contestant->id,
+                $round->id,
+                $pageant->id
+            );
+
+            if ($rawSum !== null) {
+                $weightedScore = $rawSum * $roundWeightPercent;
+
+                $judgeDetails[] = [
+                    'judge_id' => $judge->id,
+                    'judge_name' => $judge->name ?? "Judge {$judge->id}",
+                    'raw_sum' => round($rawSum, 2),
+                    'weighted_score' => round($weightedScore, 2),
+                    'round_weight' => $roundWeight,
+                ];
+            }
+        }
+
+        $totalWeighted = array_sum(array_column($judgeDetails, 'weighted_score'));
+        $judgeCount = count($judgeDetails);
+        $average = $judgeCount > 0 ? $totalWeighted / $judgeCount : 0;
+
+        return [
+            'judges' => $judgeDetails,
+            'round_average' => round($average, 2),
+            'judge_count' => $judgeCount,
+            'round_weight' => $roundWeight,
+        ];
+    }
 }

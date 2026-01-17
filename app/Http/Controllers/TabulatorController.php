@@ -586,7 +586,7 @@ class TabulatorController extends Controller
             }
         } else {
             // Standard path for score_average and rank_sum methods
-            $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant, false);
+            $rankingMethod = $pageant->ranking_method ?? 'score_average';
 
             // Find the last final round to use for ranking
             $lastFinalRound = $pageant->rounds
@@ -594,8 +594,26 @@ class TabulatorController extends Controller
                 ->sortByDesc('display_order')
                 ->first();
 
+            // Use the new score_average calculation method
+            if ($rankingMethod === 'score_average') {
+                $contestants = $this->scoreCalculationService->calculateWithScoreAverage($pageant, null, false);
+
+                // Mark finalists
+                if ($lastFinalRound) {
+                    $contestants = collect($contestants)->map(function ($contestant) use ($lastFinalRound) {
+                        $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
+
+                        return array_merge($contestant, [
+                            'hasQualifiedForFinal' => $hasFinalScore,
+                        ]);
+                    })->toArray();
+                }
+            } else {
+                // rank_sum method uses the old calculation
+                $contestants = $this->scoreCalculationService->calculatePageantFinalScores($pageant, false);
+            }
+
             if ($lastFinalRound) {
-                $rankingMethod = $pageant->ranking_method ?? 'score_average';
                 $tieHandling = $pageant->tie_handling ?? 'average';
 
                 if ($rankingMethod === 'rank_sum') {
@@ -747,101 +765,8 @@ class TabulatorController extends Controller
                         'asc',
                         $tieHandling
                     );
-                } else {
-                    // For score_average: check if inherit mode with percentages
-                    $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
-                    $finalScoreInheritance = $pageant->final_score_inheritance ?? [];
-
-                    if ($finalScoreMode === 'inherit' && ! empty($finalScoreInheritance)) {
-                        // Inherit mode with percentages: calculate weighted average per stage, then apply inheritance percentages
-                        $contestants = collect($contestants)->map(function ($contestant) use ($pageant, $lastFinalRound, $finalScoreInheritance) {
-                            $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
-
-                            // Calculate score per stage type
-                            $stageScores = [];
-                            $stageWeights = [];
-                            $stageRawTotals = []; // Sum of raw scores per stage (for weightedRawTotal calculation)
-                            $inheritanceBreakdown = [];
-
-                            foreach ($pageant->rounds as $round) {
-                                $roundType = strtolower($round->type ?? 'preliminary');
-                                $roundScore = $contestant['scores'][$round->name] ?? null;
-
-                                if ($roundScore !== null && isset($finalScoreInheritance[$roundType])) {
-                                    if (! isset($stageScores[$roundType])) {
-                                        $stageScores[$roundType] = 0;
-                                        $stageWeights[$roundType] = 0;
-                                        $stageRawTotals[$roundType] = 0;
-                                    }
-                                    $roundWeight = $round->weight ?? 1;
-                                    if ($roundWeight <= 0) {
-                                        $roundWeight = 1;
-                                    }
-                                    $weightedRoundScore = $roundScore * $roundWeight;
-                                    $stageScores[$roundType] += $weightedRoundScore;
-                                    $stageWeights[$roundType] += $roundWeight;
-                                    $stageRawTotals[$roundType] += $roundScore; // Sum raw scores per stage
-                                }
-                            }
-
-                            // Apply inheritance percentages to stage averages
-                            $finalScore = 0;
-                            $weightedRawTotal = 0; // Sum of (stage raw total × stage percentage)
-                            foreach ($stageScores as $stageType => $weightedSum) {
-                                if ($stageWeights[$stageType] > 0) {
-                                    $stageAverage = $weightedSum / $stageWeights[$stageType];
-                                    $inheritancePercentage = ($finalScoreInheritance[$stageType] ?? 0) / 100;
-                                    $contribution = $stageAverage * $inheritancePercentage;
-                                    $finalScore += $contribution;
-
-                                    // Calculate weighted raw total: stage raw score × percentage
-                                    $stageRawTotal = $stageRawTotals[$stageType] ?? 0;
-                                    $rawContribution = $stageRawTotal * $inheritancePercentage;
-                                    $weightedRawTotal += $rawContribution;
-
-                                    // Store breakdown for display
-                                    $inheritanceBreakdown[$stageType] = [
-                                        'stageType' => ucwords(str_replace('-', ' ', $stageType)),
-                                        'percentage' => $finalScoreInheritance[$stageType] ?? 0,
-                                        'stageAverage' => round($stageAverage, 2),
-                                        'stageRawTotal' => round($stageRawTotal, 2),
-                                        'rawContribution' => round($rawContribution, 2),
-                                        'contribution' => round($contribution, 2),
-                                    ];
-                                }
-                            }
-
-                            return array_merge($contestant, [
-                                'finalScore' => $hasFinalScore ? round($finalScore, 2) : null,
-                                'totalScore' => $hasFinalScore ? round($finalScore, 2) : null,
-                                'weightedRawTotal' => $hasFinalScore ? round($weightedRawTotal, 2) : null,
-                                'hasQualifiedForFinal' => $hasFinalScore,
-                                'inheritanceBreakdown' => $inheritanceBreakdown,
-                            ]);
-                        })->toArray();
-                    } else {
-                        // Fresh mode: use only the final round score for ranking
-                        $contestants = collect($contestants)->map(function ($contestant) use ($lastFinalRound) {
-                            $hasFinalScore = isset($contestant['scores'][$lastFinalRound->name]) && $contestant['scores'][$lastFinalRound->name] !== null;
-                            $finalRoundScore = $hasFinalScore ? $contestant['scores'][$lastFinalRound->name] : null;
-
-                            return array_merge($contestant, [
-                                'finalScore' => $finalRoundScore,
-                                'totalScore' => $finalRoundScore,
-                                'hasQualifiedForFinal' => $hasFinalScore,
-                            ]);
-                        })->toArray();
-                    }
-
-                    // Re-rank contestants based on final score (descending - higher is better)
-                    $contestants = $this->scoreCalculationService->applyGenderSeparatedRanking(
-                        $contestants,
-                        $pageant,
-                        'finalScore',
-                        'desc',
-                        $tieHandling
-                    );
                 }
+                // score_average is already handled by calculateWithScoreAverage above
             }
         }
 
