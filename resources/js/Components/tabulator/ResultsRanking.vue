@@ -38,9 +38,9 @@
                 <span v-if="round.type" class="text-[9px] font-medium opacity-75 uppercase">{{ round.type }}</span>
               </div>
             </th>
-            <!-- Total Raw Score column - only shown in inherit mode -->
+            <!-- Total Raw Score column - only shown in inherit mode for score-based ranking -->
             <th
-              v-if="finalScoreMode === 'inherit' && isLastFinalRound"
+              v-if="!isRankSumMethod && finalScoreMode === 'inherit' && isLastFinalRound"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-50"
             >
@@ -62,6 +62,13 @@
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               Average Rank
+            </th>
+            <th
+              v-if="isRankSumMethod"
+              scope="col"
+              class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Final Rank
             </th>
             <th
               v-else
@@ -215,9 +222,9 @@
               </div>
             </td>
 
-            <!-- Total Raw Score column - only shown in inherit mode -->
+            <!-- Total Raw Score column - only shown in inherit mode for score-based ranking -->
             <td 
-              v-if="finalScoreMode === 'inherit' && isLastFinalRound"
+              v-if="!isRankSumMethod && finalScoreMode === 'inherit' && isLastFinalRound"
               class="whitespace-nowrap px-4 py-3 text-center bg-emerald-50/50"
             >
               <span 
@@ -259,6 +266,11 @@
                     :class="getScoreClass(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant))"
                     :title="getFinalScoreBreakdown(contestant)"
                   >
+              <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
+                <span class="text-sm font-semibold tabular-nums text-slate-700">
+                  {{ index + 1 }}
+                </span>
+              </td>
                     {{ formatScore(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant)) }}
                   </span>
                   <!-- Inherit mode: only show score for tie-breaker display -->
@@ -706,19 +718,22 @@ const getWeightedRawTotal = (contestant: Contestant): number | null => {
 
 // Calculate colspan for breakdown/cutoff rows (accounts for Total Raw Score column in inherit mode)
 const getColspanForBreakdown = (): number => {
-  // Base: Contestant + Rounds + Final Result = 2 + rounds.length + 1 = rounds.length + 3
-  // With Rank column: add 1 more
-  // With Total Raw Score column (inherit mode + last final round): add 1 more
-  let colspan = props.rounds.length + 2 // Contestant + Rounds + Final Result
+  let colspan = props.rounds.length + 1 // Contestant + Rounds
+
+  if (isRankSumMethod.value) {
+    colspan += 3 // Total Rank + Average Rank + Final Rank
+  } else {
+    colspan += 1 // Final Result column
+  }
+
   if (!props.hideRankColumn) {
     colspan += 1 // Add Rank column
   }
-  if (props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
+
+  if (!isRankSumMethod.value && props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
     colspan += 1 // Add Total Raw Score column
   }
-  if (isRankSumMethod.value) {
-    colspan += 1 // Add Average Rank column
-  }
+
   return colspan
 }
 
