@@ -502,8 +502,18 @@ const hasValidFinalScore = (contestant: Contestant): boolean => {
   return hasValidScore(finalScore)
 }
 
+const isQualifiedByRank = (contestant: Contestant): boolean => {
+  const cutoff = contestant.qualification_cutoff
+  if (!cutoff || cutoff <= 0) {
+    return false
+  }
+
+  const rank = getRankPosition(contestant.id)
+  return rank > 0 && rank <= cutoff
+}
+
 const shouldShowRankStats = (contestant: Contestant): boolean => {
-  return contestant.qualified === true || hasValidFinalScore(contestant)
+  return isQualifiedByRank(contestant) || hasValidFinalScore(contestant)
 }
 
 // Get the rank of a contestant among only those who competed in the final round
