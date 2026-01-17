@@ -181,10 +181,16 @@
                 </div>
               </th>
             </template>
-            <th class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
+            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
-              <span v-else-if="isRankSumMethod && isOverallTally">Final Rank</span>
-              <span v-else-if="isRankSumMethod">Total Rank</span>
+              <span v-else-if="isOverallTally">Final Rank</span>
+              <span v-else>Total Rank</span>
+            </th>
+            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
+              Avg Rank
+            </th>
+            <th v-else class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
+              <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
               <span v-else-if="finalScoreMode === 'inherit'">Weighted Total</span>
               <span v-else>Final Score</span>
             </th>
@@ -228,12 +234,12 @@
                 :class="getDisplayScore(result, round.name) !== null ? 'text-gray-900' : 'text-gray-300'"
               >
                 <template v-if="hasValidScore(getDisplayScore(result, round.name))">
-                  <!-- For rank_sum method, show raw score with rank sum below -->
+                  <!-- For rank_sum method, show rank sum only -->
                   <template v-if="isRankSumMethod">
-                    <div class="font-semibold">{{ formatScore(getDisplayScore(result, round.name)!) }}</div>
-                    <div class="text-[8px] text-gray-500">
-                      (Rank Sum: {{ getRoundRankSum(result, round.name) }})
+                    <div v-if="getRoundRankSumValue(result, round.name) !== null" class="font-semibold">
+                      {{ formatScore(getRoundRankSumValue(result, round.name)!, 1) }}
                     </div>
+                    <div v-else class="italic text-gray-300">—</div>
                   </template>
                   <!-- For score_average method, show computed score with raw score below -->
                   <template v-else>
@@ -247,24 +253,26 @@
                 <span v-else class="italic">—</span>
               </td>
             </template>
-            <td class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
-              <template v-if="isRankSumMethod">
-                <!-- Overall tally (both fresh and inherit): show final rank position -->
-                <!-- Backend computes correct ranking including weighted inheritance calculations -->
-                <template v-if="isOverallTally">
-                  <span v-if="result.hasQualifiedForFinal !== false">{{ getFinalRankPosition(result, index) }}</span>
-                  <span v-else class="text-gray-300">—</span>
-                </template>
-                <!-- Individual round stages: show total rank sum -->
-                <template v-else>
-                  <span v-if="result.hasQualifiedForFinal !== false && (result.totalRankSum || result.final_score)">{{ result.totalRankSum ?? result.final_score }}</span>
-                  <span v-else class="text-gray-300">—</span>
-                </template>
-              </template>
-              <template v-else>
-                <span v-if="result.hasQualifiedForFinal !== false">{{ formatScore(getDisplayTotal(result)) }}</span>
+            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
+              <!-- Overall tally (both fresh and inherit): show final rank position -->
+              <!-- Backend computes correct ranking including weighted inheritance calculations -->
+              <template v-if="isOverallTally">
+                <span v-if="result.hasQualifiedForFinal !== false">{{ getFinalRankPosition(result, index) }}</span>
                 <span v-else class="text-gray-300">—</span>
               </template>
+              <!-- Individual round stages: show total rank sum -->
+              <template v-else>
+                <span v-if="result.hasQualifiedForFinal !== false && (result.totalRankSum || result.final_score)">{{ result.totalRankSum ?? result.final_score }}</span>
+                <span v-else class="text-gray-300">—</span>
+              </template>
+            </td>
+            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
+              <span v-if="getAverageRank(result) !== null">{{ formatScore(getAverageRank(result)!, 2) }}</span>
+              <span v-else class="text-gray-300">—</span>
+            </td>
+            <td v-else class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
+              <span v-if="result.hasQualifiedForFinal !== false">{{ formatScore(getDisplayTotal(result)) }}</span>
+              <span v-else class="text-gray-300">—</span>
             </td>
           </tr>
         </tbody>
@@ -564,8 +572,8 @@ const getScoreHeaders = () => {
   return props.results[0].scores || {}
 }
 
-const formatScore = (score: number): string => {
-  return score.toFixed(2)
+const formatScore = (score: number, decimals = 2): string => {
+  return score.toFixed(decimals)
 }
 
 // Helper function to check if a score is valid (not null, undefined, or 0)
@@ -602,6 +610,15 @@ const hasRawScore = (result: Result, roundName: string): boolean => {
   return result.scores && result.scores[roundName] !== undefined && result.scores[roundName] !== null
 }
 
+const getRoundRankSumValue = (result: Result, roundName: string): number | null => {
+  if (result.judgeRanks && result.judgeRanks[roundName] && result.judgeRanks[roundName].ranks) {
+    const ranks = result.judgeRanks[roundName].ranks
+    const rankSum = ranks.reduce((sum, rank) => sum + rank, 0)
+    return Number(rankSum.toFixed(2))
+  }
+  return null
+}
+
 // Get round rank sum (sum of judge ranks for a specific round)
 const getRoundRankSum = (result: Result, roundName: string): string => {
   if (result.judgeRanks && result.judgeRanks[roundName] && result.judgeRanks[roundName].ranks) {
@@ -610,6 +627,31 @@ const getRoundRankSum = (result: Result, roundName: string): string => {
     return rankSum.toFixed(1)
   }
   return '—'
+}
+
+const rankRounds = computed(() => {
+  if (!props.rounds || props.rounds.length === 0) return []
+  if (props.showAllRounds || props.selectedStage === 'overall') {
+    return props.rounds
+  }
+
+  const stage = props.selectedStage?.toLowerCase()
+  const filtered = props.rounds.filter(round => round.type?.toLowerCase() === stage)
+  return filtered.length > 0 ? filtered : props.rounds
+})
+
+const getAverageRank = (result: Result): number | null => {
+  if (!isRankSumMethod.value) return null
+  if (!result.judgeRanks) return null
+
+  const rankCount = rankRounds.value.reduce((total, round) => {
+    const ranks = result.judgeRanks?.[round.name]?.ranks
+    return total + (Array.isArray(ranks) ? ranks.length : 0)
+  }, 0)
+
+  if (rankCount === 0) return null
+  const totalRank = result.totalRankSum ?? 0
+  return Number((totalRank / rankCount).toFixed(2))
 }
 
 // Get weighted raw total (sum of score × round weight) for inherit mode

@@ -162,6 +162,8 @@
               :scores="localScores"
               :total-scores="localTotalScores"
               :weighted-scores="localWeightedScores"
+              :ranking-method="pageant?.ranking_method || 'score_average'"
+              :final-score-mode="pageant?.final_score_mode || 'fresh'"
               :criteria="criteria"
               :detailed-scores="detailedScores"
               :score-key="currentRound?.id.toString()"
@@ -192,6 +194,8 @@
               :scores="localScores"
               :total-scores="localTotalScores"
               :weighted-scores="localWeightedScores"
+              :ranking-method="pageant?.ranking_method || 'score_average'"
+              :final-score-mode="pageant?.final_score_mode || 'fresh'"
               :criteria="criteria"
               :detailed-scores="detailedScores"
               :score-key="currentRound?.id.toString()"
@@ -213,6 +217,8 @@
             :scores="localScores"
             :total-scores="localTotalScores"
             :weighted-scores="localWeightedScores"
+            :ranking-method="pageant?.ranking_method || 'score_average'"
+            :final-score-mode="pageant?.final_score_mode || 'fresh'"
             :criteria="criteria"
             :detailed-scores="detailedScores"
             :score-key="currentRound?.id.toString()"
@@ -304,6 +310,7 @@ interface Pageant {
   contestant_type?: 'solo' | 'pairs' | 'both'
   ranking_method?: 'score_average' | 'rank_sum' | 'ordinal'
   tie_handling?: 'sequential' | 'average' | 'minimum'
+  final_score_mode?: 'fresh' | 'inherit'
 }
 
 interface Criteria {

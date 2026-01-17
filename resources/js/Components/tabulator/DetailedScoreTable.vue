@@ -45,8 +45,11 @@
             >
               {{ judge.name }}
             </th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-teal-50">
-              Total Score
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" :class="isRankSumMethod ? 'bg-purple-50' : 'bg-teal-50'">
+              {{ isRankSumMethod ? 'Total Rank' : 'Total Score' }}
+            </th>
+            <th v-if="isRankSumMethod" scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-purple-50">
+              Average Rank
             </th>
             <th v-if="showBackedOutActions" scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
@@ -55,7 +58,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr 
-            v-for="contestant in contestants" 
+            v-for="contestant in displayContestants" 
             :key="contestant.id" 
             class="transition-colors"
             :class="[
@@ -88,7 +91,14 @@
               :key="judge.id"
               class="px-6 py-4 whitespace-nowrap"
             >
-              <div v-if="getTotalScore(contestant.id, judge.id) !== null" class="flex flex-col items-center">
+              <div v-if="isRankSumMethod && getJudgeRank(contestant.id, judge.id) !== null" class="flex flex-col items-center">
+                <span
+                  class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800"
+                >
+                  {{ getJudgeRank(contestant.id, judge.id) }}
+                </span>
+              </div>
+              <div v-else-if="!isRankSumMethod && getTotalScore(contestant.id, judge.id) !== null" class="flex flex-col items-center">
                 <span
                   class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-semibold bg-teal-100 text-teal-800"
                 >
@@ -105,12 +115,28 @@
               </div>
               <span v-else class=" text-right text-gray-400 text-sm">—</span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/30' : 'bg-teal-50'">
+            <td class="px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/30' : (isRankSumMethod ? 'bg-purple-50' : 'bg-teal-50')">
               <span
-                v-if="getContestantTotal(contestant.id) !== null && !contestant.backed_out"
+                v-if="isRankSumMethod && getContestantRankTotal(contestant.id) !== null && !contestant.backed_out"
+                class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-bold bg-purple-600 text-white"
+              >
+                {{ formatRankValue(getContestantRankTotal(contestant.id), 0) }}
+              </span>
+              <span
+                v-else-if="!isRankSumMethod && getContestantTotal(contestant.id) !== null && !contestant.backed_out"
                 class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-bold bg-teal-600 text-white"
               >
                 {{ getContestantTotal(contestant.id) }}
+              </span>
+              <span v-else-if="contestant.backed_out" class="text-red-400 text-sm italic">N/A</span>
+              <span v-else class="text-right text-gray-400 text-sm">—</span>
+            </td>
+            <td v-if="isRankSumMethod" class="px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/30' : 'bg-purple-50'">
+              <span
+                v-if="getContestantAverageRank(contestant.id) !== null && !contestant.backed_out"
+                class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-bold bg-purple-100 text-purple-800"
+              >
+                {{ formatRankValue(getContestantAverageRank(contestant.id), 2) }}
               </span>
               <span v-else-if="contestant.backed_out" class="text-red-400 text-sm italic">N/A</span>
               <span v-else class="text-right text-gray-400 text-sm">—</span>
@@ -144,7 +170,7 @@
     <!-- Detailed View (Individual Criteria Scores) -->
     <div v-else class="overflow-x-auto">
       <div 
-        v-for="contestant in contestants" 
+        v-for="contestant in displayContestants" 
         :key="contestant.id" 
         class="border-b border-gray-200 last:border-b-0"
         :class="{ 'opacity-60 bg-red-50/30': contestant.backed_out }"
@@ -211,9 +237,9 @@
             </div>
             <!-- Total Score -->
             <div class="text-right">
-              <div class="text-xs text-gray-500 uppercase tracking-wider">Total Score</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wider">{{ isRankSumMethod ? 'Total Rank' : 'Total Score' }}</div>
               <div v-if="!contestant.backed_out" class="text-2xl font-bold text-teal-600">
-                {{ getContestantTotal(contestant.id) || '—' }}
+                {{ isRankSumMethod ? (getContestantRankTotal(contestant.id) || '—') : (getContestantTotal(contestant.id) || '—') }}
               </div>
               <div v-else class="text-lg font-medium text-red-400 italic">
                 N/A
@@ -274,7 +300,7 @@
               <!-- Judge Totals Row -->
               <tr class="bg-teal-50 font-semibold">
                 <td class="px-6 py-3 text-sm text-gray-900" colspan="2">
-                  Judge Totals (Weighted)
+                  {{ isRankSumMethod ? 'Judge Ranks' : 'Judge Totals (Weighted)' }}
                 </td>
                 <td
                   v-for="judge in judges"
@@ -282,7 +308,13 @@
                   class="px-6 py-3 text-center"
                 >
                   <span
-                    v-if="getTotalScore(contestant.id, judge.id) !== null"
+                    v-if="isRankSumMethod && getJudgeRank(contestant.id, judge.id) !== null"
+                    class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-purple-600 text-white"
+                  >
+                    {{ getJudgeRank(contestant.id, judge.id) }}
+                  </span>
+                  <span
+                    v-else-if="!isRankSumMethod && getTotalScore(contestant.id, judge.id) !== null"
                     class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold bg-teal-600 text-white"
                   >
                     {{ getTotalScore(contestant.id, judge.id) }}
@@ -335,6 +367,8 @@ interface Props {
   scores: Map<string, number> | Record<string, number>
   totalScores?: Map<string, number> | Record<string, number>
   weightedScores?: Map<string, number> | Record<string, number>
+  rankingMethod?: 'score_average' | 'rank_sum' | 'ordinal'
+  finalScoreMode?: 'fresh' | 'inherit'
   criteria?: Criteria[]
   detailedScores?: Record<string, any>
   scoreKey?: string
@@ -352,7 +386,9 @@ const props = withDefaults(defineProps<Props>(), {
   emptyTitle: 'No Scores Yet',
   emptyMessage: 'Scores will appear here once judges start submitting.',
   showToggle: true,
-  showBackedOutActions: false
+  showBackedOutActions: false,
+  rankingMethod: 'score_average',
+  finalScoreMode: 'fresh'
 })
 
 const emit = defineEmits<{
@@ -362,14 +398,28 @@ const emit = defineEmits<{
 
 const viewMode = ref<'summary' | 'detailed'>('summary')
 
+const isRankSumMethod = computed(() => props.rankingMethod === 'rank_sum')
+
+const displayContestants = computed(() => {
+  const list = [...props.contestants]
+  if (isRankSumMethod.value) {
+    return list.sort((a, b) => (a.number ?? 0) - (b.number ?? 0))
+  }
+  return list
+})
+
 const toggleView = () => {
   viewMode.value = viewMode.value === 'summary' ? 'detailed' : 'summary'
 }
 
-const getScore = (contestantId: number, judgeId: number): number | null => {
-  const key = props.scoreKey 
+const getScoreKey = (contestantId: number, judgeId: number): string => {
+  return props.scoreKey 
     ? `${contestantId}-${judgeId}-${props.scoreKey}`
     : `${contestantId}-${judgeId}`
+}
+
+const getScore = (contestantId: number, judgeId: number): number | null => {
+  const key = getScoreKey(contestantId, judgeId)
   
   const scoresMap = props.scores instanceof Map ? props.scores : new Map(Object.entries(props.scores))
   const score = scoresMap.get(key)
@@ -379,9 +429,7 @@ const getScore = (contestantId: number, judgeId: number): number | null => {
 }
 
 const getTotalScore = (contestantId: number, judgeId: number): number | null => {
-  const key = props.scoreKey 
-    ? `${contestantId}-${judgeId}-${props.scoreKey}`
-    : `${contestantId}-${judgeId}`
+  const key = getScoreKey(contestantId, judgeId)
   
   const totalScoresMap = props.totalScores instanceof Map ? props.totalScores : new Map(Object.entries(props.totalScores || {}))
   const score = totalScoresMap.get(key)
@@ -392,9 +440,7 @@ const getTotalScore = (contestantId: number, judgeId: number): number | null => 
 
 // Get weighted score for a contestant-judge pair
 const getWeightedScore = (contestantId: number, judgeId: number): number | null => {
-  const key = props.scoreKey 
-    ? `${contestantId}-${judgeId}-${props.scoreKey}`
-    : `${contestantId}-${judgeId}`
+  const key = getScoreKey(contestantId, judgeId)
   
   const weightedScoresMap = props.weightedScores instanceof Map ? props.weightedScores : new Map(Object.entries(props.weightedScores || {}))
   const score = weightedScoresMap.get(key)
@@ -405,6 +451,8 @@ const getWeightedScore = (contestantId: number, judgeId: number): number | null 
 
 // Check if there's a tie for a judge's raw score (same raw score but different weighted score)
 const hasTieForJudge = (contestantId: number, judgeId: number): boolean => {
+  if (isRankSumMethod.value) return false
+
   const rawScore = getTotalScore(contestantId, judgeId)
   if (rawScore === null) return false
   
@@ -487,6 +535,88 @@ const getContestantTotal = (contestantId: number): number | null => {
   // Simple sum of all judge totals
   const sum = judgeTotals.reduce((acc, score) => acc + score, 0)
   return Number(sum.toFixed(2))
+}
+
+const getRankingScore = (contestantId: number, judgeId: number): number | null => {
+  const weighted = getWeightedScore(contestantId, judgeId)
+  if (weighted !== null) return weighted
+  return getTotalScore(contestantId, judgeId)
+}
+
+const judgeRankMap = computed(() => {
+  const ranks = new Map<string, number>()
+  if (!isRankSumMethod.value) return ranks
+
+  props.judges.forEach(judge => {
+    const entries: Array<{ contestantId: number; score: number }> = []
+    displayContestants.value.forEach(contestant => {
+      if (contestant.backed_out) return
+      const score = getRankingScore(contestant.id, judge.id)
+      if (score !== null) {
+        entries.push({ contestantId: contestant.id, score })
+      }
+    })
+
+    if (entries.length === 0) return
+
+    const scoreBuckets = new Map<string, number[]>()
+    entries.forEach(({ contestantId, score }) => {
+      const key = score.toFixed(6)
+      if (!scoreBuckets.has(key)) {
+        scoreBuckets.set(key, [])
+      }
+      scoreBuckets.get(key)?.push(contestantId)
+    })
+
+    const sortedScores = Array.from(scoreBuckets.keys())
+      .map(key => ({ key, value: Number(key) }))
+      .sort((a, b) => b.value - a.value)
+
+    let betterCount = 0
+    sortedScores.forEach(({ key }) => {
+      const contestantsWithScore = scoreBuckets.get(key) ?? []
+      const rank = betterCount + 1
+      contestantsWithScore.forEach(contestantId => {
+        ranks.set(getScoreKey(contestantId, judge.id), rank)
+      })
+      betterCount += contestantsWithScore.length
+    })
+  })
+
+  return ranks
+})
+
+const getJudgeRank = (contestantId: number, judgeId: number): number | null => {
+  if (!isRankSumMethod.value) return null
+  const key = getScoreKey(contestantId, judgeId)
+  const rank = judgeRankMap.value.get(key)
+  return rank === undefined ? null : rank
+}
+
+const getContestantRankTotal = (contestantId: number): number | null => {
+  if (!isRankSumMethod.value) return null
+  const judgeRanks = props.judges
+    .map(judge => getJudgeRank(contestantId, judge.id))
+    .filter(rank => rank !== null) as number[]
+
+  if (judgeRanks.length === 0) return null
+  return Number(judgeRanks.reduce((acc, rank) => acc + rank, 0).toFixed(2))
+}
+
+const getContestantAverageRank = (contestantId: number): number | null => {
+  if (!isRankSumMethod.value) return null
+  const judgeRanks = props.judges
+    .map(judge => getJudgeRank(contestantId, judge.id))
+    .filter(rank => rank !== null) as number[]
+
+  if (judgeRanks.length === 0) return null
+  const sum = judgeRanks.reduce((acc, rank) => acc + rank, 0)
+  return Number((sum / judgeRanks.length).toFixed(2))
+}
+
+const formatRankValue = (value: number | null, decimals = 2): string => {
+  if (value === null || value === undefined) return '—'
+  return value.toFixed(decimals)
 }
 
 const getScoreColor = (score: number | null, maxScore: number): string => {

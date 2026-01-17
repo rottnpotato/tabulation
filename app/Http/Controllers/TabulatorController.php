@@ -333,6 +333,7 @@ class TabulatorController extends Controller
                     'contestant_type' => $pageant->contestant_type ?? 'solo',
                     'ranking_method' => $pageant->ranking_method ?? 'score_average',
                     'tie_handling' => $pageant->tie_handling ?? 'average',
+                    'final_score_mode' => $pageant->final_score_mode ?? 'fresh',
                 ],
                 'rounds' => $rounds,
                 'contestants' => [],
@@ -441,6 +442,7 @@ class TabulatorController extends Controller
                 'contestant_type' => $pageant->contestant_type ?? 'solo',
                 'ranking_method' => $pageant->ranking_method ?? 'score_average',
                 'tie_handling' => $pageant->tie_handling ?? 'average',
+                'final_score_mode' => $pageant->final_score_mode ?? 'fresh',
             ],
             'rounds' => $rounds,
             'currentRound' => [

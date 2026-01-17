@@ -616,6 +616,7 @@
                         :number-of-winners="pageant?.number_of_winners || 3"
                         :show-all-rounds="selectedStage === 'overall'"
                         :selected-stage="selectedStage"
+                        :ranking-method="pageant?.ranking_method || 'score_average'"
                         :final-score-mode="pageant?.final_score_mode || 'fresh'"
                       />
                     </div>
@@ -638,6 +639,7 @@
                         :number-of-winners="pageant?.number_of_winners || 3"
                         :show-all-rounds="selectedStage === 'overall'"
                         :selected-stage="selectedStage"
+                        :ranking-method="pageant?.ranking_method || 'score_average'"
                         :final-score-mode="pageant?.final_score_mode || 'fresh'"
                       />
                     </div>

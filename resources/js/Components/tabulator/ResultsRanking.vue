@@ -50,11 +50,26 @@
               </div>
             </th>
             <th
+              v-if="isRankSumMethod"
+              scope="col"
+              class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Total Rank
+            </th>
+            <th
+              v-if="isRankSumMethod"
+              scope="col"
+              class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Average Rank
+            </th>
+            <th
+              v-else
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
-              <span v-else>{{ rankingMethod === 'rank_sum' ? 'Rank Sum' : 'Total' }}</span>
+              <span v-else>Total</span>
             </th>
           </tr>
         </thead>
@@ -153,8 +168,11 @@
               class="whitespace-nowrap px-4 py-3"
               :class="[getRoundCellClass(round, roundIndex), getDisplayScore(contestant, round.name) !== null ? 'text-gray-900' : 'text-gray-300']">
               <div class="flex flex-col items-center gap-1">
-                <!-- Score: show display score (sum of judge totals) for visual, use scores for ranking logic -->
-                <span v-if="hasValidScore(getDisplayScore(contestant, round.name))" class="text-sm font-medium tabular-nums">
+                <!-- Rank Sum (for rank_sum) or Score (score_average) -->
+                <span v-if="isRankSumMethod && getRoundRankSum(contestant, round.name) !== null" class="text-sm font-medium tabular-nums">
+                  {{ formatScore(getRoundRankSum(contestant, round.name), 1) }}
+                </span>
+                <span v-else-if="!isRankSumMethod && hasValidScore(getDisplayScore(contestant, round.name))" class="text-sm font-medium tabular-nums">
                   {{ formatScore(getDisplayScore(contestant, round.name)) }}
                 </span>
                 <span v-else-if="contestant.scores[round.name] === 0" class="text-gray-300 italic text-sm" title="Did not compete in this round">—</span>
@@ -213,12 +231,11 @@
             </td>
 
             <!-- Total Score / Rank Sum -->
-            <td class="whitespace-nowrap px-4 py-3 text-right">
+            <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
               <div class="flex flex-col items-end gap-1">
                 <div class="flex items-center gap-2">
                   <!-- Rank Sum method: show rank sum -->
                   <span
-                    v-if="rankingMethod === 'rank_sum'"
                     class="text-sm font-semibold tabular-nums text-purple-700"
                     :title="`Rank Sum: ${formatScore(contestant.totalRankSum, 1)} (lower is better)`"
                   >
@@ -287,6 +304,60 @@
                 >
                   ({{ formatScore((contestant as any).displayScore) }})
                 </span>
+              </div>
+            </td>
+            <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
+              <span v-if="getAverageRank(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
+                {{ formatScore(getAverageRank(contestant), 2) }}
+              </span>
+              <span v-else class="text-gray-300 italic text-sm">—</span>
+            </td>
+            <td v-else class="whitespace-nowrap px-4 py-3 text-right">
+              <div class="flex flex-col items-end gap-1">
+                <div class="flex items-center gap-2">
+                  <!-- Score Average method: show computed score (finalScore for inherit mode, displayTotal otherwise) -->
+                  <!-- In inherit mode, show score only when there's a tie (for tie-breaking purposes) -->
+                  <span
+                    v-if="finalScoreMode !== 'inherit' || !isLastFinalRound"
+                    class="text-sm font-semibold tabular-nums"
+                    :class="getScoreClass(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant))"
+                    :title="getFinalScoreBreakdown(contestant)"
+                  >
+                    {{ formatScore(finalScoreMode === 'inherit' ? contestant.totalScore : getDisplayTotal(contestant)) }}
+                  </span>
+                  <!-- Inherit mode: only show score for tie-breaker display -->
+                  <span
+                    v-else-if="hasScoreTie(contestant)"
+                    class="text-sm font-semibold tabular-nums text-emerald-600"
+                    :title="`Tie-breaker score: ${formatScore(contestant.totalScore)}`"
+                  >
+                    {{ formatScore(contestant.totalScore) }}
+                  </span>
+                  
+                  <!-- Info icon for transparency when inheritance breakdown available -->
+                  <button
+                    v-if="finalScoreMode === 'inherit' && contestant.inheritanceBreakdown"
+                    @click="toggleScoreBreakdown(contestant.id)"
+                    class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors cursor-pointer"
+                    title="Click to see inheritance breakdown"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                  </button>
+                  
+                  <!-- Top N Winner Badge in Final Result Column - ranked among finalists only -->
+                  <span
+                    v-if="isLastFinalRound && showWinners && hasValidFinalScore(contestant) && getFinalRankAmongFinalists(contestant) <= numberOfWinners"
+                    class="inline-flex items-center gap-0.5 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white border border-amber-600 whitespace-nowrap"
+                    :title="`Winner - Top ${numberOfWinners}`"
+                  >
+                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    <span>Top {{ getFinalRankAmongFinalists(contestant) }}</span>
+                  </span>
+                </div>
               </div>
             </td>
           </tr>
@@ -438,6 +509,8 @@ const props = withDefaults(defineProps<Props>(), {
   isLastFinalRound: false,
   finalScoreMode: 'fresh'
 })
+
+const isRankSumMethod = computed(() => props.rankingMethod === 'rank_sum')
 
 // Track previous rankings for animation
 const previousRankMap = ref<Map<number, number>>(new Map())
@@ -597,6 +670,31 @@ const getDisplayTotal = (contestant: Contestant): number | null => {
   return contestant.totalScore ?? null
 }
 
+const getRoundRankSum = (contestant: Contestant, roundName: string): number | null => {
+  const ranks = contestant.judgeRanks?.[roundName]?.ranks
+  if (!ranks || ranks.length === 0) {
+    return null
+  }
+  const sum = ranks.reduce((total, rank) => total + rank, 0)
+  return Number(sum.toFixed(2))
+}
+
+const getContestantRankCount = (contestant: Contestant): number => {
+  if (!contestant.judgeRanks || props.rounds.length === 0) return 0
+  return props.rounds.reduce((total, round) => {
+    const ranks = contestant.judgeRanks?.[round.name]?.ranks
+    return total + (Array.isArray(ranks) ? ranks.length : 0)
+  }, 0)
+}
+
+const getAverageRank = (contestant: Contestant): number | null => {
+  if (!isRankSumMethod.value) return null
+  const rankCount = getContestantRankCount(contestant)
+  if (rankCount === 0) return null
+  const totalRank = contestant.totalRankSum ?? 0
+  return Number((totalRank / rankCount).toFixed(2))
+}
+
 // Get weighted raw total (sum of score × round weight) for inherit mode
 const getWeightedRawTotal = (contestant: Contestant): number | null => {
   if ((contestant as any).weightedRawTotal !== undefined && (contestant as any).weightedRawTotal !== null) {
@@ -617,6 +715,9 @@ const getColspanForBreakdown = (): number => {
   }
   if (props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
     colspan += 1 // Add Total Raw Score column
+  }
+  if (isRankSumMethod.value) {
+    colspan += 1 // Add Average Rank column
   }
   return colspan
 }
