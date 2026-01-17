@@ -254,20 +254,19 @@
               </td>
             </template>
             <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
-              <!-- Overall tally (both fresh and inherit): show final rank position -->
-              <!-- Backend computes correct ranking including weighted inheritance calculations -->
-              <template v-if="isOverallTally">
-                <span v-if="result.hasQualifiedForFinal !== false">{{ getFinalRankPosition(result, index) }}</span>
+              <template v-if="isOverallTally || isLastFinalRound">
+                <span v-if="shouldShowWinners && hasValidFinalScore(result) && getFinalRankAmongFinalists(result) > 0 && getFinalRankAmongFinalists(result) <= numberOfWinners">
+                  Top {{ getFinalRankAmongFinalists(result) }}
+                </span>
                 <span v-else class="text-gray-300">—</span>
               </template>
-              <!-- Individual round stages: show total rank sum -->
               <template v-else>
-                <span v-if="result.hasQualifiedForFinal !== false && (result.totalRankSum || result.final_score)">{{ result.totalRankSum ?? result.final_score }}</span>
+                <span v-if="shouldShowRankStats(result) && getTotalAverageRankSum(result) !== null">{{ formatScore(getTotalAverageRankSum(result)!, 2) }}</span>
                 <span v-else class="text-gray-300">—</span>
               </template>
             </td>
             <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
-              <span v-if="getAverageRank(result) !== null">{{ formatScore(getAverageRank(result)!, 2) }}</span>
+              <span v-if="shouldShowRankStats(result) && getAverageRank(result) !== null">{{ formatScore(getAverageRank(result)!, 2) }}</span>
               <span v-else class="text-gray-300">—</span>
             </td>
             <td v-else class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
@@ -409,11 +408,45 @@ const finalScoreMode = computed(() => {
   return props.finalScoreMode || 'fresh'
 })
 
+const shouldShowWinners = computed(() => {
+  return props.selectedStage === 'overall' || props.isLastFinalRound === true
+})
+
 // Check if we're on overall tally (both fresh and inherit modes should show rank position)
 // Because backend computes correct ranking including weighted inheritance calculations
 const isOverallTally = computed(() => {
   return props.selectedStage === 'overall'
 })
+
+const getFinalRoundName = (): string | null => {
+  if (!props.rounds || props.rounds.length === 0) return null
+  const finalRounds = props.rounds.filter(round => round.type?.toLowerCase() === 'final')
+  if (finalRounds.length === 0) return null
+  return finalRounds[finalRounds.length - 1].name
+}
+
+const hasValidFinalScore = (result: Result): boolean => {
+  const finalRoundName = getFinalRoundName()
+  if (!finalRoundName) return false
+  if (!result.scores) return false
+  return finalRoundName in result.scores
+}
+
+const shouldShowRankStats = (result: Result): boolean => {
+  if (isOverallTally.value || props.isLastFinalRound) {
+    return hasValidFinalScore(result)
+  }
+
+  if (result.qualification_cutoff === null || result.qualification_cutoff === undefined) {
+    return true
+  }
+
+  if (result.qualified === true) {
+    return true
+  }
+
+  return hasValidFinalScore(result)
+}
 
 // Check if we're in fresh start mode on overall tally
 const isFreshOverall = computed(() => {
@@ -442,17 +475,45 @@ const getRankDisplayValue = (result: Result, position?: number): string => {
 
 // Get final rank position among finalists only
 // For fresh start mode, count only contestants who qualified for final
-const getFinalRankPosition = (result: Result, currentIndex: number): number | string => {
-  if (!result.hasQualifiedForFinal) return '—'
-  
-  // Count how many finalists come before this one in the sorted list
-  let finalistPosition = 0
-  for (let i = 0; i <= currentIndex; i++) {
-    if (props.results[i]?.hasQualifiedForFinal !== false) {
-      finalistPosition++
-    }
+// Helper function to safely convert values to numbers
+const toNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined) {
+    return null
   }
-  return finalistPosition
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.length === 0) {
+      return null
+    }
+    const parsed = Number(trimmed)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
+const rankedResults = computed(() => {
+  return [...props.results].sort((a, b) => {
+    if (isRankSumMethod.value) {
+      const aWeighted = toNumber((a as any).weightedRankAvg) ?? toNumber(a.totalRankSum) ?? Infinity
+      const bWeighted = toNumber((b as any).weightedRankAvg) ?? toNumber(b.totalRankSum) ?? Infinity
+      return aWeighted - bWeighted
+    }
+
+    const aTotal = toNumber((a as any).totalScore ?? a.final_score) ?? 0
+    const bTotal = toNumber((b as any).totalScore ?? b.final_score) ?? 0
+    return bTotal - aTotal
+  })
+})
+
+const getFinalRankAmongFinalists = (result: Result): number => {
+  if (!hasValidFinalScore(result)) return -1
+
+  const finalists = rankedResults.value.filter(entry => hasValidFinalScore(entry))
+  const position = finalists.findIndex(entry => entry.id === result.id)
+  return position >= 0 ? position + 1 : -1
 }
 
 // Get pageant logo URL
@@ -629,29 +690,81 @@ const getRoundRankSum = (result: Result, roundName: string): string => {
   return '—'
 }
 
-const rankRounds = computed(() => {
+const rankSumRounds = computed(() => {
+  if (!isRankSumMethod.value) return []
   if (!props.rounds || props.rounds.length === 0) return []
-  if (props.showAllRounds || props.selectedStage === 'overall') {
-    return props.rounds
+
+  if (finalScoreMode.value === 'fresh') {
+    const finalRoundName = getFinalRoundName()
+    if (!finalRoundName) return props.rounds
+    return props.rounds.filter(round => round.name === finalRoundName)
   }
 
-  const stage = props.selectedStage?.toLowerCase()
-  const filtered = props.rounds.filter(round => round.type?.toLowerCase() === stage)
-  return filtered.length > 0 ? filtered : props.rounds
+  return props.rounds
 })
+
+const roundAverageRankMap = computed(() => {
+  const map = new Map<string, Map<number, number>>()
+
+  if (!isRankSumMethod.value || !props.rounds || props.rounds.length === 0 || props.results.length === 0) {
+    return map
+  }
+
+  props.rounds.forEach(round => {
+    const roundMap = new Map<number, number>()
+
+    props.results.forEach(result => {
+      const ranks = result.judgeRanks?.[round.name]?.ranks
+      if (!Array.isArray(ranks) || ranks.length === 0) return
+
+      const average = ranks.reduce((sum, rank) => sum + rank, 0) / ranks.length
+      roundMap.set(result.id, Number(average.toFixed(2)))
+    })
+
+    if (roundMap.size > 0) {
+      map.set(round.name, roundMap)
+    }
+  })
+
+  return map
+})
+
+const getRoundAverageRank = (result: Result, roundName: string): number | null => {
+  if (!isRankSumMethod.value) return null
+  return roundAverageRankMap.value.get(roundName)?.get(result.id) ?? null
+}
+
+const getRoundAverageCount = (result: Result): number => {
+  if (!result.judgeRanks || rankSumRounds.value.length === 0) return 0
+  return rankSumRounds.value.reduce((total, round) => {
+    return getRoundAverageRank(result, round.name) !== null ? total + 1 : total
+  }, 0)
+}
+
+const getTotalAverageRankSum = (result: Result): number | null => {
+  if (!isRankSumMethod.value) return null
+  if (!result.judgeRanks || rankSumRounds.value.length === 0) return null
+
+  let sum = 0
+  let hasAny = false
+
+  rankSumRounds.value.forEach(round => {
+    const roundAverage = getRoundAverageRank(result, round.name)
+    if (roundAverage !== null) {
+      sum += roundAverage
+      hasAny = true
+    }
+  })
+
+  return hasAny ? Number(sum.toFixed(2)) : null
+}
 
 const getAverageRank = (result: Result): number | null => {
   if (!isRankSumMethod.value) return null
-  if (!result.judgeRanks) return null
-
-  const rankCount = rankRounds.value.reduce((total, round) => {
-    const ranks = result.judgeRanks?.[round.name]?.ranks
-    return total + (Array.isArray(ranks) ? ranks.length : 0)
-  }, 0)
-
-  if (rankCount === 0) return null
-  const totalRank = result.totalRankSum ?? 0
-  return Number((totalRank / rankCount).toFixed(2))
+  const totalAverage = getTotalAverageRankSum(result)
+  const roundCount = getRoundAverageCount(result)
+  if (totalAverage === null || roundCount === 0) return null
+  return Number((totalAverage / roundCount).toFixed(2))
 }
 
 // Get weighted raw total (sum of score × round weight) for inherit mode
