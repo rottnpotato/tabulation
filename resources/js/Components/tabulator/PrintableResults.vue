@@ -289,8 +289,8 @@
             </td>
             <!-- Final Result (Top N) column - only for overall and final -->
             <td v-if="shouldShowScoreColumn && isRankSumMethod && (isOverallTally || isLastFinalRound)" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
-              <span v-if="shouldShowWinners && hasValidFinalScore(result) && getFinalRankAmongFinalists(result) > 0 && getFinalRankAmongFinalists(result) <= numberOfWinners">
-                Top {{ getFinalRankAmongFinalists(result) }}
+              <span v-if="getFinalResultLabel(result, index)">
+                {{ getFinalResultLabel(result, index) }}
               </span>
               <span v-else class="text-gray-300">—</span>
             </td>
@@ -478,9 +478,15 @@ const isOverallTally = computed(() => {
 
 const isPerRoundStage = computed(() => {
   const stage = props.selectedStage?.toLowerCase() || ''
-  if (!stage) return false
   if (props.isLastFinalRound) return false
-  return stage !== 'overall' && stage !== 'final'
+  if (stage) {
+    return stage !== 'overall' && stage !== 'final'
+  }
+
+  const title = props.reportTitle?.toLowerCase() || ''
+  if (!title) return false
+  if (title.includes('overall') || title.includes('final')) return false
+  return true
 })
 
 const showLeadingRankColumn = computed(() => {
@@ -492,7 +498,7 @@ const showTrailingRankColumn = computed(() => {
 })
 
 const shouldShowScoreColumn = computed(() => {
-  if (isRankSumMethod.value && isPerRoundStage.value) {
+  if (isPerRoundStage.value) {
     return false
   }
   return true
@@ -598,6 +604,25 @@ const getFinalRankAmongFinalists = (result: Result): number => {
   const finalists = rankedResults.value.filter(entry => hasValidFinalScore(entry))
   const position = finalists.findIndex(entry => entry.id === result.id)
   return position >= 0 ? position + 1 : -1
+}
+
+const getFinalResultLabel = (result: Result, index: number): string | null => {
+  if (!shouldShowWinners.value) return null
+
+  if (props.isLastFinalRound) {
+    const rankValue = toNumber(result.rank) ?? index + 1
+    if (rankValue > 0 && rankValue <= props.numberOfWinners) {
+      return `Top ${rankValue}`
+    }
+    return null
+  }
+
+  const finalRank = getFinalRankAmongFinalists(result)
+  if (finalRank > 0 && finalRank <= props.numberOfWinners) {
+    return `Top ${finalRank}`
+  }
+
+  return null
 }
 
 // Get pageant logo URL
