@@ -621,6 +621,14 @@ const getFinalResultLabel = (result: Result, index: number): string | null => {
     return null
   }
 
+  if (isOverallTally.value) {
+    const rankValue = toNumber(result.rank) ?? index + 1
+    if (rankValue > 0 && rankValue <= props.numberOfWinners) {
+      return `Top ${rankValue}`
+    }
+    return null
+  }
+
   const finalRank = getFinalRankAmongFinalists(result)
   if (finalRank > 0 && finalRank <= props.numberOfWinners) {
     return `Top ${finalRank}`
@@ -809,6 +817,10 @@ const rankSumRounds = computed(() => {
 
   if (stageRankRounds.value.length > 0) {
     return stageRankRounds.value
+  }
+
+  if (props.showAllRounds) {
+    return props.rounds
   }
 
   if (finalScoreMode.value === 'fresh') {
