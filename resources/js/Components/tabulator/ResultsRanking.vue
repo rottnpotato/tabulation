@@ -262,7 +262,8 @@
                   <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  <span>Top {{ getFinalRankAmongFinalists(contestant) }}</span>
+                  <span v-if="hasFinalistTiedRank(contestant)">Tied {{ getOrdinalRank(getFinalRankAmongFinalists(contestant)) }}</span>
+                  <span v-else>Top {{ getFinalRankAmongFinalists(contestant) }}</span>
                 </span>
                 <span v-else class="text-gray-300 italic text-sm">—</span>
               </div>
@@ -310,7 +311,8 @@
                     <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    <span>Top {{ getFinalRankAmongFinalists(contestant) }}</span>
+                    <span v-if="hasFinalistTiedRank(contestant)">Tied {{ getOrdinalRank(getFinalRankAmongFinalists(contestant)) }}</span>
+                    <span v-else>Top {{ getFinalRankAmongFinalists(contestant) }}</span>
                   </span>
                 </div>
               </div>
@@ -860,9 +862,27 @@ const rankPositionMap = computed(() => {
   const map = new Map<number, number>()
   const contestants = rankedContestants.value
   
-  let currentRank = 1
-  let previousValue: number | null = null
+  // First pass: group contestants by their ranking value
+  const valueGroups = new Map<string, number[]>()
   
+  contestants.forEach((contestant) => {
+    let currentValue: number
+    
+    if (props.rankingMethod === 'rank_sum') {
+      currentValue = toNumber((contestant as any).weightedRankAvg) ?? toNumber(contestant.totalRankSum) ?? Infinity
+    } else {
+      currentValue = getNonRankSumTotal(contestant)
+    }
+    
+    // Use string key with fixed precision for floating point comparison
+    const key = currentValue.toFixed(4)
+    const group = valueGroups.get(key) ?? []
+    group.push(contestant.id)
+    valueGroups.set(key, group)
+  })
+  
+  // Second pass: assign ranks based on position in sorted list
+  let currentRank = 1
   contestants.forEach((contestant, index) => {
     let currentValue: number
     
@@ -872,15 +892,15 @@ const rankPositionMap = computed(() => {
       currentValue = getNonRankSumTotal(contestant)
     }
     
-    if (previousValue !== null && Math.abs(currentValue - previousValue) < 0.0001) {
-      // Same value as previous contestant - assign same rank (tie)
-      map.set(contestant.id, currentRank)
-    } else {
-      // Different value - assign new rank based on position
+    const key = currentValue.toFixed(4)
+    const group = valueGroups.get(key) ?? []
+    
+    // If this is the first contestant in a tie group, set the rank for all in the group
+    if (group.length > 0 && group[0] === contestant.id) {
       currentRank = index + 1
-      map.set(contestant.id, currentRank)
-      previousValue = currentValue
     }
+    
+    map.set(contestant.id, currentRank)
   })
   
   return map
@@ -1054,6 +1074,25 @@ const hasTiedRank = (contestantId: number): boolean => {
   let count = 0
   rankPositionMap.value.forEach((rank) => {
     if (rank === position) count++
+  })
+  
+  return count > 1
+}
+
+// Check if a finalist has a tied rank with another finalist
+const hasFinalistTiedRank = (contestant: Contestant): boolean => {
+  if (!hasValidFinalScore(contestant)) return false
+  
+  const finalistRank = getFinalRankAmongFinalists(contestant)
+  if (finalistRank <= 0) return false
+  
+  // Get all finalists
+  const finalists = rankedContestants.value.filter(c => hasValidFinalScore(c))
+  
+  // Count how many finalists share the same rank
+  let count = 0
+  finalists.forEach((c, index) => {
+    if (getFinalRankAmongFinalists(c) === finalistRank) count++
   })
   
   return count > 1
