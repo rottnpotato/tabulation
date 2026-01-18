@@ -538,6 +538,12 @@ const getContestantTotal = (contestantId: number): number | null => {
 }
 
 const getRankingScore = (contestantId: number, judgeId: number): number | null => {
+  // For rank_sum method, use raw total scores (not weighted) to match judge interface ranking
+  // The judge's ScoringTable ranks by raw score sum, so we must do the same
+  if (isRankSumMethod.value) {
+    return getTotalScore(contestantId, judgeId)
+  }
+  // For score_average method, use weighted scores for ranking
   const weighted = getWeightedScore(contestantId, judgeId)
   if (weighted !== null) return weighted
   return getTotalScore(contestantId, judgeId)
