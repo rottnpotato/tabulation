@@ -1695,7 +1695,7 @@ const maleResults = computed(() => {
   // Recompute rank and qualified status within male group
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
-    const genderRank = typeof contestant.rank === 'number' && contestant.rank > 0 ? contestant.rank : index + 1
+    const genderRank = index + 1
     return {
       ...contestant,
       rank: genderRank,
@@ -1777,7 +1777,7 @@ const femaleResults = computed(() => {
   // Recompute rank and qualified status within female group
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
-    const genderRank = typeof contestant.rank === 'number' && contestant.rank > 0 ? contestant.rank : index + 1
+    const genderRank = index + 1
     return {
       ...contestant,
       rank: genderRank,
