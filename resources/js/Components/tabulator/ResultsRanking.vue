@@ -529,18 +529,58 @@ const shouldShowRankStats = (contestant: Contestant): boolean => {
 }
 
 // Get the rank of a contestant among only those who competed in the final round
+// This properly handles ties by assigning the same rank to contestants with equal scores
 const getFinalRankAmongFinalists = (contestant: Contestant): number => {
   if (!hasValidFinalScore(contestant)) return -1
   
   const finalRoundName = getFinalRoundName()
   if (!finalRoundName) return -1
   
-  // Get all contestants who have a final round score
+  // Get all contestants who have a final round score (already sorted by rankedContestants)
   const finalists = rankedContestants.value.filter(c => hasValidFinalScore(c))
   
-  // Find the position of this contestant among finalists
-  const position = finalists.findIndex(c => c.id === contestant.id)
-  return position >= 0 ? position + 1 : -1
+  // Get the current contestant's score/value for comparison
+  let contestantValue: number
+  if (props.rankingMethod === 'rank_sum') {
+    contestantValue = toNumber((contestant as any).weightedRankAvg) ?? toNumber(contestant.totalRankSum) ?? Infinity
+  } else {
+    contestantValue = getNonRankSumTotal(contestant)
+  }
+  
+  // Calculate the proper rank considering ties
+  let rank = 1
+  for (let i = 0; i < finalists.length; i++) {
+    const c = finalists[i]
+    if (c.id === contestant.id) {
+      return rank
+    }
+    
+    // Get next contestant's value
+    let nextValue: number
+    if (props.rankingMethod === 'rank_sum') {
+      nextValue = toNumber((c as any).weightedRankAvg) ?? toNumber(c.totalRankSum) ?? Infinity
+    } else {
+      nextValue = getNonRankSumTotal(c)
+    }
+    
+    // Check if next contestant has different value (not tied)
+    if (i + 1 < finalists.length) {
+      const nextC = finalists[i + 1]
+      let nextNextValue: number
+      if (props.rankingMethod === 'rank_sum') {
+        nextNextValue = toNumber((nextC as any).weightedRankAvg) ?? toNumber(nextC.totalRankSum) ?? Infinity
+      } else {
+        nextNextValue = getNonRankSumTotal(nextC)
+      }
+      
+      // If values are different, increment rank
+      if (Math.abs(nextValue - nextNextValue) >= 0.0001) {
+        rank = i + 2
+      }
+    }
+  }
+  
+  return -1
 }
 
 // Get final score breakdown tooltip
@@ -1083,16 +1123,28 @@ const hasTiedRank = (contestantId: number): boolean => {
 const hasFinalistTiedRank = (contestant: Contestant): boolean => {
   if (!hasValidFinalScore(contestant)) return false
   
-  const finalistRank = getFinalRankAmongFinalists(contestant)
-  if (finalistRank <= 0) return false
+  // Get the contestant's score/value for comparison
+  let contestantValue: number
+  if (props.rankingMethod === 'rank_sum') {
+    contestantValue = toNumber((contestant as any).weightedRankAvg) ?? toNumber(contestant.totalRankSum) ?? Infinity
+  } else {
+    contestantValue = getNonRankSumTotal(contestant)
+  }
   
   // Get all finalists
   const finalists = rankedContestants.value.filter(c => hasValidFinalScore(c))
   
-  // Count how many finalists share the same rank
+  // Count how many finalists have the exact same value
   let count = 0
-  finalists.forEach((c, index) => {
-    if (getFinalRankAmongFinalists(c) === finalistRank) count++
+  finalists.forEach((c) => {
+    let cValue: number
+    if (props.rankingMethod === 'rank_sum') {
+      cValue = toNumber((c as any).weightedRankAvg) ?? toNumber(c.totalRankSum) ?? Infinity
+    } else {
+      cValue = getNonRankSumTotal(c)
+    }
+    
+    if (Math.abs(cValue - contestantValue) < 0.0001) count++
   })
   
   return count > 1
