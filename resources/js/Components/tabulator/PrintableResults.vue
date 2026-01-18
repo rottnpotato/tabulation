@@ -181,16 +181,20 @@
                 </div>
               </th>
             </template>
-            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
-              <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
-              <span v-else-if="isOverallTally">Final Rank</span>
-              <span v-else>Total Rank</span>
+            <!-- Total Rank column - only for preliminary/semi-final stages, NOT for overall or final -->
+            <th v-if="isRankSumMethod && !isOverallTally && !isLastFinalRound" class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
+              Total Rank
             </th>
             <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
               Avg Rank
             </th>
-            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
+            <!-- Round Rank column - only for preliminary/semi-final stages, NOT for overall or final -->
+            <th v-if="isRankSumMethod && !isOverallTally && !isLastFinalRound" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
               Round Rank
+            </th>
+            <!-- Final Result (Top N) column - only for overall and final -->
+            <th v-if="isRankSumMethod && (isOverallTally || isLastFinalRound)" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
+              Final Result (Top {{ numberOfWinners }})
             </th>
             <th v-else class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
@@ -255,24 +259,25 @@
                 </template>
               </td>
             </template>
-            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
-              <template v-if="isOverallTally || isLastFinalRound">
-                <span v-if="shouldShowWinners && hasValidFinalScore(result) && getFinalRankAmongFinalists(result) > 0 && getFinalRankAmongFinalists(result) <= numberOfWinners">
-                  Top {{ getFinalRankAmongFinalists(result) }}
-                </span>
-                <span v-else class="text-gray-300">—</span>
-              </template>
-              <template v-else>
-                <span v-if="shouldShowRankStats(result) && getTotalAverageRankSum(result) !== null">{{ formatScore(getTotalAverageRankSum(result)!, 2) }}</span>
-                <span v-else class="text-gray-300">—</span>
-              </template>
+            <!-- Total Rank column - only for preliminary/semi-final stages -->
+            <td v-if="isRankSumMethod && !isOverallTally && !isLastFinalRound" class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
+              <span v-if="shouldShowRankStats(result) && getTotalAverageRankSum(result) !== null">{{ formatScore(getTotalAverageRankSum(result)!, 2) }}</span>
+              <span v-else class="text-gray-300">—</span>
             </td>
             <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
               <span v-if="shouldShowRankStats(result) && getAverageRank(result) !== null">{{ formatScore(getAverageRank(result)!, 2) }}</span>
               <span v-else class="text-gray-300">—</span>
             </td>
-            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
+            <!-- Round Rank column - only for preliminary/semi-final stages -->
+            <td v-if="isRankSumMethod && !isOverallTally && !isLastFinalRound" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
               <span v-if="shouldShowRankStats(result) && roundRankMap.get(result.id)">{{ roundRankMap.get(result.id) }}</span>
+              <span v-else class="text-gray-300">—</span>
+            </td>
+            <!-- Final Result (Top N) column - only for overall and final -->
+            <td v-if="isRankSumMethod && (isOverallTally || isLastFinalRound)" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
+              <span v-if="shouldShowWinners && hasValidFinalScore(result) && getFinalRankAmongFinalists(result) > 0 && getFinalRankAmongFinalists(result) <= numberOfWinners">
+                Top {{ getFinalRankAmongFinalists(result) }}
+              </span>
               <span v-else class="text-gray-300">—</span>
             </td>
             <td v-else class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">

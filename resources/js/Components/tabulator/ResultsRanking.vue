@@ -103,7 +103,8 @@
                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-all duration-300"
                     :class="getRankBadgeClass(getRankPosition(contestant.id), contestant.qualified)"
                   >
-                    <span class="mr-1 tabular-nums">{{ getRankPosition(contestant.id) }}</span>
+                    <span v-if="hasTiedRank(contestant.id)" class="mr-1">Tied</span>
+                    <span class="mr-1 tabular-nums">{{ getOrdinalRank(getRankPosition(contestant.id)) }}</span>
                     <span v-if="showWinners && getRankPosition(contestant.id) <= numberOfWinners">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
                     <span v-else-if="!showWinners && getRankPosition(contestant.id) <= 3">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
                   </span>
@@ -857,9 +858,31 @@ const displayContestants = computed(() => {
 
 const rankPositionMap = computed(() => {
   const map = new Map<number, number>()
-  rankedContestants.value.forEach((contestant, index) => {
-    map.set(contestant.id, index + 1)
+  const contestants = rankedContestants.value
+  
+  let currentRank = 1
+  let previousValue: number | null = null
+  
+  contestants.forEach((contestant, index) => {
+    let currentValue: number
+    
+    if (props.rankingMethod === 'rank_sum') {
+      currentValue = toNumber((contestant as any).weightedRankAvg) ?? toNumber(contestant.totalRankSum) ?? Infinity
+    } else {
+      currentValue = getNonRankSumTotal(contestant)
+    }
+    
+    if (previousValue !== null && Math.abs(currentValue - previousValue) < 0.0001) {
+      // Same value as previous contestant - assign same rank (tie)
+      map.set(contestant.id, currentRank)
+    } else {
+      // Different value - assign new rank based on position
+      currentRank = index + 1
+      map.set(contestant.id, currentRank)
+      previousValue = currentValue
+    }
   })
+  
   return map
 })
 
@@ -1020,6 +1043,31 @@ const getRankChange = (contestantId: number, currentRank: number): 'up' | 'down'
 
 const getRankPosition = (contestantId: number): number => {
   return rankPositionMap.value.get(contestantId) ?? -1
+}
+
+// Check if a contestant has a tied rank with another contestant
+const hasTiedRank = (contestantId: number): boolean => {
+  const position = getRankPosition(contestantId)
+  if (position <= 0) return false
+  
+  // Count how many contestants have the same rank
+  let count = 0
+  rankPositionMap.value.forEach((rank) => {
+    if (rank === position) count++
+  })
+  
+  return count > 1
+}
+
+// Get ordinal suffix for a rank (1st, 2nd, 3rd, etc.)
+const getOrdinalRank = (rank: number): string => {
+  if (rank <= 0) return ''
+  const j = rank % 10
+  const k = rank % 100
+  if (j === 1 && k !== 11) return rank + 'st'
+  if (j === 2 && k !== 12) return rank + 'nd'
+  if (j === 3 && k !== 13) return rank + 'rd'
+  return rank + 'th'
 }
 
 const getRankDisplay = (rank: number): string => {
