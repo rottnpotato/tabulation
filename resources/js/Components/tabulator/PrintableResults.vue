@@ -182,12 +182,15 @@
               </th>
             </template>
             <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
-              Avg Rank
-            </th>
-            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
               <span v-else-if="isOverallTally">Final Rank</span>
               <span v-else>Total Rank</span>
+            </th>
+            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
+              Avg Rank
+            </th>
+            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
+              Round Rank
             </th>
             <th v-else class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
@@ -253,10 +256,6 @@
               </td>
             </template>
             <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
-              <span v-if="shouldShowRankStats(result) && getAverageRank(result) !== null">{{ formatScore(getAverageRank(result)!, 2) }}</span>
-              <span v-else class="text-gray-300">—</span>
-            </td>
-            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
               <template v-if="isOverallTally || isLastFinalRound">
                 <span v-if="shouldShowWinners && hasValidFinalScore(result) && getFinalRankAmongFinalists(result) > 0 && getFinalRankAmongFinalists(result) <= numberOfWinners">
                   Top {{ getFinalRankAmongFinalists(result) }}
@@ -267,6 +266,14 @@
                 <span v-if="shouldShowRankStats(result) && getTotalAverageRankSum(result) !== null">{{ formatScore(getTotalAverageRankSum(result)!, 2) }}</span>
                 <span v-else class="text-gray-300">—</span>
               </template>
+            </td>
+            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
+              <span v-if="shouldShowRankStats(result) && getAverageRank(result) !== null">{{ formatScore(getAverageRank(result)!, 2) }}</span>
+              <span v-else class="text-gray-300">—</span>
+            </td>
+            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
+              <span v-if="shouldShowRankStats(result) && roundRankMap.get(result.id)">{{ roundRankMap.get(result.id) }}</span>
+              <span v-else class="text-gray-300">—</span>
             </td>
             <td v-else class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
               <span v-if="result.hasQualifiedForFinal !== false">{{ formatScore(getNonRankSumTotal(result)) }}</span>
@@ -315,7 +322,7 @@ import { computed } from 'vue'
 interface JudgeRankData {
   ranks: number[]
   scores?: number[]
-  details?: Array<{ judge_id: number; judge_name: string; score: number; rank: number }>
+  details?: Array<{ judge_id: number; judge_name?: string; score: number; rank?: number }>
 }
 
 interface Result {
@@ -366,6 +373,7 @@ interface Round {
 interface Props {
   pageant: Pageant
   results: Result[]
+  rankReferenceResults?: Result[]
   judges: Judge[]
   rounds?: Round[]
   reportTitle?: string
@@ -376,7 +384,7 @@ interface Props {
   hideRankColumn?: boolean
   showAllRounds?: boolean
   selectedStage?: string
-  rankingMethod?: 'score_average' | 'rank_sum' | 'sum_of_ranks'
+  rankingMethod?: 'score_average' | 'rank_sum' | 'sum_of_ranks' | 'ordinal'
   finalScoreMode?: 'fresh' | 'inherit'
 }
 
@@ -390,11 +398,36 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const isRankSumMethod = computed(() => {
-  return props.rankingMethod === 'sum_of_ranks' || props.rankingMethod === 'rank_sum'
+  return props.rankingMethod === 'sum_of_ranks' || props.rankingMethod === 'rank_sum' || props.rankingMethod === 'ordinal'
 })
 
 const isScoreAverageMethod = computed(() => {
   return props.rankingMethod === 'score_average'
+})
+
+const rankSourceResults = computed(() => {
+  if (props.rankReferenceResults && props.rankReferenceResults.length > 0) {
+    return props.rankReferenceResults
+  }
+
+  return props.results
+})
+
+const normalizeStageKey = (value: string): string => {
+  return value.toLowerCase().replace(/[\s-]/g, '')
+}
+
+const normalizedStageKey = computed(() => {
+  return normalizeStageKey(props.selectedStage ?? '')
+})
+
+const stageRankRounds = computed(() => {
+  if (!props.rounds || props.rounds.length === 0) return []
+  if (!normalizedStageKey.value || normalizedStageKey.value === 'overall' || normalizedStageKey.value === 'final') {
+    return []
+  }
+
+  return props.rounds.filter(round => normalizeStageKey(round.type ?? '') === normalizedStageKey.value)
 })
 
 const rankingMethodLabel = computed(() => {
@@ -402,6 +435,8 @@ const rankingMethodLabel = computed(() => {
     case 'sum_of_ranks':
     case 'rank_sum':
       return 'Sum of Ranks'
+    case 'ordinal':
+      return 'Ordinal'
     case 'score_average':
     default:
       return 'Score Average'
@@ -499,8 +534,12 @@ const toNumber = (value: unknown): number | null => {
 }
 
 const rankedResults = computed(() => {
-  return [...props.results].sort((a, b) => {
+  return [...rankSourceResults.value].sort((a, b) => {
     if (isRankSumMethod.value) {
+      const aAverage = getAverageRank(a) ?? Infinity
+      const bAverage = getAverageRank(b) ?? Infinity
+      if (aAverage !== bAverage) return aAverage - bAverage
+
       const aWeighted = toNumber((a as any).weightedRankAvg) ?? toNumber(a.totalRankSum) ?? Infinity
       const bWeighted = toNumber((b as any).weightedRankAvg) ?? toNumber(b.totalRankSum) ?? Infinity
       return aWeighted - bWeighted
@@ -698,6 +737,10 @@ const rankSumRounds = computed(() => {
   if (!isRankSumMethod.value) return []
   if (!props.rounds || props.rounds.length === 0) return []
 
+  if (stageRankRounds.value.length > 0) {
+    return stageRankRounds.value
+  }
+
   if (finalScoreMode.value === 'fresh') {
     const finalRoundName = getFinalRoundName()
     if (!finalRoundName) return props.rounds
@@ -710,7 +753,7 @@ const rankSumRounds = computed(() => {
 const roundAverageRankMap = computed(() => {
   const map = new Map<string, Map<number, number>>()
 
-  if (!isRankSumMethod.value || !props.rounds || props.rounds.length === 0 || props.results.length === 0) {
+  if (!isRankSumMethod.value || !props.rounds || props.rounds.length === 0 || rankSourceResults.value.length === 0) {
     return map
   }
 
@@ -718,7 +761,7 @@ const roundAverageRankMap = computed(() => {
     const roundName = round.name
     const judgeScores = new Map<number, Array<{ contestantId: number; score: number }>>()
 
-    props.results.forEach(result => {
+    rankSourceResults.value.forEach(result => {
       const details = result.judgeRanks?.[roundName]?.details
       if (!details || details.length === 0) return
 
@@ -776,9 +819,23 @@ const roundAverageRankMap = computed(() => {
   return map
 })
 
+const getRoundAverageRankFromRanks = (result: Result, roundName: string): number | null => {
+  const ranks = result.judgeRanks?.[roundName]?.ranks
+  if (!ranks || ranks.length === 0) return null
+
+  const total = ranks.reduce((sum, rank) => sum + rank, 0)
+  return Number((total / ranks.length).toFixed(2))
+}
+
 const getRoundAverageRank = (result: Result, roundName: string): number | null => {
   if (!isRankSumMethod.value) return null
-  return roundAverageRankMap.value.get(roundName)?.get(result.id) ?? null
+
+  const fromMap = roundAverageRankMap.value.get(roundName)?.get(result.id)
+  if (fromMap !== null && fromMap !== undefined) {
+    return fromMap
+  }
+
+  return getRoundAverageRankFromRanks(result, roundName)
 }
 
 const getRoundAverageCount = (result: Result): number => {
@@ -813,6 +870,30 @@ const getAverageRank = (result: Result): number | null => {
   if (totalAverage === null || roundCount === 0) return null
   return Number((totalAverage / roundCount).toFixed(2))
 }
+
+const roundRankMap = computed(() => {
+  if (!isRankSumMethod.value) return new Map<number, number>()
+
+  const entries = rankSourceResults.value
+    .map(result => ({ id: result.id, avgRank: getAverageRank(result) }))
+    .filter(entry => entry.avgRank !== null)
+    .sort((a, b) => (a.avgRank ?? Infinity) - (b.avgRank ?? Infinity))
+
+  const map = new Map<number, number>()
+  let currentRank = 0
+  let lastValue: number | null = null
+
+  entries.forEach((entry, index) => {
+    const position = index + 1
+    if (lastValue === null || entry.avgRank !== lastValue) {
+      currentRank = position
+      lastValue = entry.avgRank as number
+    }
+    map.set(entry.id, currentRank)
+  })
+
+  return map
+})
 
 // Get weighted raw total (sum of score × round weight) for inherit mode
 const getWeightedRawTotal = (result: Result): number | null => {

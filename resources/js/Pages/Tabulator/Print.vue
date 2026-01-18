@@ -525,6 +525,7 @@
                         <PrintableResults
                           :pageant="pageant"
                           :results="maleResults"
+                          :rank-reference-results="rankReferenceResults"
                           :judges="judges"
                           :rounds="rounds"
                           :report-title="reportTitle"
@@ -550,6 +551,7 @@
                         <PrintableResults
                           :pageant="pageant"
                           :results="femaleResults"
+                          :rank-reference-results="rankReferenceResults"
                           :judges="judges"
                           :rounds="rounds"
                           :report-title="reportTitle"
@@ -608,6 +610,7 @@
                       <PrintableResults
                         :pageant="pageant"
                         :results="maleResults"
+                        :rank-reference-results="rankReferenceResults"
                         :judges="judges"
                         :rounds="rounds"
                         :report-title="`${reportTitle} - Male`"
@@ -631,6 +634,7 @@
                       <PrintableResults
                         :pageant="pageant"
                         :results="femaleResults"
+                        :rank-reference-results="rankReferenceResults"
                         :judges="judges"
                         :rounds="rounds"
                         :report-title="`${reportTitle} - Female`"
@@ -650,6 +654,7 @@
                     v-else
                     :pageant="pageant"
                     :results="resultsToShow"
+                    :rank-reference-results="rankReferenceResults"
                     :judges="judges"
                     :rounds="rounds"
                     :report-title="reportTitle"
@@ -917,6 +922,7 @@
             <PrintableResults
               :pageant="pageant"
               :results="maleResults"
+              :rank-reference-results="rankReferenceResults"
               :judges="judges"
               :rounds="rounds"
               :report-title="reportTitle"
@@ -942,6 +948,7 @@
             <PrintableResults
               :pageant="pageant"
               :results="femaleResults"
+              :rank-reference-results="rankReferenceResults"
               :judges="judges"
               :rounds="rounds"
               :report-title="reportTitle"
@@ -997,6 +1004,7 @@
           <PrintableResults
             :pageant="pageant"
             :results="maleResults"
+            :rank-reference-results="rankReferenceResults"
             :judges="judges"
             :rounds="rounds"
             :report-title="`${reportTitle} - Male`"
@@ -1017,6 +1025,7 @@
           <PrintableResults
             :pageant="pageant"
             :results="femaleResults"
+            :rank-reference-results="rankReferenceResults"
             :judges="judges"
             :rounds="rounds"
             :report-title="`${reportTitle} - Female`"
@@ -1036,6 +1045,7 @@
         v-else
         :pageant="pageant"
         :results="resultsToShow"
+        :rank-reference-results="rankReferenceResults"
         :judges="judges"
         :rounds="rounds"
         :report-title="reportTitle"
@@ -1067,6 +1077,7 @@ defineOptions({
 interface JudgeRankData {
   ranks: number[]
   scores?: number[]
+  details?: Array<{ judge_id: number; judge_name?: string; score: number; rank?: number }>
 }
 
 interface Result {
@@ -1273,6 +1284,171 @@ const getFinalRoundName = (): string | null => {
   return finalRounds[finalRounds.length - 1].name
 }
 
+const normalizeStageKey = (value: string): string => {
+  return value.toLowerCase().replace(/[\s-]/g, '')
+}
+
+const stageKey = computed(() => {
+  return normalizeStageKey(selectedStage.value)
+})
+
+const isNumericStage = computed(() => /^\d+$/.test(selectedStage.value))
+
+const isStageTypeSelection = computed(() => {
+  return stageKey.value !== '' && stageKey.value !== 'overall' && !isNumericStage.value
+})
+
+const overallResults = computed<Result[]>(() => {
+  return Array.isArray(props.overallTally)
+    ? props.overallTally
+    : (Array.isArray(props.resultsOverall) ? props.resultsOverall : [])
+})
+
+const overallResultsById = computed(() => {
+  return new Map(overallResults.value.map(result => [result.id, result]))
+})
+
+const rankReferenceResults = computed<Result[] | undefined>(() => {
+  if (isStageTypeSelection.value) {
+    return overallResults.value
+  }
+
+  return undefined
+})
+
+const mergeJudgeRanksFromOverall = (list: Result[]): Result[] => {
+  if (overallResultsById.value.size === 0) return list
+
+  return list.map(result => {
+    const overall = overallResultsById.value.get(result.id)
+    if (!overall) return result
+
+    const hasJudgeRanks = result.judgeRanks && Object.keys(result.judgeRanks).length > 0
+    if (hasJudgeRanks) return result
+
+    return {
+      ...result,
+      judgeRanks: overall.judgeRanks
+    }
+  })
+}
+
+const getRoundAverageRankFromRanks = (result: Result, roundName: string): number | null => {
+  const ranks = result.judgeRanks?.[roundName]?.ranks
+  if (!ranks || ranks.length === 0) return null
+
+  const total = ranks.reduce((sum, rank) => sum + rank, 0)
+  return Number((total / ranks.length).toFixed(2))
+}
+
+const overallRoundAverageRankMap = computed(() => {
+  const map = new Map<string, Map<number, number>>()
+
+  if (!props.rounds || props.rounds.length === 0 || overallResults.value.length === 0) {
+    return map
+  }
+
+  props.rounds.forEach(round => {
+    const roundName = round.name
+    const judgeScores = new Map<number, Array<{ contestantId: number; score: number }>>()
+
+    overallResults.value.forEach(result => {
+      const details = result.judgeRanks?.[roundName]?.details
+      if (!details || details.length === 0) return
+
+      details.forEach(detail => {
+        const score = typeof detail.score === 'number' ? detail.score : Number(detail.score)
+        if (!Number.isFinite(score)) return
+
+        const entries = judgeScores.get(detail.judge_id) ?? []
+        entries.push({ contestantId: result.id, score })
+        judgeScores.set(detail.judge_id, entries)
+      })
+    })
+
+    const roundRanks = new Map<number, { sum: number; count: number }>()
+
+    judgeScores.forEach(entries => {
+      const sorted = [...entries].sort((a, b) => b.score - a.score)
+      let index = 0
+      let betterCount = 0
+
+      while (index < sorted.length) {
+        const currentScore = sorted[index].score
+        const sameScoreGroup: typeof sorted = []
+
+        while (index < sorted.length && sorted[index].score === currentScore) {
+          sameScoreGroup.push(sorted[index])
+          index += 1
+        }
+
+        const rank = betterCount + 1
+        sameScoreGroup.forEach(entry => {
+          const current = roundRanks.get(entry.contestantId) ?? { sum: 0, count: 0 }
+          roundRanks.set(entry.contestantId, {
+            sum: current.sum + rank,
+            count: current.count + 1
+          })
+        })
+
+        betterCount += sameScoreGroup.length
+      }
+    })
+
+    const roundMap = new Map<number, number>()
+    roundRanks.forEach((value, contestantId) => {
+      if (value.count > 0) {
+        roundMap.set(contestantId, Number((value.sum / value.count).toFixed(2)))
+      }
+    })
+
+    if (roundMap.size > 0) {
+      map.set(roundName, roundMap)
+    }
+  })
+
+  return map
+})
+
+const overallRankRoundNames = computed(() => {
+  if (!props.rounds || props.rounds.length === 0) return []
+  const finalScoreMode = props.pageant?.final_score_mode || 'fresh'
+
+  if (finalScoreMode === 'fresh') {
+    const finalRoundName = getFinalRoundName()
+    if (finalRoundName) return [finalRoundName]
+  }
+
+  return props.rounds.map(round => round.name)
+})
+
+const getOverallRoundAverageRank = (result: Result, roundName: string): number | null => {
+  const fromMap = overallRoundAverageRankMap.value.get(roundName)?.get(result.id)
+  if (fromMap !== null && fromMap !== undefined) {
+    return fromMap
+  }
+
+  return getRoundAverageRankFromRanks(result, roundName)
+}
+
+const getOverallAverageRank = (result: Result): number | null => {
+  if (overallRankRoundNames.value.length === 0) return null
+
+  let sum = 0
+  let count = 0
+
+  overallRankRoundNames.value.forEach(roundName => {
+    const average = getOverallRoundAverageRank(result, roundName)
+    if (average !== null) {
+      sum += average
+      count += 1
+    }
+  })
+
+  if (count === 0) return null
+  return Number((sum / count).toFixed(2))
+}
+
 const getScoreAverageTotal = (result: Result): number => {
   const finalScoreMode = props.pageant?.final_score_mode || 'fresh'
   const scores = result.scores ?? {}
@@ -1332,6 +1508,10 @@ const resultsToShow = computed<Result[]>(() => {
     }
   }
 
+  if (isStageTypeSelection.value) {
+    baseList = mergeJudgeRanksFromOverall(baseList)
+  }
+
   // Deduplicate by contestant ID (keep first occurrence)
   const seenIds = new Set<number>()
   const deduplicated = baseList.filter(contestant => {
@@ -1347,6 +1527,13 @@ const resultsToShow = computed<Result[]>(() => {
 
   // Sort contestants: for inherit mode, trust backend order; for fresh mode, compute locally
   const sorted = [...deduplicated].sort((a, b) => {
+    if (stageKey.value === 'final' && (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal')) {
+      const avgA = getOverallAverageRank(a) ?? Infinity
+      const avgB = getOverallAverageRank(b) ?? Infinity
+      if (avgA !== avgB) return avgA - avgB
+      return (a.number ?? 0) - (b.number ?? 0)
+    }
+
     if (selectedStage.value === 'overall') {
       if (rankingMethod === 'score_average') {
         const scoreA = getScoreAverageTotal(a)
@@ -1407,7 +1594,7 @@ const resultsToShow = computed<Result[]>(() => {
 
   // Update qualified status based on position
   return sorted.map((contestant, index) => {
-    const currentRank = (contestant.rank ?? 0) > 0 ? contestant.rank : index + 1
+    const currentRank = typeof contestant.rank === 'number' && contestant.rank > 0 ? contestant.rank : index + 1
     const qualified = topNProceed === null || currentRank <= topNProceed
     
     return {
@@ -1445,6 +1632,13 @@ const maleResults = computed(() => {
   
   // Sort: trust backend rank for inherit mode, compute locally for fresh mode
   const sorted = [...males].sort((a, b) => {
+    if (stageKey.value === 'final' && (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal')) {
+      const avgA = getOverallAverageRank(a) ?? Infinity
+      const avgB = getOverallAverageRank(b) ?? Infinity
+      if (avgA !== avgB) return avgA - avgB
+      return (a.number ?? 0) - (b.number ?? 0)
+    }
+
     if (selectedStage.value === 'overall') {
       if (rankingMethod === 'score_average') {
         const scoreA = getScoreAverageTotal(a)
@@ -1501,7 +1695,7 @@ const maleResults = computed(() => {
   // Recompute rank and qualified status within male group
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
-    const genderRank = (contestant.rank ?? 0) > 0 ? contestant.rank : index + 1
+    const genderRank = typeof contestant.rank === 'number' && contestant.rank > 0 ? contestant.rank : index + 1
     return {
       ...contestant,
       rank: genderRank,
@@ -1520,6 +1714,13 @@ const femaleResults = computed(() => {
   
   // Sort: trust backend rank for inherit mode, compute locally for fresh mode
   const sorted = [...females].sort((a, b) => {
+    if (stageKey.value === 'final' && (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal')) {
+      const avgA = getOverallAverageRank(a) ?? Infinity
+      const avgB = getOverallAverageRank(b) ?? Infinity
+      if (avgA !== avgB) return avgA - avgB
+      return (a.number ?? 0) - (b.number ?? 0)
+    }
+
     if (selectedStage.value === 'overall') {
       if (rankingMethod === 'score_average') {
         const scoreA = getScoreAverageTotal(a)
@@ -1576,7 +1777,7 @@ const femaleResults = computed(() => {
   // Recompute rank and qualified status within female group
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
-    const genderRank = (contestant.rank ?? 0) > 0 ? contestant.rank : index + 1
+    const genderRank = typeof contestant.rank === 'number' && contestant.rank > 0 ? contestant.rank : index + 1
     return {
       ...contestant,
       rank: genderRank,
