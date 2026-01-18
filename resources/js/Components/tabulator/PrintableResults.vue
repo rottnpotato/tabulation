@@ -467,13 +467,19 @@ const finalScoreMode = computed(() => {
 })
 
 const shouldShowWinners = computed(() => {
-  return props.selectedStage === 'overall' || props.isLastFinalRound === true
+  const stage = normalizedStageKey.value
+  return props.isLastFinalRound === true || stage === 'overall' || stage === 'final' || stage === 'finals'
 })
 
 // Check if we're on overall tally (both fresh and inherit modes should show rank position)
 // Because backend computes correct ranking including weighted inheritance calculations
 const isOverallTally = computed(() => {
   return props.selectedStage === 'overall'
+})
+
+const isFinalStage = computed(() => {
+  const stage = normalizedStageKey.value
+  return stage === 'final' || stage === 'finals'
 })
 
 const isPerRoundStage = computed(() => {
@@ -555,8 +561,15 @@ const getRankDisplayValue = (result: Result, position?: number): string => {
     }
     return result.rank ? `Rank: ${result.rank}` : '—'
   }
-  // For individual rounds, show rank sum
-  return `Rank Sum: ${result.totalRankSum ?? result.final_score}`
+  const averageRank = getAverageRank(result)
+  if (averageRank !== null) {
+    return `Avg Rank: ${formatScore(averageRank, 2)}`
+  }
+  const rankSum = toNumber(result.totalRankSum ?? result.final_score)
+  if (rankSum !== null) {
+    return `Rank Sum: ${formatScore(rankSum, 2)}`
+  }
+  return '—'
 }
 
 // Get final rank position among finalists only
@@ -609,7 +622,7 @@ const getFinalRankAmongFinalists = (result: Result): number => {
 const getFinalResultLabel = (result: Result, index: number): string | null => {
   if (!shouldShowWinners.value) return null
 
-  if (props.isLastFinalRound) {
+  if (props.isLastFinalRound || isFinalStage.value) {
     const rankValue = toNumber(result.rank) ?? index + 1
     if (rankValue > 0 && rankValue <= props.numberOfWinners) {
       return `Top ${rankValue}`
