@@ -182,12 +182,12 @@
               </th>
             </template>
             <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
+              Avg Rank
+            </th>
+            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
               <span v-else-if="isOverallTally">Final Rank</span>
               <span v-else>Total Rank</span>
-            </th>
-            <th v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold w-12 border-l border-black">
-              Avg Rank
             </th>
             <th v-else class="py-1 px-1 text-center font-bold w-12 border-l-2 border-black">
               <span v-if="isLastFinalRound">Final Result (Top {{ numberOfWinners }})</span>
@@ -253,6 +253,10 @@
               </td>
             </template>
             <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
+              <span v-if="shouldShowRankStats(result) && getAverageRank(result) !== null">{{ formatScore(getAverageRank(result)!, 2) }}</span>
+              <span v-else class="text-gray-300">—</span>
+            </td>
+            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
               <template v-if="isOverallTally || isLastFinalRound">
                 <span v-if="shouldShowWinners && hasValidFinalScore(result) && getFinalRankAmongFinalists(result) > 0 && getFinalRankAmongFinalists(result) <= numberOfWinners">
                   Top {{ getFinalRankAmongFinalists(result) }}
@@ -263,10 +267,6 @@
                 <span v-if="shouldShowRankStats(result) && getTotalAverageRankSum(result) !== null">{{ formatScore(getTotalAverageRankSum(result)!, 2) }}</span>
                 <span v-else class="text-gray-300">—</span>
               </template>
-            </td>
-            <td v-if="isRankSumMethod" class="py-1 px-1 text-center font-bold tabular-nums border-l border-black">
-              <span v-if="shouldShowRankStats(result) && getAverageRank(result) !== null">{{ formatScore(getAverageRank(result)!, 2) }}</span>
-              <span v-else class="text-gray-300">—</span>
             </td>
             <td v-else class="py-1 px-1 text-center font-bold tabular-nums border-l-2 border-black">
               <span v-if="result.hasQualifiedForFinal !== false">{{ formatScore(getNonRankSumTotal(result)) }}</span>
@@ -315,6 +315,7 @@ import { computed } from 'vue'
 interface JudgeRankData {
   ranks: number[]
   scores?: number[]
+  details?: Array<{ judge_id: number; judge_name: string; score: number; rank: number }>
 }
 
 interface Result {
@@ -714,18 +715,61 @@ const roundAverageRankMap = computed(() => {
   }
 
   props.rounds.forEach(round => {
-    const roundMap = new Map<number, number>()
+    const roundName = round.name
+    const judgeScores = new Map<number, Array<{ contestantId: number; score: number }>>()
 
     props.results.forEach(result => {
-      const ranks = result.judgeRanks?.[round.name]?.ranks
-      if (!Array.isArray(ranks) || ranks.length === 0) return
+      const details = result.judgeRanks?.[roundName]?.details
+      if (!details || details.length === 0) return
 
-      const average = ranks.reduce((sum, rank) => sum + rank, 0) / ranks.length
-      roundMap.set(result.id, Number(average.toFixed(2)))
+      details.forEach(detail => {
+        const score = typeof detail.score === 'number' ? detail.score : Number(detail.score)
+        if (!Number.isFinite(score)) return
+
+        const entries = judgeScores.get(detail.judge_id) ?? []
+        entries.push({ contestantId: result.id, score })
+        judgeScores.set(detail.judge_id, entries)
+      })
+    })
+
+    const roundRanks = new Map<number, { sum: number; count: number }>()
+
+    judgeScores.forEach(entries => {
+      const sorted = [...entries].sort((a, b) => b.score - a.score)
+      let index = 0
+      let betterCount = 0
+
+      while (index < sorted.length) {
+        const currentScore = sorted[index].score
+        const sameScoreGroup: typeof sorted = []
+
+        while (index < sorted.length && sorted[index].score === currentScore) {
+          sameScoreGroup.push(sorted[index])
+          index += 1
+        }
+
+        const rank = betterCount + 1
+        sameScoreGroup.forEach(entry => {
+          const current = roundRanks.get(entry.contestantId) ?? { sum: 0, count: 0 }
+          roundRanks.set(entry.contestantId, {
+            sum: current.sum + rank,
+            count: current.count + 1
+          })
+        })
+
+        betterCount += sameScoreGroup.length
+      }
+    })
+
+    const roundMap = new Map<number, number>()
+    roundRanks.forEach((value, contestantId) => {
+      if (value.count > 0) {
+        roundMap.set(contestantId, Number((value.sum / value.count).toFixed(2)))
+      }
     })
 
     if (roundMap.size > 0) {
-      map.set(round.name, roundMap)
+      map.set(roundName, roundMap)
     }
   })
 
