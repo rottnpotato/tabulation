@@ -1686,12 +1686,18 @@ class ScoreCalculationService
                 $totalRoundWeight = 0;
                 $totalRankSum = 0;
 
-                // Get scores for ALL rounds up to target round (for display)
+                // Get scores and judge ranks for ALL rounds up to target round (for display)
                 foreach ($roundsForDisplay as $round) {
                     $roundScore = $this->calculateContestantRoundScore($contestant, $round, $pageant);
 
                     if ($roundScore !== null) {
                         $roundScores[$round->name] = round($roundScore, 2);
+                    }
+
+                    // Always get judge ranks for ALL display rounds (for frontend display)
+                    if ($pageant->ranking_method === 'rank_sum') {
+                        $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling, $finalScoreMode);
+                        $judgeRanks[$round->name] = $roundJudgeData;
                     }
                 }
 
@@ -1716,6 +1722,12 @@ class ScoreCalculationService
                             }
                             $stageScores[$roundType] += $roundScore * $roundWeight;
                             $stageWeights[$roundType] += $roundWeight;
+                        }
+
+                        // Sum up the rank sum for rounds used in calculation
+                        if ($pageant->ranking_method === 'rank_sum' && isset($judgeRanks[$round->name]['ranks']) && is_array($judgeRanks[$round->name]['ranks'])) {
+                            $roundRankSum = array_sum($judgeRanks[$round->name]['ranks']);
+                            $totalRankSum += $roundRankSum;
                         }
                     }
 
@@ -1742,15 +1754,9 @@ class ScoreCalculationService
                             $totalRoundWeight += $roundWeight;
                         }
 
-                        // Always get judge ranks for display purposes (regardless of ranking method)
-                        $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling, $finalScoreMode);
-                        if ($pageant->ranking_method === 'rank_sum') {
-                            $judgeRanks[$round->name] = $roundJudgeData;
-                        }
-
-                        // Always sum up the rank sum for this round (for secondary display)
-                        if (isset($roundJudgeData['ranks']) && is_array($roundJudgeData['ranks'])) {
-                            $roundRankSum = array_sum($roundJudgeData['ranks']);
+                        // Sum up the rank sum for rounds used in calculation
+                        if ($pageant->ranking_method === 'rank_sum' && isset($judgeRanks[$round->name]['ranks']) && is_array($judgeRanks[$round->name]['ranks'])) {
+                            $roundRankSum = array_sum($judgeRanks[$round->name]['ranks']);
                             $totalRankSum += $roundRankSum;
                         }
                     }
