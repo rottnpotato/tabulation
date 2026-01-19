@@ -96,10 +96,10 @@
               ]"
             >
             <!-- Rank -->
-            <td v-if="!hideRankColumn" class="whitespace-nowrap px-4 py-3 text-center">
+            <!-- <td v-if="!hideRankColumn" class="whitespace-nowrap px-4 py-3 text-center">
               <div class="flex items-center justify-center gap-2">
                 <div class="relative">
-                  <!-- <span
+                   <span
                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-all duration-300"
                     :class="getRankBadgeClass(getRankPosition(contestant.id), contestant.qualified)"
                   >
@@ -109,7 +109,7 @@
                     <!-- <span v-if="showWinners && getRankPosition(contestant.id) <= numberOfWinners">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
                     <span v-else-if="!showWinners && getRankPosition(contestant.id) <= 3">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span> 
                   </span> -->
-                  <!-- Rank change indicator -->
+                  <!-- Rank change indicator 
                   <transition name="rank-indicator">
                     <span
                       v-if="isUpdating && getRankChange(contestant.id, getRankPosition(contestant.id)) === 'up'"
@@ -146,7 +146,7 @@
                   <span>Eliminated</span>
                 </span>
               </div>
-            </td>
+            </td> -->
 
             <!-- Contestant Info -->
             <td class="whitespace-nowrap px-4 py-3">
