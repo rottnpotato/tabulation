@@ -798,6 +798,14 @@ const getRoundAverageRank = (contestant: Contestant, roundName: string): number 
 
 const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string): number | null => {
   if (!isRankSumMethod.value) return null
+  
+  // Use backend-calculated perRoundRanks if available (this matches the RANK column in DetailedScoreTable)
+  if (contestant.perRoundRanks && contestant.perRoundRanks[roundName] !== undefined) {
+    const rank = contestant.perRoundRanks[roundName]
+    return rank > 0 ? rank : null
+  }
+  
+  // Fallback to locally computed value
   return roundAverageRankPlacementMap.value.get(roundName)?.get(contestant.id) ?? null
 }
 
