@@ -105,8 +105,8 @@
                   >
                     <span v-if="hasTiedRank(contestant.id)" class="mr-1">Tied</span>
                     <span class="mr-1 tabular-nums">{{ getOrdinalRank(getRankPosition(contestant.id)) }}</span>
-                    <span v-if="showWinners && getRankPosition(contestant.id) <= numberOfWinners">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
-                    <span v-else-if="!showWinners && getRankPosition(contestant.id) <= 3">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
+                    <!-- <span v-if="showWinners && getRankPosition(contestant.id) <= numberOfWinners">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
+                    <span v-else-if="!showWinners && getRankPosition(contestant.id) <= 3">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span> -->
                   </span>
                   <!-- Rank change indicator -->
                   <transition name="rank-indicator">
