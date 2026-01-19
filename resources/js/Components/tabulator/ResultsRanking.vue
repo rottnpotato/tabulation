@@ -13,13 +13,13 @@
       <table class="min-w-full divide-y divide-gray-100 text-sm">
         <thead class="bg-gray-50">
           <tr>
-            <th
+            <!-- <th
               v-if="!hideRankColumn"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               Rank
-            </th>
+            </th> -->
             <th
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"
@@ -99,19 +99,16 @@
             <td v-if="!hideRankColumn" class="whitespace-nowrap px-4 py-3 text-center">
               <div class="flex items-center justify-center gap-2">
                 <div class="relative">
-                  <span
-                   
-                  >
-
-                      <!-- <span
+                  <!-- <span
                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-all duration-300"
                     :class="getRankBadgeClass(getRankPosition(contestant.id), contestant.qualified)"
-                  > -->
+                  >
+                  
                     <span v-if="hasTiedRank(contestant.id)" class="mr-1">Tied</span>
-                    <!-- <span class="mr-1 tabular-nums">{{ getOrdinalRank(getRankPosition(contestant.id)) }}</span> -->
+                     <span class="mr-1 tabular-nums">{{ getOrdinalRank(getRankPosition(contestant.id)) }}</span> -->
                     <!-- <span v-if="showWinners && getRankPosition(contestant.id) <= numberOfWinners">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
-                    <span v-else-if="!showWinners && getRankPosition(contestant.id) <= 3">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span> -->
-                  </span>
+                    <span v-else-if="!showWinners && getRankPosition(contestant.id) <= 3">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span> 
+                  </span> -->
                   <!-- Rank change indicator -->
                   <transition name="rank-indicator">
                     <span
@@ -377,7 +374,7 @@
           </tr>
           
           <!-- Qualification Cutoff Line (hidden in overall tally view) -->
-          <tr 
+          <!-- <tr 
             v-if="!hideRankColumn && shouldShowCutoffLine(contestant)"
             class="bg-slate-100 border-t-2 border-b-2 border-slate-400"
           >
@@ -392,7 +389,7 @@
                 </svg>
               </div>
             </td>
-          </tr>
+          </tr> -->
         </template>
         </tbody>
       </table>
