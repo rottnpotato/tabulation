@@ -684,8 +684,9 @@ const rankSumRounds = computed(() => {
   return props.rounds
 })
 
-const roundAverageRankMap = computed(() => {
-  const map = new Map<string, Map<number, number>>()
+// Store both sum and count of judge ranks per round per contestant
+const roundRankDataMap = computed(() => {
+  const map = new Map<string, Map<number, { sum: number; count: number }>>()
 
   if (!isRankSumMethod.value || props.rounds.length === 0 || props.contestants.length === 0) {
     return map
@@ -737,13 +738,44 @@ const roundAverageRankMap = computed(() => {
       }
     })
 
+    map.set(roundName, roundRanks)
+  })
+
+  return map
+})
+
+// Get the average rank for a contestant in a round (Total Rank / Judge Count)
+const roundAverageRankMap = computed(() => {
+  const map = new Map<string, Map<number, number>>()
+
+  if (!isRankSumMethod.value) return map
+
+  roundRankDataMap.value.forEach((roundData, roundName) => {
     const roundMap = new Map<number, number>()
-    roundRanks.forEach((value, contestantId) => {
+    roundData.forEach((value, contestantId) => {
       if (value.count > 0) {
         roundMap.set(contestantId, Number((value.sum / value.count).toFixed(2)))
       }
     })
+    map.set(roundName, roundMap)
+  })
 
+  return map
+})
+
+// Get the total rank sum for a contestant in a round (sum of all judge ranks)
+const roundTotalRankMap = computed(() => {
+  const map = new Map<string, Map<number, number>>()
+
+  if (!isRankSumMethod.value) return map
+
+  roundRankDataMap.value.forEach((roundData, roundName) => {
+    const roundMap = new Map<number, number>()
+    roundData.forEach((value, contestantId) => {
+      if (value.count > 0) {
+        roundMap.set(contestantId, value.sum)
+      }
+    })
     map.set(roundName, roundMap)
   })
 
@@ -806,6 +838,18 @@ const getRoundAverageRank = (contestant: Contestant, roundName: string): number 
   return roundAverageRankMap.value.get(roundName)?.get(contestant.id) ?? null
 }
 
+// Get total rank sum for a specific round (sum of all judge ranks in that round)
+const getRoundTotalRank = (contestant: Contestant, roundName: string): number | null => {
+  if (!isRankSumMethod.value) return null
+  return roundTotalRankMap.value.get(roundName)?.get(contestant.id) ?? null
+}
+
+// Get judge count for a specific round
+const getRoundJudgeCount = (contestant: Contestant, roundName: string): number => {
+  const data = roundRankDataMap.value.get(roundName)?.get(contestant.id)
+  return data?.count ?? 0
+}
+
 const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string): number | null => {
   if (!isRankSumMethod.value) return null
   
@@ -816,11 +860,19 @@ const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string)
 const getRoundAverageCount = (contestant: Contestant): number => {
   if (!contestant.judgeRanks || rankSumRounds.value.length === 0) return 0
   return rankSumRounds.value.reduce((total, round) => {
-    // Use actual average rank (consistent with getTotalAverageRankSum)
     return getRoundAverageRank(contestant, round.name) !== null ? total + 1 : total
   }, 0)
 }
 
+// Get total judge rank count across all rounds
+const getTotalJudgeCount = (contestant: Contestant): number => {
+  if (!contestant.judgeRanks || rankSumRounds.value.length === 0) return 0
+  return rankSumRounds.value.reduce((total, round) => {
+    return total + getRoundJudgeCount(contestant, round.name)
+  }, 0)
+}
+
+// Get grand total of all judge ranks across all rounds (sum of all individual judge ranks)
 const getTotalAverageRankSum = (contestant: Contestant): number | null => {
   if (!isRankSumMethod.value) return null
   if (!contestant.judgeRanks || rankSumRounds.value.length === 0) return null
@@ -829,10 +881,10 @@ const getTotalAverageRankSum = (contestant: Contestant): number | null => {
   let hasAny = false
 
   rankSumRounds.value.forEach(round => {
-    // Use actual average rank (average of judge ranks) instead of placement
-    const roundAvgRank = getRoundAverageRank(contestant, round.name)
-    if (roundAvgRank !== null) {
-      sum += roundAvgRank
+    // Use total rank (sum of judge ranks) for each round
+    const roundTotalRank = getRoundTotalRank(contestant, round.name)
+    if (roundTotalRank !== null) {
+      sum += roundTotalRank
       hasAny = true
     }
   })
@@ -840,12 +892,13 @@ const getTotalAverageRankSum = (contestant: Contestant): number | null => {
   return hasAny ? Number(sum.toFixed(2)) : null
 }
 
+// Get average rank = Total of all judge ranks / Total number of judges across all rounds
 const getAverageRank = (contestant: Contestant): number | null => {
   if (!isRankSumMethod.value) return null
-  const totalAverage = getTotalAverageRankSum(contestant)
-  const roundCount = getRoundAverageCount(contestant)
-  if (totalAverage === null || roundCount === 0) return null
-  return Number((totalAverage / roundCount).toFixed(2))
+  const totalRankSum = getTotalAverageRankSum(contestant)
+  const judgeCount = getTotalJudgeCount(contestant)
+  if (totalRankSum === null || judgeCount === 0) return null
+  return Number((totalRankSum / judgeCount).toFixed(2))
 }
 
 // Get weighted raw total (sum of score × round weight) for inherit mode
