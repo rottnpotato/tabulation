@@ -38,9 +38,9 @@
                 <span v-if="round.type" class="text-[9px] font-medium opacity-75 uppercase">{{ round.type }}</span>
               </div>
             </th>
-            <!-- Total Raw Score column - only shown in inherit mode for score-based ranking -->
+            <!-- Total Raw Score column - only shown in inherit mode for score-based ranking (not in round view) -->
             <th
-              v-if="!isRankSumMethod && finalScoreMode === 'inherit' && isLastFinalRound"
+              v-if="!isRankSumMethod && finalScoreMode === 'inherit' && isLastFinalRound && !isRoundView"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-50"
             >
@@ -50,28 +50,28 @@
               </div>
             </th>
             <th
-              v-if="isRankSumMethod"
+              v-if="isRankSumMethod && !isRoundView"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               Total Rank
             </th>
             <th
-              v-if="isRankSumMethod"
+              v-if="isRankSumMethod && !isRoundView"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               Average Rank
             </th>
             <th
-              v-if="isRankSumMethod && !hideFinalRankColumn"
+              v-if="isRankSumMethod && !isRoundView"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
               Final Rank
             </th>
             <th
-              v-else
+              v-else-if="!isRoundView"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
@@ -231,9 +231,9 @@
               </div>
             </td>
 
-            <!-- Total Raw Score column - only shown in inherit mode for score-based ranking -->
+            <!-- Total Raw Score column - only shown in inherit mode for score-based ranking (not in round view) -->
             <td 
-              v-if="!isRankSumMethod && finalScoreMode === 'inherit' && isLastFinalRound"
+              v-if="!isRankSumMethod && finalScoreMode === 'inherit' && isLastFinalRound && !isRoundView"
               class="whitespace-nowrap px-4 py-3 text-center bg-emerald-50/50"
             >
               <span 
@@ -247,19 +247,19 @@
             </td>
 
             <!-- Total Score / Rank Sum -->
-            <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
+            <td v-if="isRankSumMethod && !isRoundView" class="whitespace-nowrap px-4 py-3 text-right">
               <span v-if="shouldShowRankStats(contestant) && getTotalAverageRankSum(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
                 {{ formatScore(getTotalAverageRankSum(contestant), 2) }}
               </span>
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
-            <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
+            <td v-if="isRankSumMethod && !isRoundView" class="whitespace-nowrap px-4 py-3 text-right">
               <span v-if="shouldShowRankStats(contestant) && getAverageRank(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
                 {{ formatScore(getAverageRank(contestant), 2) }}
               </span>
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
-            <td v-if="isRankSumMethod && !hideFinalRankColumn" class="whitespace-nowrap px-4 py-3 text-right">
+            <td v-if="isRankSumMethod && !isRoundView" class="whitespace-nowrap px-4 py-3 text-right">
               <div class="flex items-center justify-end">
                 <span
                   v-if="isLastFinalRound && showWinners && hasValidFinalScore(contestant) && getFinalRankAmongFinalists(contestant) <= numberOfWinners"
@@ -275,7 +275,7 @@
                 <span v-else class="text-gray-300 italic text-sm">—</span>
               </div>
             </td>
-            <td v-else class="whitespace-nowrap px-4 py-3 text-right">
+            <td v-else-if="!isRoundView" class="whitespace-nowrap px-4 py-3 text-right">
               <div class="flex flex-col items-end gap-1">
                 <div class="flex items-center gap-2">
                   <!-- Score Average method: show computed score (finalScore for inherit mode, displayTotal otherwise) -->
@@ -461,9 +461,9 @@ interface Props {
   showWinners?: boolean
   rankingMethod?: 'score_average' | 'rank_sum' | 'ordinal'
   hideRankColumn?: boolean
-  hideFinalRankColumn?: boolean
   isLastFinalRound?: boolean
   finalScoreMode?: 'fresh' | 'inherit'
+  isRoundView?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -472,14 +472,15 @@ const props = withDefaults(defineProps<Props>(), {
   showWinners: false,
   rankingMethod: 'score_average',
   hideRankColumn: false,
-  hideFinalRankColumn: false,
   isLastFinalRound: false,
-  finalScoreMode: 'fresh'
+  finalScoreMode: 'fresh',
+  isRoundView: false
 })
 
 const isRankSumMethod = computed(() => props.rankingMethod === 'rank_sum')
 const isScoreAverageMethod = computed(() => props.rankingMethod === 'score_average')
 const shouldShowRoundRank = computed(() => isRankSumMethod.value)
+const isRoundView = computed(() => props.isRoundView)
 
 // Track previous rankings for animation
 const previousRankMap = ref<Map<number, number>>(new Map())
@@ -855,17 +856,20 @@ const getWeightedRawTotal = (contestant: Contestant): number | null => {
 const getColspanForBreakdown = (): number => {
   let colspan = props.rounds.length + 1 // Contestant + Rounds
 
-  if (isRankSumMethod.value) {
-    colspan += props.hideFinalRankColumn ? 2 : 3 // Total Rank + Average Rank (+ Final Rank)
-  } else {
-    colspan += 1 // Final Result column
+  // Only add summary columns if not viewing a specific round
+  if (!props.isRoundView) {
+    if (isRankSumMethod.value) {
+      colspan += 3 // Total Rank + Average Rank + Final Rank
+    } else {
+      colspan += 1 // Final Result column
+    }
   }
 
   if (!props.hideRankColumn) {
     colspan += 1 // Add Rank column
   }
 
-  if (!isRankSumMethod.value && props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
+  if (!isRankSumMethod.value && props.finalScoreMode === 'inherit' && props.isLastFinalRound && !props.isRoundView) {
     colspan += 1 // Add Total Raw Score column
   }
 
