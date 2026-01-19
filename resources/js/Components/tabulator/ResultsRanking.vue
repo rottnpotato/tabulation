@@ -763,33 +763,26 @@ const roundAverageRankPlacementMap = computed(() => {
       return
     }
 
-    const scoreBuckets = new Map<string, number[]>()
-    averageRanks.forEach((averageRank, contestantId) => {
-      const key = averageRank.toFixed(6)
-      if (!scoreBuckets.has(key)) {
-        scoreBuckets.set(key, [])
-      }
-      scoreBuckets.get(key)?.push(contestantId)
-    })
+    // Sort contestants by average rank (ascending - lower is better)
+    const sortedContestants = Array.from(averageRanks.entries())
+      .sort((a, b) => a[1] - b[1]) // a[1] and b[1] are the average rank values
 
-    const sortedScores = Array.from(scoreBuckets.keys())
-      .map(key => ({ key, value: Number(key) }))
-      .sort((a, b) => a.value - b.value)
-
-    let currentRank = 1
     const roundPlacements = new Map<number, number>()
+    let currentRank = 1
+    let previousAverage = -1
 
-    sortedScores.forEach(({ key }) => {
-      const contestantsWithScore = scoreBuckets.get(key) ?? []
-      const startRank = currentRank
-      const endRank = currentRank + contestantsWithScore.length - 1
-      const placement = (startRank + endRank) / 2
-
-      contestantsWithScore.forEach(contestantId => {
-        roundPlacements.set(contestantId, placement)
-      })
-
-      currentRank += contestantsWithScore.length
+    sortedContestants.forEach(([contestantId, averageRank]) => {
+      // Only apply tie-handling if averages are EXACTLY the same
+      if (averageRank !== previousAverage) {
+        // Different average rank, assign next sequential rank
+        roundPlacements.set(contestantId, currentRank)
+        previousAverage = averageRank
+        currentRank++
+      } else {
+        // Exact same average rank, use the same rank as previous
+        const previousRank = roundPlacements.get(sortedContestants[sortedContestants.findIndex(([id]) => id === contestantId) - 1][0])!
+        roundPlacements.set(contestantId, previousRank)
+      }
     })
 
     map.set(round.name, roundPlacements)
