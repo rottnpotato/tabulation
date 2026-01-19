@@ -260,6 +260,7 @@ import { RefreshCw, Printer, Trophy, BarChart3, Users, LayoutDashboard, Target, 
 import CustomSelect from '../../Components/CustomSelect.vue'
 import ResultsRanking from '../../Components/tabulator/ResultsRanking.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
+import { getDisplayedRounds } from '@/utils/rounds'
 
 defineOptions({
   layout: TabulatorLayout
@@ -602,42 +603,10 @@ const currentRoundInfo = computed(() => {
 })
 
 const displayedRounds = computed(() => {
-  let rounds = props.rounds
-  
-  if (activeRound.value !== 'overall') {
-    // Show only rounds up to and including the selected round
-    const selectedRound = props.rounds.find(r => r.id.toString() === activeRound.value)
-    if (!selectedRound) return props.rounds
-    
-    // Filter rounds and verify they have score data
-    const roundsUpToSelected = props.rounds.filter(r => (r.display_order || 0) <= (selectedRound.display_order || 0))
-    
-    // For round-specific views, only show rounds that have actual scores in the contestants data
-    if (displayedContestants.value && displayedContestants.value.length > 0) {
-      const firstContestant = displayedContestants.value[0]
-      const availableRoundNames = new Set(Object.keys(firstContestant.scores || {}))
-      rounds = roundsUpToSelected.filter(r => availableRoundNames.has(r.name))
-    } else {
-      rounds = roundsUpToSelected
-    }
-  }
-  
-  // Sort rounds: First by display_order, then prioritize rounds without top_n_proceed (non-advancing)
-  // This ensures rounds like "Evening Gown" appear before "Production Number" when they're in the same stage
-  return [...rounds].sort((a, b) => {
-    const orderA = a.display_order || 0
-    const orderB = b.display_order || 0
-    
-    // First sort by display order
-    if (orderA !== orderB) {
-      return orderA - orderB
-    }
-    
-    // If same display order, prioritize rounds without top_n_proceed (no advancement)
-    const aHasAdvancement = (a.top_n_proceed && a.top_n_proceed > 0) ? 1 : 0
-    const bHasAdvancement = (b.top_n_proceed && b.top_n_proceed > 0) ? 1 : 0
-    
-    return aHasAdvancement - bHasAdvancement
+  return getDisplayedRounds({
+    rounds: props.rounds,
+    activeRound: activeRound.value,
+    displayedContestants: displayedContestants.value
   })
 })
 
