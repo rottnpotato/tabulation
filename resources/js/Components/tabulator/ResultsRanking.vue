@@ -810,7 +810,7 @@ const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string)
 const getRoundAverageCount = (contestant: Contestant): number => {
   if (!contestant.judgeRanks || rankSumRounds.value.length === 0) return 0
   return rankSumRounds.value.reduce((total, round) => {
-    return getRoundAverageRank(contestant, round.name) !== null ? total + 1 : total
+    return getRoundAverageRankPlacement(contestant, round.name) !== null ? total + 1 : total
   }, 0)
 }
 
@@ -822,9 +822,9 @@ const getTotalAverageRankSum = (contestant: Contestant): number | null => {
   let hasAny = false
 
   rankSumRounds.value.forEach(round => {
-    const roundAverage = getRoundAverageRank(contestant, round.name)
-    if (roundAverage !== null) {
-      sum += roundAverage
+    const roundPlacement = getRoundAverageRankPlacement(contestant, round.name)
+    if (roundPlacement !== null) {
+      sum += roundPlacement
       hasAny = true
     }
   })
