@@ -178,7 +178,14 @@
               :class="[getRoundCellClass(round, roundIndex), getDisplayScore(contestant, round.name) !== null ? 'text-gray-900' : 'text-gray-300']">
               <div class="flex flex-col items-center gap-1">
                 <!-- Rank Sum (for rank_sum) or Score (score_average) -->
-                <span v-if="isRankSumMethod && getRoundAverageRank(contestant, round.name) !== null" class="text-sm font-medium tabular-nums">
+                <span
+                  v-if="isRankSumMethod && shouldShowRoundRank && getRoundAverageRankPlacement(contestant, round.name) !== null"
+                  class="text-sm font-semibold tabular-nums"
+                  :title="`Average rank: ${formatScore(getRoundAverageRank(contestant, round.name), 2)}`"
+                >
+                  {{ formatPlacementValue(getRoundAverageRankPlacement(contestant, round.name)) }}
+                </span>
+                <span v-else-if="isRankSumMethod && getRoundAverageRank(contestant, round.name) !== null" class="text-sm font-medium tabular-nums">
                   {{ formatScore(getRoundAverageRank(contestant, round.name), 2) }}
                 </span>
                 <span v-else-if="!isRankSumMethod && hasValidScore(getDisplayScore(contestant, round.name))" class="text-sm font-medium tabular-nums">
@@ -470,6 +477,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const isRankSumMethod = computed(() => props.rankingMethod === 'rank_sum')
 const isScoreAverageMethod = computed(() => props.rankingMethod === 'score_average')
+const shouldShowRoundRank = computed(() => isRankSumMethod.value && props.hideRankColumn)
 
 // Track previous rankings for animation
 const previousRankMap = ref<Map<number, number>>(new Map())
@@ -741,9 +749,62 @@ const roundAverageRankMap = computed(() => {
   return map
 })
 
+const roundAverageRankPlacementMap = computed(() => {
+  const map = new Map<string, Map<number, number>>()
+
+  if (!isRankSumMethod.value || props.rounds.length === 0 || props.contestants.length === 0) {
+    return map
+  }
+
+  props.rounds.forEach(round => {
+    const averageRanks = roundAverageRankMap.value.get(round.name)
+    if (!averageRanks || averageRanks.size === 0) {
+      return
+    }
+
+    const scoreBuckets = new Map<string, number[]>()
+    averageRanks.forEach((averageRank, contestantId) => {
+      const key = averageRank.toFixed(6)
+      if (!scoreBuckets.has(key)) {
+        scoreBuckets.set(key, [])
+      }
+      scoreBuckets.get(key)?.push(contestantId)
+    })
+
+    const sortedScores = Array.from(scoreBuckets.keys())
+      .map(key => ({ key, value: Number(key) }))
+      .sort((a, b) => a.value - b.value)
+
+    let currentRank = 1
+    const roundPlacements = new Map<number, number>()
+
+    sortedScores.forEach(({ key }) => {
+      const contestantsWithScore = scoreBuckets.get(key) ?? []
+      const startRank = currentRank
+      const endRank = currentRank + contestantsWithScore.length - 1
+      const placement = (startRank + endRank) / 2
+
+      contestantsWithScore.forEach(contestantId => {
+        roundPlacements.set(contestantId, placement)
+      })
+
+      currentRank += contestantsWithScore.length
+    })
+
+    map.set(round.name, roundPlacements)
+  })
+
+  return map
+})
+
 const getRoundAverageRank = (contestant: Contestant, roundName: string): number | null => {
   if (!isRankSumMethod.value) return null
   return roundAverageRankMap.value.get(roundName)?.get(contestant.id) ?? null
+}
+
+const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string): number | null => {
+  if (!isRankSumMethod.value) return null
+  return roundAverageRankPlacementMap.value.get(roundName)?.get(contestant.id) ?? null
 }
 
 const getRoundAverageCount = (contestant: Contestant): number => {
@@ -1209,6 +1270,11 @@ const formatScore = (value: unknown, decimals = 2, empty = '-'): string => {
     return empty
   }
   return n.toFixed(decimals)
+}
+
+const formatPlacementValue = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return '-'
+  return Number(value.toFixed(2)).toString()
 }
 
 // Get judge breakdown for a contestant in the final round

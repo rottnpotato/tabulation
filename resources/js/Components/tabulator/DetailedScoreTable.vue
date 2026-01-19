@@ -51,7 +51,10 @@
             <th v-if="isRankSumMethod" scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-purple-50">
               Average Rank
             </th>
-            <th v-if="showBackedOutActions" scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th v-if="isRankSumMethod" scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-purple-50">
+              Rank
+            </th>
+            <th v-if="showBackedOutActions && !isRankSumMethod" scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -141,8 +144,17 @@
               <span v-else-if="contestant.backed_out" class="text-red-400 text-sm italic">N/A</span>
               <span v-else class="text-right text-gray-400 text-sm">—</span>
             </td>
-            <!-- Actions Column -->
-            <td v-if="showBackedOutActions" class="px-6 py-4 whitespace-nowrap text-center">
+            <td v-if="isRankSumMethod" class="px-6 py-4 whitespace-nowrap" :class="contestant.backed_out ? 'bg-red-50/30' : 'bg-purple-50'">
+              <span
+                v-if="getContestantAverageRankPlacement(contestant.id) !== null && !contestant.backed_out"
+                class="inline-flex text-center items-center px-3 py-1 rounded-full text-sm font-bold bg-purple-600 text-white"
+              >
+                {{ formatPlacementValue(getContestantAverageRankPlacement(contestant.id)) }}
+              </span>
+              <span v-else-if="contestant.backed_out" class="text-red-400 text-sm italic">N/A</span>
+              <span v-else class="text-right text-gray-400 text-sm">—</span>
+            </td>
+            <td v-if="showBackedOutActions && !isRankSumMethod" class="px-6 py-4 whitespace-nowrap text-center">
               <button
                 v-if="contestant.backed_out"
                 @click="emit('restore', contestant)"
@@ -620,9 +632,65 @@ const getContestantAverageRank = (contestantId: number): number | null => {
   return Number((sum / judgeRanks.length).toFixed(2))
 }
 
+const averageRankPlacementMap = computed(() => {
+  const placements = new Map<number, number>()
+  if (!isRankSumMethod.value) return placements
+
+  const entries = displayContestants.value
+    .filter(contestant => !contestant.backed_out)
+    .map(contestant => {
+      const averageRank = getContestantAverageRank(contestant.id)
+      if (averageRank === null) return null
+      return { contestantId: contestant.id, averageRank }
+    })
+    .filter(Boolean) as Array<{ contestantId: number; averageRank: number }>
+
+  if (entries.length === 0) return placements
+
+  const scoreBuckets = new Map<string, number[]>()
+  entries.forEach(({ contestantId, averageRank }) => {
+    const key = averageRank.toFixed(6)
+    if (!scoreBuckets.has(key)) {
+      scoreBuckets.set(key, [])
+    }
+    scoreBuckets.get(key)?.push(contestantId)
+  })
+
+  const sortedScores = Array.from(scoreBuckets.keys())
+    .map(key => ({ key, value: Number(key) }))
+    .sort((a, b) => a.value - b.value)
+
+  let currentRank = 1
+  sortedScores.forEach(({ key }) => {
+    const contestantsWithScore = scoreBuckets.get(key) ?? []
+    const startRank = currentRank
+    const endRank = currentRank + contestantsWithScore.length - 1
+    const placement = (startRank + endRank) / 2
+
+    contestantsWithScore.forEach(contestantId => {
+      placements.set(contestantId, placement)
+    })
+
+    currentRank += contestantsWithScore.length
+  })
+
+  return placements
+})
+
+const getContestantAverageRankPlacement = (contestantId: number): number | null => {
+  if (!isRankSumMethod.value) return null
+  const placement = averageRankPlacementMap.value.get(contestantId)
+  return placement === undefined ? null : placement
+}
+
 const formatRankValue = (value: number | null, decimals = 2): string => {
   if (value === null || value === undefined) return '—'
   return value.toFixed(decimals)
+}
+
+const formatPlacementValue = (value: number | null): string => {
+  if (value === null || value === undefined) return '—'
+  return Number(value.toFixed(2)).toString()
 }
 
 const getScoreColor = (score: number | null, maxScore: number): string => {
