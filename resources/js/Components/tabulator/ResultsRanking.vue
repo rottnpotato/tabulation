@@ -180,14 +180,11 @@
               <div class="flex flex-col items-center gap-1">
                 <!-- Rank Sum (for rank_sum) or Score (score_average) -->
                 <span
-                  v-if="isRankSumMethod && shouldShowRoundRank && getRoundAverageRankPlacement(contestant, round.name) !== null"
+                  v-if="isRankSumMethod && getRoundAverageRank(contestant, round.name) !== null"
                   class="text-sm font-semibold tabular-nums"
                   :title="`Average rank: ${formatScore(getRoundAverageRank(contestant, round.name), 2)}`"
                 >
-                  {{ formatPlacementValue(getRoundAverageRankPlacement(contestant, round.name)) }}
-                </span>
-                <span v-else-if="isRankSumMethod && getRoundAverageRank(contestant, round.name) !== null" class="text-sm font-medium tabular-nums">
-                  {{ formatScore(getRoundAverageRank(contestant, round.name), 2) }}
+                  {{ formatScore(getRoundAverageRank(contestant, round.name), 0) }}
                 </span>
                 <span v-else-if="!isRankSumMethod && hasValidScore(getDisplayScore(contestant, round.name))" class="text-sm font-medium tabular-nums">
                   {{ formatScore(getDisplayScore(contestant, round.name)) }}
