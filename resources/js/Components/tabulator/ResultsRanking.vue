@@ -477,7 +477,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const isRankSumMethod = computed(() => props.rankingMethod === 'rank_sum')
 const isScoreAverageMethod = computed(() => props.rankingMethod === 'score_average')
-const shouldShowRoundRank = computed(() => isRankSumMethod.value && props.hideRankColumn)
+const shouldShowRoundRank = computed(() => isRankSumMethod.value)
 
 // Track previous rankings for animation
 const previousRankMap = ref<Map<number, number>>(new Map())
