@@ -181,7 +181,8 @@
                   :number-of-winners="pageant?.number_of_winners || 3"
                   :show-winners="shouldShowWinners"
                   :ranking-method="pageant?.ranking_method || 'score_average'"
-                  :hide-rank-column="activeRound === 'overall'"
+                  :hide-rank-column="activeRound !== 'overall'"
+                  :hide-final-rank-column="activeRound !== 'overall'"
                   :is-last-final-round="shouldShowWinners"
                   :final-score-mode="pageant?.final_score_mode || 'fresh'"
                 />
@@ -207,7 +208,8 @@
                   :number-of-winners="pageant?.number_of_winners || 3"
                   :show-winners="shouldShowWinners"
                   :ranking-method="pageant?.ranking_method || 'score_average'"
-                  :hide-rank-column="activeRound === 'overall'"
+                  :hide-rank-column="activeRound !== 'overall'"
+                  :hide-final-rank-column="activeRound !== 'overall'"
                   :is-last-final-round="shouldShowWinners"
                   :final-score-mode="pageant?.final_score_mode || 'fresh'"
                 />
@@ -229,7 +231,8 @@
                 :number-of-winners="pageant?.number_of_winners || 3"
                 :show-winners="shouldShowWinners"
                 :ranking-method="pageant?.ranking_method || 'score_average'"
-                :hide-rank-column="activeRound === 'overall'"
+                :hide-rank-column="activeRound !== 'overall'"
+                :hide-final-rank-column="activeRound !== 'overall'"
                 :is-last-final-round="shouldShowWinners"
                 :final-score-mode="pageant?.final_score_mode || 'fresh'"
               />
@@ -431,26 +434,30 @@ const displayedContestants = computed(() => {
     // For overall view, trust the backend order completely
     // This is especially important for ordinal ranking where rank=0 means non-finalist
     if (activeRound.value === 'overall') {
+      const aRank = a.rank ?? 0
+      const bRank = b.rank ?? 0
       // Both have positive ranks - sort by rank ascending
-      if (a.rank > 0 && b.rank > 0) {
-        return a.rank - b.rank
+      if (aRank > 0 && bRank > 0) {
+        return aRank - bRank
       }
       // Ranked contestants come before unranked (rank=0)
-      if (a.rank > 0 && b.rank === 0) return -1
-      if (a.rank === 0 && b.rank > 0) return 1
+      if (aRank > 0 && bRank === 0) return -1
+      if (aRank === 0 && bRank > 0) return 1
       // Both unranked - sort by contestant number
       return (a.number ?? 0) - (b.number ?? 0)
     }
     
     // For round-specific views, check ranking method
     if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
+      const aRank = a.rank ?? 0
+      const bRank = b.rank ?? 0
       // For rank sum and ordinal: lower is better (ascending order) or use backend rank
-      if (a.rank > 0 && b.rank > 0) {
-        return a.rank - b.rank
+      if (aRank > 0 && bRank > 0) {
+        return aRank - bRank
       }
       // Ranked contestants come before unranked
-      if (a.rank > 0 && b.rank === 0) return -1
-      if (a.rank === 0 && b.rank > 0) return 1
+      if (aRank > 0 && bRank === 0) return -1
+      if (aRank === 0 && bRank > 0) return 1
       // Both unranked - use weightedRankAvg (Excel formula) or fall back to rank sum
       const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
       const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
@@ -468,7 +475,8 @@ const displayedContestants = computed(() => {
   const result = sorted.map((contestant, index) => {
     // Use backend rank if available and positive, otherwise use position
     // For ordinal ranking, rank=0 means non-finalist, so use index+1 for display
-    const currentRank = contestant.rank > 0 ? contestant.rank : index + 1
+    const baseRank = contestant.rank ?? 0
+    const currentRank = baseRank > 0 ? baseRank : index + 1
     newRankings.set(contestant.id, currentRank)
     
     // Recompute qualified status based on current position
@@ -514,17 +522,21 @@ const maleContestants = computed(() => {
   const sorted = [...males].sort((a, b) => {
     // For overall view, trust backend order (handles ordinal rank=0 properly)
     if (activeRound.value === 'overall') {
-      if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
-      if (a.rank > 0 && b.rank === 0) return -1
-      if (a.rank === 0 && b.rank > 0) return 1
+      const aRank = a.rank ?? 0
+      const bRank = b.rank ?? 0
+      if (aRank > 0 && bRank > 0) return aRank - bRank
+      if (aRank > 0 && bRank === 0) return -1
+      if (aRank === 0 && bRank > 0) return 1
       return (a.number ?? 0) - (b.number ?? 0)
     }
     
     // For round-specific views, check ranking method
     if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
-      if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
-      if (a.rank > 0 && b.rank === 0) return -1
-      if (a.rank === 0 && b.rank > 0) return 1
+      const aRank = a.rank ?? 0
+      const bRank = b.rank ?? 0
+      if (aRank > 0 && bRank > 0) return aRank - bRank
+      if (aRank > 0 && bRank === 0) return -1
+      if (aRank === 0 && bRank > 0) return 1
       const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
       const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
       return weightedA - weightedB
@@ -539,7 +551,8 @@ const maleContestants = computed(() => {
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
     // Use backend rank if available and positive (handles ties properly)
-    const genderRank = contestant.rank > 0 ? contestant.rank : index + 1
+    const baseRank = contestant.rank ?? 0
+    const genderRank = baseRank > 0 ? baseRank : index + 1
     return {
       ...contestant,
       rank: genderRank,
@@ -561,17 +574,21 @@ const femaleContestants = computed(() => {
   const sorted = [...females].sort((a, b) => {
     // For overall view, trust backend order (handles ordinal rank=0 properly)
     if (activeRound.value === 'overall') {
-      if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
-      if (a.rank > 0 && b.rank === 0) return -1
-      if (a.rank === 0 && b.rank > 0) return 1
+      const aRank = a.rank ?? 0
+      const bRank = b.rank ?? 0
+      if (aRank > 0 && bRank > 0) return aRank - bRank
+      if (aRank > 0 && bRank === 0) return -1
+      if (aRank === 0 && bRank > 0) return 1
       return (a.number ?? 0) - (b.number ?? 0)
     }
     
     // For round-specific views, check ranking method
     if (rankingMethod === 'rank_sum' || rankingMethod === 'ordinal') {
-      if (a.rank > 0 && b.rank > 0) return a.rank - b.rank
-      if (a.rank > 0 && b.rank === 0) return -1
-      if (a.rank === 0 && b.rank > 0) return 1
+      const aRank = a.rank ?? 0
+      const bRank = b.rank ?? 0
+      if (aRank > 0 && bRank > 0) return aRank - bRank
+      if (aRank > 0 && bRank === 0) return -1
+      if (aRank === 0 && bRank > 0) return 1
       const weightedA = (a as any).weightedRankAvg ?? a.totalRankSum ?? 999999
       const weightedB = (b as any).weightedRankAvg ?? b.totalRankSum ?? 999999
       return weightedA - weightedB
@@ -586,7 +603,8 @@ const femaleContestants = computed(() => {
   const topN = currentQualificationCutoff.value
   return sorted.map((contestant, index) => {
     // Use backend rank if available and positive (handles ties properly)
-    const genderRank = contestant.rank > 0 ? contestant.rank : index + 1
+    const baseRank = contestant.rank ?? 0
+    const genderRank = baseRank > 0 ? baseRank : index + 1
     return {
       ...contestant,
       rank: genderRank,
@@ -602,11 +620,24 @@ const currentRoundInfo = computed(() => {
   return round || null
 })
 
-const displayedRounds = computed(() => {
-  return getDisplayedRounds({
+const displayedRounds = computed<Round[]>(() => {
+  const rounds = getDisplayedRounds({
     rounds: props.rounds,
     activeRound: activeRound.value,
     displayedContestants: displayedContestants.value
+  })
+
+  const roundMap = new Map(props.rounds.map((round) => [round.id, round]))
+
+  return rounds.map((round) => {
+    const fallback = roundMap.get(round.id)
+    const rawWeight = (round as { weight?: unknown }).weight
+    const roundWeight = typeof rawWeight === 'number' ? rawWeight : undefined
+    return {
+      ...fallback,
+      ...round,
+      weight: roundWeight ?? fallback?.weight ?? 0
+    }
   })
 })
 

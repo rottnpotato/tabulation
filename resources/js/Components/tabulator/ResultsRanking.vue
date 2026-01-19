@@ -64,7 +64,7 @@
               Average Rank
             </th>
             <th
-              v-if="isRankSumMethod"
+              v-if="isRankSumMethod && !hideFinalRankColumn"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
@@ -259,7 +259,7 @@
               </span>
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
-            <td v-if="isRankSumMethod" class="whitespace-nowrap px-4 py-3 text-right">
+            <td v-if="isRankSumMethod && !hideFinalRankColumn" class="whitespace-nowrap px-4 py-3 text-right">
               <div class="flex items-center justify-end">
                 <span
                   v-if="isLastFinalRound && showWinners && hasValidFinalScore(contestant) && getFinalRankAmongFinalists(contestant) <= numberOfWinners"
@@ -461,6 +461,7 @@ interface Props {
   showWinners?: boolean
   rankingMethod?: 'score_average' | 'rank_sum' | 'ordinal'
   hideRankColumn?: boolean
+  hideFinalRankColumn?: boolean
   isLastFinalRound?: boolean
   finalScoreMode?: 'fresh' | 'inherit'
 }
@@ -471,6 +472,7 @@ const props = withDefaults(defineProps<Props>(), {
   showWinners: false,
   rankingMethod: 'score_average',
   hideRankColumn: false,
+  hideFinalRankColumn: false,
   isLastFinalRound: false,
   finalScoreMode: 'fresh'
 })
@@ -854,7 +856,7 @@ const getColspanForBreakdown = (): number => {
   let colspan = props.rounds.length + 1 // Contestant + Rounds
 
   if (isRankSumMethod.value) {
-    colspan += 3 // Total Rank + Average Rank + Final Rank
+    colspan += props.hideFinalRankColumn ? 2 : 3 // Total Rank + Average Rank (+ Final Rank)
   } else {
     colspan += 1 // Final Result column
   }
