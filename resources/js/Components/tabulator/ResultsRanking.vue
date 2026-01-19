@@ -100,11 +100,15 @@
               <div class="flex items-center justify-center gap-2">
                 <div class="relative">
                   <span
+                   
+                  >
+
+                      <!-- <span
                     class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-all duration-300"
                     :class="getRankBadgeClass(getRankPosition(contestant.id), contestant.qualified)"
-                  >
+                  > -->
                     <span v-if="hasTiedRank(contestant.id)" class="mr-1">Tied</span>
-                    <span class="mr-1 tabular-nums">{{ getOrdinalRank(getRankPosition(contestant.id)) }}</span>
+                    <!-- <span class="mr-1 tabular-nums">{{ getOrdinalRank(getRankPosition(contestant.id)) }}</span> -->
                     <!-- <span v-if="showWinners && getRankPosition(contestant.id) <= numberOfWinners">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span>
                     <span v-else-if="!showWinners && getRankPosition(contestant.id) <= 3">{{ getRankDisplay(getRankPosition(contestant.id)) }}</span> -->
                   </span>
