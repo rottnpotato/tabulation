@@ -199,11 +199,7 @@ class ScoreCalculationService
         $scores = [];
 
         foreach ($pageant->contestants as $contestant) {
-            if (($pageant->ranking_method ?? '') === 'rank_sum') {
-                $score = $this->calculateJudgeRawScoreSum($judgeId, $contestant->id, $roundId, $pageant->id);
-            } else {
-                $score = $this->calculateJudgeContestantScore($judgeId, $contestant->id, $roundId, $pageant->id);
-            }
+            $score = $this->calculateJudgeContestantScore($judgeId, $contestant->id, $roundId, $pageant->id);
             if ($score !== null) {
                 $scores[$contestant->id] = $score;
             }
@@ -224,18 +220,14 @@ class ScoreCalculationService
         $judgeDetails = [];
 
         foreach ($pageant->judges as $judge) {
-            if (($pageant->ranking_method ?? '') === 'rank_sum') {
-                $judgeScore = $this->calculateJudgeRawScoreSum($judge->id, $contestant->id, $round->id, $pageant->id);
-            } else {
-                $judgeScore = $this->calculateJudgeContestantScore($judge->id, $contestant->id, $round->id, $pageant->id);
-            }
+            $judgeScore = $this->calculateJudgeContestantScore($judge->id, $contestant->id, $round->id, $pageant->id);
 
             if ($judgeScore !== null) {
                 $allJudgeScores = $this->getAllJudgeScoresForRound($judge->id, $round->id, $pageant);
 
-                if (($pageant->ranking_method ?? '') === 'rank_sum') {
-                    $rank = $this->calculateRankMin($judgeScore, $allJudgeScores, 'desc');
-                } elseif ($finalScoreMode === 'fresh') {
+                // Fresh mode: use minimum ranking (ties get same rank)
+                // Inherit mode: use average ranking (ties get averaged rank)
+                if ($finalScoreMode === 'fresh') {
                     $rank = $this->calculateRankMin($judgeScore, $allJudgeScores, 'desc');
                 } else {
                     $rank = $this->calculateRankAvg($judgeScore, $allJudgeScores, 'desc');
