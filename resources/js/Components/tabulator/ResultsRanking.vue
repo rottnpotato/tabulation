@@ -763,26 +763,36 @@ const roundAverageRankPlacementMap = computed(() => {
       return
     }
 
-    // Sort contestants by average rank (ascending - lower is better)
-    const sortedContestants = Array.from(averageRanks.entries())
-      .sort((a, b) => a[1] - b[1]) // a[1] and b[1] are the average rank values
+    // Group contestants by their average rank (to detect ties)
+    const scoreBuckets = new Map<string, number[]>()
+    averageRanks.forEach((avgRank, contestantId) => {
+      const key = avgRank.toFixed(6)
+      if (!scoreBuckets.has(key)) {
+        scoreBuckets.set(key, [])
+      }
+      scoreBuckets.get(key)?.push(contestantId)
+    })
+
+    // Sort by average rank (ascending - lower is better)
+    const sortedScores = Array.from(scoreBuckets.keys())
+      .map(key => ({ key, value: Number(key) }))
+      .sort((a, b) => a.value - b.value)
 
     const roundPlacements = new Map<number, number>()
     let currentRank = 1
-    let previousAverage = -1
 
-    sortedContestants.forEach(([contestantId, averageRank]) => {
-      // Only apply tie-handling if averages are EXACTLY the same
-      if (averageRank !== previousAverage) {
-        // Different average rank, assign next sequential rank
-        roundPlacements.set(contestantId, currentRank)
-        previousAverage = averageRank
-        currentRank++
-      } else {
-        // Exact same average rank, use the same rank as previous
-        const previousRank = roundPlacements.get(sortedContestants[sortedContestants.findIndex(([id]) => id === contestantId) - 1][0])!
-        roundPlacements.set(contestantId, previousRank)
-      }
+    sortedScores.forEach(({ key }) => {
+      const contestantsWithScore = scoreBuckets.get(key) ?? []
+      // Use fractional ranking for ties (same as DetailedScoreTable.vue)
+      const startRank = currentRank
+      const endRank = currentRank + contestantsWithScore.length - 1
+      const placement = (startRank + endRank) / 2
+
+      contestantsWithScore.forEach(contestantId => {
+        roundPlacements.set(contestantId, placement)
+      })
+
+      currentRank += contestantsWithScore.length
     })
 
     map.set(round.name, roundPlacements)
@@ -799,13 +809,7 @@ const getRoundAverageRank = (contestant: Contestant, roundName: string): number 
 const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string): number | null => {
   if (!isRankSumMethod.value) return null
   
-  // Use backend-calculated perRoundRanks if available (this matches the RANK column in DetailedScoreTable)
-  if (contestant.perRoundRanks && contestant.perRoundRanks[roundName] !== undefined) {
-    const rank = contestant.perRoundRanks[roundName]
-    return rank > 0 ? rank : null
-  }
-  
-  // Fallback to locally computed value
+  // Use locally computed placement to match DetailedScoreTable.vue logic
   return roundAverageRankPlacementMap.value.get(roundName)?.get(contestant.id) ?? null
 }
 
