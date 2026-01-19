@@ -685,6 +685,7 @@ const rankSumRounds = computed(() => {
 })
 
 // Store both sum and count of judge ranks per round per contestant
+// Uses pre-computed ranks from backend (judgeRanks[roundName].details[].rank)
 const roundRankDataMap = computed(() => {
   const map = new Map<string, Map<number, { sum: number; count: number }>>()
 
@@ -694,47 +695,26 @@ const roundRankDataMap = computed(() => {
 
   props.rounds.forEach(round => {
     const roundName = round.name
-    const judgeScores = new Map<number, Array<{ contestantId: number; score: number }>>()
+    const roundRanks = new Map<number, { sum: number; count: number }>()
 
     props.contestants.forEach(contestant => {
       const details = contestant.judgeRanks?.[roundName]?.details
       if (!details || details.length === 0) return
 
+      let sum = 0
+      let count = 0
+
       details.forEach(detail => {
-        const score = typeof detail.score === 'number' ? detail.score : Number(detail.score)
-        if (!Number.isFinite(score)) return
-
-        const entries = judgeScores.get(detail.judge_id) ?? []
-        entries.push({ contestantId: contestant.id, score })
-        judgeScores.set(detail.judge_id, entries)
-      })
-    })
-
-    const roundRanks = new Map<number, { sum: number; count: number }>()
-
-    judgeScores.forEach(entries => {
-      const sorted = [...entries].sort((a, b) => b.score - a.score)
-      let index = 0
-      let betterCount = 0
-
-      while (index < sorted.length) {
-        const currentScore = sorted[index].score
-        const sameScoreGroup: typeof sorted = []
-        while (index < sorted.length && sorted[index].score === currentScore) {
-          sameScoreGroup.push(sorted[index])
-          index += 1
+        // Use the pre-computed rank from backend directly
+        const rank = typeof detail.rank === 'number' ? detail.rank : Number(detail.rank)
+        if (Number.isFinite(rank)) {
+          sum += rank
+          count += 1
         }
+      })
 
-        const rank = betterCount + 1
-        sameScoreGroup.forEach(entry => {
-          const current = roundRanks.get(entry.contestantId) ?? { sum: 0, count: 0 }
-          roundRanks.set(entry.contestantId, {
-            sum: current.sum + rank,
-            count: current.count + 1
-          })
-        })
-
-        betterCount += sameScoreGroup.length
+      if (count > 0) {
+        roundRanks.set(contestant.id, { sum, count })
       }
     })
 
