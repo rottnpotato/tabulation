@@ -656,6 +656,8 @@ class ScoreCalculationService
     {
         try {
             $finalScoreMode = $pageant->final_score_mode ?? 'fresh';
+            $finalScoreInheritance = $pageant->final_score_inheritance ?? [];
+            $shouldInheritScores = $finalScoreMode === 'inherit' && ! empty($finalScoreInheritance);
 
             $cacheKey = $stage
                 ? "pageant_ranksum_scores_{$pageant->id}_{$stage}_{$finalScoreMode}"
@@ -708,12 +710,18 @@ class ScoreCalculationService
                 $weightedRankSum = 0;
                 $totalWeight = 0;
                 $perRoundRanks = [];
+                
+                // For inheritance mode: track rank sums per stage type
+                $stageRankSums = [];
+                $stageRoundCounts = [];
 
                 foreach ($rounds as $round) {
                     $roundWeight = $round->weight ?? 1;
                     if ($roundWeight <= 0) {
                         $roundWeight = 1;
                     }
+                    
+                    $roundType = strtolower($round->type ?? 'preliminary');
 
                     $roundJudgeData = $this->getJudgeRanksForRound($contestant, $round, $pageant, $tieHandling, $finalScoreMode);
 
@@ -735,12 +743,50 @@ class ScoreCalculationService
                         $weightedRank = ($contestantRoundRank / 100) * $roundWeight;
                         $weightedRankSum += $weightedRank;
                         $totalWeight += $roundWeight;
+                        
+                        // Track stage rank sums for inheritance mode
+                        if ($shouldInheritScores) {
+                            if (! isset($stageRankSums[$roundType])) {
+                                $stageRankSums[$roundType] = 0;
+                                $stageRoundCounts[$roundType] = 0;
+                            }
+                            $stageRankSums[$roundType] += $contestantRoundRank;
+                            $stageRoundCounts[$roundType]++;
+                        }
                     }
                 }
 
                 // Excel formula: average of weighted ranks = sum / count (or sum / 3 for 3 rounds)
                 $roundCount = count(array_filter($perRoundRanks, fn ($r) => $r > 0));
                 $weightedRankAvg = $roundCount > 0 ? $weightedRankSum / $roundCount : 0;
+                
+                // For inheritance mode: calculate weighted rank sum using inheritance percentages
+                $inheritedRankSum = $totalRankSum;
+                $inheritanceBreakdown = [];
+                
+                if ($shouldInheritScores && ! empty($stageRankSums)) {
+                    $inheritedRankSum = 0;
+                    
+                    foreach ($stageRankSums as $stageType => $stageRankTotal) {
+                        $inheritPercent = $finalScoreInheritance[$stageType] ?? 0;
+                        $inheritDecimal = $inheritPercent / 100;
+                        
+                        // Average rank within this stage, then apply inheritance percentage
+                        $stageAvgRank = $stageRoundCounts[$stageType] > 0 
+                            ? $stageRankTotal / $stageRoundCounts[$stageType] 
+                            : 0;
+                        $stageContribution = $stageAvgRank * $inheritDecimal;
+                        
+                        $inheritedRankSum += $stageContribution;
+                        
+                        $inheritanceBreakdown[$stageType] = [
+                            'stageType' => ucwords(str_replace('-', ' ', $stageType)),
+                            'percentage' => $inheritPercent,
+                            'stageAverage' => round($stageAvgRank, 2),
+                            'contribution' => round($stageContribution, 4),
+                        ];
+                    }
+                }
 
                 $memberNames = [];
                 $memberGenders = [];
@@ -764,10 +810,12 @@ class ScoreCalculationService
                     'scores' => $roundScores,
                     'judgeRanks' => $judgeRanks,
                     'perRoundRanks' => $perRoundRanks,
-                    'totalRankSum' => round($totalRankSum, 2),
+                    'totalRankSum' => round($shouldInheritScores ? $inheritedRankSum : $totalRankSum, 2),
+                    'rawTotalRankSum' => round($totalRankSum, 2),
                     'weightedRankAvg' => round($weightedRankAvg, 4),
-                    'finalScore' => round($totalRankSum, 2),
-                    'totalScore' => round($totalRankSum, 2),
+                    'finalScore' => round($shouldInheritScores ? $inheritedRankSum : $totalRankSum, 2),
+                    'totalScore' => round($shouldInheritScores ? $inheritedRankSum : $totalRankSum, 2),
+                    'inheritanceBreakdown' => $shouldInheritScores ? $inheritanceBreakdown : null,
                 ];
             }
 
