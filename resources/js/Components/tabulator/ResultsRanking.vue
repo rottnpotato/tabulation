@@ -939,15 +939,39 @@ const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string)
 }
 
 const getRoundAverageCount = (contestant: Contestant): number => {
-  if (!contestant.judgeRanks || rankSumRounds.value.length === 0) return 0
+  if (rankSumRounds.value.length === 0) return 0
   return rankSumRounds.value.reduce((total, round) => {
-    return getRoundAverageRankPlacement(contestant, round.name) !== null ? total + 1 : total
+    const backendPlacement = (contestant as any).perRoundRanks?.[round.name]
+    const computedPlacement = getRoundAverageRankPlacement(contestant, round.name)
+    const hasPlacement = (backendPlacement ?? computedPlacement) !== null && 
+                         (backendPlacement ?? computedPlacement) !== undefined &&
+                         (backendPlacement ?? computedPlacement) > 0
+    return hasPlacement ? total + 1 : total
   }, 0)
 }
 
 const getTotalAverageRankSum = (contestant: Contestant): number | null => {
   if (!isRankSumMethod.value) return null
-  if (!contestant.judgeRanks || rankSumRounds.value.length === 0) return null
+  if (rankSumRounds.value.length === 0) return null
+
+  // Helper function to get inheritance percentage with case-insensitive key lookup
+  const getInheritPercent = (stageType: string): number => {
+    const normalizedType = stageType.toLowerCase().replace(/[_\s]/g, '-')
+    
+    // Try exact match first
+    if (props.inheritancePercentages[normalizedType] !== undefined) {
+      return props.inheritancePercentages[normalizedType]
+    }
+    
+    // Try case-insensitive match
+    for (const [key, value] of Object.entries(props.inheritancePercentages)) {
+      if (key.toLowerCase().replace(/[_\s]/g, '-') === normalizedType) {
+        return value
+      }
+    }
+    
+    return 0
+  }
 
   // For inheritance mode: multiply each round's placement by its stage's inheritance percentage
   if (shouldApplyInheritance.value) {
@@ -955,10 +979,14 @@ const getTotalAverageRankSum = (contestant: Contestant): number | null => {
     let roundCount = 0
     
     rankSumRounds.value.forEach(round => {
-      const roundPlacement = getRoundAverageRankPlacement(contestant, round.name)
-      if (roundPlacement !== null) {
+      // Try to get placement from backend perRoundRanks first, then fall back to computed placement
+      const backendPlacement = (contestant as any).perRoundRanks?.[round.name]
+      const computedPlacement = getRoundAverageRankPlacement(contestant, round.name)
+      const roundPlacement = backendPlacement ?? computedPlacement
+      
+      if (roundPlacement !== null && roundPlacement !== undefined && roundPlacement > 0) {
         const stageType = (round.type || 'preliminary').toLowerCase()
-        const inheritPercent = props.inheritancePercentages[stageType] ?? 0
+        const inheritPercent = getInheritPercent(stageType)
         const inheritDecimal = inheritPercent / 100
         
         // placement × inheritance percentage (e.g., rank 2 × 0.30 = 0.60)
@@ -976,8 +1004,11 @@ const getTotalAverageRankSum = (contestant: Contestant): number | null => {
   let hasAny = false
 
   rankSumRounds.value.forEach(round => {
-    const roundPlacement = getRoundAverageRankPlacement(contestant, round.name)
-    if (roundPlacement !== null) {
+    const backendPlacement = (contestant as any).perRoundRanks?.[round.name]
+    const computedPlacement = getRoundAverageRankPlacement(contestant, round.name)
+    const roundPlacement = backendPlacement ?? computedPlacement
+    
+    if (roundPlacement !== null && roundPlacement !== undefined && roundPlacement > 0) {
       sum += roundPlacement
       hasAny = true
     }
