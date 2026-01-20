@@ -925,14 +925,7 @@ const getRoundAverageRank = (contestant: Contestant, roundName: string): number 
 const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string): number | null => {
   if (!isRankSumMethod.value) return null
   
-  // Use pre-computed perRoundRanks from backend for consistency with DetailedScoreTable
-  // perRoundRanks contains the placement rank calculated by the backend using the same dataset
-  if (contestant.perRoundRanks && contestant.perRoundRanks[roundName] !== undefined) {
-    const rank = contestant.perRoundRanks[roundName]
-    return rank > 0 ? rank : null
-  }
-  
-  // Fallback to locally computed placement if perRoundRanks not available
+  // Use locally computed placement to match DetailedScoreTable.vue logic
   return roundAverageRankPlacementMap.value.get(roundName)?.get(contestant.id) ?? null
 }
 
