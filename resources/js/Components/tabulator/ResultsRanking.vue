@@ -684,6 +684,40 @@ const rankSumRounds = computed(() => {
   return props.rounds
 })
 
+// DEBUG: Log props data on mount
+const debugLogProps = () => {
+  console.group('🔍 ResultsRanking DEBUG - Props Data')
+  console.log('Ranking Method:', props.rankingMethod)
+  console.log('Rounds:', props.rounds.map(r => ({ id: r.id, name: r.name, type: r.type })))
+  console.log('Total Contestants:', props.contestants.length)
+  
+  props.contestants.forEach(contestant => {
+    console.group(`👤 Contestant #${contestant.number}: ${contestant.name} (ID: ${contestant.id})`)
+    console.log('scores:', contestant.scores)
+    console.log('totalScore:', contestant.totalScore)
+    console.log('totalRankSum:', contestant.totalRankSum)
+    console.log('perRoundRanks:', contestant.perRoundRanks)
+    
+    if (contestant.judgeRanks) {
+      Object.keys(contestant.judgeRanks).forEach(roundName => {
+        const roundData = contestant.judgeRanks![roundName]
+        console.group(`📋 Round: ${roundName}`)
+        console.log('scores array:', roundData.scores)
+        console.log('ranks array:', roundData.ranks)
+        console.log('details:', roundData.details)
+        console.groupEnd()
+      })
+    } else {
+      console.log('judgeRanks: undefined/null')
+    }
+    console.groupEnd()
+  })
+  console.groupEnd()
+}
+
+// Call debug on component setup
+debugLogProps()
+
 // Compute judge ranks per round using the same logic as DetailedScoreTable.vue
 // This computes ranks from raw scores per judge (highest score = rank 1)
 const roundJudgeRankMap = computed(() => {
@@ -692,6 +726,8 @@ const roundJudgeRankMap = computed(() => {
   if (!isRankSumMethod.value || props.rounds.length === 0 || props.contestants.length === 0) {
     return map
   }
+
+  console.group('🧮 roundJudgeRankMap Computation')
 
   props.rounds.forEach(round => {
     const roundName = round.name
@@ -713,6 +749,14 @@ const roundJudgeRankMap = computed(() => {
         judgeScores.set(detail.judge_id, entries)
       })
     })
+
+    console.group(`📊 Round: ${roundName}`)
+    console.log('Judge Scores Map:', Object.fromEntries(
+      Array.from(judgeScores.entries()).map(([judgeId, entries]) => [
+        `Judge ${judgeId}`,
+        entries.map(e => `C${e.contestantId}:${e.score}`)
+      ])
+    ))
 
     // Compute ranks per judge (same logic as DetailedScoreTable.vue judgeRankMap)
     judgeScores.forEach((entries, judgeId) => {
@@ -742,9 +786,13 @@ const roundJudgeRankMap = computed(() => {
       })
     })
 
+    console.log(`Computed ranks for ${roundName}:`, Object.fromEntries(roundRanks))
+    console.groupEnd()
+
     map.set(roundName, roundRanks)
   })
 
+  console.groupEnd()
   return map
 })
 
@@ -774,6 +822,8 @@ const roundAverageRankMap = computed(() => {
     return map
   }
 
+  console.group('📈 roundAverageRankMap Computation')
+
   props.rounds.forEach(round => {
     const roundName = round.name
     const roundRanks = roundJudgeRankMap.value.get(roundName)
@@ -798,9 +848,14 @@ const roundAverageRankMap = computed(() => {
       }
     })
 
+    console.log(`Round ${roundName} Average Ranks:`, Object.fromEntries(
+      Array.from(roundMap.entries()).map(([id, avg]) => [`C${id}`, avg.toFixed(2)])
+    ))
+
     map.set(roundName, roundMap)
   })
 
+  console.groupEnd()
   return map
 })
 
@@ -810,6 +865,8 @@ const roundAverageRankPlacementMap = computed(() => {
   if (!isRankSumMethod.value || props.rounds.length === 0 || props.contestants.length === 0) {
     return map
   }
+
+  console.group('🏆 roundAverageRankPlacementMap Computation')
 
   props.rounds.forEach(round => {
     const averageRanks = roundAverageRankMap.value.get(round.name)
@@ -849,9 +906,14 @@ const roundAverageRankPlacementMap = computed(() => {
       currentRank += contestantsWithScore.length
     })
 
+    console.log(`Round ${round.name} Placements:`, Object.fromEntries(
+      Array.from(roundPlacements.entries()).map(([id, p]) => [`C${id}`, p])
+    ))
+
     map.set(round.name, roundPlacements)
   })
 
+  console.groupEnd()
   return map
 })
 
@@ -889,7 +951,7 @@ const getTotalAverageRankSum = (contestant: Contestant): number | null => {
     }
   })
 
-  return hasAny ? Number(sum.toFixed(2)) : null
+  return hasAny ? sum : null
 }
 
 const getAverageRank = (contestant: Contestant): number | null => {
@@ -897,8 +959,39 @@ const getAverageRank = (contestant: Contestant): number | null => {
   const totalAverage = getTotalAverageRankSum(contestant)
   const roundCount = getRoundAverageCount(contestant)
   if (totalAverage === null || roundCount === 0) return null
-  return Number((totalAverage / roundCount).toFixed(2))
+  return totalAverage / roundCount
 }
+
+// Debug: Log final summary for each contestant
+const logFinalSummary = () => {
+  if (!isRankSumMethod.value) return
+  
+  console.group('📊 FINAL SUMMARY - ResultsRanking Computations')
+  console.table(
+    props.contestants.map(c => {
+      const roundData: Record<string, string> = {}
+      props.rounds.forEach(r => {
+        const avgRank = getRoundAverageRank(c, r.name)
+        const placement = getRoundAverageRankPlacement(c, r.name)
+        roundData[r.name] = `AvgRank: ${avgRank?.toFixed(2) ?? 'N/A'}, Placement: ${placement ?? 'N/A'}`
+      })
+      return {
+        'Contestant': `#${c.number} ${c.name}`,
+        ...roundData,
+        'Total Rank Sum': getTotalAverageRankSum(c)?.toFixed(2) ?? 'N/A',
+        'Average Rank': getAverageRank(c)?.toFixed(2) ?? 'N/A'
+      }
+    })
+  )
+  console.groupEnd()
+}
+
+// Call after computed properties are ready (use setTimeout to ensure reactivity is complete)
+setTimeout(() => {
+  if (isRankSumMethod.value) {
+    logFinalSummary()
+  }
+}, 100)
 
 // Get weighted raw total (sum of score × round weight) for inherit mode
 const getWeightedRawTotal = (contestant: Contestant): number | null => {
