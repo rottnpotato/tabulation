@@ -209,6 +209,25 @@ class ScoreCalculationService
     }
 
     /**
+     * Get all RAW (unweighted) scores from a specific judge for all contestants in a round.
+     * This matches the totalScores calculation in TabulatorController::scores()
+     * and is required for rank_sum method to match DetailedScoreTable rankings.
+     */
+    private function getAllJudgeRawScoresForRound(int $judgeId, int $roundId, Pageant $pageant): array
+    {
+        $scores = [];
+
+        foreach ($pageant->contestants as $contestant) {
+            $score = $this->calculateJudgeContestantRawScore($judgeId, $contestant->id, $roundId, $pageant->id);
+            if ($score !== null) {
+                $scores[$contestant->id] = $score;
+            }
+        }
+
+        return $scores;
+    }
+
+    /**
      * Get judge ranks for a contestant in a specific round.
      *
      * @param  string  $finalScoreMode  'fresh' uses minimum ranking (ties get same rank), 'inherit' uses average ranking
@@ -220,26 +239,29 @@ class ScoreCalculationService
         $judgeDetails = [];
 
         foreach ($pageant->judges as $judge) {
-            $judgeScore = $this->calculateJudgeContestantScore($judge->id, $contestant->id, $round->id, $pageant->id);
+            // Use RAW score sum for ranking (matches DetailedScoreTable behavior)
+            // This ensures per-round rankings match what DetailedScoreTable shows
+            $judgeRawScore = $this->calculateJudgeContestantRawScore($judge->id, $contestant->id, $round->id, $pageant->id);
 
-            if ($judgeScore !== null) {
-                $allJudgeScores = $this->getAllJudgeScoresForRound($judge->id, $round->id, $pageant);
+            if ($judgeRawScore !== null) {
+                // Get all RAW scores for this judge in this round
+                $allJudgeRawScores = $this->getAllJudgeRawScoresForRound($judge->id, $round->id, $pageant);
 
                 // Fresh mode: use minimum ranking (ties get same rank)
                 // Inherit mode: use average ranking (ties get averaged rank)
                 if ($finalScoreMode === 'fresh') {
-                    $rank = $this->calculateRankMin($judgeScore, $allJudgeScores, 'desc');
+                    $rank = $this->calculateRankMin($judgeRawScore, $allJudgeRawScores, 'desc');
                 } else {
-                    $rank = $this->calculateRankAvg($judgeScore, $allJudgeScores, 'desc');
+                    $rank = $this->calculateRankAvg($judgeRawScore, $allJudgeRawScores, 'desc');
                 }
 
-                $scores[] = $judgeScore;
+                $scores[] = $judgeRawScore;
                 $ranks[] = $rank;
 
                 $judgeDetails[] = [
                     'judge_id' => $judge->id,
                     'judge_name' => $judge->name ?? "Judge {$judge->id}",
-                    'score' => round($judgeScore, 2),
+                    'score' => round($judgeRawScore, 2),
                     'rank' => $rank,
                 ];
             }
@@ -666,46 +688,14 @@ class ScoreCalculationService
             }
 
             // Step 2: Calculate per-round RANK for each contestant (rank by rank sum within round)
-            // For pairs pageants, ranks are calculated separately by gender to match DetailedScoreTable
             $roundRanks = [];
-            $isPairsPageant = $pageant->isPairsOnly() || $pageant->allowsBothTypes();
-
             foreach ($rounds as $round) {
                 $roundRanks[$round->id] = [];
+                $allRankSumsInRound = array_values($roundRankSums[$round->id]);
 
-                if ($isPairsPageant) {
-                    // Separate rank sums by gender
-                    $maleRankSums = [];
-                    $femaleRankSums = [];
-
-                    foreach ($roundRankSums[$round->id] as $contestantId => $rankSum) {
-                        $contestant = $pageant->contestants->firstWhere('id', $contestantId);
-                        if ($contestant) {
-                            if (($contestant->gender ?? '') === 'male') {
-                                $maleRankSums[$contestantId] = $rankSum;
-                            } else {
-                                $femaleRankSums[$contestantId] = $rankSum;
-                            }
-                        }
-                    }
-
-                    // Calculate ranks within each gender group
-                    $allMaleRankSums = array_values($maleRankSums);
-                    foreach ($maleRankSums as $contestantId => $rankSum) {
-                        $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allMaleRankSums, 'asc');
-                    }
-
-                    $allFemaleRankSums = array_values($femaleRankSums);
-                    foreach ($femaleRankSums as $contestantId => $rankSum) {
-                        $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allFemaleRankSums, 'asc');
-                    }
-                } else {
-                    // For solo pageants, rank all contestants together
-                    $allRankSumsInRound = array_values($roundRankSums[$round->id]);
-
-                    foreach ($roundRankSums[$round->id] as $contestantId => $rankSum) {
-                        $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allRankSumsInRound, 'asc');
-                    }
+                foreach ($roundRankSums[$round->id] as $contestantId => $rankSum) {
+                    // Use RANK.AVG - lower rank sum gets better (lower) rank
+                    $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allRankSumsInRound, 'asc');
                 }
             }
 
@@ -1499,6 +1489,46 @@ class ScoreCalculationService
 
         } catch (\Exception $e) {
             Log::error('Error calculating judge contestant score: '.$e->getMessage(), [
+                'judge_id' => $judgeId,
+                'contestant_id' => $contestantId,
+                'round_id' => $roundId,
+                'pageant_id' => $pageantId,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Calculate RAW (unweighted) sum of scores for a specific judge-contestant-round combination.
+     * This matches the totalScores calculation in TabulatorController::scores()
+     * and is required for rank_sum method to match DetailedScoreTable rankings.
+     */
+    public function calculateJudgeContestantRawScore(int $judgeId, int $contestantId, int $roundId, int $pageantId): ?float
+    {
+        try {
+            $scores = Score::where('pageant_id', $pageantId)
+                ->where('round_id', $roundId)
+                ->where('judge_id', $judgeId)
+                ->where('contestant_id', $contestantId)
+                ->get();
+
+            if ($scores->isEmpty()) {
+                return null;
+            }
+
+            $total = 0;
+            foreach ($scores as $score) {
+                if (is_numeric($score->score)) {
+                    $total += $score->score;
+                }
+            }
+
+            return $total;
+
+        } catch (\Exception $e) {
+            Log::error('Error calculating judge contestant raw score: '.$e->getMessage(), [
                 'judge_id' => $judgeId,
                 'contestant_id' => $contestantId,
                 'round_id' => $roundId,
