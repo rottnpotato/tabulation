@@ -1056,12 +1056,20 @@ const getAverageRank = (contestant: Contestant): number | null => {
   return Number((totalRank / roundCount).toFixed(2))
 }
 
-// Get weighted raw total (sum of score × round weight) for inherit mode
+// Get weighted raw total (sum of score × inheritance percent) for inherit mode
 const getWeightedRawTotal = (contestant: Contestant): number | null => {
+  // For score_average method with inheritance, use our calculated value
+  if (isScoreAverageMethod.value && props.finalScoreMode === 'inherit') {
+    const calculated = getScoreAverageTotal(contestant)
+    if (calculated > 0) return calculated
+  }
+  
+  // Fallback to backend value if available
   if ((contestant as any).weightedRawTotal !== undefined && (contestant as any).weightedRawTotal !== null) {
     return (contestant as any).weightedRawTotal
   }
-  // Fallback to displayTotal if weightedRawTotal not available
+  
+  // Final fallback to displayTotal
   return getDisplayTotal(contestant)
 }
 
