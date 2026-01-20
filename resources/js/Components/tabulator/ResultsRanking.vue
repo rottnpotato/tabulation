@@ -54,14 +54,22 @@
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
-              Total Rank
+              <div class="flex flex-col items-end gap-0.5">
+                <span>Total Rank</span>
+                <span v-if="isLastFinalRound && finalScoreMode === 'inherit'" class="text-[9px] font-medium text-emerald-600 uppercase">Weighted</span>
+                <span v-else-if="isLastFinalRound" class="text-[9px] font-medium text-blue-600 uppercase">Fresh</span>
+              </div>
             </th>
             <th
               v-if="isRankSumMethod && !isRoundView"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
-              Average Rank
+              <div class="flex flex-col items-end gap-0.5">
+                <span>Average Rank</span>
+                <span v-if="isLastFinalRound && finalScoreMode === 'inherit'" class="text-[9px] font-medium text-emerald-600 uppercase">Weighted</span>
+                <span v-else-if="isLastFinalRound" class="text-[9px] font-medium text-blue-600 uppercase">Fresh</span>
+              </div>
             </th>
             <th
               v-if="isRankSumMethod && !isRoundView"
@@ -246,14 +254,14 @@
 
             <!-- Total Score / Rank Sum -->
             <td v-if="isRankSumMethod && !isRoundView" class="whitespace-nowrap px-4 py-3 text-right">
-              <span v-if="shouldShowRankStats(contestant) && getTotalAverageRankSum(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
-                {{ formatScore(getTotalAverageRankSum(contestant), 2) }}
+              <span v-if="shouldShowRankStats(contestant) && getDisplayTotalRank(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
+                {{ formatScore(getDisplayTotalRank(contestant), 2) }}
               </span>
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
             <td v-if="isRankSumMethod && !isRoundView" class="whitespace-nowrap px-4 py-3 text-right">
-              <span v-if="shouldShowRankStats(contestant) && getAverageRank(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
-                {{ formatScore(getAverageRank(contestant), 2) }}
+              <span v-if="shouldShowRankStats(contestant) && getDisplayAverageRank(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
+                {{ formatScore(getDisplayAverageRank(contestant), 2) }}
               </span>
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
@@ -962,6 +970,104 @@ const getAverageRank = (contestant: Contestant): number | null => {
   const roundCount = getRoundAverageCount(contestant)
   if (totalAverage === null || roundCount === 0) return null
   return Number((totalAverage / roundCount).toFixed(2))
+}
+
+// Get the display value for Total Rank column
+// In inherit mode for final tally: shows inheritance-weighted sum of stage average placements
+// Otherwise: shows regular total average rank sum
+const getDisplayTotalRank = (contestant: Contestant): number | null => {
+  if (!isRankSumMethod.value) return null
+  
+  // If inherit mode and viewing final tally, calculate weighted total
+  if (props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
+    const inheritance = props.finalScoreInheritance
+    if (inheritance && Object.keys(inheritance).length > 0) {
+      // Group rounds by type
+      const roundsByType = new Map<string, Round[]>()
+      props.rounds.forEach(round => {
+        const roundType = round.type?.toLowerCase() || 'preliminary'
+        if (!roundsByType.has(roundType)) {
+          roundsByType.set(roundType, [])
+        }
+        roundsByType.get(roundType)?.push(round)
+      })
+
+      let weightedTotal = 0
+      let hasAny = false
+
+      roundsByType.forEach((stageRounds, stageType) => {
+        const inheritPercent = inheritance[stageType] ?? 0
+        if (inheritPercent <= 0) return
+
+        let stagePlacementSum = 0
+        let stageRoundCount = 0
+
+        stageRounds.forEach(round => {
+          const placement = getRoundAverageRankPlacement(contestant, round.name)
+          if (placement !== null) {
+            stagePlacementSum += placement
+            stageRoundCount++
+          }
+        })
+
+        if (stageRoundCount > 0) {
+          // Average placement for this stage * inheritance percentage / 100
+          const stageAvgPlacement = stagePlacementSum / stageRoundCount
+          weightedTotal += stageAvgPlacement * (inheritPercent / 100)
+          hasAny = true
+        }
+      })
+
+      return hasAny ? Number(weightedTotal.toFixed(2)) : null
+    }
+  }
+
+  // Default: return regular total
+  return getTotalAverageRankSum(contestant)
+}
+
+// Get the display value for Average Rank column
+// In inherit mode for final tally: shows weighted average (weighted total / number of stages with scores)
+// Otherwise: shows regular average rank
+const getDisplayAverageRank = (contestant: Contestant): number | null => {
+  if (!isRankSumMethod.value) return null
+  
+  // If inherit mode and viewing final tally, calculate weighted average
+  if (props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
+    const inheritance = props.finalScoreInheritance
+    if (inheritance && Object.keys(inheritance).length > 0) {
+      const weightedTotal = getDisplayTotalRank(contestant)
+      
+      // Count stages that have scores
+      const roundsByType = new Map<string, Round[]>()
+      props.rounds.forEach(round => {
+        const roundType = round.type?.toLowerCase() || 'preliminary'
+        if (!roundsByType.has(roundType)) {
+          roundsByType.set(roundType, [])
+        }
+        roundsByType.get(roundType)?.push(round)
+      })
+
+      let stagesWithScores = 0
+      roundsByType.forEach((stageRounds, stageType) => {
+        const inheritPercent = inheritance[stageType] ?? 0
+        if (inheritPercent <= 0) return
+
+        const hasScore = stageRounds.some(round => 
+          getRoundAverageRankPlacement(contestant, round.name) !== null
+        )
+        if (hasScore) stagesWithScores++
+      })
+
+      if (weightedTotal !== null && stagesWithScores > 0) {
+        return Number((weightedTotal / stagesWithScores).toFixed(2))
+      }
+      return null
+    }
+  }
+
+  // Default: return regular average rank
+  return getAverageRank(contestant)
 }
 
 // Get weighted raw total (sum of score × round weight) for inherit mode
