@@ -1018,7 +1018,11 @@ const getDisplayTotalRank = (contestant: Contestant): number | null => {
         }
       })
 
-      return hasAny ? Number(weightedTotal.toFixed(2)) : null
+      // If weighted calculation succeeded, return it; otherwise fall back to regular
+      if (hasAny) {
+        return Number(weightedTotal.toFixed(2))
+      }
+      // Fall through to regular calculation if weighted didn't find data
     }
   }
 
@@ -1036,9 +1040,7 @@ const getDisplayAverageRank = (contestant: Contestant): number | null => {
   if (props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
     const inheritance = props.finalScoreInheritance
     if (inheritance && Object.keys(inheritance).length > 0) {
-      const weightedTotal = getDisplayTotalRank(contestant)
-      
-      // Count stages that have scores
+      // Group rounds by type
       const roundsByType = new Map<string, Round[]>()
       props.rounds.forEach(round => {
         const roundType = round.type?.toLowerCase() || 'preliminary'
@@ -1047,22 +1049,38 @@ const getDisplayAverageRank = (contestant: Contestant): number | null => {
         }
         roundsByType.get(roundType)?.push(round)
       })
-
+      
+      let weightedTotal = 0
       let stagesWithScores = 0
+      let hasAny = false
+
       roundsByType.forEach((stageRounds, stageType) => {
         const inheritPercent = inheritance[stageType] ?? 0
         if (inheritPercent <= 0) return
 
-        const hasScore = stageRounds.some(round => 
-          getRoundAverageRankPlacement(contestant, round.name) !== null
-        )
-        if (hasScore) stagesWithScores++
+        let stagePlacementSum = 0
+        let stageRoundCount = 0
+
+        stageRounds.forEach(round => {
+          const placement = getRoundAverageRankPlacement(contestant, round.name)
+          if (placement !== null) {
+            stagePlacementSum += placement
+            stageRoundCount++
+          }
+        })
+
+        if (stageRoundCount > 0) {
+          const stageAvgPlacement = stagePlacementSum / stageRoundCount
+          weightedTotal += stageAvgPlacement * (inheritPercent / 100)
+          stagesWithScores++
+          hasAny = true
+        }
       })
 
-      if (weightedTotal !== null && stagesWithScores > 0) {
+      if (hasAny && stagesWithScores > 0) {
         return Number((weightedTotal / stagesWithScores).toFixed(2))
       }
-      return null
+      // Fall through to regular calculation if weighted didn't find data
     }
   }
 
