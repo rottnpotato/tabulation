@@ -184,6 +184,7 @@
                   :hide-rank-column="activeRound === 'overall'"
                   :is-last-final-round="shouldShowWinners"
                   :final-score-mode="pageant?.final_score_mode || 'fresh'"
+                  :final-score-inheritance="pageant?.final_score_inheritance || {}"
                   :is-round-view="activeRound !== 'overall'"
                 />
               </div>
@@ -211,6 +212,7 @@
                   :hide-rank-column="activeRound === 'overall'"
                   :is-last-final-round="shouldShowWinners"
                   :final-score-mode="pageant?.final_score_mode || 'fresh'"
+                  :final-score-inheritance="pageant?.final_score_inheritance || {}"
                   :is-round-view="activeRound !== 'overall'"
                 />
               </div>
@@ -234,6 +236,7 @@
                 :hide-rank-column="activeRound === 'overall'"
                 :is-last-final-round="shouldShowWinners"
                 :final-score-mode="pageant?.final_score_mode || 'fresh'"
+                :final-score-inheritance="pageant?.final_score_inheritance || {}"
                 :is-round-view="activeRound !== 'overall'"
               />
             </div>

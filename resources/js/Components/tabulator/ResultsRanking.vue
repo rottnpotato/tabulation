@@ -461,6 +461,7 @@ interface Props {
   hideRankColumn?: boolean
   isLastFinalRound?: boolean
   finalScoreMode?: 'fresh' | 'inherit'
+  finalScoreInheritance?: Record<string, number>
   isRoundView?: boolean
 }
 
@@ -472,6 +473,7 @@ const props = withDefaults(defineProps<Props>(), {
   hideRankColumn: false,
   isLastFinalRound: false,
   finalScoreMode: 'fresh',
+  finalScoreInheritance: () => ({}),
   isRoundView: false
 })
 
@@ -995,18 +997,116 @@ const getColspanForBreakdown = (): number => {
   return colspan
 }
 
+// Calculate inheritance-weighted value for ranking in inherit mode
+// For rank_sum: multiply each round's placement rank by stage percentage (lower = better)
+// For score_average: multiply each round's score by stage percentage (higher = better)
+const getInheritanceWeightedValue = (contestant: Contestant): number => {
+  if (props.finalScoreMode !== 'inherit' || !props.isLastFinalRound) {
+    // Not in inherit mode or not final - use default calculation
+    if (isRankSumMethod.value) {
+      return toNumber((contestant as any).weightedRankAvg) ?? toNumber(contestant.totalRankSum) ?? Infinity
+    }
+    return getNonRankSumTotal(contestant)
+  }
+
+  const inheritance = props.finalScoreInheritance
+  if (!inheritance || Object.keys(inheritance).length === 0) {
+    // No inheritance config - fallback to default
+    if (isRankSumMethod.value) {
+      return toNumber((contestant as any).weightedRankAvg) ?? toNumber(contestant.totalRankSum) ?? Infinity
+    }
+    return getNonRankSumTotal(contestant)
+  }
+
+  // Group rounds by type for stage-based calculation
+  const roundsByType = new Map<string, Round[]>()
+  props.rounds.forEach(round => {
+    const roundType = round.type?.toLowerCase() || 'preliminary'
+    if (!roundsByType.has(roundType)) {
+      roundsByType.set(roundType, [])
+    }
+    roundsByType.get(roundType)?.push(round)
+  })
+
+  let weightedTotal = 0
+
+  if (isRankSumMethod.value) {
+    // For rank_sum: calculate weighted placement per stage
+    // Get placement per round, then average per stage, then multiply by inheritance %
+    roundsByType.forEach((stageRounds, stageType) => {
+      const inheritPercent = inheritance[stageType] ?? 0
+      if (inheritPercent <= 0) return
+
+      let stagePlacementSum = 0
+      let stageRoundCount = 0
+
+      stageRounds.forEach(round => {
+        const placement = getRoundAverageRankPlacement(contestant, round.name)
+        if (placement !== null) {
+          stagePlacementSum += placement
+          stageRoundCount++
+        }
+      })
+
+      if (stageRoundCount > 0) {
+        // Average placement for this stage * inheritance percentage / 100
+        const stageAvgPlacement = stagePlacementSum / stageRoundCount
+        weightedTotal += stageAvgPlacement * (inheritPercent / 100)
+      }
+    })
+
+    return weightedTotal > 0 ? weightedTotal : Infinity
+  } else {
+    // For score_average: calculate weighted score per stage
+    roundsByType.forEach((stageRounds, stageType) => {
+      const inheritPercent = inheritance[stageType] ?? 0
+      if (inheritPercent <= 0) return
+
+      let stageScoreSum = 0
+      let stageRoundCount = 0
+
+      stageRounds.forEach(round => {
+        const score = getDisplayScore(contestant, round.name)
+        if (score !== null && score > 0) {
+          stageScoreSum += score
+          stageRoundCount++
+        }
+      })
+
+      if (stageRoundCount > 0) {
+        // Sum of scores for this stage * inheritance percentage / 100
+        // (or average if preferred: stageScoreSum / stageRoundCount)
+        weightedTotal += stageScoreSum * (inheritPercent / 100)
+      }
+    })
+
+    return weightedTotal
+  }
+}
+
+// Get ranking value for sorting - uses inheritance when in inherit mode
+const getRankingValue = (contestant: Contestant): number => {
+  if (props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
+    return getInheritanceWeightedValue(contestant)
+  }
+
+  if (isRankSumMethod.value) {
+    return toNumber((contestant as any).weightedRankAvg) ?? toNumber(contestant.totalRankSum) ?? Infinity
+  }
+  return getNonRankSumTotal(contestant)
+}
+
 const rankedContestants = computed(() => {
   return [...props.contestants].sort((a, b) => {
+    const aValue = getRankingValue(a)
+    const bValue = getRankingValue(b)
+    
     if (props.rankingMethod === 'rank_sum') {
-      // Use weightedRankAvg (Excel formula) - lower is better
-      const aWeighted = toNumber((a as any).weightedRankAvg) ?? toNumber(a.totalRankSum) ?? Infinity
-      const bWeighted = toNumber((b as any).weightedRankAvg) ?? toNumber(b.totalRankSum) ?? Infinity
-      return aWeighted - bWeighted
+      // Lower is better for rank_sum
+      return aValue - bValue
     }
-    // Higher score is better
-    const aTotal = getNonRankSumTotal(a)
-    const bTotal = getNonRankSumTotal(b)
-    return bTotal - aTotal
+    // Higher is better for score_average
+    return bValue - aValue
   })
 })
 
@@ -1029,13 +1129,7 @@ const rankPositionMap = computed(() => {
   let previousValue: number | null = null
   
   contestants.forEach((contestant, index) => {
-    let currentValue: number
-    
-    if (props.rankingMethod === 'rank_sum') {
-      currentValue = toNumber((contestant as any).weightedRankAvg) ?? toNumber(contestant.totalRankSum) ?? Infinity
-    } else {
-      currentValue = getNonRankSumTotal(contestant)
-    }
+    const currentValue = getRankingValue(contestant)
     
     if (previousValue !== null && Math.abs(currentValue - previousValue) < 0.0001) {
       // Same value as previous contestant - assign same rank (tie)
@@ -1052,6 +1146,11 @@ const rankPositionMap = computed(() => {
 })
 
 const getFinalistRankValue = (contestant: Contestant): number => {
+  // For final tally with inheritance, use the inheritance-weighted value
+  if (props.finalScoreMode === 'inherit' && props.isLastFinalRound) {
+    return getInheritanceWeightedValue(contestant)
+  }
+  
   if (props.rankingMethod === 'rank_sum') {
     const averageRank = getAverageRank(contestant)
     if (averageRank !== null) {
