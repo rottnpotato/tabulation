@@ -666,14 +666,46 @@ class ScoreCalculationService
             }
 
             // Step 2: Calculate per-round RANK for each contestant (rank by rank sum within round)
+            // For pairs pageants, ranks are calculated separately by gender to match DetailedScoreTable
             $roundRanks = [];
+            $isPairsPageant = $pageant->isPairsOnly() || $pageant->allowsBothTypes();
+
             foreach ($rounds as $round) {
                 $roundRanks[$round->id] = [];
-                $allRankSumsInRound = array_values($roundRankSums[$round->id]);
 
-                foreach ($roundRankSums[$round->id] as $contestantId => $rankSum) {
-                    // Use RANK.AVG - lower rank sum gets better (lower) rank
-                    $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allRankSumsInRound, 'asc');
+                if ($isPairsPageant) {
+                    // Separate rank sums by gender
+                    $maleRankSums = [];
+                    $femaleRankSums = [];
+
+                    foreach ($roundRankSums[$round->id] as $contestantId => $rankSum) {
+                        $contestant = $pageant->contestants->firstWhere('id', $contestantId);
+                        if ($contestant) {
+                            if (($contestant->gender ?? '') === 'male') {
+                                $maleRankSums[$contestantId] = $rankSum;
+                            } else {
+                                $femaleRankSums[$contestantId] = $rankSum;
+                            }
+                        }
+                    }
+
+                    // Calculate ranks within each gender group
+                    $allMaleRankSums = array_values($maleRankSums);
+                    foreach ($maleRankSums as $contestantId => $rankSum) {
+                        $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allMaleRankSums, 'asc');
+                    }
+
+                    $allFemaleRankSums = array_values($femaleRankSums);
+                    foreach ($femaleRankSums as $contestantId => $rankSum) {
+                        $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allFemaleRankSums, 'asc');
+                    }
+                } else {
+                    // For solo pageants, rank all contestants together
+                    $allRankSumsInRound = array_values($roundRankSums[$round->id]);
+
+                    foreach ($roundRankSums[$round->id] as $contestantId => $rankSum) {
+                        $roundRanks[$round->id][$contestantId] = $this->calculateRankAvg($rankSum, $allRankSumsInRound, 'asc');
+                    }
                 }
             }
 

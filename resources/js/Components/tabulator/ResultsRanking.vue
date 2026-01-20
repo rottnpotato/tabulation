@@ -925,7 +925,14 @@ const getRoundAverageRank = (contestant: Contestant, roundName: string): number 
 const getRoundAverageRankPlacement = (contestant: Contestant, roundName: string): number | null => {
   if (!isRankSumMethod.value) return null
   
-  // Use locally computed placement to match DetailedScoreTable.vue logic
+  // Use pre-computed perRoundRanks from backend for consistency with DetailedScoreTable
+  // perRoundRanks contains the placement rank calculated by the backend using the same dataset
+  if (contestant.perRoundRanks && contestant.perRoundRanks[roundName] !== undefined) {
+    const rank = contestant.perRoundRanks[roundName]
+    return rank > 0 ? rank : null
+  }
+  
+  // Fallback to locally computed placement if perRoundRanks not available
   return roundAverageRankPlacementMap.value.get(roundName)?.get(contestant.id) ?? null
 }
 
@@ -951,7 +958,7 @@ const getTotalAverageRankSum = (contestant: Contestant): number | null => {
     }
   })
 
-  return hasAny ? sum : null
+  return hasAny ? Number(sum.toFixed(2)) : null
 }
 
 const getAverageRank = (contestant: Contestant): number | null => {
@@ -959,39 +966,8 @@ const getAverageRank = (contestant: Contestant): number | null => {
   const totalAverage = getTotalAverageRankSum(contestant)
   const roundCount = getRoundAverageCount(contestant)
   if (totalAverage === null || roundCount === 0) return null
-  return totalAverage / roundCount
+  return Number((totalAverage / roundCount).toFixed(2))
 }
-
-// Debug: Log final summary for each contestant
-const logFinalSummary = () => {
-  if (!isRankSumMethod.value) return
-  
-  console.group('📊 FINAL SUMMARY - ResultsRanking Computations')
-  console.table(
-    props.contestants.map(c => {
-      const roundData: Record<string, string> = {}
-      props.rounds.forEach(r => {
-        const avgRank = getRoundAverageRank(c, r.name)
-        const placement = getRoundAverageRankPlacement(c, r.name)
-        roundData[r.name] = `AvgRank: ${avgRank?.toFixed(2) ?? 'N/A'}, Placement: ${placement ?? 'N/A'}`
-      })
-      return {
-        'Contestant': `#${c.number} ${c.name}`,
-        ...roundData,
-        'Total Rank Sum': getTotalAverageRankSum(c)?.toFixed(2) ?? 'N/A',
-        'Average Rank': getAverageRank(c)?.toFixed(2) ?? 'N/A'
-      }
-    })
-  )
-  console.groupEnd()
-}
-
-// Call after computed properties are ready (use setTimeout to ensure reactivity is complete)
-setTimeout(() => {
-  if (isRankSumMethod.value) {
-    logFinalSummary()
-  }
-}, 100)
 
 // Get weighted raw total (sum of score × round weight) for inherit mode
 const getWeightedRawTotal = (contestant: Contestant): number | null => {
