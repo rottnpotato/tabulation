@@ -650,17 +650,46 @@ const getDisplayTotal = (contestant: Contestant): number | null => {
 const getScoreAverageTotal = (contestant: Contestant): number => {
   const scores = contestant.scores ?? {}
 
-  if (props.finalScoreMode === 'inherit') {
-    const sum = Object.values(scores).reduce((total, score) => {
-      const numeric = toNumber(score)
-      return numeric !== null ? total + numeric : total
-    }, 0)
-
-    if (sum > 0 || Object.keys(scores).length > 0) {
-      return sum
+  // Helper function to get inheritance percentage with case-insensitive key lookup
+  const getInheritPercent = (stageType: string): number => {
+    const normalizedType = stageType.toLowerCase().replace(/[_\s]/g, '-')
+    
+    // Try exact match first
+    if (props.inheritancePercentages[normalizedType] !== undefined) {
+      return props.inheritancePercentages[normalizedType]
     }
+    
+    // Try case-insensitive match
+    for (const [key, value] of Object.entries(props.inheritancePercentages)) {
+      if (key.toLowerCase().replace(/[_\s]/g, '-') === normalizedType) {
+        return value
+      }
+    }
+    
+    return 0
   }
 
+  // For inheritance mode: multiply each round's score by its stage's inheritance percentage
+  if (props.finalScoreMode === 'inherit' && Object.keys(props.inheritancePercentages).length > 0) {
+    let weightedTotal = 0
+    
+    props.rounds.forEach(round => {
+      const roundScore = toNumber(scores[round.name])
+      if (roundScore !== null && roundScore > 0) {
+        const stageType = (round.type || 'preliminary').toLowerCase()
+        const inheritPercent = getInheritPercent(stageType)
+        const inheritDecimal = inheritPercent / 100
+        
+        // score × inheritance percentage (e.g., score 85 × 0.30 = 25.5)
+        const contribution = roundScore * inheritDecimal
+        weightedTotal += contribution
+      }
+    })
+
+    return Number(weightedTotal.toFixed(2))
+  }
+
+  // Fresh mode: use final round score only
   const finalRoundName = getFinalRoundName()
   if (finalRoundName && scores[finalRoundName] !== undefined) {
     return toNumber(scores[finalRoundName]) ?? 0
