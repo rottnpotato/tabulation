@@ -38,6 +38,20 @@
                 <span v-if="round.type" class="text-[9px] font-medium opacity-75 uppercase">{{ round.type }}</span>
               </div>
             </th>
+            <!-- Stage Total column - appears after the last round of each stage type when there are multiple rounds -->
+            <template v-for="(round, roundIndex) in rounds" :key="`stage-total-${round.id}`">
+              <th
+                v-if="isLastRoundOfType(roundIndex) && stageHasMultipleRounds(round.type || 'preliminary') && !isRoundView"
+                scope="col"
+                class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide"
+                :class="getStageTotalHeaderClass(round.type)"
+              >
+                <div class="flex flex-col items-center gap-1">
+                  <span>Stage Total</span>
+                  <span class="text-[9px] font-medium opacity-75 uppercase">{{ round.type || 'PRELIMINARY' }}</span>
+                </div>
+              </th>
+            </template>
             <!-- Total Raw Score column - only shown in inherit mode for score-based ranking (not in round view) -->
             <th
               v-if="!isRankSumMethod && finalScoreMode === 'inherit' && isLastFinalRound && !isRoundView"
@@ -56,8 +70,9 @@
             >
               Total Rank
             </th>
+            <!-- Average Rank column - hidden in inherit mode -->
             <th
-              v-if="isRankSumMethod && !isRoundView"
+              v-if="isRankSumMethod && !isRoundView && !shouldHideAverageRank"
               scope="col"
               class="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500"
             >
@@ -192,10 +207,9 @@
                 <span v-else-if="contestant.scores[round.name] === 0" class="text-gray-300 italic text-sm" title="Did not compete in this round">—</span>
                 <span v-else class="text-gray-300 italic text-sm">—</span>
                 
-                <!-- Advancement Badge for this round -->
-                <template v-if="hasValidScore(contestant.scores[round.name])">
+                <!-- Advancement Badge for this round - ONLY shown when stage has single round -->
+                <template v-if="hasValidScore(contestant.scores[round.name]) && !stageHasMultipleRounds(round.type || 'preliminary')">
                   <!-- Show "Finalist" badge for final round (both fresh and inherit modes) -->
-                  <!-- Ranking is shown in the Final Result column to avoid redundancy -->
                   <span
                     v-if="round.type?.toLowerCase() === 'final'"
                     class="inline-flex items-center gap-0.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-indigo-600"
@@ -229,6 +243,61 @@
               </div>
             </td>
 
+            <!-- Stage Total cells - appear after the last round of each stage type when there are multiple rounds -->
+            <template v-for="(round, roundIndex) in rounds" :key="`stage-total-cell-${round.id}`">
+              <td
+                v-if="isLastRoundOfType(roundIndex) && stageHasMultipleRounds(round.type || 'preliminary') && !isRoundView"
+                class="whitespace-nowrap px-4 py-3 text-center"
+                :class="getStageTotalCellClass(round.type)"
+              >
+                <div class="flex flex-col items-center gap-1">
+                  <!-- Stage Total Value -->
+                  <span
+                    v-if="isRankSumMethod && getStageTotalPlacement(contestant, round.type || 'preliminary') !== null"
+                    class="text-sm font-bold tabular-nums"
+                    :title="`Stage total placement for ${round.type || 'preliminary'}`"
+                  >
+                    {{ formatScore(getStageTotalPlacement(contestant, round.type || 'preliminary'), 2) }}
+                  </span>
+                  <span 
+                    v-else-if="!isRankSumMethod && getStageTotalScore(contestant, round.type || 'preliminary') !== null" 
+                    class="text-sm font-bold tabular-nums"
+                    :title="`Stage total score for ${round.type || 'preliminary'}`"
+                  >
+                    {{ formatScore(getStageTotalScore(contestant, round.type || 'preliminary')) }}
+                  </span>
+                  <span v-else class="text-gray-300 italic text-sm">—</span>
+                  
+                  <!-- Badge on Stage Total column -->
+                  <template v-if="(isRankSumMethod ? getStageTotalPlacement(contestant, round.type || 'preliminary') : getStageTotalScore(contestant, round.type || 'preliminary')) !== null">
+                    <!-- Finalist badge for final stage -->
+                    <span
+                      v-if="round.type?.toLowerCase() === 'final'"
+                      class="inline-flex items-center gap-0.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-indigo-600"
+                      title="Competed in Final Round"
+                    >
+                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                      </svg>
+                      <span>Finalist</span>
+                    </span>
+                    
+                    <!-- Advanced badge for non-final stages -->
+                    <span
+                      v-else-if="getStageTopN(round.type || 'preliminary') && hasAdvancedFromStage(contestant, round.type || 'preliminary')"
+                      class="inline-flex items-center gap-0.5 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-emerald-600"
+                      :title="`Advanced from ${round.type || 'preliminary'} stage (Top ${getStageTopN(round.type || 'preliminary')})`"
+                    >
+                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                      </svg>
+                      <span>Advanced</span>
+                    </span>
+                  </template>
+                </div>
+              </td>
+            </template>
+
             <!-- Total Raw Score column - only shown in inherit mode for score-based ranking (not in round view) -->
             <td 
               v-if="!isRankSumMethod && finalScoreMode === 'inherit' && isLastFinalRound && !isRoundView"
@@ -251,7 +320,8 @@
               </span>
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
-            <td v-if="isRankSumMethod && !isRoundView" class="whitespace-nowrap px-4 py-3 text-right">
+            <!-- Average Rank - hidden in inherit mode -->
+            <td v-if="isRankSumMethod && !isRoundView && !shouldHideAverageRank" class="whitespace-nowrap px-4 py-3 text-right">
               <span v-if="shouldShowRankStats(contestant) && getAverageRank(contestant) !== null" class="text-sm font-semibold tabular-nums text-slate-700">
                 {{ formatScore(getAverageRank(contestant), 2) }}
               </span>
@@ -488,6 +558,138 @@ const shouldApplyInheritance = computed(() => {
     props.finalScoreMode === 'inherit' && 
     Object.keys(props.inheritancePercentages).length > 0
 })
+
+// Check if we should hide Average Rank column (in inherit mode for rank_sum)
+const shouldHideAverageRank = computed(() => {
+  return isRankSumMethod.value && props.finalScoreMode === 'inherit'
+})
+
+// Group rounds by stage type and count
+const stageTypeInfo = computed(() => {
+  const info: Record<string, { count: number; rounds: Round[]; lastRoundIndex: number; topNProceed: number | null }> = {}
+  
+  props.rounds.forEach((round, index) => {
+    const stageType = (round.type || 'preliminary').toLowerCase()
+    if (!info[stageType]) {
+      info[stageType] = { count: 0, rounds: [], lastRoundIndex: -1, topNProceed: null }
+    }
+    info[stageType].count++
+    info[stageType].rounds.push(round)
+    info[stageType].lastRoundIndex = index
+    // Use the last round's top_n_proceed for the stage
+    if (round.top_n_proceed) {
+      info[stageType].topNProceed = round.top_n_proceed
+    }
+  })
+  
+  return info
+})
+
+// Check if a stage type has multiple rounds (needs Stage Total column)
+const stageHasMultipleRounds = (stageType: string): boolean => {
+  const normalizedType = stageType.toLowerCase()
+  return (stageTypeInfo.value[normalizedType]?.count ?? 0) > 1
+}
+
+// Check if this round is the last of its type (where Stage Total column appears)
+const isLastRoundOfType = (roundIndex: number): boolean => {
+  const currentRound = props.rounds[roundIndex]
+  const stageType = (currentRound?.type || 'preliminary').toLowerCase()
+  return stageTypeInfo.value[stageType]?.lastRoundIndex === roundIndex
+}
+
+// Get stage total score for a contestant (sum of all round scores in that stage)
+const getStageTotalScore = (contestant: Contestant, stageType: string): number | null => {
+  const normalizedType = stageType.toLowerCase()
+  const stageInfo = stageTypeInfo.value[normalizedType]
+  if (!stageInfo) return null
+  
+  let total = 0
+  let hasAny = false
+  
+  stageInfo.rounds.forEach(round => {
+    const score = getDisplayScore(contestant, round.name)
+    if (score !== null && score > 0) {
+      total += score
+      hasAny = true
+    }
+  })
+  
+  return hasAny ? total : null
+}
+
+// Get stage total placement for rank_sum (sum of placements in that stage)
+const getStageTotalPlacement = (contestant: Contestant, stageType: string): number | null => {
+  if (!isRankSumMethod.value) return null
+  
+  const normalizedType = stageType.toLowerCase()
+  const stageInfo = stageTypeInfo.value[normalizedType]
+  if (!stageInfo) return null
+  
+  let total = 0
+  let hasAny = false
+  
+  stageInfo.rounds.forEach(round => {
+    const placement = getRoundAverageRankPlacement(contestant, round.name)
+    if (placement !== null && placement > 0) {
+      total += placement
+      hasAny = true
+    }
+  })
+  
+  return hasAny ? total : null
+}
+
+// Get stage top N proceed value
+const getStageTopN = (stageType: string): number | null => {
+  const normalizedType = stageType.toLowerCase()
+  return stageTypeInfo.value[normalizedType]?.topNProceed ?? null
+}
+
+// Check if contestant advanced from a stage (based on stage total ranking)
+const hasAdvancedFromStage = (contestant: Contestant, stageType: string): boolean => {
+  const topN = getStageTopN(stageType)
+  if (!topN) return false
+  
+  // Get ranking among all contestants for this stage
+  const stageRank = getContestantStageRank(contestant, stageType)
+  return stageRank !== null && stageRank <= topN
+}
+
+// Get contestant's rank within a stage (based on stage total)
+const getContestantStageRank = (contestant: Contestant, stageType: string): number | null => {
+  const normalizedType = stageType.toLowerCase()
+  
+  // Build ranking for all contestants in this stage
+  const stageValues: { id: number; value: number }[] = []
+  
+  props.contestants.forEach(c => {
+    let value: number | null = null
+    
+    if (isRankSumMethod.value) {
+      value = getStageTotalPlacement(c, normalizedType)
+    } else {
+      value = getStageTotalScore(c, normalizedType)
+    }
+    
+    if (value !== null) {
+      stageValues.push({ id: c.id, value })
+    }
+  })
+  
+  if (stageValues.length === 0) return null
+  
+  // Sort: for rank_sum lower is better, for score_average higher is better
+  if (isRankSumMethod.value) {
+    stageValues.sort((a, b) => a.value - b.value)
+  } else {
+    stageValues.sort((a, b) => b.value - a.value)
+  }
+  
+  // Find contestant's position
+  const position = stageValues.findIndex(v => v.id === contestant.id)
+  return position >= 0 ? position + 1 : null
+}
 
 // Track previous rankings for animation
 const previousRankMap = ref<Map<number, number>>(new Map())
@@ -1498,6 +1700,18 @@ const getRoundCellClass = (round: Round, roundIndex: number): string => {
   const colors = getRoundTypeColors(round.type)
   const isFirst = isFirstOfRoundType(roundIndex)
   return `${colors.cell} ${isFirst ? 'border-l-4' : ''} ${colors.border}`
+}
+
+// Get header class for Stage Total columns
+const getStageTotalHeaderClass = (stageType: string | undefined): string => {
+  const colors = getRoundTypeColors(stageType)
+  return `${colors.header} border-l-2 border-r-2 ${colors.border} font-bold`
+}
+
+// Get cell class for Stage Total cells
+const getStageTotalCellClass = (stageType: string | undefined): string => {
+  const colors = getRoundTypeColors(stageType)
+  return `${colors.cell} border-l-2 border-r-2 ${colors.border} font-semibold`
 }
 
 
