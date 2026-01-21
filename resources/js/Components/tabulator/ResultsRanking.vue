@@ -26,20 +26,19 @@
             >
               Contestant
             </th>
-            <th
-              v-for="(round, roundIndex) in rounds"
-              :key="round.id"
-              scope="col"
-              class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide"
-              :class="getRoundHeaderClass(round, roundIndex)"
-            >
-              <div class="flex flex-col items-center gap-1">
-                <span>{{ round.name }}</span>
-                <span v-if="round.type" class="text-[9px] font-medium opacity-75 uppercase">{{ round.type }}</span>
-              </div>
-            </th>
-            <!-- Stage Total column - appears after the last round of each stage type when there are multiple rounds -->
-            <template v-for="(round, roundIndex) in rounds" :key="`stage-total-${round.id}`">
+            <!-- Round headers with Stage Total columns inline (grouped per stage) -->
+            <template v-for="(round, roundIndex) in rounds" :key="round.id">
+              <th
+                scope="col"
+                class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide"
+                :class="getRoundHeaderClass(round, roundIndex)"
+              >
+                <div class="flex flex-col items-center gap-1">
+                  <span>{{ round.name }}</span>
+                  <span v-if="round.type" class="text-[9px] font-medium opacity-75 uppercase">{{ round.type }}</span>
+                </div>
+              </th>
+              <!-- Stage Total column - appears immediately after the last round of each stage type -->
               <th
                 v-if="isLastRoundOfType(roundIndex) && stageHasMultipleRounds(round.type || 'preliminary') && !isRoundView"
                 scope="col"
@@ -186,65 +185,63 @@
               </div>
             </td>
 
-            <!-- Round Scores -->
-            <td
-              v-for="(round, roundIndex) in rounds"
-              :key="round.id"
-              class="whitespace-nowrap px-4 py-3"
-              :class="[getRoundCellClass(round, roundIndex), getDisplayScore(contestant, round.name) !== null ? 'text-gray-900' : 'text-gray-300']">
-              <div class="flex flex-col items-center gap-1">
-                <!-- Rank Sum (for rank_sum) or Score (score_average) -->
-                <span
-                  v-if="isRankSumMethod && getRoundAverageRankPlacement(contestant, round.name) !== null"
-                  class="text-sm font-semibold tabular-nums"
-                  :title="`Average rank: ${formatScore(getRoundAverageRank(contestant, round.name), 2)}`"
-                >
-                  {{ formatPlacementValue(getRoundAverageRankPlacement(contestant, round.name)) }}
-                </span>
-                <span v-else-if="!isRankSumMethod && hasValidScore(getDisplayScore(contestant, round.name))" class="text-sm font-medium tabular-nums">
-                  {{ formatScore(getDisplayScore(contestant, round.name)) }}
-                </span>
-                <span v-else-if="contestant.scores[round.name] === 0" class="text-gray-300 italic text-sm" title="Did not compete in this round">—</span>
-                <span v-else class="text-gray-300 italic text-sm">—</span>
-                
-                <!-- Advancement Badge for this round - ONLY shown when stage has single round -->
-                <template v-if="hasValidScore(contestant.scores[round.name]) && !stageHasMultipleRounds(round.type || 'preliminary')">
-                  <!-- Show "Finalist" badge for final round (both fresh and inherit modes) -->
+            <!-- Round Scores with Stage Total cells inline (grouped per stage) -->
+            <template v-for="(round, roundIndex) in rounds" :key="round.id">
+              <td
+                class="whitespace-nowrap px-4 py-3"
+                :class="[getRoundCellClass(round, roundIndex), getDisplayScore(contestant, round.name) !== null ? 'text-gray-900' : 'text-gray-300']">
+                <div class="flex flex-col items-center gap-1">
+                  <!-- Rank Sum (for rank_sum) or Score (score_average) -->
                   <span
-                    v-if="round.type?.toLowerCase() === 'final'"
-                    class="inline-flex items-center gap-0.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-indigo-600"
-                    title="Competed in Final Round"
+                    v-if="isRankSumMethod && getRoundAverageRankPlacement(contestant, round.name) !== null"
+                    class="text-sm font-semibold tabular-nums"
+                    :title="`Average rank: ${formatScore(getRoundAverageRank(contestant, round.name), 2)}`"
                   >
-                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    <span>Finalist</span>
+                    {{ formatPlacementValue(getRoundAverageRankPlacement(contestant, round.name)) }}
                   </span>
+                  <span v-else-if="!isRankSumMethod && hasValidScore(getDisplayScore(contestant, round.name))" class="text-sm font-medium tabular-nums">
+                    {{ formatScore(getDisplayScore(contestant, round.name)) }}
+                  </span>
+                  <span v-else-if="contestant.scores[round.name] === 0" class="text-gray-300 italic text-sm" title="Did not compete in this round">—</span>
+                  <span v-else class="text-gray-300 italic text-sm">—</span>
                   
-                  <!-- Show "Advanced" badge only for non-final rounds that lead to next stage -->
-                  <span
-                    v-else-if="shouldShowAdvancementBadge(roundIndex) && round.top_n_proceed && getRankAtRound(contestant, roundIndex) <= round.top_n_proceed"
-                    class="inline-flex items-center gap-0.5 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-emerald-600"
-                    :title="`Advanced from ${round.name} (Top ${round.top_n_proceed})`"
+                  <!-- Advancement Badge for this round - ONLY shown when stage has single round -->
+                  <template v-if="hasValidScore(contestant.scores[round.name]) && !stageHasMultipleRounds(round.type || 'preliminary')">
+                    <!-- Show "Finalist" badge for final round (both fresh and inherit modes) -->
+                    <span
+                      v-if="round.type?.toLowerCase() === 'final'"
+                      class="inline-flex items-center gap-0.5 rounded-full bg-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-indigo-600"
+                      title="Competed in Final Round"
+                    >
+                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                      </svg>
+                      <span>Finalist</span>
+                    </span>
+                    
+                    <!-- Show "Advanced" badge only for non-final rounds that lead to next stage -->
+                    <span
+                      v-else-if="shouldShowAdvancementBadge(roundIndex) && round.top_n_proceed && getRankAtRound(contestant, roundIndex) <= round.top_n_proceed"
+                      class="inline-flex items-center gap-0.5 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white border border-emerald-600"
+                      :title="`Advanced from ${round.name} (Top ${round.top_n_proceed})`"
+                    >
+                      <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                      </svg>
+                      <span>Advanced</span>
+                    </span>
+                  </template>
+                  <!-- Show 0 score indicator for contestants who didn't actually compete -->
+                  <span 
+                    v-else-if="contestant.scores[round.name] === 0 && round.type?.toLowerCase() === 'final'"
+                    class="text-[10px] text-gray-400 italic"
                   >
-                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    <span>Advanced</span>
+                    No score
                   </span>
-                </template>
-                <!-- Show 0 score indicator for contestants who didn't actually compete -->
-                <span 
-                  v-else-if="contestant.scores[round.name] === 0 && round.type?.toLowerCase() === 'final'"
-                  class="text-[10px] text-gray-400 italic"
-                >
-                  No score
-                </span>
-              </div>
-            </td>
+                </div>
+              </td>
 
-            <!-- Stage Total cells - appear after the last round of each stage type when there are multiple rounds -->
-            <template v-for="(round, roundIndex) in rounds" :key="`stage-total-cell-${round.id}`">
+              <!-- Stage Total cell - appears immediately after the last round of each stage type -->
               <td
                 v-if="isLastRoundOfType(roundIndex) && stageHasMultipleRounds(round.type || 'preliminary') && !isRoundView"
                 class="whitespace-nowrap px-4 py-3 text-center"
@@ -871,21 +868,31 @@ const getScoreAverageTotal = (contestant: Contestant): number => {
     return 0
   }
 
-  // For inheritance mode: multiply each round's score by its stage's inheritance percentage
+  // For inheritance mode: first calculate Stage Totals (sum of all rounds in each stage),
+  // then apply inheritance percentage to each Stage Total
   if (props.finalScoreMode === 'inherit' && Object.keys(props.inheritancePercentages).length > 0) {
-    let weightedTotal = 0
+    // Group rounds by stage type and calculate stage totals
+    const stageTotals: Record<string, number> = {}
     
     props.rounds.forEach(round => {
       const roundScore = toNumber(scores[round.name])
       if (roundScore !== null && roundScore > 0) {
         const stageType = (round.type || 'preliminary').toLowerCase()
-        const inheritPercent = getInheritPercent(stageType)
-        const inheritDecimal = inheritPercent / 100
-        
-        // score × inheritance percentage (e.g., score 85 × 0.30 = 25.5)
-        const contribution = roundScore * inheritDecimal
-        weightedTotal += contribution
+        if (!stageTotals[stageType]) {
+          stageTotals[stageType] = 0
+        }
+        stageTotals[stageType] += roundScore
       }
+    })
+    
+    // Apply inheritance percentage to each Stage Total
+    let weightedTotal = 0
+    Object.entries(stageTotals).forEach(([stageType, stageTotal]) => {
+      const inheritPercent = getInheritPercent(stageType)
+      const inheritDecimal = inheritPercent / 100
+      // Stage Total × inheritance percentage (e.g., 173 × 0.30 = 51.9)
+      const contribution = stageTotal * inheritDecimal
+      weightedTotal += contribution
     })
 
     return Number(weightedTotal.toFixed(2))
@@ -1204,30 +1211,40 @@ const getTotalAverageRankSum = (contestant: Contestant): number | null => {
     return 0
   }
 
-  // For inheritance mode: multiply each round's placement by its stage's inheritance percentage
+  // For inheritance mode: first calculate Stage Total placements (sum of all round placements in each stage),
+  // then apply inheritance percentage to each Stage Total placement
   if (shouldApplyInheritance.value) {
-    let weightedTotal = 0
-    let roundCount = 0
+    // Group rounds by stage type and calculate stage total placements
+    const stageTotals: Record<string, { total: number; count: number }> = {}
     
     rankSumRounds.value.forEach(round => {
-      // Try to get placement from backend perRoundRanks first, then fall back to computed placement
       const backendPlacement = (contestant as any).perRoundRanks?.[round.name]
       const computedPlacement = getRoundAverageRankPlacement(contestant, round.name)
       const roundPlacement = backendPlacement ?? computedPlacement
       
       if (roundPlacement !== null && roundPlacement !== undefined && roundPlacement > 0) {
         const stageType = (round.type || 'preliminary').toLowerCase()
-        const inheritPercent = getInheritPercent(stageType)
-        const inheritDecimal = inheritPercent / 100
-        
-        // placement × inheritance percentage (e.g., rank 2 × 0.30 = 0.60)
-        const contribution = roundPlacement * inheritDecimal
-        weightedTotal += contribution
-        roundCount++
+        if (!stageTotals[stageType]) {
+          stageTotals[stageType] = { total: 0, count: 0 }
+        }
+        stageTotals[stageType].total += roundPlacement
+        stageTotals[stageType].count++
       }
     })
+    
+    // Apply inheritance percentage to each Stage Total placement
+    let weightedTotal = 0
+    let stageCount = 0
+    Object.entries(stageTotals).forEach(([stageType, stageData]) => {
+      const inheritPercent = getInheritPercent(stageType)
+      const inheritDecimal = inheritPercent / 100
+      // Stage Total placement × inheritance percentage (e.g., 5 × 0.30 = 1.50)
+      const contribution = stageData.total * inheritDecimal
+      weightedTotal += contribution
+      stageCount++
+    })
 
-    return roundCount > 0 ? Number(weightedTotal.toFixed(2)) : null
+    return stageCount > 0 ? Number(weightedTotal.toFixed(2)) : null
   }
 
   // Standard calculation (fresh mode or no inheritance config)
