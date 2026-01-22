@@ -339,7 +339,7 @@
                 >
                   <div 
                     v-if="showRankBreakdown[contestant.id]"
-                    class="absolute z-50 right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-slate-200 p-3 text-left"
+                    class="absolute z-[9999] right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-slate-200 p-3 text-left"
                     @mouseenter="showRankBreakdown[contestant.id] = true"
                     @mouseleave="showRankBreakdown[contestant.id] = false"
                   >
