@@ -318,58 +318,62 @@
                 </span>
                 <!-- Info icon trigger -->
                 <button
+                  :ref="el => rankBreakdownRefs[contestant.id] = el"
                   class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-help"
-                  @mouseenter="showRankBreakdown[contestant.id] = true"
-                  @mouseleave="showRankBreakdown[contestant.id] = false"
-                  @click.stop="showRankBreakdown[contestant.id] = !showRankBreakdown[contestant.id]"
+                  @mouseenter="openRankBreakdown(contestant.id)"
+                  @mouseleave="closeRankBreakdown(contestant.id)"
+                  @click.stop="toggleRankBreakdown(contestant.id)"
                   title="View calculation breakdown"
                 >
                   <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
                 </button>
-                <!-- Tooltip popover -->
-                <transition
-                  enter-active-class="transition ease-out duration-100"
-                  enter-from-class="opacity-0 scale-95"
-                  enter-to-class="opacity-100 scale-100"
-                  leave-active-class="transition ease-in duration-75"
-                  leave-from-class="opacity-100 scale-100"
-                  leave-to-class="opacity-0 scale-95"
-                >
-                  <div 
-                    v-if="showRankBreakdown[contestant.id]"
-                    class="absolute z-[9999] right-0 top-full mt-1 w-56 bg-white rounded-lg shadow-lg border border-slate-200 p-3 text-left"
-                    @mouseenter="showRankBreakdown[contestant.id] = true"
-                    @mouseleave="showRankBreakdown[contestant.id] = false"
+                <!-- Tooltip popover using Teleport -->
+                <Teleport to="body">
+                  <transition
+                    enter-active-class="transition ease-out duration-100"
+                    enter-from-class="opacity-0 scale-95"
+                    enter-to-class="opacity-100 scale-100"
+                    leave-active-class="transition ease-in duration-75"
+                    leave-from-class="opacity-100 scale-100"
+                    leave-to-class="opacity-0 scale-95"
                   >
-                    <div class="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1.5">
-                      <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                      </svg>
-                      <span>Rank Calculation</span>
-                    </div>
-                    <div class="space-y-1.5 text-[11px]">
-                      <!-- Show stage placements -->
-                      <template v-for="(info, stageType) in stageTypeInfo" :key="stageType">
-                        <div v-if="getStageTotalPlacement(contestant, stageType) !== null" class="flex justify-between items-center">
-                          <span class="text-slate-500 capitalize">{{ formatStageName(stageType) }}:</span>
-                          <span class="font-medium text-slate-700 tabular-nums">
-                            {{ formatScore(getStageTotalPlacement(contestant, stageType), 2) }}
-                            <template v-if="shouldApplyInheritance && getInheritPercent(stageType) > 0">
-                              <span class="text-purple-500">× {{ getInheritPercent(stageType) }}%</span>
-                            </template>
-                          </span>
+                    <div 
+                      v-if="showRankBreakdown[contestant.id]"
+                      class="fixed z-[9999] w-56 bg-white rounded-lg shadow-xl border border-slate-200 p-3 text-left"
+                      :style="getRankBreakdownPosition(contestant.id)"
+                      @mouseenter="openRankBreakdown(contestant.id)"
+                      @mouseleave="closeRankBreakdown(contestant.id)"
+                    >
+                      <div class="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        <span>Rank Calculation</span>
+                      </div>
+                      <div class="space-y-1.5 text-[11px]">
+                        <!-- Show stage placements -->
+                        <template v-for="(info, stageType) in stageTypeInfo" :key="stageType">
+                          <div v-if="getStageTotalPlacement(contestant, stageType) !== null" class="flex justify-between items-center">
+                            <span class="text-slate-500 capitalize">{{ formatStageName(stageType) }}:</span>
+                            <span class="font-medium text-slate-700 tabular-nums">
+                              {{ formatScore(getStageTotalPlacement(contestant, stageType), 2) }}
+                              <template v-if="shouldApplyInheritance && getInheritPercent(stageType) > 0">
+                                <span class="text-purple-500">× {{ getInheritPercent(stageType) }}%</span>
+                              </template>
+                            </span>
+                          </div>
+                        </template>
+                        <!-- Divider and total -->
+                        <div class="border-t border-slate-200 pt-1.5 mt-1.5 flex justify-between items-center">
+                          <span class="font-semibold text-slate-600">Total:</span>
+                          <span class="font-bold text-purple-600 tabular-nums">{{ formatScore(getTotalAverageRankSum(contestant), 2) }}</span>
                         </div>
-                      </template>
-                      <!-- Divider and total -->
-                      <div class="border-t border-slate-200 pt-1.5 mt-1.5 flex justify-between items-center">
-                        <span class="font-semibold text-slate-600">Total:</span>
-                        <span class="font-bold text-purple-600 tabular-nums">{{ formatScore(getTotalAverageRankSum(contestant), 2) }}</span>
                       </div>
                     </div>
-                  </div>
-                </transition>
+                  </transition>
+                </Teleport>
               </div>
               <span v-else class="text-gray-300 italic text-sm">—</span>
             </td>
@@ -780,6 +784,43 @@ const toggleScoreBreakdown = (contestantId: number) => {
 
 // Track rank breakdown popover visibility per contestant
 const showRankBreakdown = ref<Record<number, boolean>>({})
+
+// Store refs to the info buttons for positioning the teleported popover
+const rankBreakdownRefs = ref<Record<number, any>>({})
+
+// Open rank breakdown popover with delay for hover
+let rankBreakdownTimeout: ReturnType<typeof setTimeout> | null = null
+
+const openRankBreakdown = (contestantId: number) => {
+  if (rankBreakdownTimeout) {
+    clearTimeout(rankBreakdownTimeout)
+  }
+  showRankBreakdown.value[contestantId] = true
+}
+
+const closeRankBreakdown = (contestantId: number) => {
+  rankBreakdownTimeout = setTimeout(() => {
+    showRankBreakdown.value[contestantId] = false
+  }, 100) // Small delay to allow moving to popover
+}
+
+const toggleRankBreakdown = (contestantId: number) => {
+  showRankBreakdown.value[contestantId] = !showRankBreakdown.value[contestantId]
+}
+
+// Get position for the teleported popover based on button position
+const getRankBreakdownPosition = (contestantId: number): Record<string, string> => {
+  const buttonEl = rankBreakdownRefs.value[contestantId]
+  if (!buttonEl) {
+    return { top: '0px', left: '0px' }
+  }
+  
+  const rect = buttonEl.getBoundingClientRect()
+  return {
+    top: `${rect.bottom + 8}px`,
+    left: `${rect.right - 224}px` // 224px = w-56 (14rem)
+  }
+}
 
 // Format stage name for display (e.g., 'preliminary' -> 'Preliminary', 'semi-final' -> 'Semi-Final')
 const formatStageName = (stage: string): string => {
