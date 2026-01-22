@@ -40,7 +40,7 @@
               </th>
               <!-- Stage Total column - appears immediately after the last round of each stage type -->
               <th
-                v-if="isLastRoundOfType(roundIndex) && stageHasMultipleRounds(round.type || 'preliminary') && !isRoundView"
+                v-if="isLastRoundOfType(roundIndex) && stageHasMultipleRounds(round.type || 'preliminary') && shouldShowStageTotalColumn(round.type || 'preliminary')"
                 scope="col"
                 class="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide"
                 :class="getStageTotalHeaderClass(round.type)"
@@ -243,7 +243,7 @@
 
               <!-- Stage Total cell - appears immediately after the last round of each stage type -->
               <td
-                v-if="isLastRoundOfType(roundIndex) && stageHasMultipleRounds(round.type || 'preliminary') && !isRoundView"
+                v-if="isLastRoundOfType(roundIndex) && stageHasMultipleRounds(round.type || 'preliminary') && shouldShowStageTotalColumn(round.type || 'preliminary')"
                 class="whitespace-nowrap px-4 py-3 text-center"
                 :class="getStageTotalCellClass(round.type)"
               >
@@ -641,6 +641,25 @@ const getStageTotalPlacement = (contestant: Contestant, stageType: string): numb
 const getStageTopN = (stageType: string): number | null => {
   const normalizedType = stageType.toLowerCase()
   return stageTypeInfo.value[normalizedType]?.topNProceed ?? null
+}
+
+// Determine if Stage Total column should be shown for a given stage type
+// Shows in Overall Tally view (not round view), or in round view when
+// viewing a round that belongs to this stage type (and stage has 2+ rounds)
+const shouldShowStageTotalColumn = (stageType: string): boolean => {
+  // Always show in Overall Tally view (not round view)
+  if (!isRoundView.value) {
+    return true
+  }
+  
+  // In round view, check if the currently displayed rounds include this stage type
+  // This means we're viewing a tab that shows rounds of this stage type
+  const normalizedType = stageType.toLowerCase()
+  const hasRoundsOfThisType = props.rounds.some(
+    round => (round.type || 'preliminary').toLowerCase() === normalizedType
+  )
+  
+  return hasRoundsOfThisType
 }
 
 // Check if contestant advanced from a stage (based on stage total ranking)

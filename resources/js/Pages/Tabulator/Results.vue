@@ -97,7 +97,7 @@
               </div>
 
               <!-- Ranking Method Indicator -->
-              <div v-if="pageant" class="flex items-center gap-3 mb-4">
+              <div v-if="pageant" class="flex flex-wrap items-center gap-3 mb-4">
                 <div 
                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium"
                   :class="getRankingMethodClass()"
@@ -111,7 +111,108 @@
                 >
                   <span>{{ getTieHandlingLabel() }}</span>
                 </div>
+                <!-- Score Mode Badge -->
+                <div 
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all"
+                  :class="pageant.final_score_mode === 'inherit' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200' : 'bg-sky-100 text-sky-700 border border-sky-200 hover:bg-sky-200'"
+                  @click="showComputationGuide = !showComputationGuide"
+                  :title="'Click to see how scores are computed'"
+                >
+                  <Calculator class="w-4 h-4" />
+                  <span>{{ pageant.final_score_mode === 'inherit' ? 'Inherit Mode' : 'Fresh Mode' }}</span>
+                  <ChevronDown 
+                    class="w-3.5 h-3.5 transition-transform duration-200"
+                    :class="{ 'rotate-180': showComputationGuide }"
+                  />
+                </div>
               </div>
+
+              <!-- Computation Mode Guide -->
+              <transition
+                enter-active-class="transition-all duration-300 ease-out"
+                enter-from-class="opacity-0 max-h-0"
+                enter-to-class="opacity-100 max-h-96"
+                leave-active-class="transition-all duration-200 ease-in"
+                leave-from-class="opacity-100 max-h-96"
+                leave-to-class="opacity-0 max-h-0"
+              >
+                <div v-if="showComputationGuide" class="mb-4 overflow-hidden">
+                  <div 
+                    class="p-4 rounded-xl border text-sm"
+                    :class="pageant.final_score_mode === 'inherit' ? 'bg-emerald-50 border-emerald-200' : 'bg-sky-50 border-sky-200'"
+                  >
+                    <div class="flex items-start gap-3">
+                      <div class="flex-shrink-0 mt-0.5">
+                        <div 
+                          class="w-8 h-8 rounded-full flex items-center justify-center"
+                          :class="pageant.final_score_mode === 'inherit' ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'"
+                        >
+                          <Calculator class="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-slate-900 mb-2">
+                          {{ pageant.final_score_mode === 'inherit' ? 'Inherit Mode Computation' : 'Fresh Mode Computation' }}
+                        </h4>
+                        
+                        <!-- Fresh Mode Explanation -->
+                        <template v-if="pageant.final_score_mode !== 'inherit'">
+                          <p class="text-slate-600 mb-2">
+                            Only the <strong>Final round</strong> scores are used for ranking. Previous rounds determine advancement only.
+                          </p>
+                          <div class="bg-white/60 rounded-lg p-3 border border-slate-200">
+                            <div v-if="pageant.ranking_method === 'score_average'" class="space-y-1">
+                              <div class="font-medium text-slate-700">Score Average Method:</div>
+                              <div class="text-slate-500 font-mono text-xs">Final Score = Average of judge scores in Final Round</div>
+                            </div>
+                            <div v-else-if="pageant.ranking_method === 'rank_sum'" class="space-y-1">
+                              <div class="font-medium text-slate-700">Rank Sum Method:</div>
+                              <div class="text-slate-500 font-mono text-xs">Total Rank = Sum of judge placements in Final Round</div>
+                            </div>
+                            <div v-else class="space-y-1">
+                              <div class="font-medium text-slate-700">Ordinal/Final Ballot:</div>
+                              <div class="text-slate-500 font-mono text-xs">Winner = Majority of #1 votes OR lowest rank sum</div>
+                            </div>
+                          </div>
+                        </template>
+                        
+                        <!-- Inherit Mode Explanation -->
+                        <template v-else>
+                          <p class="text-slate-600 mb-2">
+                            Scores from <strong>all stages</strong> contribute to the final ranking based on inheritance percentages.
+                          </p>
+                          <div class="bg-white/60 rounded-lg p-3 border border-slate-200 space-y-3">
+                            <div v-if="pageant.ranking_method === 'score_average'" class="space-y-1">
+                              <div class="font-medium text-slate-700">Score Average Method:</div>
+                              <div class="text-slate-500 font-mono text-xs">Final Score = Σ(Stage Total × Stage %)</div>
+                            </div>
+                            <div v-else-if="pageant.ranking_method === 'rank_sum'" class="space-y-1">
+                              <div class="font-medium text-slate-700">Rank Sum Method:</div>
+                              <div class="text-slate-500 font-mono text-xs">Total Rank = Σ(Stage Placement × Stage %)</div>
+                            </div>
+                            
+                            <!-- Inheritance Percentages -->
+                            <div v-if="pageant.final_score_inheritance && Object.keys(pageant.final_score_inheritance).length > 0" class="pt-2 border-t border-slate-200">
+                              <div class="font-medium text-slate-700 mb-2">Inheritance Percentages:</div>
+                              <div class="flex flex-wrap gap-2">
+                                <div 
+                                  v-for="(percent, stage) in pageant.final_score_inheritance" 
+                                  :key="stage"
+                                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                                  :class="getStagePercentBadgeClass(stage)"
+                                >
+                                  <span class="capitalize">{{ formatStageName(stage) }}</span>
+                                  <span class="font-bold">{{ percent }}%</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </transition>
 
               <div v-if="currentRoundInfo" class="flex items-center gap-2 p-3 bg-teal-50 border border-teal-100 rounded-xl">
                 <div class="text-sm text-teal-700">
@@ -262,7 +363,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import { route } from 'ziggy-js'
-import { RefreshCw, Printer, Trophy, BarChart3, Users, LayoutDashboard, Target, Award } from 'lucide-vue-next'
+import { RefreshCw, Printer, Trophy, BarChart3, Users, LayoutDashboard, Target, Award, Calculator, ChevronDown } from 'lucide-vue-next'
 import CustomSelect from '../../Components/CustomSelect.vue'
 import ResultsRanking from '../../Components/tabulator/ResultsRanking.vue'
 import TabulatorLayout from '../../Layouts/TabulatorLayout.vue'
@@ -342,6 +443,27 @@ const isUpdating = ref(false)
 
 const activeRound = ref('overall')
 const selectedRoundId = ref<number | null>(null)
+const showComputationGuide = ref(false)
+
+// Format stage name for display (e.g., 'semi-final' -> 'Semi-Final')
+const formatStageName = (stage: string): string => {
+  return stage
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('-')
+}
+
+// Get badge styling class based on stage type
+const getStagePercentBadgeClass = (stage: string): string => {
+  const normalizedStage = stage.toLowerCase()
+  if (normalizedStage.includes('final') && !normalizedStage.includes('semi')) {
+    return 'bg-amber-100 text-amber-800 border border-amber-300'
+  }
+  if (normalizedStage.includes('semi')) {
+    return 'bg-purple-100 text-purple-800 border border-purple-300'
+  }
+  return 'bg-blue-100 text-blue-800 border border-blue-300'
+}
 
 const isRankSumMethod = computed(() => {
   return props.pageant?.ranking_method === 'rank_sum'
